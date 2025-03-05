@@ -3,10 +3,10 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: [
     // Pinia 配置
-    '@pinia/nuxt',
-    '@pinia-plugin-persistedstate/nuxt',
-    'dayjs-nuxt',
-    '@nuxtjs/i18n'
+    "@pinia/nuxt",
+    "@pinia-plugin-persistedstate/nuxt",
+    "dayjs-nuxt",
+    "@nuxtjs/i18n",
   ],
   // i18n: {
   //   langDir: 'locales',
@@ -16,6 +16,10 @@ export default defineNuxtConfig({
   //   ]
   // },
   imports: {
-    dirs: ['store/**']
-  }
-})
+    dirs: ["store/**"],
+  },
+  devServer: {
+    host: "127.0.0.1",
+    port: 1007,
+  },
+});

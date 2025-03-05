@@ -1,0 +1,13 @@
+/* 页面进入和离开时的过渡效果 */
+
+/* 页面进入和离开过程中的动画设置 */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 2s; /* 设置透明度过渡动画,持续2秒 */
+}
+
+/* 页面进入开始时和离开结束时的状态 */
+.page-enter,
+.page-leave-active {
+  opacity: 0; /* 完全透明 */
+}
