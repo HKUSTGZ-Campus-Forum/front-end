@@ -37,7 +37,7 @@ importers:
         version: 4.5.0(vue@3.5.13(typescript@5.7.3))
     devDependencies:
       '@nuxtjs/i18n':
-        specifier: ^9.0.0-rc.2
+        specifier: ^9.2.0
         version: 9.2.0(@vue/compiler-dom@3.5.13)(eslint@9.20.1(jiti@2.4.2))(magicast@0.3.5)(rollup@4.34.6)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
       '@nuxtjs/style-resources':
         specifier: ^1.2.2

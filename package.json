@@ -21,7 +21,7 @@
     "vue-router": "latest"
   },
   "devDependencies": {
-    "@nuxtjs/i18n": "^9.0.0-rc.2",
+    "@nuxtjs/i18n": "^9.2.0",
     "@nuxtjs/style-resources": "^1.2.2",
     "@types/node": "^22.13.1",
     "sass": "^1.84.0",
