@@ -1,3 +1,4 @@
+import { Emoji } from "../emoji";
 import { Time } from "../time";
 import type { Tag } from "./tags";
 
@@ -8,6 +9,6 @@ export interface PostsDataFront {
   background: string;
   title: string;
   time: Time;
-  emoji: string[];
+  emoji: Emoji;
   tags: Tag[];
 }
