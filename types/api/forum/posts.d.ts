@@ -1,5 +1,5 @@
-import { Time } from "./time";
-import type { Tag } from "./tag";
+import { Time } from "../time";
+import type { Tag } from "./tags";
 
 export interface PostsDataFront {
   NumberLikes: number;
