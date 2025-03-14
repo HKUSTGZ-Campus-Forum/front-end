@@ -15,7 +15,7 @@ export type Time = {
   absolute: {
     //   timestamp: number;        // Unix时间戳
     //   formatted: string;        // 格式化的时间字符串，如："2024-03-12 14:30:00"
-    date: string; // 日期部分，如："2024-03-12"
-    time: string; // 时间部分，如："14:30:00"
+    date: string; // 日期部分，如："2024-03-12" || 1-10
+    time: string; // 时间部分，如："14:30:00" || 12-18
   };
 };
