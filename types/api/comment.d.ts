@@ -1,5 +1,5 @@
 export interface Comment {
-  // parent: 是否副评论 NONE
+  parent: ;// 是否副评论 NONE
   content: string;
   NumberLikes: number;
   time: Time;
