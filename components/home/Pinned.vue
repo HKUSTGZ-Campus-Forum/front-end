@@ -2,35 +2,16 @@
 // 从 vue-i18n 导入国际化钩子，用于多语言支持
 import { useI18n } from "vue-i18n";
 // 导入置顶主题的类型定义接口
-import type { HomePinnedTopic } from "~/types/api/home.d.ts";
+import type { HomePinnedTopic } from "~/types/home";
 // 获取当前语言环境设置
 const { locale } = useI18n();
 
 // 使用 Nuxt 的 useLazyFetch 钩子异步获取置顶主题数据
-const { data } = await useLazyFetch<HomePinnedTopic[]>(`/types/api/home/pin`, {
-  method: "GET",
-});
+// const { data } = await useLazyFetch<HomePinnedTopic[]>(`/types/api/home/pin`, {
+//   method: "GET",
+// });
+
 </script>
-
-<template>
-  <!-- 置顶主题容器 -->
-  <div class="pinned">
-    <!-- 使用 v-for 遍历置顶主题数据，生成主题链接列表 -->
-    <NuxtLink
-      v-for="(topic, index) in data"
-      :key="index"
-      :to="`/topic/${topic.tid}`"
-    >
-      <!-- 显示置顶图标 -->
-      <Icon class="icon" name="lucide:pin" />
-      <!-- 显示主题标题 -->
-      <span>{{ topic.title }}</span>
-      <!-- 显示格式化后的发布时间 -->
-      <span>{{ formatTimeDifference(topic.time) }}</span>
-    </NuxtLink>
-  </div>
-</template>
-
 <style lang="scss" scoped>
 /* 置顶主题容器样式 */
 .pinned {
