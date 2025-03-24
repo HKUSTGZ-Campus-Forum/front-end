@@ -2,6 +2,10 @@
 // 导入国际化相关功能（如果需要）
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
+
+defineProps<{
+  folded: boolean
+}>();
 </script>
 
 <script setup>
