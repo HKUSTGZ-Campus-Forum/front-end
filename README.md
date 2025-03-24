@@ -76,6 +76,8 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 # UniKorn 前端项目文档
 
+## API 文档位置：https://github.com/HKUSTGZ-Campus-Forum/Docs
+
 ## 目录
 
 - 项目概述
