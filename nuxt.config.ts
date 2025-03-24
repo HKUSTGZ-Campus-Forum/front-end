@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  compatibilityDate: "2024-11-01",
+  compatibilityDate: "2025-03-24",
   devtools: { enabled: false },
   modules: [
     // Pinia 配置
@@ -21,5 +21,14 @@ export default defineNuxtConfig({
   devServer: {
     host: "127.0.0.1",
     port: 1007,
+  },
+  app: {
+    // 禁用默认的 Nuxt 启动屏幕
+    pageTransition: false,
+    layoutTransition: false,
+    keepalive: false,
+    head: {
+      // 可以在这里自定义 head 内容
+    }
   },
 });
