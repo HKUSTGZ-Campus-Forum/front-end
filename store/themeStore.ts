@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 
-// 定义主题状态的接口
 interface ThemeState {
   backgroundColor: string;
   backgroundImage: string | null;
@@ -9,7 +8,7 @@ interface ThemeState {
 
 export const useThemeStore = defineStore('theme', {
   state: (): ThemeState => ({
-    backgroundColor: '#97d4f3', // 默认背景颜色
+    backgroundColor: '#97d4f3',
     backgroundImage: null,
     backgroundOpacity: 0.7
   }),
@@ -17,26 +16,36 @@ export const useThemeStore = defineStore('theme', {
   actions: {
     setBackgroundColor(color: string) {
       this.backgroundColor = color;
-      document.documentElement.style.setProperty('--background-color', color);
+      if (process.client) {
+        document.documentElement.style.setProperty('--background-color', color);
+      }
     },
     
     setBackgroundImage(imageUrl: string | null) {
       this.backgroundImage = imageUrl;
-      if (imageUrl) {
-        document.documentElement.style.setProperty(
-          '--background-image', 
-          `url(${imageUrl})`
-        );
-      } else {
-        document.documentElement.style.setProperty('--background-image', 'none');
+      if (process.client) {
+        if (imageUrl) {
+          document.documentElement.style.setProperty(
+            '--background-image', 
+            `url(${imageUrl})`
+          );
+        } else {
+          document.documentElement.style.setProperty('--background-image', 'none');
+        }
       }
     },
     
     setBackgroundOpacity(opacity: number) {
       this.backgroundOpacity = opacity;
-      document.documentElement.style.setProperty('--background-opacity', opacity.toString());
+      if (process.client) {
+        document.documentElement.style.setProperty('--background-opacity', opacity.toString());
+      }
     }
   },
   
-  persist: true // 持久化存储用户设置
+  // 条件应用持久化配置
+  persist: process.client ? {
+    storage: localStorage,
+    paths: ['backgroundColor', 'backgroundImage', 'backgroundOpacity']
+  } : false
 })

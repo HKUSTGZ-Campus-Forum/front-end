@@ -31,5 +31,5 @@ export default defineNuxtConfig({
       // 可以在这里自定义 head 内容
     },
   },
-  css: ["~/assets/css/variables.scss"],
+  css: ["~/assets/css/variables.scss", "~/assets/css/global.scss"],
 });

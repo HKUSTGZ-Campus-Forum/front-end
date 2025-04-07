@@ -23,6 +23,11 @@ defineProps({
     type: String,
     default: "测试",
   },
+  // 添加侧边栏折叠状态属性
+  sidebarFolded: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // 处理侧边栏切换
@@ -35,7 +40,7 @@ const toggleSidebar = () => {
 <template>
   <nav class="top-nav">
     <!-- 品牌/Logo -->
-    <a class="brand" href="/">
+    <a class="brand" :class="{ 'sidebar-expanded': !sidebarFolded }" href="/">
       {{ brandName }}
     </a>
 
@@ -97,8 +102,11 @@ const toggleSidebar = () => {
   background-color: var(--color-blue-7, #9fc3e7);
   padding: 0.5rem 1rem;
   color: white;
-  height: 56px;
-  width: 100%;
+  height: 70px;
+  width: 98.7%;
+  position: fixed;
+  z-index: 1000; /* 确保在侧边栏之上 */
+  top: 0px;
 }
 
 .brand {
@@ -108,7 +116,17 @@ const toggleSidebar = () => {
   padding: 0.5rem 1rem;
   margin-right: 1rem;
   white-space: nowrap;
-  margin-left: 60px;
+  margin-left: 170px; // 展开时的位置
+  transition: margin-left 0.3s ease; // 添加过渡效果
+  
+  &.sidebar-expanded {
+    margin-left: 170px; // 展开时的位置
+  }
+  
+  &:not(.sidebar-expanded) {
+    margin-left: 70px; // 折叠时的位置
+  }
+  
   &:hover {
     color: rgba(255, 255, 255, 0.75);
   }
@@ -132,7 +150,7 @@ const toggleSidebar = () => {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 50px;
 }
 
 .search-form {
