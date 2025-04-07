@@ -24,28 +24,21 @@ useHead({
 </script>
 
 <template>
-  <!-- 页面根容器 -->
-  <div class="root">
-    <!-- 引入首页主要内容组件 -->
-    <HomeContainer />
-    <!-- 测试图片 -->
-    <img src="/image/testpic1.jpg" />
-  </div>
+  <!-- 移除多余的HomeContainer嵌套 -->
+  <HomeContainer>
+    <div class="root">
+      <!-- 测试图片 -->
+      <img src="public/image/testpic1.jpg" />
+    </div>
+  </HomeContainer>
 </template>
 
 <style lang="scss" scoped>
 /* 根容器样式 */
 .root {
-  display: flex; // 使用弹性布局
-  flex-direction: column; // 垂直方向排列
-  height: 100%; // 充满高度
-  min-height: calc(100dvh - 75px); // 最小高度为视口高度减去75px
-  max-width: 80rem; // 最大宽度限制
-  margin: 0 auto; // 水平居中
-  padding: 17px; // 内边距
-
-  backdrop-filter: blur(8px); // 背景模糊效果
-  background-color: rgba(255, 255, 255, 0.5); // 半透明白色背景
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
 }
 
 /* 响应式布局：屏幕宽度小于1000px时的样式 */

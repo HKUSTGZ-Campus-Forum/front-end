@@ -103,10 +103,11 @@ const toggleSidebar = () => {
   padding: 0.5rem 1rem;
   color: white;
   height: 70px;
-  width: 98.7%;
+  width: 100%; 
   position: fixed;
-  z-index: 1000; /* 确保在侧边栏之上 */
-  top: 0px;
+  z-index: 1010; /* 确保在侧边栏之上 */
+  top: 0;
+  left: 0;
 }
 
 .brand {
@@ -120,11 +121,11 @@ const toggleSidebar = () => {
   transition: margin-left 0.3s ease; // 添加过渡效果
   
   &.sidebar-expanded {
-    margin-left: 170px; // 展开时的位置
+    margin-left: 180px; // 展开时的位置
   }
   
   &:not(.sidebar-expanded) {
-    margin-left: 70px; // 折叠时的位置
+    margin-left: 80px; // 折叠时的位置
   }
   
   &:hover {

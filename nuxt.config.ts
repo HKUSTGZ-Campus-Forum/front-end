@@ -23,13 +23,15 @@ export default defineNuxtConfig({
     port: 1007,
   },
   app: {
-    // 禁用默认的 Nuxt 启动屏幕
-    pageTransition: false,
     layoutTransition: false,
     keepalive: false,
     head: {
       // 可以在这里自定义 head 内容
     },
   },
-  css: ["~/assets/css/variables.scss", "~/assets/css/global.scss"],
+  css: [
+    "~/assets/css/variables.scss",
+    "~/assets/css/global.scss",
+    "~/assets/css/transitions.scss",
+  ],
 });

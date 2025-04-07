@@ -3,52 +3,53 @@
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 
-const props = withDefaults(
-  defineProps<{
-    folded: boolean;
-  }>(),
-  {
-    folded: false,
-  }
-);
+const props = defineProps({
+  folded: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 // 添加emit用于通知父组件状态变化
-const emit = defineEmits(['update:folded']);
+const emit = defineEmits(["update:folded"]);
 
 // 本地状态，用于处理悬停效果
 const isHovered = ref(false);
 
-// 处理鼠标悬停
 function handleMouseEnter() {
   if (props.folded) {
     isHovered.value = true;
+    emit("update:folded", false); // 直接发射展开事件
   }
 }
 
 function handleMouseLeave() {
-  isHovered.value = false;
+  if (!props.folded) {
+    isHovered.value = false;
+    emit("update:folded", true); // 直接发射折叠事件
+  }
 }
 
 // 监控悬停状态变化
 watch(isHovered, (newValue) => {
   // 只在折叠状态下才触发展开
   if (props.folded) {
-    emit('update:folded', !newValue);
+    emit("update:folded", !newValue);
   }
 });
 </script>
 
 <template>
-    <div 
-    class="sidebar" 
-    :class="{ collapsed: folded && !isHovered }"
+  <div
+    class="sidebar"
+    :class="{ collapsed: folded }"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
     <div class="sidebar-content">
       <div class="sidebar-header">
         <div class="uniKonwn-logo">
-          <img src="/image/uniKorn.jpg" alt="uniKonwn">
+          <img src="/image/uniKorn.jpg" alt="uniKonwn" />
         </div>
       </div>
       <ul class="nav-items">
@@ -75,13 +76,13 @@ watch(isHovered, (newValue) => {
   overflow: hidden;
   border: 3px solid rgba(255, 255, 255, 0.2);
   transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-  
+
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
-  
+
   &:hover {
     transform: scale(1.12) rotate(360deg);
     border-color: rgba(255, 255, 255, 0.8);
@@ -99,14 +100,14 @@ watch(isHovered, (newValue) => {
 .sidebar {
   position: fixed;
   left: 0;
-  top: 0px; /* 与顶部导航栏高度相匹配 */
-  height: 100%;
+  top: 0; /* 从页面顶部开始 */
+  height: 100vh;
   width: 200px;
   background-color: #343a40;
   color: white;
   transition: all 0.3s ease;
-  z-index: 1010;
-  padding : 0;
+  z-index: 1010; /* 提高z-index使其在顶部栏之上 */
+  padding: 0;
 
   &.collapsed {
     width: 100px;
