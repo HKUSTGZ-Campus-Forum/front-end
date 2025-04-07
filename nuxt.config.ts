@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     keepalive: false,
     head: {
       // 可以在这里自定义 head 内容
-    }
+    },
   },
+  css: ["~/assets/css/variables.scss"],
 });

@@ -8,4 +8,5 @@ const { fold } = storeToRefs(usePersistHomeStore());
 <template>
   <!-- 渲染首页固定内容组件 -->
   <HomePinned />
+  <HomeSildebar :folded="fold.updates" />
 </template>

@@ -1,0 +1,33 @@
+:root {
+  --background-color: #97d4f3;
+  --background-image: none;
+  --background-opacity: 1;
+}
+
+body {
+  background-color: var(--background-color);
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+  
+  &::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--background-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: var(--background-opacity);
+    z-index: -1;
+  }
+}
+
+// 确保内容区域在背景之上
+#__nuxt {
+  position: relative;
+  z-index: 1;
+}
