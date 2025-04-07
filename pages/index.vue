@@ -29,7 +29,7 @@ useHead({
     <!-- 引入首页主要内容组件 -->
     <HomeContainer />
     <!-- 测试图片 -->
-    <img src="/image/testpic1.jpg" />
+    <!-- <img src="/image/testpic1.jpg" /> -->
   </div>
 </template>
 

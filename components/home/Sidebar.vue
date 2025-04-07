@@ -3,22 +3,18 @@
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 
-defineProps<{
-  folded: boolean
-}>();
-</script>
-
-<script setup>
-defineProps({
-  folded: {
-    type: Boolean,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    folded: boolean;
+  }>(),
+  {
+    folded: false,
   }
-});
+);
 </script>
 
 <template>
-  <div class="sidebar" :class="{ 'collapsed': folded }">
+  <div class="sidebar" :class="{ collapsed: folded }">
     <div class="sidebar-content">
       <div class="sidebar-header">
         <h3>导航菜单</h3>
@@ -44,36 +40,37 @@ defineProps({
   color: white;
   transition: all 0.3s ease;
   z-index: 1000;
-  
+
   &.collapsed {
     width: 60px;
-    
+
     .nav-items span {
       display: none;
     }
   }
-  
+
   .sidebar-content {
     padding: 1rem;
   }
-  
+
   .nav-items {
     list-style: none;
     padding: 0;
     margin: 0;
-    
+
     li {
       margin-bottom: 0.5rem;
     }
-    
+
     a {
       color: rgba(255, 255, 255, 0.8);
       text-decoration: none;
       display: block;
       padding: 0.5rem;
       border-radius: 4px;
-      
-      &:hover, &.active {
+
+      &:hover,
+      &.active {
         background-color: rgba(255, 255, 255, 0.1);
       }
     }

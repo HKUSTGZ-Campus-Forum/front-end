@@ -7,28 +7,28 @@ const { t } = useI18n();
 defineProps({
   brandName: {
     type: String,
-    default: "uniKorn"
+    default: "uniKorn",
   },
   showSearch: {
     type: Boolean,
-    default: true
+    default: true,
   },
   // 添加用户头像URL属性
   userAvatar: {
     type: String,
-    default: "/image/testpic1.jpg"
+    default: "/image/testpic1.jpg",
   },
   // 添加用户名属性
   username: {
     type: String,
-    default: "测试"
-  }
+    default: "测试",
+  },
 });
 
 // 处理侧边栏切换
-const emit = defineEmits(['toggle-sidebar']);
+const emit = defineEmits(["toggle-sidebar"]);
 const toggleSidebar = () => {
-  emit('toggle-sidebar');
+  emit("toggle-sidebar");
 };
 </script>
 
@@ -38,24 +38,28 @@ const toggleSidebar = () => {
     <a class="brand" href="/">
       {{ brandName }}
     </a>
-    
+
     <!-- 侧边栏切换按钮 -->
     <button class="sidebar-toggle" @click="toggleSidebar">
       <i class="fas fa-bars"></i>
     </button>
-    
+
     <!-- 右侧功能区 -->
     <div class="right-section">
       <!-- 搜索框 -->
       <form v-if="showSearch" class="search-form">
         <div class="search-group">
-          <input class="search-input" type="text" :placeholder="t('search.placeholder', '搜索...')" />
+          <input
+            class="search-input"
+            type="text"
+            :placeholder="t('search.placeholder', '搜索...')"
+          />
           <button class="search-button" type="button">
             <i class="fas fa-search"></i>
           </button>
         </div>
       </form>
-      
+
       <!-- 用户下拉菜单 -->
       <div class="user-menu">
         <div class="dropdown">
@@ -67,10 +71,18 @@ const toggleSidebar = () => {
           </a>
           <ul class="dropdown-menu">
             <li class="dropdown-header" v-if="username">{{ username }}</li>
-            <li><NuxtLink class="dropdown-item" to="/settings">设置</NuxtLink></li>
-            <li><NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink></li>
+            <li>
+              <NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink class="dropdown-item" to="/setting/background"
+                >设置</NuxtLink
+              >
+            </li>
             <li><hr class="divider" /></li>
-            <li><NuxtLink class="dropdown-item" to="/logout">退出登录</NuxtLink></li>
+            <li>
+              <NuxtLink class="dropdown-item" to="/logout">退出登录</NuxtLink>
+            </li>
           </ul>
         </div>
       </div>
@@ -82,7 +94,7 @@ const toggleSidebar = () => {
 .top-nav {
   display: flex;
   align-items: center;
-  background-color: var(--kungalgame-blue-7, #343a40);
+  background-color: var(--color-blue-7, #9fc3e7);
   padding: 0.5rem 1rem;
   color: white;
   height: 56px;
@@ -109,7 +121,7 @@ const toggleSidebar = () => {
   cursor: pointer;
   padding: 0.25rem 0.75rem;
   font-size: 1.25rem;
-  
+
   &:hover {
     color: rgba(255, 255, 255, 0.75);
   }
@@ -125,7 +137,7 @@ const toggleSidebar = () => {
 
 .search-form {
   display: flex;
-  
+
   @media (max-width: 767px) {
     display: none;
   }
@@ -151,7 +163,7 @@ const toggleSidebar = () => {
   border-radius: 0 0.25rem 0.25rem 0;
   padding: 0.375rem 0.75rem;
   cursor: pointer;
-  
+
   &:hover {
     background-color: var(--kungalgame-blue-6, #0a58ca);
     border-color: var(--kungalgame-blue-6, #0a58ca);
@@ -160,27 +172,27 @@ const toggleSidebar = () => {
 
 .user-menu {
   position: relative;
-  
+
   .dropdown {
     position: relative;
     display: inline-block;
-    
+
     &:hover .dropdown-menu {
       display: block;
     }
   }
-  
+
   .dropdown-toggle {
     color: rgba(255, 255, 255, 0.55);
     text-decoration: none;
     padding: 0.5rem;
     display: flex;
     align-items: center;
-    
+
     &:hover {
       color: rgba(255, 255, 255, 0.75);
     }
-    
+
     i {
       font-size: 1rem;
     }
@@ -193,14 +205,14 @@ const toggleSidebar = () => {
     border-radius: 50%;
     overflow: hidden;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    
+
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
   }
-  
+
   .dropdown-menu {
     display: none;
     position: absolute;
@@ -213,11 +225,11 @@ const toggleSidebar = () => {
     border-radius: 0.25rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     z-index: 1000;
-    
+
     li {
       list-style: none;
     }
-    
+
     .dropdown-header {
       display: block;
       padding: 0.5rem 1rem;
@@ -227,7 +239,7 @@ const toggleSidebar = () => {
       white-space: nowrap;
       font-weight: bold;
     }
-    
+
     .dropdown-item {
       display: block;
       width: 100%;
@@ -239,13 +251,13 @@ const toggleSidebar = () => {
       border: 0;
       color: #212529;
       text-decoration: none;
-      
+
       &:hover {
         background-color: #f8f9fa;
         color: #16181b;
       }
     }
-    
+
     .divider {
       height: 0;
       margin: 0.5rem 0;
