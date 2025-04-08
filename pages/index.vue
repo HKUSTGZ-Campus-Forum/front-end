@@ -28,7 +28,7 @@ useHead({
   <HomeContainer>
     <div class="root">
       <!-- 测试图片 -->
-      <img src="public/image/testpic1.jpg" />
+      <!-- <img src="public/image/testpic1.jpg" /> -->
     </div>
   </HomeContainer>
 </template>
