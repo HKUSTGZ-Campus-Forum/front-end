@@ -87,6 +87,37 @@ export function useAuth() {
     }
   }
 
+  async function register(username: string, email: string, password: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      // 调用API进行注册
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "注册失败");
+      }
+
+      const data = await response.json();
+      
+      // 注册成功，但不自动登录用户
+      // 如果需要自动登录，可以在这里设置 token 和 user
+      
+      return { success: true, data };
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : "注册失败，请稍后再试";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     user,
     token,
@@ -95,5 +126,6 @@ export function useAuth() {
     isLoggedIn,
     login,
     logout,
+    register,
   };
 }
