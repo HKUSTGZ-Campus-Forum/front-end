@@ -1,8 +1,12 @@
 <script setup lang="ts">
-// 导入国际化相关功能（如果需要）
 import { useI18n } from "vue-i18n";
-const { t } = useI18n();
+import { useAuth } from "~/composables/useAuth"; // 引入认证相关组合式函数
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
+
+const { t } = useI18n();
+const { isLoggedIn, logout } = useAuth(); // 获取登录状态
 // 定义组件属性，允许自定义
 defineProps({
   brandName: {
@@ -34,6 +38,17 @@ defineProps({
 const emit = defineEmits(["toggle-sidebar"]);
 const toggleSidebar = () => {
   emit("toggle-sidebar");
+};
+
+const handleLoginOrLogout = async () => {
+  if (isLoggedIn.value) {
+    // 如果已登录，执行登出
+    await logout();
+    router.push('/');
+  } else {
+    // 如果未登录，跳转到登录页
+    router.push('/login');
+  }
 };
 </script>
 
@@ -86,7 +101,13 @@ const toggleSidebar = () => {
             </li>
             <li><hr class="divider" /></li>
             <li>
-              <NuxtLink class="dropdown-item" to="/logout">退出登录</NuxtLink>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click.prevent="handleLoginOrLogout"
+              >
+                {{ isLoggedIn ? "退出登录" : "登录" }}
+              </a>
             </li>
           </ul>
         </div>
@@ -103,7 +124,7 @@ const toggleSidebar = () => {
   padding: 0.5rem 1rem;
   color: white;
   height: 70px;
-  width: 100%; 
+  width: 100%;
   position: fixed;
   z-index: 1010; /* 确保在侧边栏之上 */
   top: 0;
@@ -119,15 +140,15 @@ const toggleSidebar = () => {
   white-space: nowrap;
   margin-left: 170px; // 展开时的位置
   transition: margin-left 0.3s ease; // 添加过渡效果
-  
+
   &.sidebar-expanded {
     margin-left: 180px; // 展开时的位置
   }
-  
+
   &:not(.sidebar-expanded) {
     margin-left: 80px; // 折叠时的位置
   }
-  
+
   &:hover {
     color: rgba(255, 255, 255, 0.75);
   }
