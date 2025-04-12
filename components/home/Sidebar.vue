@@ -54,7 +54,7 @@ watch(isHovered, (newValue) => {
       </div>
       <ul class="nav-items">
         <li><NuxtLink to="/">首页</NuxtLink></li>
-        <li><NuxtLink to="/posts">论坛</NuxtLink></li>
+        <li><NuxtLink to="/forum">论坛</NuxtLink></li>
         <li><NuxtLink to="/users">用户</NuxtLink></li>
         <!-- 更多菜单项 -->
       </ul>
