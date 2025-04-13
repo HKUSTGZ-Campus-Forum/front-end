@@ -1,9 +1,7 @@
 <template>
   <div class="background-settings">
-    <h3>背景设置</h3>
-
     <div class="setting-group">
-      <label>背景颜色</label>
+      <label class="setting-label">背景颜色</label>
       <input
         type="color"
         :value="themeStore.backgroundColor"
@@ -12,12 +10,14 @@
     </div>
 
     <div class="setting-group">
-      <label>背景图片</label>
+      <label class="setting-label">背景图片</label>
       <input type="file" accept="image/*" @change="handleImageUpload" />
     </div>
 
     <div class="setting-group" v-if="themeStore.backgroundImage">
-      <label>图片透明度: {{ themeStore.backgroundOpacity }}</label>
+      <label class="setting-label"
+        >图片透明度: {{ themeStore.backgroundOpacity }}</label
+      >
       <input
         type="range"
         min="0.1"
@@ -27,15 +27,16 @@
         @input="updateBackgroundOpacity"
       />
     </div>
-
-    <button
-      v-if="themeStore.backgroundImage"
-      class="remove-btn"
-      @click="removeBackgroundImage"
-    >
-      移除背景图片
-    </button>
-    <button class="home-btn" @click="navigateToHome">返回主页</button>
+    <div class="button-container">
+      <button
+        v-if="themeStore.backgroundImage"
+        class="remove-btn"
+        @click="removeBackgroundImage"
+      >
+        移除背景图片
+      </button>
+      <button class="home-btn" @click="navigateToHome">返回主页</button>
+    </div>
   </div>
 </template>
 
@@ -77,13 +78,15 @@ function navigateToHome() {
 }
 </script>
 
-
 <style lang="scss" scoped>
 .background-settings {
   padding: 1rem;
   background-color: rgb(193, 243, 243);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
+  margin: 0 auto;
+  font-size: 2 rem;
 
   h3 {
     margin-top: 0;
@@ -92,6 +95,9 @@ function navigateToHome() {
 
   .setting-group {
     margin-bottom: 1rem;
+    .setting-label {
+      font-size: 1.5rem;
+    }
 
     label {
       display: block;
@@ -133,6 +139,19 @@ function navigateToHome() {
 
   &:hover {
     background-color: #0d8bf2;
+  }
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column; /* 垂直排列 */
+  gap: 1rem; /* 按钮间距 */
+  margin-top: 1.5rem;
+
+  .remove-btn,
+  .home-btn {
+    width: 20%; /* 让按钮占满容器宽度 */
+    /* 其他样式保持不变 */
   }
 }
 </style>
