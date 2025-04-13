@@ -1,0 +1,19 @@
+/* 全局CSS重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+#__nuxt,
+#__layout {
+  height: 100%;
+}
