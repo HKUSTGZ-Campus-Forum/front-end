@@ -1,12 +1,12 @@
 <script setup lang="ts">
 // 导入类型和工具
-import { defineProps, withDefaults } from 'vue';
+import { defineProps, withDefaults } from "vue";
 // 从正确的地方导入 useRouter
-import { useRouter } from 'vue-router';  // 如果使用标准 Vue Router
+import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
 // 或者在 Nuxt 3 中直接使用
 // const router = useRouter();  // Nuxt 自动提供
 
-import { formatDate } from '~/utils/dateFormat'; // 假设有这个工具函数
+import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
 
 // 定义帖子属性接口，基于数据库结构
 interface PostProps {
@@ -20,18 +20,18 @@ interface PostProps {
   comment_count?: number;
   reaction_count?: number;
   views_count?: number;
-  tags?: Array<{tag_id: number, name: string}>;
+  tags?: Array<{ tag_id: number; name: string }>;
   // 其他可能的属性
 }
 
 // 使用withDefaults为可选属性设置默认值
 const props = withDefaults(defineProps<PostProps>(), {
-  author: '匿名用户',
-  excerpt: '无内容摘要...',
+  author: "匿名用户",
+  excerpt: "无内容摘要...",
   comment_count: 0,
   reaction_count: 0,
   views_count: 0,
-  tags: () => []
+  tags: () => [],
 });
 
 // 路由导航
@@ -46,7 +46,7 @@ const goToPostDetail = () => {
     <h2 class="post-title">
       <NuxtLink :to="`/forum/post/${id}`">{{ title }}</NuxtLink>
     </h2>
-    
+
     <div class="post-meta">
       <span class="author">{{ author }}</span>
       <span class="date">{{ formatDate(publishDate) }}</span>
@@ -54,16 +54,16 @@ const goToPostDetail = () => {
         <i class="fas fa-eye"></i> {{ views_count }}
       </span>
     </div>
-    
+
     <!-- 标签展示 -->
     <div class="post-tags" v-if="tags && tags.length > 0">
       <span v-for="tag in tags" :key="tag.tag_id" class="tag">
         {{ tag.name }}
       </span>
     </div>
-    
+
     <p class="post-excerpt">{{ excerpt }}</p>
-    
+
     <div class="post-stats">
       <span class="reactions">
         <i class="fas fa-thumbs-up"></i> {{ reaction_count }}
@@ -72,7 +72,7 @@ const goToPostDetail = () => {
         <i class="fas fa-comment"></i> {{ comment_count }}
       </span>
     </div>
-    
+
     <NuxtLink :to="`/forum/post/${id}`" class="read-more">阅读更多</NuxtLink>
   </div>
 </template>
@@ -85,7 +85,7 @@ const goToPostDetail = () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
-  
+
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -94,11 +94,11 @@ const goToPostDetail = () => {
 
 .post-title {
   margin-bottom: 0.5rem;
-  
+
   a {
     color: #2c3e50;
     text-decoration: none;
-    
+
     &:hover {
       color: #3498db;
     }
@@ -112,7 +112,7 @@ const goToPostDetail = () => {
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
   align-items: center;
-  
+
   .views {
     display: flex;
     align-items: center;
@@ -125,7 +125,7 @@ const goToPostDetail = () => {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
-  
+
   .tag {
     font-size: 0.8rem;
     background-color: #edf2f7;
@@ -152,8 +152,9 @@ const goToPostDetail = () => {
   color: #666;
   font-size: 0.9rem;
   margin-bottom: 1rem;
-  
-  .reactions, .comments {
+
+  .reactions,
+  .comments {
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -164,7 +165,7 @@ const goToPostDetail = () => {
   color: #3498db;
   text-decoration: none;
   font-weight: 500;
-  
+
   &:hover {
     text-decoration: underline;
   }

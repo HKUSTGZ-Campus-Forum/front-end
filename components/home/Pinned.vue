@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useAuth } from "~/composables/useAuth"; // 引入认证相关组合式函数
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 
@@ -44,10 +44,10 @@ const handleLoginOrLogout = async () => {
   if (isLoggedIn.value) {
     // 如果已登录，执行登出
     await logout();
-    router.push('/');
+    router.push("/");
   } else {
     // 如果未登录，跳转到登录页
-    router.push('/login');
+    router.push("/login");
   }
 };
 </script>
@@ -118,13 +118,14 @@ const handleLoginOrLogout = async () => {
 
 <style lang="scss" scoped>
 .top-nav {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
-  background-color: var(--color-blue-7, #9fc3e7);
+  background-color: var(--color-blue-7, #b9d2ea);
   padding: 0.5rem 1rem;
   color: white;
   height: 70px;
-  width: 100%;
+  width: 99%;
   position: fixed;
   z-index: 1010; /* 确保在侧边栏之上 */
   top: 0;

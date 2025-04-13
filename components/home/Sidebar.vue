@@ -98,12 +98,13 @@ watch(isHovered, (newValue) => {
 }
 
 .sidebar {
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
   position: fixed;
   left: 0;
   top: 0; /* 从页面顶部开始 */
   height: 100vh;
   width: 200px;
-  background-color: #343a40;
+  background-color: #677d94;
   color: white;
   transition: all 0.3s ease;
   z-index: 1010; /* 提高z-index使其在顶部栏之上 */
