@@ -1,3 +1,5 @@
+import pkg from "./package.json";
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
   devtools: { enabled: false },
@@ -36,10 +38,15 @@ export default defineNuxtConfig({
   ],
   nitro: {
     devProxy: {
-      '/api': {
-        target: 'https://dev.unikorn.axfff.com',
-        changeOrigin: true
-      }
-    }
-  }
+      "/api": {
+        target: "https://dev.unikorn.axfff.com",
+        changeOrigin: true,
+      },
+    },
+  },
+  runtimeConfig: {
+    public: {
+      appVersion: pkg.version,
+    },
+  },
 });
