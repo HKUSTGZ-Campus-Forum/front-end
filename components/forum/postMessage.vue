@@ -270,61 +270,92 @@ const handleCancel = () => {
 };
 
 // 提交表单
-const handleSubmit = async () => {
-  validateTitle();
-  validateContent();
 
-  if (errors.value.title || errors.value.content) {
-    return;
-  }
+// 在组件中添加这个方法
+// async function testApiConnection() {
+//   try {
+//     console.log("开始测试API连接...");
 
-  try {
-    isLoading.value = true;
-    errorMessage.value = "";
+//     // 使用相同的配置做一个更详细的测试
+//     const response = await fetch("https://dev.unikorn.axfff.com/api/posts", {
+//       method: "GET",
+//       mode: "cors", // 尝试明确使用CORS模式
+//       credentials: "include", // 尝试包含凭证
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//     });
 
-    // 模拟API提交
-    // 实际应用中，你需要将数据发送到后端API
-    // 例如：
-    /*
-      const formData = new FormData();
-      formData.append('title', title.value);
-      formData.append('category', category.value);
-      formData.append('content', content.value);
-      formData.append('tags', JSON.stringify(tags.value));
-      
-      images.value.forEach((image, index) => {
-        formData.append(`image_${index}`, image.file);
-      });
-      
-      const response = await fetch('/api/forum/post', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '发布失败');
-      }
-      
-      const postData = await response.json();
-      */
+//     console.log("收到响应状态:", response.status);
+//     const data = await response.json();
+//     console.log("API 连接成功:", data);
+//     alert(`API 连接成功，返回数据: ${JSON.stringify(data)}`);
+//     return true;
+//   } catch (err) {
+//     console.error("API 连接失败:", err);
+//     alert(`API 连接失败类型: ${err.name}, 信息: ${err.message}`);
+//     return false;
+//   }
+// }
 
-    // 模拟延迟和成功响应
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+// // 在组件加载时或通过按钮调用这个测试方法
+// onMounted(() => {
+//   testApiConnection();
+// });
 
-    const mockPostId = Math.floor(Math.random() * 10000);
-    successMessage.value = "帖子发布成功！";
+// 提交表单
+// const handleSubmit = async () => {
+//   validateTitle();
+//   validateContent();
 
-    // 触发成功事件
-    emit("post-success", mockPostId);
-  } catch (err) {
-    console.error("发布出错:", err);
-    errorMessage.value =
-      err instanceof Error ? err.message : "发布失败，请稍后重试";
-  } finally {
-    isLoading.value = false;
-  }
-};
+//   if (errors.value.title || errors.value.content) {
+//     return;
+//   }
+
+//   try {
+//     isLoading.value = true;
+//     errorMessage.value = "";
+
+//     // 准备表单数据
+//     const formData = new FormData();
+//     formData.append("title", title.value);
+//     formData.append("category", category.value);
+//     formData.append("content", content.value);
+//     formData.append("tags", JSON.stringify(tags.value));
+
+//     // 添加图片附件
+//     images.value.forEach((image, index) => {
+//       formData.append(`image_${index}`, image.file);
+//     });
+
+//     // 发送请求到API
+//     const response = await fetch("https://dev.unikorn.axfff.com/api/posts", {
+//       method: "POST",
+//       body: formData,
+//     });
+
+//     // 处理响应
+//     if (!response.ok) {
+//       const errorData = await response.json();
+//       throw new Error(errorData.message || "发布失败");
+//     }
+
+//     // 解析成功响应
+//     const postData = await response.json();
+
+//     // 显示成功消息
+//     successMessage.value = "帖子发布成功！";
+
+//     // 触发成功事件，使用实际返回的帖子ID
+//     emit("post-success", postData.id || postData.postId);
+//   } catch (err) {
+//     console.error("发布出错:", err);
+//     errorMessage.value =
+//       err instanceof Error ? err.message : "发布失败，请稍后重试";
+//   } finally {
+//     isLoading.value = false;
+//   }
+// };
 
 // 定义事件
 const emit = defineEmits(["post-success"]);
