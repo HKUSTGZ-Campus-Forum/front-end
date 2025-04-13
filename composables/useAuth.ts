@@ -16,25 +16,51 @@ export function useAuth() {
 
   const isLoggedIn = computed(() => !!user.value && !!token.value);
 
-
   // 登录函数
   async function login(username: string, password: string) {
     loading.value = true;
     error.value = null;
 
     try {
+      console.log("开始登录请求，发送数据:", { username });
+
       // 调用API进行登录
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("https://dev.unikorn.axfff.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
+      console.log("收到响应状态:", response.status);
+
       if (!response.ok) {
-        throw new Error("登录失败");
+        // 尝试读取错误响应内容
+        let errorMessage = "登录失败";
+        try {
+          // 尝试解析错误响应为JSON
+          const errorData = await response.json();
+          console.error("登录错误详情:", errorData);
+          errorMessage =
+            errorData.message ||
+            errorData.error ||
+            errorData.msg ||
+            `登录失败(${response.status})`;
+        } catch (parseError) {
+          // 如果JSON解析失败，尝试获取文本响应
+          const errorText = await response.text();
+          console.error("服务器返回非JSON错误:", errorText);
+          errorMessage = `登录失败(${response.status}): ${errorText.substring(
+            0,
+            100
+          )}`;
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log("登录成功，服务器响应:", data);
+
       token.value = data.token;
       user.value = data.user;
 
@@ -50,7 +76,8 @@ export function useAuth() {
 
       return user.value;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : "未知错误";
+      console.error("登录过程中发生错误:", err);
+      error.value = err instanceof Error ? err.message : "登录失败，请稍后重试";
       throw err;
     } finally {
       loading.value = false;
@@ -92,32 +119,53 @@ export function useAuth() {
     error.value = null;
 
     try {
+      console.log("开始注册请求，发送数据:", { username, email });
+
       // 调用API进行注册
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("https://dev.unikorn.axfff.com/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
       });
 
+      console.log("收到响应状态:", response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "注册失败");
+        // 尝试读取错误响应内容
+        let errorMessage = "注册失败";
+        try {
+          // 尝试解析错误响应为JSON
+          const errorData = await response.json();
+          console.error("服务器错误详情:", errorData);
+          errorMessage =
+            errorData.message ||
+            errorData.error ||
+            `服务器错误(${response.status})`;
+        } catch (parseError) {
+          // 如果JSON解析失败，尝试获取文本响应
+          const errorText = await response.text();
+          console.error("服务器返回非JSON错误:", errorText);
+          errorMessage = `服务器错误(${response.status}): ${errorText.substring(
+            0,
+            100
+          )}`;
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      
-      // 注册成功，但不自动登录用户
-      // 如果需要自动登录，可以在这里设置 token 和 user
-      
+      console.log("注册成功，服务器响应:", data);
+
       return { success: true, data };
     } catch (err) {
+      console.error("注册过程中发生错误:", err);
       error.value = err instanceof Error ? err.message : "注册失败，请稍后再试";
       throw err;
     } finally {
       loading.value = false;
     }
   }
-
   return {
     user,
     token,

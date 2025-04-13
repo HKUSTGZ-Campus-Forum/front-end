@@ -34,4 +34,12 @@ export default defineNuxtConfig({
     "~/assets/css/global.scss",
     "~/assets/css/transitions.scss",
   ],
+  nitro: {
+    devProxy: {
+      '/api': {
+        target: 'https://dev.unikorn.axfff.com',
+        changeOrigin: true
+      }
+    }
+  }
 });
