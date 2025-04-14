@@ -43,10 +43,17 @@ export default defineNuxtConfig({
         changeOrigin: true,
       },
     },
+    preset: 'static',
+    prerender: {
+      crawlLinks: false,  // prevent crawler from following <a> to /users etc.
+      failOnError: false, // ignore 404 during prerender
+      routes: ['/', '/login', '/register'] // optional: define known static routes
+    },
   },
   runtimeConfig: {
     public: {
       appVersion: pkg.version,
     },
   },
+  ssr: true,
 });
