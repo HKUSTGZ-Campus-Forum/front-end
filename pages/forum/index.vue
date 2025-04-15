@@ -2,7 +2,7 @@
   <HomeContainer>
     <div class="posts-container">
       <h1 class="page-title">论坛文章</h1>
-      
+
       <!-- 新增筛选和操作栏 -->
       <div class="filter-action-bar">
         <div class="filter-options">
@@ -13,7 +13,7 @@
             <option value="hot">热度优先</option>
           </select>
         </div>
-        
+
         <NuxtLink to="/forum/postMessage" class="post-button">
           <i class="fas fa-plus"></i> 我要发帖
         </NuxtLink>
@@ -46,13 +46,13 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import ForumPost from "~/components/forum/Post.vue";
+import ForumPost from "~/components/forum/post.vue";
 import { formatDate } from "~/utils/dateFormat";
 
 const posts = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
-const sortBy = ref('latest'); // 默认按最新发布排序
+const sortBy = ref("latest"); // 默认按最新发布排序
 
 function prevPage() {
   if (currentPage.value > 1) {
@@ -93,14 +93,16 @@ async function fetchPosts() {
           { tag_id: 2, name: "标签2" },
         ],
       }));
-      
+
     // 根据排序方式调整数据顺序
-    if (sortBy.value === 'oldest') {
+    if (sortBy.value === "oldest") {
       posts.value.reverse();
-    } else if (sortBy.value === 'hot') {
-      posts.value.sort((a, b) => (b.views + b.comments * 2) - (a.views + a.comments * 2));
+    } else if (sortBy.value === "hot") {
+      posts.value.sort(
+        (a, b) => b.views + b.comments * 2 - (a.views + a.comments * 2)
+      );
     }
-    
+
     totalPages.value = 5;
   } catch (error) {
     console.error("获取文章列表失败:", error);
@@ -138,13 +140,13 @@ onMounted(() => {
 .filter-options {
   display: flex;
   align-items: center;
-  
+
   .filter-label {
     margin-right: 0.5rem;
     font-weight: 500;
     color: #555;
   }
-  
+
   .filter-select {
     padding: 0.5rem;
     border: 1px solid #ddd;
@@ -152,7 +154,7 @@ onMounted(() => {
     background-color: white;
     color: #333;
     cursor: pointer;
-    
+
     &:focus {
       outline: none;
       border-color: #3498db;
@@ -171,11 +173,11 @@ onMounted(() => {
   text-decoration: none;
   font-weight: 500;
   transition: background-color 0.2s;
-  
+
   &:hover {
     background-color: #2980b9;
   }
-  
+
   i {
     font-size: 0.9rem;
   }

@@ -10,13 +10,12 @@ export default defineNuxtConfig({
     "dayjs-nuxt",
     "@nuxtjs/i18n",
   ],
-  // i18n: {
-  //   langDir: 'locales',
-  //   defaultLocale: 'zh',
-  //   locales: [
-  //     { code: 'zh', file: 'zh.json' }
-  //   ]
-  // },
+  i18n: {
+    bundle: {
+      optimizeTranslationDirective: false, // 明确禁用此选项
+    },
+    // 其他 i18n 配置...
+  },
   imports: {
     dirs: ["store/**"],
   },
@@ -43,11 +42,11 @@ export default defineNuxtConfig({
         changeOrigin: true,
       },
     },
-    preset: 'static',
+    preset: "static",
     prerender: {
-      crawlLinks: false,  // prevent crawler from following <a> to /users etc.
+      crawlLinks: false, // prevent crawler from following <a> to /users etc.
       failOnError: false, // ignore 404 during prerender
-      routes: ['/', '/login', '/register'] // optional: define known static routes
+      routes: ["/", "/login", "/register"], // optional: define known static routes
     },
   },
   runtimeConfig: {

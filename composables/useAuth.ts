@@ -18,7 +18,11 @@ export function useAuth() {
 
   // 新增: 初始化函数，检查本地存储的令牌
   function init() {
-    const storedToken = localStorage.getItem("auth_token");
+    // 修改这一行，检查可能的两种token键名
+    const storedToken =
+      safeLocalStorage("get", "auth_token") ||
+      safeLocalStorage("get", "access_token");
+
     if (storedToken) {
       console.log("发现存储的认证令牌");
       token.value = storedToken;
@@ -44,11 +48,52 @@ export function useAuth() {
     }
   }
 
+  function safeLocalStorage(
+    action: "get" | "set" | "remove",
+    key: string,
+    value?: string
+  ): string | null {
+    // 检查是否在客户端环境
+    if (process.client) {
+      if (action === "get") {
+        return localStorage.getItem(key);
+      } else if (action === "set" && value !== undefined) {
+        localStorage.setItem(key, value);
+        return value;
+      } else if (action === "remove") {
+        localStorage.removeItem(key);
+      }
+    }
+    return null;
+  }
+
+  // 获取用户资料
   // 获取用户资料
   async function fetchUserProfile(authToken: string) {
+    if (!process.client) return; // 仅在客户端执行
+
     try {
+      // 从JWT令牌中获取用户ID
+      let userId = null;
+      try {
+        const tokenParts = authToken.split(".");
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          userId = payload.sub || payload.id || user.value?.id;
+        }
+      } catch (e) {
+        console.error("解析令牌获取用户ID失败", e);
+      }
+
+      // 如果无法获取用户ID，则无法继续
+      if (!userId) {
+        console.error("无法获取用户ID，无法获取用户资料");
+        return;
+      }
+
+      // 使用正确的API路径
       const response = await fetch(
-        "https://dev.unikorn.axfff.com/api/auth/profile",
+        `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -59,9 +104,11 @@ export function useAuth() {
       if (response.ok) {
         const userData = await response.json();
         user.value = userData;
+      } else if (response.status === 404) {
+        console.warn("用户不存在或无权访问");
       } else {
-        // 令牌无效，清除存储
-        localStorage.removeItem("auth_token");
+        console.error("获取用户资料失败:", response.status);
+        safeLocalStorage("remove", "auth_token");
         token.value = null;
       }
     } catch (err) {
@@ -69,7 +116,50 @@ export function useAuth() {
     }
   }
 
-  // 其他方法保持不变...
+  // 更新用户资料 - 添加到useAuth中
+  async function updateUserProfile(userData: Partial<User>) {
+    if (!process.client || !token.value || !user.value) return null;
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const userId = user.value.id;
+
+      const response = await fetch(
+        `https://dev.unikorn.axfff.com/api/users/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token.value}`,
+          },
+          body: JSON.stringify(userData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || `更新用户资料失败(${response.status})`;
+        throw new Error(errorMessage);
+      }
+
+      // 获取更新后的用户数据
+      const updatedUserData = await response.json();
+
+      // 更新本地用户状态
+      user.value = { ...user.value, ...updatedUserData };
+
+      return user.value;
+    } catch (err) {
+      console.error("更新用户资料失败:", err);
+      error.value = err instanceof Error ? err.message : "更新用户资料失败";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
 
   // 初始化调用
   onMounted(() => {
@@ -124,11 +214,12 @@ export function useAuth() {
       const data = await response.json();
       console.log("登录成功，服务器响应:", data);
 
-      token.value = data.token;
+      // 使用适当的token字段（access_token或token）
+      token.value = data.access_token || data.token;
       user.value = data.user;
 
-      // 存储令牌
-      localStorage.setItem("auth_token", data.token);
+      // 存储令牌 - 使用safeLocalStorage并支持两种可能的token字段名
+      safeLocalStorage("set", "auth_token", data.access_token || data.token);
 
       // 首次登录后重定向
       if (user.value?.isFirstLogin) {
@@ -163,7 +254,8 @@ export function useAuth() {
       token.value = null;
 
       // 从localStorage中移除令牌
-      localStorage.removeItem("auth_token");
+      safeLocalStorage("remove", "auth_token");
+      safeLocalStorage("remove", "access_token");
 
       // 重定向到首页或登录页
       navigateTo("/");
@@ -240,5 +332,6 @@ export function useAuth() {
     logout,
     register,
     init,
+    updateUserProfile,
   };
 }

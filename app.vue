@@ -1,22 +1,19 @@
-<script setup lang="ts">
-import { NuxtLayout } from '#components';
-import { useAuth } from '~/composables/useAuth';
+<template>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
+</template>
 
+<script setup lang="ts">
+import { useAuth } from "~/composables/useAuth";
+
+// 获取认证功能
 const { init } = useAuth();
 
 // 确保应用启动时检查登录状态
 onMounted(() => {
-  init();
+  if (process.client) {
+    init();
+  }
 });
-
 </script>
-
-<template>
-  <!-- <div> -->
-  <!-- <NuxtRouteAnnouncer />
-    <NuxtWelcome /> -->
-<NuxtLayout>
-  <NuxtPage />
-</NuxtLayout>
-  <!-- </div> -->
-</template>
