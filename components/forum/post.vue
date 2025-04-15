@@ -44,7 +44,7 @@ const goToPostDetail = () => {
 <template>
   <div class="post-card" @click="goToPostDetail">
     <h2 class="post-title">
-      <NuxtLink :to="`/forum/posts/${id}`">{{ title }}</NuxtLink>
+      <NuxtLink :to="`/forum/post/${id}`">{{ title }}</NuxtLink>
     </h2>
 
     <div class="post-meta">
@@ -73,7 +73,7 @@ const goToPostDetail = () => {
       </span>
     </div>
 
-    <NuxtLink :to="`/forum/posts/${id}`" class="read-more">阅读更多</NuxtLink>
+    <NuxtLink :to="`/forum/post/${id}`" class="read-more">阅读更多</NuxtLink>
   </div>
 </template>
 
