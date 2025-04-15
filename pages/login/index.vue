@@ -2,11 +2,11 @@
   <HomeContainer>
     <div class="login-container">
       <h1 class="page-title">登录</h1>
-      
+
       <form class="login-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="username">用户名或邮箱</label>
-          <input 
+          <input
             id="username"
             v-model="username"
             type="text"
@@ -15,7 +15,7 @@
             required
           />
         </div>
-        
+
         <div class="form-group">
           <label for="password">密码</label>
           <div class="password-field">
@@ -27,16 +27,16 @@
               autocomplete="current-password"
               required
             />
-            <button 
-              type="button" 
-              class="toggle-password" 
+            <button
+              type="button"
+              class="toggle-password"
               @click="showPassword = !showPassword"
             >
-              {{ showPassword ? '隐藏' : '显示' }}
+              {{ showPassword ? "隐藏" : "显示" }}
             </button>
           </div>
         </div>
-        
+
         <div class="form-options">
           <label>
             <input type="checkbox" v-model="rememberMe" />
@@ -46,22 +46,18 @@
             忘记密码?
           </NuxtLink>
         </div>
-        
+
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
-        
-        <button 
-          type="submit" 
-          class="login-button" 
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '登录中...' : '登录' }}
+
+        <button type="submit" class="login-button" :disabled="isLoading">
+          {{ isLoading ? "登录中..." : "登录" }}
         </button>
       </form>
-      
+
       <div class="register-link">
-        还没有账号? 
+        还没有账号?
         <NuxtLink to="/register">立即注册</NuxtLink>
       </div>
     </div>
@@ -69,19 +65,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuth } from '~/composables/useAuth';
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuth } from "~/composables/useAuth";
 
 // 获取认证功能
 const { login } = useAuth();
 
 // 状态变量
-const username = ref('');
-const password = ref('');
+const username = ref("");
+const password = ref("");
 const showPassword = ref(false);
 const rememberMe = ref(false);
-const errorMessage = ref('');
+const errorMessage = ref("");
 const isLoading = ref(false);
 
 const router = useRouter();
@@ -90,23 +86,22 @@ const route = useRoute();
 // 登录处理函数
 async function handleLogin() {
   if (!username.value || !password.value) {
-    errorMessage.value = '请输入用户名和密码';
+    errorMessage.value = "请输入用户名和密码";
     return;
   }
-  
+
   try {
     isLoading.value = true;
-    errorMessage.value = '';
-    
+    errorMessage.value = "";
+
     await login(username.value, password.value, rememberMe.value);
-    
+
     // 登录成功后重定向
-    const redirectPath = route.query.redirect || '/forum';
+    const redirectPath = route.query.redirect || "/forum";
     router.push(redirectPath);
-    
   } catch (error) {
-    console.error('登录出错:', error);
-    errorMessage.value = error.message || '用户名或密码错误，请重试';
+    console.error("登录出错:", error);
+    errorMessage.value = error.message || "用户名或密码错误，请重试";
   } finally {
     isLoading.value = false;
   }
@@ -138,19 +133,19 @@ async function handleLogin() {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  
+
   label {
     font-weight: 500;
     font-size: 0.9rem;
   }
-  
+
   input {
     padding: 0.75rem 1rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1rem;
     transition: border-color 0.3s;
-    
+
     &:focus {
       outline: none;
       border-color: #3498db;
@@ -161,12 +156,12 @@ async function handleLogin() {
 
 .password-field {
   position: relative;
-  
+
   input {
     width: 100%;
     padding-right: 70px;
   }
-  
+
   .toggle-password {
     position: absolute;
     right: 10px;
@@ -177,7 +172,7 @@ async function handleLogin() {
     color: #666;
     cursor: pointer;
     font-size: 0.8rem;
-    
+
     &:hover {
       color: #333;
     }
@@ -189,18 +184,18 @@ async function handleLogin() {
   justify-content: space-between;
   align-items: center;
   font-size: 0.9rem;
-  
+
   label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
   }
-  
+
   .forgot-password {
     color: #3498db;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
@@ -225,11 +220,11 @@ async function handleLogin() {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s;
-  
+
   &:hover:not(:disabled) {
     background-color: #2980b9;
   }
-  
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -240,12 +235,12 @@ async function handleLogin() {
   text-align: center;
   margin-top: 1.5rem;
   font-size: 0.9rem;
-  
+
   a {
     color: #3498db;
     text-decoration: none;
     font-weight: 500;
-    
+
     &:hover {
       text-decoration: underline;
     }
