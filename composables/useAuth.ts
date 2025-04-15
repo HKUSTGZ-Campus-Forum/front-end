@@ -68,12 +68,11 @@ export function useAuth() {
   }
 
   // 获取用户资料
-  // 获取用户资料
   async function fetchUserProfile(authToken: string) {
-    if (!process.client) return; // 仅在客户端执行
+    if (!process.client) return;
 
     try {
-      // 从JWT令牌中获取用户ID
+      // 解析令牌获取用户ID (保持不变)
       let userId = null;
       try {
         const tokenParts = authToken.split(".");
@@ -85,40 +84,73 @@ export function useAuth() {
         console.error("解析令牌获取用户ID失败", e);
       }
 
-      // 如果无法获取用户ID，则无法继续
       if (!userId) {
         console.error("无法获取用户ID，无法获取用户资料");
         return;
       }
 
+      // 打印调试信息
+      console.log("准备请求用户资料:", {
+        url: `https://dev.unikorn.axfff.com/api/users/${userId}`,
+        userId,
+        tokenPreview: `${authToken.substring(0, 15)}...`,
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
       // 使用正确的API路径
       const response = await fetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
+          // 显式指定GET方法以便调试
+          method: "GET",
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
         }
       );
 
-      if (response.ok) {
-        const responseData = await response.json();
-        // 检查响应是否包含user对象
-        if (responseData.user) {
-          user.value = responseData.user;
-        } else {
-          // 如果直接返回用户数据也可以处理
-          user.value = responseData;
+      // 详细处理响应
+      if (!response.ok) {
+        console.error(
+          `获取用户资料失败: ${response.status} ${response.statusText}`
+        );
+
+        // 尝试获取详细错误信息
+        try {
+          const errorData = await response.json();
+          console.error("错误详情:", errorData);
+        } catch (e) {
+          // 如果不能解析为JSON，尝试获取文本
+          try {
+            const errorText = await response.text();
+            console.error("错误响应文本:", errorText);
+          } catch (textError) {
+            console.error("无法读取错误响应");
+          }
         }
-      } else if (response.status === 404) {
-        console.warn("用户不存在或无权访问");
+
+        if (response.status === 401) {
+          // 可能是令牌格式问题，尝试查看请求头
+          console.log("请求头信息:", {
+            Authorization格式: `Bearer ${authToken.substring(0, 10)}...`,
+          });
+        }
+
+        return;
+      }
+
+      // 正常处理响应
+      const responseData = await response.json();
+      console.log("成功获取用户资料:", responseData);
+
+      // 确保正确提取用户信息
+      if (responseData.user) {
+        user.value = responseData.user;
       } else {
-        console.error("获取用户资料失败:", response.status);
-        safeLocalStorage("remove", "auth_token");
-        token.value = null;
+        user.value = responseData;
       }
     } catch (err) {
-      console.error("获取用户资料失败", err);
+      console.error("获取用户资料异常:", err);
     }
   }
 
