@@ -72,7 +72,7 @@ export function useAuth() {
     if (!process.client) return;
 
     try {
-      // 解析令牌获取用户ID (保持不变)
+      // 解析令牌获取用户ID
       let userId = null;
       try {
         const tokenParts = authToken.split(".");
@@ -92,35 +92,59 @@ export function useAuth() {
       // 检查令牌格式，确保没有额外字符
       authToken = authToken.trim();
 
-      // 创建完整的请求头
-      const headers = new Headers();
-      headers.append("Authorization", `Bearer ${authToken}`);
-      headers.append("Content-Type", "application/json");
+      // 尝试使用简单对象headers
+      console.log("尝试使用简单对象方式设置请求头");
 
-      // 打印实际请求信息用于调试
-      console.log("请求详情:", {
-        URL: `https://dev.unikorn.axfff.com/api/users/${userId}`,
-        方法: "GET",
-        请求头: Object.fromEntries([...headers.entries()]),
-        令牌长度: authToken.length,
-      });
-
-      // 使用正确创建的headers对象
       const response = await fetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
           method: "GET",
-          headers: headers,
-          mode: "cors",
-          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+          // 移除这些可能导致问题的设置
+          // mode: "cors",
+          // credentials: "include",
         }
       );
 
-      // 其余代码保持不变...
+      console.log("用户资料请求结果:", response.status, response.statusText);
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log("成功获取用户资料:", responseData);
+
+        // 确保正确提取用户信息
+        if (responseData.user) {
+          user.value = responseData.user;
+        } else {
+          user.value = responseData;
+        }
+      } else {
+        // 详细记录错误
+        console.error(
+          `获取用户资料失败: ${response.status} ${response.statusText}`
+        );
+
+        try {
+          const errorData = await response.json();
+          console.error("错误详情:", errorData);
+        } catch (e) {
+          // 可能不是JSON响应
+          try {
+            const errorText = await response.text();
+            console.error("错误响应文本:", errorText);
+          } catch (textError) {
+            console.error("无法读取错误响应");
+          }
+        }
+      }
     } catch (err) {
       console.error("获取用户资料异常:", err);
     }
   }
+
   // 更新用户资料 - 添加到useAuth中
   async function updateUserProfile(userData: Partial<User>) {
     if (!process.client || !token.value || !user.value) return null;
