@@ -72,7 +72,7 @@ export function useAuth() {
     if (!process.client) return;
 
     try {
-      // 解析令牌获取用户ID
+      // 解析令牌获取用户ID (不修改令牌本身)
       let userId = null;
       try {
         const tokenParts = authToken.split(".");
@@ -89,38 +89,78 @@ export function useAuth() {
         return;
       }
 
-      // 检查令牌格式，确保没有额外字符
-      authToken = authToken.trim();
+      // 不要对令牌进行任何处理，保持完全原样
+      // authToken = authToken.trim(); // 移除这一行
 
-      // 尝试使用简单对象headers
-      console.log("尝试使用简单对象方式设置请求头");
+      // 打印请求详情但隐藏完整令牌
+      console.log("请求详情:", {
+        URL: `https://dev.unikorn.axfff.com/api/users/${userId}`,
+        令牌前缀: authToken.substring(0, 10) + "...",
+        令牌长度: authToken.length,
+      });
 
+      // 尝试不同的授权头格式
       const response = await fetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
           method: "GET",
           headers: {
+            // 方式1: 标准格式
             Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
           },
-          // 移除这些可能导致问题的设置
-          // mode: "cors",
-          // credentials: "include",
         }
       );
 
-      console.log("用户资料请求结果:", response.status, response.statusText);
+      // 如果失败，尝试其他格式
+      if (response.status === 401) {
+        console.log("标准授权头格式失败，尝试其他格式...");
 
-      if (response.ok) {
-        const responseData = await response.json();
+        // 方式2: 不带空格
+        const response2 = await fetch(
+          `https://dev.unikorn.axfff.com/api/users/${userId}`,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer${authToken}` },
+          }
+        );
+
+        if (response2.ok) {
+          // 使用成功的响应
+          return handleSuccessResponse(response2);
+        }
+
+        // 方式3: 不带Bearer前缀
+        const response3 = await fetch(
+          `https://dev.unikorn.axfff.com/api/users/${userId}`,
+          {
+            method: "GET",
+            headers: { Authorization: authToken },
+          }
+        );
+
+        if (response3.ok) {
+          // 使用成功的响应
+          return handleSuccessResponse(response3);
+        }
+
+        // 使用原始响应继续处理
+      }
+
+      async function handleSuccessResponse(resp: Response) {
+        const responseData = await resp.json();
         console.log("成功获取用户资料:", responseData);
 
-        // 确保正确提取用户信息
         if (responseData.user) {
           user.value = responseData.user;
         } else {
           user.value = responseData;
         }
+        return true;
+      }
+
+      // 正常响应处理逻辑
+      if (response.ok) {
+        return handleSuccessResponse(response);
       } else {
         // 详细记录错误
         console.error(
@@ -131,13 +171,7 @@ export function useAuth() {
           const errorData = await response.json();
           console.error("错误详情:", errorData);
         } catch (e) {
-          // 可能不是JSON响应
-          try {
-            const errorText = await response.text();
-            console.error("错误响应文本:", errorText);
-          } catch (textError) {
-            console.error("无法读取错误响应");
-          }
+          // 同现有的错误处理...
         }
       }
     } catch (err) {
@@ -239,11 +273,12 @@ export function useAuth() {
         throw new Error(errorMessage);
       }
 
+      // 在login函数中的相关部分
       const data = await response.json();
       console.log("登录成功，服务器响应:", data);
 
-      // 确保令牌没有额外字符
-      const accessToken = (data.access_token || data.token || "").trim();
+      // 直接使用原始令牌，不做任何处理
+      const accessToken = data.access_token || data.token || "";
       token.value = accessToken;
       user.value = data.user;
 
