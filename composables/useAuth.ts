@@ -16,6 +16,66 @@ export function useAuth() {
 
   const isLoggedIn = computed(() => !!user.value && !!token.value);
 
+  // 新增: 初始化函数，检查本地存储的令牌
+  function init() {
+    const storedToken = localStorage.getItem("auth_token");
+    if (storedToken) {
+      console.log("发现存储的认证令牌");
+      token.value = storedToken;
+
+      // 从令牌中解析基本用户信息或发送请求获取完整用户信息
+      // 方案1: 如果你的令牌是JWT，可以解析其中的用户信息
+      try {
+        const tokenParts = storedToken.split(".");
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          user.value = {
+            id: payload.sub || payload.id,
+            username: payload.username || "",
+            isFirstLogin: false,
+          };
+        }
+      } catch (e) {
+        console.error("解析令牌失败", e);
+      }
+
+      // 方案2: 调用API获取用户信息
+      fetchUserProfile(storedToken);
+    }
+  }
+
+  // 获取用户资料
+  async function fetchUserProfile(authToken: string) {
+    try {
+      const response = await fetch(
+        "https://dev.unikorn.axfff.com/api/auth/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const userData = await response.json();
+        user.value = userData;
+      } else {
+        // 令牌无效，清除存储
+        localStorage.removeItem("auth_token");
+        token.value = null;
+      }
+    } catch (err) {
+      console.error("获取用户资料失败", err);
+    }
+  }
+
+  // 其他方法保持不变...
+
+  // 初始化调用
+  onMounted(() => {
+    init();
+  });
+
   // 登录函数
   async function login(username: string, password: string) {
     loading.value = true;
@@ -25,11 +85,14 @@ export function useAuth() {
       console.log("开始登录请求，发送数据:", { username });
 
       // 调用API进行登录
-      const response = await fetch("https://dev.unikorn.axfff.com/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await fetch(
+        "https://dev.unikorn.axfff.com/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        }
+      );
 
       console.log("收到响应状态:", response.status);
 
@@ -166,6 +229,7 @@ export function useAuth() {
       loading.value = false;
     }
   }
+
   return {
     user,
     token,
@@ -175,5 +239,6 @@ export function useAuth() {
     login,
     logout,
     register,
+    init,
   };
 }

@@ -12,3 +12,14 @@ import { NuxtLayout } from '#components';
 </NuxtLayout>
   <!-- </div> -->
 </template>
+
+<script setup>
+import { useAuth } from '~/composables/useAuth';
+
+const { init } = useAuth();
+
+// 确保应用启动时检查登录状态
+onMounted(() => {
+  init();
+});
+</script>
