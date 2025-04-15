@@ -102,8 +102,14 @@ export function useAuth() {
       );
 
       if (response.ok) {
-        const userData = await response.json();
-        user.value = userData;
+        const responseData = await response.json();
+        // 检查响应是否包含user对象
+        if (responseData.user) {
+          user.value = responseData.user;
+        } else {
+          // 如果直接返回用户数据也可以处理
+          user.value = responseData;
+        }
       } else if (response.status === 404) {
         console.warn("用户不存在或无权访问");
       } else {
@@ -146,9 +152,8 @@ export function useAuth() {
       }
 
       // 获取更新后的用户数据
-      const updatedUserData = await response.json();
-
-      // 更新本地用户状态
+      const responseData = await response.json();
+      const updatedUserData = responseData.user || responseData;
       user.value = { ...user.value, ...updatedUserData };
 
       return user.value;
