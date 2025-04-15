@@ -89,71 +89,38 @@ export function useAuth() {
         return;
       }
 
-      // 打印调试信息
-      console.log("准备请求用户资料:", {
-        url: `https://dev.unikorn.axfff.com/api/users/${userId}`,
-        userId,
-        tokenPreview: `${authToken.substring(0, 15)}...`,
-        headers: { Authorization: `Bearer ${authToken}` },
+      // 检查令牌格式，确保没有额外字符
+      authToken = authToken.trim();
+
+      // 创建完整的请求头
+      const headers = new Headers();
+      headers.append("Authorization", `Bearer ${authToken}`);
+      headers.append("Content-Type", "application/json");
+
+      // 打印实际请求信息用于调试
+      console.log("请求详情:", {
+        URL: `https://dev.unikorn.axfff.com/api/users/${userId}`,
+        方法: "GET",
+        请求头: Object.fromEntries([...headers.entries()]),
+        令牌长度: authToken.length,
       });
 
-      // 使用正确的API路径
+      // 使用正确创建的headers对象
       const response = await fetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
-          // 显式指定GET方法以便调试
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+          headers: headers,
+          mode: "cors",
+          credentials: "include",
         }
       );
 
-      // 详细处理响应
-      if (!response.ok) {
-        console.error(
-          `获取用户资料失败: ${response.status} ${response.statusText}`
-        );
-
-        // 尝试获取详细错误信息
-        try {
-          const errorData = await response.json();
-          console.error("错误详情:", errorData);
-        } catch (e) {
-          // 如果不能解析为JSON，尝试获取文本
-          try {
-            const errorText = await response.text();
-            console.error("错误响应文本:", errorText);
-          } catch (textError) {
-            console.error("无法读取错误响应");
-          }
-        }
-
-        if (response.status === 401) {
-          // 可能是令牌格式问题，尝试查看请求头
-          console.log("请求头信息:", {
-            Authorization格式: `Bearer ${authToken.substring(0, 10)}...`,
-          });
-        }
-
-        return;
-      }
-
-      // 正常处理响应
-      const responseData = await response.json();
-      console.log("成功获取用户资料:", responseData);
-
-      // 确保正确提取用户信息
-      if (responseData.user) {
-        user.value = responseData.user;
-      } else {
-        user.value = responseData;
-      }
+      // 其余代码保持不变...
     } catch (err) {
       console.error("获取用户资料异常:", err);
     }
   }
-
   // 更新用户资料 - 添加到useAuth中
   async function updateUserProfile(userData: Partial<User>) {
     if (!process.client || !token.value || !user.value) return null;
@@ -251,12 +218,20 @@ export function useAuth() {
       const data = await response.json();
       console.log("登录成功，服务器响应:", data);
 
-      // 使用适当的token字段（access_token或token）
-      token.value = data.access_token || data.token;
+      // 确保令牌没有额外字符
+      const accessToken = (data.access_token || data.token || "").trim();
+      token.value = accessToken;
       user.value = data.user;
 
-      // 存储令牌 - 使用safeLocalStorage并支持两种可能的token字段名
-      safeLocalStorage("set", "auth_token", data.access_token || data.token);
+      // 检查令牌格式
+      console.log("令牌格式检查:", {
+        令牌长度: accessToken.length,
+        部分数量: accessToken.split(".").length,
+        首部分长度: accessToken.split(".")[0]?.length,
+      });
+
+      // 存储令牌 - 使用正确的键名
+      safeLocalStorage("set", "auth_token", accessToken);
 
       // 首次登录后重定向
       if (user.value?.isFirstLogin) {
