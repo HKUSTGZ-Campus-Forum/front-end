@@ -9,7 +9,7 @@ export default defineNuxtConfig({
     "@pinia-plugin-persistedstate/nuxt",
     "dayjs-nuxt",
     "@nuxtjs/i18n",
-    "@nuxtjs/ui",
+    "@nuxt/ui",
   ],
   i18n: {
     bundle: {
