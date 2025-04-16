@@ -30,8 +30,7 @@
           :publish-date="post.publishDate"
           :excerpt="post.excerpt"
           :comment_count="post.comments"
-          :reaction_count="post.likes"
-          :views_count="post.views || 0"
+          :view_count="post.view_count || 0"
           :tags="post.tags || []"
         />
       </div>

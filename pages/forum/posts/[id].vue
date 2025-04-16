@@ -88,7 +88,7 @@ onMounted(async () => {
         状态: response.status,
         响应: errorText,
       });
-      
+
       // 使用模拟数据继续渲染
       useFallbackData();
       return;
@@ -97,45 +97,43 @@ onMounted(async () => {
     // 解析API返回的真实数据
     const data = await response.json();
     post.value = data;
-    console.log("获取文章成功:", data);
-    console.log("文章ID:", postId);
-    console.log("文章内容:", post.value.content);
-    console.log("文章作者:", post.value.author);
-    console.log("文章发布日期:", post.value.time);
+    post.value.author = data.author_id;
+    post.value.publishDate = data.time;
+    post.value.view_count = data.view_count || 0;
   } catch (error) {
     console.error("获取文章失败:", error);
     errorMessage.value = "无法连接到服务器，请稍后再试";
 
     // 连接失败时使用模拟数据
-    useFallbackData();
+    // useFallbackData();
   } finally {
     isLoading.value = false;
   }
 });
 
 // 回退到模拟数据
-function useFallbackData() {
-  console.log("使用模拟数据...");
-  post.value = {
-    id: postId,
-    title: `文章标题 #${postId}`,
-    author: "张三",
-    publishDate: new Date().toISOString(),
-    content:
-      "这里是文章内容，可以包含很长的文本。这里是文章内容，可以包含很长的文本。",
-    reaction_count: 42,
-    comment_count: 2,
-    views_count: 156,
-    tags: [
-      { tag_id: 1, name: "标签1" },
-      { tag_id: 2, name: "标签2" },
-    ],
-    comments: [
-      { id: 1, author: "李四", content: "很棒的文章！" },
-      { id: 2, author: "王五", content: "学习了，谢谢分享。" },
-    ],
-  };
-}
+// function useFallbackData() {
+//   console.log("使用模拟数据...");
+//   post.value = {
+//     id: postId,
+//     title: `文章标题 #${postId}`,
+//     author: "张三",
+//     publishDate: new Date().toISOString(),
+//     content:
+//       "这里是文章内容，可以包含很长的文本。这里是文章内容，可以包含很长的文本。",
+//     reaction_count: 42,
+//     comment_count: 2,
+//     views_count: 156,
+//     tags: [
+//       { tag_id: 1, name: "标签1" },
+//       { tag_id: 2, name: "标签2" },
+//     ],
+//     comments: [
+//       { id: 1, author: "李四", content: "很棒的文章！" },
+//       { id: 2, author: "王五", content: "学习了，谢谢分享。" },
+//     ],
+//   };
+// }
 </script>
 
 <style lang="scss" scoped>

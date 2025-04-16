@@ -79,6 +79,7 @@
       </div>
 
       <!-- 上传图片 -->
+      <!-- 修改以下部分，添加到图片上传部分 -->
       <div class="form-group">
         <label>图片附件</label>
         <div class="upload-container">
@@ -94,10 +95,22 @@
             type="button"
             class="upload-btn"
             @click="$refs.fileInput.click()"
+            :disabled="isUploading"
           >
             选择图片
           </button>
           <span class="upload-info">{{ uploadMsg }}</span>
+        </div>
+
+        <!-- 添加上传进度条 -->
+        <div v-if="isUploading" class="upload-progress">
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              :style="`width: ${uploadProgress}%`"
+            ></div>
+          </div>
+          <div class="progress-text">上传中... {{ uploadProgress }}%</div>
         </div>
 
         <div v-if="images.length > 0" class="image-previews">
@@ -144,6 +157,11 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
+import { uploadFileToOSS } from "~/utils/ossUpload";
+
+const isUploading = ref(false);
+const uploadProgress = ref(0);
+
 const { token } = useAuth();
 const router = useRouter();
 
@@ -212,7 +230,7 @@ const removeTag = (index) => {
 };
 
 // 处理图片上传
-const handleImageUpload = (event) => {
+const handleImageUpload = async (event) => {
   const files = event.target.files;
   if (!files || !files.length) return;
 
@@ -222,24 +240,40 @@ const handleImageUpload = (event) => {
     return;
   }
 
-  // 处理每个文件
-  Array.from(files).forEach((file) => {
-    if (!file.type.startsWith("image/")) {
-      uploadMsg.value = "只能上传图片文件";
-      return;
-    }
+  isUploading.value = true;
+  uploadMsg.value = "正在上传...";
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+  try {
+    // 处理每个文件
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) {
+        uploadMsg.value = "只能上传图片文件";
+        continue;
+      }
+
+      // 上传到OSS
+      const result = await uploadFileToOSS(file, (progress) => {
+        uploadProgress.value = progress;
+      });
+
+      // 添加到图片列表
       images.value.push({
         file: file,
-        url: e.target.result,
+        url: result.url,
+        ossUrl: result.url, // 保存OSS URL以便提交表单时使用
       });
-    };
-    reader.readAsDataURL(file);
-  });
+    }
 
-  uploadMsg.value = `已选择${images.value.length}张图片，最多可上传5张`;
+    uploadMsg.value = `已上传${images.value.length}张图片，最多可上传5张`;
+  } catch (error) {
+    console.error("上传失败:", error);
+    uploadMsg.value = `上传失败: ${error.message || "未知错误"}`;
+  } finally {
+    isUploading.value = false;
+    uploadProgress.value = 0;
+    // 清空文件输入框，允许再次选择相同文件
+    event.target.value = "";
+  }
 };
 
 // 删除图片
@@ -329,6 +363,8 @@ const handleSubmit = async () => {
       category: category.value,
       content: content.value,
       tags: tags.value,
+      // 添加图片URL数组
+      images: images.value.map((img) => img.ossUrl),
     };
 
     // 添加图片附件
@@ -591,5 +627,29 @@ const emit = defineEmits(["post-success"]);
   margin-bottom: 1rem;
   text-align: center;
   font-size: 1.1rem;
+}
+
+.upload-progress {
+  margin-top: 0.5rem;
+
+  .progress-bar {
+    height: 0.5rem;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--color-blue-7, #9fc3e7);
+      transition: width 0.2s;
+    }
+  }
+
+  .progress-text {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+    text-align: center;
+  }
 }
 </style>
