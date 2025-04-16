@@ -46,7 +46,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import ForumPost from "~/components/forum/Post.vue";
+import ForumPost from "~/components/forum/post.vue";
 import { formatDate } from "~/utils/dateFormat";
 
 const posts = ref([]);
