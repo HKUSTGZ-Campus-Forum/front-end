@@ -25,11 +25,11 @@
           v-for="post in posts"
           :key="post.id"
           :id="post.id"
-          :user_id="post.author_id" 
+          :user_id="post.author_id"
           :title="post.title"
           :author="post.author"
           :publish-date="post.publishDate"
-          :excerpt="post.excerpt"
+          :excerpt="post.content"
           :content="post.content"
           :comment_count="post.comments"
           :view_count="post.view_count || 0"
@@ -77,6 +77,18 @@ async function fetchPosts() {
     );
     const data = await response.json();
     posts.value = data.posts;
+
+    // 转换数据格式以匹配组件期望的结构
+    posts.value = data.posts.map((post) => ({
+      ...post,
+      // 确保字段名匹配
+      author_id: post.author_id || post.user_id,
+      comments: post.comments || post.comment_count || 0,
+      view_count: post.view_count || post.views || 0,
+      // 确保数据格式统一，便于排序
+      views: post.view_count || post.views || 0,
+    }));
+
     totalPages.value = data.totalPages;
 
     // 模拟数据

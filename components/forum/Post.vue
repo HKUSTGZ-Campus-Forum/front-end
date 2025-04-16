@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 导入类型和工具
-import { defineProps, withDefaults } from "vue";
+import { defineProps, withDefaults, computed } from "vue";
 // 从正确的地方导入 useRouter
 import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
 // 或者在 Nuxt 3 中直接使用
@@ -19,7 +19,7 @@ interface PostProps {
   publishDate: string; // 实际应该对应数据库中的created_at
   comment_count?: number;
   reaction_count?: number;
-  views_count?: number;
+  view_count?: number;
   tags?: Array<{ tag_id: number; name: string }>;
   // 其他可能的属性
 }
@@ -37,23 +37,13 @@ const props = withDefaults(defineProps<PostProps>(), {
 // 添加计算属性
 // 从内容生成摘要
 const displayExcerpt = computed(() => {
-  // 如果已提供摘要，直接使用
-  if (props.excerpt && props.excerpt.trim().length > 0) {
-    return props.excerpt;
-  }
-
-  // 如果没有内容，返回默认消息
-  if (!props.content || props.content.trim().length === 0) {
-    return "无内容摘要...";
-  }
-
   // 计算摘要：提取前30个字母或15个汉字
   let excerpt = "";
   let count = 0;
   const limit = 30;
 
-  for (let i = 0; i < props.content.length && count < limit; i++) {
-    const char = props.content[i];
+  for (let i = 0; i < props.excerpt.length && count < limit; i++) {
+    const char = props.excerpt[i];
     excerpt += char;
 
     // 汉字计数为2，其他字符计数为1
@@ -65,7 +55,7 @@ const displayExcerpt = computed(() => {
   }
 
   // 如果内容比摘要长，添加省略号
-  if (props.content.length > excerpt.length) {
+  if (props.excerpt.length > excerpt.length) {
     excerpt += "...";
   }
 
@@ -76,7 +66,7 @@ const displayExcerpt = computed(() => {
 const displayAuthor = computed(() => {
   // 优先使用用户ID
   if (props.user_id) {
-    return `用户-${props.user_id}`;
+    return `用户：${props.user_id}`;
   }
   return props.author || "匿名用户";
 });
@@ -97,8 +87,8 @@ const goToPostDetail = () => {
     <div class="post-meta">
       <span class="author">{{ displayAuthor }}</span>
       <span class="date">{{ formatDate(publishDate) }}</span>
-      <span class="views" v-if="views_count !== undefined">
-        <i class="fas fa-eye"></i> {{ views_count }}
+      <span class="views" v-if="view_count !== undefined">
+        <i class="fas fa-eye"></i> {{ `浏览量：${view_count}` }}
       </span>
     </div>
 
@@ -112,10 +102,10 @@ const goToPostDetail = () => {
 
     <div class="post-stats">
       <span class="reactions">
-        <i class="fas fa-thumbs-up"></i> {{ reaction_count }}
+        <i class="fas fa-thumbs-up"></i> {{ `点赞数量：${reaction_count}`}}
       </span>
       <span class="comments">
-        <i class="fas fa-comment"></i> {{ comment_count }}
+        <i class="fas fa-comment"></i> {{ `评论数量：${comment_count}` }}
       </span>
     </div>
 
