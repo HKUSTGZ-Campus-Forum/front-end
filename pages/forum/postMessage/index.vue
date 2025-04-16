@@ -9,7 +9,7 @@
 
 <script setup>
 import { useRouter } from "vue-router";
-import PostMessage from "~/components/forum/postMessage.vue";
+import PostMessage from "~/components/forum/PostMessage.vue";
 
 const router = useRouter();
 
