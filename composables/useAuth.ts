@@ -106,7 +106,7 @@ export function useAuth() {
           method: "GET",
           headers: {
             // 方式1: 标准格式
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer "${authToken}"`,
           },
         }
       );
@@ -120,7 +120,7 @@ export function useAuth() {
           `https://dev.unikorn.axfff.com/api/users/${userId}`,
           {
             method: "GET",
-            headers: { Authorization: `Bearer${authToken}` },
+            headers: { Authorization: `Bearer"${authToken}"` },
           }
         );
 
@@ -130,11 +130,12 @@ export function useAuth() {
         }
 
         // 方式3: 不带Bearer前缀
+
         const response3 = await fetch(
           `https://dev.unikorn.axfff.com/api/users/${userId}`,
           {
             method: "GET",
-            headers: { Authorization: authToken },
+            headers: { Authorization: `"${authToken}"` },
           }
         );
 
