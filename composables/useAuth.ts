@@ -89,10 +89,8 @@ export function useAuth() {
         return;
       }
 
-      // 创建请求头，确保令牌不被修改
       const headers: Record<string, string> = {};
       // console.log("请求头:", headers);
-      // 方式1: 标准格式 (最常见)
       headers["Authorization"] = `Bearer ${authToken}`;
 
       console.log("请求详情:", {
@@ -117,6 +115,7 @@ export function useAuth() {
   }
 
   // 更新用户资料 - 添加到useAuth中
+  // 注意！！！这个函数还没有和上面那个一样的处理令牌
   async function updateUserProfile(userData: Partial<User>) {
     if (!process.client || !token.value || !user.value) return null;
 
