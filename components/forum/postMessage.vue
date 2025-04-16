@@ -143,8 +143,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "~/composables/useAuth";
-const { token } = useAuth();
+
 const router = useRouter();
 
 // 表单数据
@@ -305,77 +304,58 @@ const handleCancel = () => {
 // });
 
 // 提交表单
-const handleSubmit = async () => {
-  validateTitle();
-  validateContent();
+// const handleSubmit = async () => {
+//   validateTitle();
+//   validateContent();
 
-  if (errors.value.title || errors.value.content) {
-    return;
-  }
+//   if (errors.value.title || errors.value.content) {
+//     return;
+//   }
 
-  try {
-    isLoading.value = true;
-    errorMessage.value = "";
+//   try {
+//     isLoading.value = true;
+//     errorMessage.value = "";
 
-    // 准备表单数据
-    // const formData = new FormData();
-    // formData.append("title", title.value);
-    // formData.append("category", category.value);
-    // formData.append("content", content.value);
-    // formData.append("tags", JSON.stringify(tags.value));
+//     // 准备表单数据
+//     const formData = new FormData();
+//     formData.append("title", title.value);
+//     formData.append("category", category.value);
+//     formData.append("content", content.value);
+//     formData.append("tags", JSON.stringify(tags.value));
 
-    const jsonData = {
-      title: title.value,
-      category: category.value,
-      content: content.value,
-      tags: tags.value,
-    };
+//     // 添加图片附件
+//     images.value.forEach((image, index) => {
+//       formData.append(`image_${index}`, image.file);
+//     });
 
-    // 添加图片附件
-    // images.value.forEach((image, index) => {
-    //   formData.append(`image_${index}`, image.file);
-    // });
+//     // 发送请求到API
+//     const response = await fetch("https://dev.unikorn.axfff.com/api/posts", {
+//       method: "POST",
+//       body: formData,
+//     });
 
-    // 发送请求到API
-    // const response = await fetch("c/api/posts", {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${token.value}`,
-    //   },
-    //   body: formData,
-    // });
+//     // 处理响应
+//     if (!response.ok) {
+//       const errorData = await response.json();
+//       throw new Error(errorData.message || "发布失败");
+//     }
 
-    const response = await fetch("https://dev.unikorn.axfff.com/api/posts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token.value}`,
-      },
-      body: JSON.stringify(jsonData),
-    });
+//     // 解析成功响应
+//     const postData = await response.json();
 
-    // 处理响应
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "发布失败");
-    }
+//     // 显示成功消息
+//     successMessage.value = "帖子发布成功！";
 
-    // 解析成功响应
-    const postData = await response.json();
-
-    // 显示成功消息
-    successMessage.value = "帖子发布成功！";
-
-    // 触发成功事件，使用实际返回的帖子ID
-    emit("post-success", postData.id || postData.postId);
-  } catch (err) {
-    console.error("发布出错:", err);
-    errorMessage.value =
-      err instanceof Error ? err.message : "发布失败，请稍后重试";
-  } finally {
-    isLoading.value = false;
-  }
-};
+//     // 触发成功事件，使用实际返回的帖子ID
+//     emit("post-success", postData.id || postData.postId);
+//   } catch (err) {
+//     console.error("发布出错:", err);
+//     errorMessage.value =
+//       err instanceof Error ? err.message : "发布失败，请稍后重试";
+//   } finally {
+//     isLoading.value = false;
+//   }
+// };
 
 // 定义事件
 const emit = defineEmits(["post-success"]);
