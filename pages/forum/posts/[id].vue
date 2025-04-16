@@ -57,38 +57,85 @@ import { formatDate } from "~/utils/dateFormat";
 const route = useRoute();
 const postId = route.params.id;
 const post = ref({});
+const isLoading = ref(true);
+const errorMessage = ref("");
+
+// 获取认证令牌
+const { token } = useAuth();
 
 // 获取文章数据
 onMounted(async () => {
   try {
-    // 实际项目中替换为API调用
-    // const response = await fetch(`/api/posts/${postId}`);
-    // post.value = await response.json();
+    isLoading.value = true;
+    // console.log(token.value, "token");
+    const response = await fetch(
+      `https://dev.unikorn.axfff.com/api/posts/${postId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          // 添加授权头
+          ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
+        },
+      }
+    );
 
-    // 模拟数据
-    post.value = {
-      id: postId,
-      title: `文章标题 #${postId}`,
-      author: "张三",
-      publishDate: new Date().toISOString(),
-      content:
-        "这里是文章内容，可以包含很长的文本。这里是文章内容，可以包含很长的文本。这里是文章内容，可以包含很长的文本。",
-      reaction_count: 42,
-      comment_count: 2,
-      views_count: 156,
-      tags: [
-        { tag_id: 1, name: "标签1" },
-        { tag_id: 2, name: "标签2" },
-      ],
-      comments: [
-        { id: 1, author: "李四", content: "很棒的文章！" },
-        { id: 2, author: "王五", content: "学习了，谢谢分享。" },
-      ],
-    };
+    if (!response.ok) {
+      // 处理错误状态码
+      const errorText = await response.text().catch(() => "未知错误");
+      errorMessage.value = `获取文章失败 (${response.status}): ${errorText}`;
+      console.error("API错误:", {
+        状态: response.status,
+        响应: errorText,
+      });
+      
+      // 使用模拟数据继续渲染
+      useFallbackData();
+      return;
+    }
+
+    // 解析API返回的真实数据
+    const data = await response.json();
+    post.value = data;
+    console.log("获取文章成功:", data);
+    console.log("文章ID:", postId);
+    console.log("文章内容:", post.value.content);
+    console.log("文章作者:", post.value.author);
+    console.log("文章发布日期:", post.value.time);
   } catch (error) {
     console.error("获取文章失败:", error);
+    errorMessage.value = "无法连接到服务器，请稍后再试";
+
+    // 连接失败时使用模拟数据
+    useFallbackData();
+  } finally {
+    isLoading.value = false;
   }
 });
+
+// 回退到模拟数据
+function useFallbackData() {
+  console.log("使用模拟数据...");
+  post.value = {
+    id: postId,
+    title: `文章标题 #${postId}`,
+    author: "张三",
+    publishDate: new Date().toISOString(),
+    content:
+      "这里是文章内容，可以包含很长的文本。这里是文章内容，可以包含很长的文本。",
+    reaction_count: 42,
+    comment_count: 2,
+    views_count: 156,
+    tags: [
+      { tag_id: 1, name: "标签1" },
+      { tag_id: 2, name: "标签2" },
+    ],
+    comments: [
+      { id: 1, author: "李四", content: "很棒的文章！" },
+      { id: 2, author: "王五", content: "学习了，谢谢分享。" },
+    ],
+  };
+}
 </script>
 
 <style lang="scss" scoped>

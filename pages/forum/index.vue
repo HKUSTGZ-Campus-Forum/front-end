@@ -46,7 +46,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import ForumPost from "~/components/forum/post.vue";
+import ForumPost from "~/components/forum/Post.vue";
 import { formatDate } from "~/utils/dateFormat";
 
 const posts = ref([]);
@@ -71,28 +71,30 @@ function nextPage() {
 async function fetchPosts() {
   try {
     // 实际项目中替换为API调用
-    // const response = await fetch(`/api/posts?page=${currentPage.value}&sort=${sortBy.value}`);
-    // const data = await response.json();
-    // posts.value = data.posts;
-    // totalPages.value = data.totalPages;
+    const response = await fetch(
+      `https://dev.unikorn.axfff.com/api/posts?page=${currentPage.value}&sort=${sortBy.value}`
+    );
+    const data = await response.json();
+    posts.value = data.posts;
+    totalPages.value = data.totalPages;
 
     // 模拟数据
-    posts.value = Array(10)
-      .fill()
-      .map((_, i) => ({
-        id: i + 1 + (currentPage.value - 1) * 10,
-        title: `文章标题 #${i + 1 + (currentPage.value - 1) * 10}`,
-        author: "用户名",
-        publishDate: new Date(Date.now() - i * 86400000).toISOString(), // 根据排序变化日期
-        excerpt: "这是文章摘要，简单介绍文章的内容...",
-        likes: Math.floor(Math.random() * 100),
-        comments: Math.floor(Math.random() * 20),
-        views: Math.floor(Math.random() * 500),
-        tags: [
-          { tag_id: 1, name: "标签1" },
-          { tag_id: 2, name: "标签2" },
-        ],
-      }));
+    // posts.value = Array(10)
+    //   .fill()
+    //   .map((_, i) => ({
+    //     id: i + 1 + (currentPage.value - 1) * 10,
+    //     title: `文章标题 #${i + 1 + (currentPage.value - 1) * 10}`,
+    //     author: "用户名",
+    //     publishDate: new Date(Date.now() - i * 86400000).toISOString(), // 根据排序变化日期
+    //     excerpt: "这是文章摘要，简单介绍文章的内容...",
+    //     likes: Math.floor(Math.random() * 100),
+    //     comments: Math.floor(Math.random() * 20),
+    //     views: Math.floor(Math.random() * 500),
+    //     tags: [
+    //       { tag_id: 1, name: "标签1" },
+    //       { tag_id: 2, name: "标签2" },
+    //     ],
+    //   }));
 
     // 根据排序方式调整数据顺序
     if (sortBy.value === "oldest") {
