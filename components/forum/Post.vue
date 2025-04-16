@@ -34,6 +34,53 @@ const props = withDefaults(defineProps<PostProps>(), {
   tags: () => [],
 });
 
+// 添加计算属性
+// 从内容生成摘要
+const displayExcerpt = computed(() => {
+  // 如果已提供摘要，直接使用
+  if (props.excerpt && props.excerpt.trim().length > 0) {
+    return props.excerpt;
+  }
+
+  // 如果没有内容，返回默认消息
+  if (!props.content || props.content.trim().length === 0) {
+    return "无内容摘要...";
+  }
+
+  // 计算摘要：提取前30个字母或15个汉字
+  let excerpt = "";
+  let count = 0;
+  const limit = 30;
+
+  for (let i = 0; i < props.content.length && count < limit; i++) {
+    const char = props.content[i];
+    excerpt += char;
+
+    // 汉字计数为2，其他字符计数为1
+    if (/[\u4e00-\u9fa5]/.test(char)) {
+      count += 2; // 汉字算2个字符
+    } else {
+      count += 1; // 英文字母和其他字符算1个
+    }
+  }
+
+  // 如果内容比摘要长，添加省略号
+  if (props.content.length > excerpt.length) {
+    excerpt += "...";
+  }
+
+  return excerpt;
+});
+
+// 显示作者ID
+const displayAuthor = computed(() => {
+  // 优先使用用户ID
+  if (props.user_id) {
+    return `用户-${props.user_id}`;
+  }
+  return props.author || "匿名用户";
+});
+
 // 路由导航
 const router = useRouter();
 const goToPostDetail = () => {
@@ -48,21 +95,20 @@ const goToPostDetail = () => {
     </h2>
 
     <div class="post-meta">
-      <span class="author">{{ author }}</span>
+      <span class="author">{{ displayAuthor }}</span>
       <span class="date">{{ formatDate(publishDate) }}</span>
       <span class="views" v-if="views_count !== undefined">
         <i class="fas fa-eye"></i> {{ views_count }}
       </span>
     </div>
 
-    <!-- 标签展示 -->
     <div class="post-tags" v-if="tags && tags.length > 0">
       <span v-for="tag in tags" :key="tag.tag_id" class="tag">
         {{ tag.name }}
       </span>
     </div>
 
-    <p class="post-excerpt">{{ excerpt }}</p>
+    <p class="post-excerpt">{{ displayExcerpt }}</p>
 
     <div class="post-stats">
       <span class="reactions">

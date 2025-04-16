@@ -237,7 +237,7 @@ export function useAuth() {
       if (user.value?.isFirstLogin) {
         navigateTo("/setting/background");
       } else {
-        navigateTo("/dashboard");
+        navigateTo("/");
       }
 
       return user.value;
