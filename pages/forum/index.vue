@@ -25,7 +25,7 @@
           v-for="post in posts"
           :key="post.id"
           :id="post.id"
-          :user_id="post.author_id"
+          :user_id="post.author"
           :title="post.title"
           :author="post.author"
           :publish-date="post.publishDate"
@@ -49,6 +49,9 @@
 import { ref, onMounted } from "vue";
 import ForumPost from "~/components/forum/Post.vue";
 import { formatDate } from "~/utils/dateFormat";
+import { useUsers } from "~/composables/useUsers";
+
+const { getUserById } = useUsers();
 
 const posts = ref([]);
 const currentPage = ref(1);
@@ -76,16 +79,16 @@ async function fetchPosts() {
       `https://dev.unikorn.axfff.com/api/posts?page=${currentPage.value}&sort=${sortBy.value}`
     );
     const data = await response.json();
-    posts.value = data.posts;
 
-    // 转换数据格式以匹配组件期望的结构
-    posts.value = data.posts.map((post) => ({
+    const userPromises = data.posts.map((post) => getUserById(post.author_id));
+    const users = await Promise.all(userPromises);
+
+    posts.value = data.posts.map((post, index) => ({
       ...post,
-      // 确保字段名匹配
       author_id: post.author_id || post.user_id,
+      author: users[index]?.username || `用户-${post.author_id}`,
       comments: post.comments || post.comment_count || 0,
       view_count: post.view_count || post.views || 0,
-      // 确保数据格式统一，便于排序
       views: post.view_count || post.views || 0,
     }));
 

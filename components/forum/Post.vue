@@ -3,9 +3,6 @@
 import { defineProps, withDefaults, computed } from "vue";
 // 从正确的地方导入 useRouter
 import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
-// 或者在 Nuxt 3 中直接使用
-// const router = useRouter();  // Nuxt 自动提供
-
 import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
 
 // 定义帖子属性接口，基于数据库结构
@@ -102,7 +99,7 @@ const goToPostDetail = () => {
 
     <div class="post-stats">
       <span class="reactions">
-        <i class="fas fa-thumbs-up"></i> {{ `点赞数量：${reaction_count}`}}
+        <i class="fas fa-thumbs-up"></i> {{ `点赞数量：${reaction_count}` }}
       </span>
       <span class="comments">
         <i class="fas fa-comment"></i> {{ `评论数量：${comment_count}` }}
