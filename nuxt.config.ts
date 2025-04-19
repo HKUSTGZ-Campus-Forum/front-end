@@ -45,11 +45,20 @@ export default defineNuxtConfig({
     },
     preset: "static",
     prerender: {
-      crawlLinks: false, // prevent crawler from following <a> to /users etc.
+      crawlLinks: true, // prevent crawler from following <a> to /users etc.
       failOnError: false, // ignore 404 during prerender
-      routes: ["/", "/login", "/register"], // optional: define known static routes
+      // routes: ["/", "/login", "/register"], // optional: define known static routes
+      ignore: [
+        // 忽略特定路径，不进行预渲染
+        "/user", // 排除用户相关页面
+        "/user/**", // 排除用户相关的所有子路径
+        // "/admin/**", // 排除管理员路径
+        // "/profile/**", // 排除个人资料页面
+        "/settings/**", // 排除设置页面
+      ],
     },
   },
+
   runtimeConfig: {
     public: {
       appVersion: pkg.version,

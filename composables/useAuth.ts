@@ -28,7 +28,7 @@ export function useAuth() {
       token.value = storedToken;
 
       // 从令牌中解析基本用户信息或发送请求获取完整用户信息
-      // 方案1: 如果你的令牌是JWT，可以解析其中的用户信息
+      // 令牌是JWT，可以解析其中的用户信息
       try {
         const tokenParts = storedToken.split(".");
         if (tokenParts.length === 3) {
@@ -43,7 +43,7 @@ export function useAuth() {
         console.error("解析令牌失败", e);
       }
 
-      // 方案2: 调用API获取用户信息
+      // 调用API获取用户信息
       fetchUserProfile(storedToken);
     }
   }
@@ -70,6 +70,7 @@ export function useAuth() {
   // 获取用户资料
   async function fetchUserProfile(authToken: string) {
     if (!process.client) return;
+    loading.value = true;
 
     try {
       // 解析令牌获取用户ID (不修改令牌本身)
@@ -86,20 +87,10 @@ export function useAuth() {
 
       if (!userId) {
         console.error("无法获取用户ID，无法获取用户资料");
+        loading.value = false;
         return;
       }
 
-      const headers: Record<string, string> = {};
-      // console.log("请求头:", headers);
-      headers["Authorization"] = `Bearer ${authToken}`;
-
-      console.log("请求详情:", {
-        URL: `https://dev.unikorn.axfff.com/api/users/${userId}`,
-        令牌前缀: authToken.substring(0, 10) + "...",
-        令牌长度: authToken.length,
-      });
-
-      // 使用原始令牌，不做任何处理
       const response = await fetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
@@ -108,9 +99,30 @@ export function useAuth() {
         }
       );
 
-      // 其余逻辑保持不变...
+      // 处理响应
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`获取用户资料失败(${response.status}):`, errorText);
+        error.value = `获取用户资料失败(${response.status})`;
+        return;
+      }
+
+      // 解析并更新用户信息 - 这是关键修复
+      const userData = await response.json();
+      console.log("获取用户资料成功:", userData);
+
+      // 更新用户信息
+      user.value = {
+        id: userData.id || userId,
+        username: userData.username || user.value?.username || "",
+        isFirstLogin: userData.isFirstLogin || false,
+        ...userData,
+      };
     } catch (err) {
       console.error("获取用户资料异常:", err);
+      error.value = err instanceof Error ? err.message : "获取用户资料失败";
+    } finally {
+      loading.value = false;
     }
   }
 
@@ -237,7 +249,7 @@ export function useAuth() {
       if (user.value?.isFirstLogin) {
         navigateTo("/setting/background");
       } else {
-        navigateTo("/dashboard");
+        navigateTo("/");
       }
 
       return user.value;
