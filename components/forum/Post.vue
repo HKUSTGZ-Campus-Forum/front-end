@@ -65,8 +65,8 @@ const displayExcerpt = computed(() => {
 // 显示作者ID
 const displayAuthor = computed(() => {
   // 优先使用用户ID
-  if (props.user_id) {
-    return `用户：${props.user_id}`;
+  if (props.author) {
+    return `用户：${props.author}`;
   }
   return props.author || "匿名用户";
 });

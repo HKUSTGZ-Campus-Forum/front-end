@@ -53,6 +53,9 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { formatDate } from "~/utils/dateFormat";
+import { useUser } from '~/composables/useUser';
+
+const { getUsernameById } = useUser();
 
 const route = useRoute();
 const postId = route.params.id;
@@ -96,8 +99,25 @@ onMounted(async () => {
 
     // 解析API返回的真实数据
     const data = await response.json();
+
+    if (data.author_id) {
+      const username = await getUsernameById(data.author_id);
+      post.value.author = username;
+    } else {
+      post.value.author = "匿名用户";
+    }
+
     post.value = data;
-    post.value.author = data.author_id;
+
+
+    if (data.author_id) {
+      const username = await getUsernameById(data.author_id);
+      post.value.author = username;
+    } else {
+      post.value.author = "匿名用户";
+    }
+    
+    post.value.author = data.author;
     post.value.publishDate = data.time;
     post.value.view_count = data.view_count || 0;
   } catch (error) {
