@@ -3,6 +3,7 @@
 import { useHead } from "#imports";
 // 导入网站配置信息
 import { hkustgz } from "~/config/hkustgz";
+import CalendarView from "~/components/calendar/CalendarView.vue";
 
 // 设置页面的元信息
 useHead({
@@ -24,11 +25,9 @@ useHead({
 </script>
 
 <template>
-  <!-- 移除多余的HomeContainer嵌套 -->
   <HomeContainer>
     <div class="root">
-      <!-- 测试图片 -->
-      <!-- <img src="public/image/testpic1.jpg" /> -->
+      <CalendarView />
     </div>
   </HomeContainer>
 </template>
