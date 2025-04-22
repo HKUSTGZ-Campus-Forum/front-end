@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { usePersistHomeStore } from "~/store/homeStore";
+import { usePersistHomeStore } from "~/store/modules/home";
 import BackgroundSettings from "~/components/setting/BackgroundSettings.vue";
 
 // 获取主页状态
