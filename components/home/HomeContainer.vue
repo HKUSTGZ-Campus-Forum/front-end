@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { usePersistHomeStore } from '~/store/homeStore';
+import { usePersistHomeStore } from '~/store/modules/home';
 
 // 获取主页状态
 const homeStore = usePersistHomeStore();
@@ -15,7 +15,7 @@ function handleSidebarUpdate(newValue: boolean) {
 <template>
   <!-- 渲染首页固定内容组件 -->
   <div>
-    <HomePinned :sidebarFolded="fold.updates" @toggle-sidebar="homeStore.toggleSidebar()" />
+    <HomePinned :sidebarFolded="fold.updates" @toggle-sidebar="homeStore.fold.updates = !homeStore.fold.updates" />
     <HomeSidebar :folded="fold.updates" @update:folded="handleSidebarUpdate" />
     
     <!-- 添加内容区域 -->
