@@ -2,6 +2,23 @@
   // https://nuxt.com/docs/guide/concepts/typescript
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "types": ["@nuxtjs/i18n"],
+    "types": [
+      "@nuxt/types",
+      "@nuxtjs/i18n",
+      "vite/client"
+    ],
+    "lib": ["ES2015", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
+  "include": [
+    "**/*.ts",
+    "**/*.vue",
+    ".nuxt/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
