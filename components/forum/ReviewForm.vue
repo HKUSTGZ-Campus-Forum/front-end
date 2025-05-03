@@ -9,13 +9,16 @@ const props = defineProps<{
 }>()
 
 const rating = ref(0)
-const difficulty = ref<number | null>(null)
-const workload = ref<number | null>(null)
+const difficulty = ref<number | undefined>(undefined)
+const workload = ref<number | undefined>(undefined)
 const content = ref('')
 const isLoading = ref(false)
 
+const emit = defineEmits(['submitted'])
+
 const submitReview = async () => {
   if (!rating.value || !content.value) return
+
   
   isLoading.value = true
   const success = await submitReviewApi(props.courseId, {
@@ -27,9 +30,10 @@ const submitReview = async () => {
   
   if (success) {
     rating.value = 0
-    difficulty.value = null
-    workload.value = null
+    difficulty.value = undefined
+    workload.value = undefined
     content.value = ''
+    emit('submitted')
   }
   isLoading.value = false
 }
