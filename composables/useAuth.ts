@@ -10,27 +10,28 @@ interface User {
 
 export function useAuth() {
   const user = ref<User | null>(null);
-  const token = ref<string | null>(null);
+  const accessToken = ref<string | null>(null);
+  const refreshToken = ref<string | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const isRefreshing = ref(false);
 
-  const isLoggedIn = computed(() => !!user.value && !!token.value);
+  const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
 
-  // 新增: 初始化函数，检查本地存储的令牌
+  // Initialize function to check stored tokens
   function init() {
-    // 修改这一行，检查可能的两种token键名
-    const storedToken =
-      safeLocalStorage("get", "auth_token") ||
-      safeLocalStorage("get", "access_token");
+    if (!process.client) return;
 
-    if (storedToken) {
-      // console.log("发现存储的认证令牌");
-      token.value = storedToken;
+    const storedAccessToken = safeLocalStorage("get", "auth_token");
+    const storedRefreshToken = safeLocalStorage("get", "refresh_token");
 
-      // 从令牌中解析基本用户信息或发送请求获取完整用户信息
-      // 令牌是JWT，可以解析其中的用户信息
+    if (storedAccessToken && storedRefreshToken) {
+      accessToken.value = storedAccessToken;
+      refreshToken.value = storedRefreshToken;
+
+      // Parse basic user info from access token
       try {
-        const tokenParts = storedToken.split(".");
+        const tokenParts = storedAccessToken.split(".");
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
           user.value = {
@@ -40,11 +41,11 @@ export function useAuth() {
           };
         }
       } catch (e) {
-        console.error("解析令牌失败", e);
+        console.error("Failed to parse token:", e);
       }
 
-      // 调用API获取用户信息
-      fetchUserProfile(storedToken);
+      // Fetch full user profile
+      fetchUserProfile(storedAccessToken);
     }
   }
 
@@ -129,7 +130,7 @@ export function useAuth() {
   // 更新用户资料 - 添加到useAuth中
   // 注意！！！这个函数还没有和上面那个一样的处理令牌
   async function updateUserProfile(userData: Partial<User>) {
-    if (!process.client || !token.value || !user.value) return null;
+    if (!process.client || !accessToken.value || !user.value) return null;
 
     loading.value = true;
     error.value = null;
@@ -143,7 +144,7 @@ export function useAuth() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token.value}`,
+            Authorization: `Bearer ${accessToken.value}`,
           },
           body: JSON.stringify(userData),
         }
@@ -171,81 +172,73 @@ export function useAuth() {
     }
   }
 
-  // 初始化调用
-  onMounted(() => {
-    init();
-  });
+  // Token refresh function
+  async function refreshAccessToken() {
+    if (!refreshToken.value || isRefreshing.value) return null;
+    
+    isRefreshing.value = true;
+    try {
+      const response = await fetch("https://dev.unikorn.axfff.com/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${refreshToken.value}`
+        }
+      });
 
-  // 登录函数
+      if (!response.ok) {
+        throw new Error("Failed to refresh token");
+      }
+
+      const data = await response.json();
+      accessToken.value = data.access_token;
+      safeLocalStorage("set", "auth_token", data.access_token);
+      return data.access_token;
+    } catch (err) {
+      console.error("Token refresh failed:", err);
+      // If refresh fails, logout the user
+      await logout();
+      throw err;
+    } finally {
+      isRefreshing.value = false;
+    }
+  }
+
+  // Modified login function to store both tokens
   async function login(username: string, password: string) {
     loading.value = true;
     error.value = null;
 
     try {
-      console.log("开始登录请求，发送数据:", { username });
-
-      // 调用API进行登录
-      const response = await fetch(
-        "https://dev.unikorn.axfff.com/api/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        }
-      );
-
-      console.log("收到响应状态:", response.status);
+      const response = await fetch("https://dev.unikorn.axfff.com/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
       if (!response.ok) {
-        // 尝试读取错误响应内容
-        let errorMessage = "登录失败";
+        let errorMessage = "Login failed";
         try {
-          // 尝试解析错误响应为JSON
           const errorData = await response.json();
-          console.error("登录错误详情:", errorData);
-          errorMessage =
-            errorData.message ||
-            errorData.error ||
-            errorData.msg ||
-            `登录失败(${response.status})`;
+          errorMessage = errorData.message || errorData.error || errorData.msg || `Login failed (${response.status})`;
         } catch (parseError) {
-          // 如果JSON解析失败，尝试获取文本响应
           const errorText = await response.text();
-          console.error("服务器返回非JSON错误:", errorText);
-          errorMessage = `登录失败(${response.status}): ${errorText.substring(
-            0,
-            100
-          )}`;
+          errorMessage = `Login failed (${response.status}): ${errorText.substring(0, 100)}`;
         }
-
         throw new Error(errorMessage);
       }
 
-      // 在login函数中的相关部分
       const data = await response.json();
-      // console.log("登录成功，服务器响应:", data);
-
-      // 直接使用原始令牌，不做任何修改
-      const accessToken = data.access_token || data.token || "";
-      // 不使用trim()或其他操作
-      token.value = accessToken;
+      accessToken.value = data.access_token;
+      refreshToken.value = data.refresh_token;
       user.value = data.user;
 
-      // 存储用户信息以备使用
+      // Store both tokens and user info
+      safeLocalStorage("set", "auth_token", data.access_token);
+      safeLocalStorage("set", "refresh_token", data.refresh_token);
       if (data.user) {
         safeLocalStorage("set", "user_info", JSON.stringify(data.user));
       }
 
-      // console.log("令牌格式检查:", {
-      //   令牌长度: accessToken.length,
-      //   部分数量: accessToken.split(".").length,
-      //   首部分长度: accessToken.split(".")[0]?.length,
-      // });
-
-      // 存储令牌 - 完全原样，不做任何处理
-      safeLocalStorage("set", "auth_token", accessToken);
-
-      // 首次登录后重定向
       if (user.value?.isFirstLogin) {
         navigateTo("/setting/background");
       } else {
@@ -254,39 +247,42 @@ export function useAuth() {
 
       return user.value;
     } catch (err) {
-      console.error("登录过程中发生错误:", err);
-      error.value = err instanceof Error ? err.message : "登录失败，请稍后重试";
+      console.error("Login error:", err);
+      error.value = err instanceof Error ? err.message : "Login failed, please try again";
       throw err;
     } finally {
       loading.value = false;
     }
   }
 
+  // Modified logout function to clear both tokens
   async function logout() {
     loading.value = true;
     error.value = null;
 
     try {
-      // 可选：调用API进行登出
-      // const response = await fetch('/api/auth/logout', {
-      //   method: 'POST',
-      //   headers: { 'Authorization': `Bearer ${token.value}` }
-      // });
+      if (accessToken.value) {
+        // Call logout API to blacklist the token
+        await fetch("https://dev.unikorn.axfff.com/api/auth/logout", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${accessToken.value}` }
+        }).catch(console.error); // Ignore logout API errors
+      }
 
-      // 清除状态
+      // Clear state
       user.value = null;
-      token.value = null;
+      accessToken.value = null;
+      refreshToken.value = null;
 
-      // 从localStorage中移除令牌
+      // Remove tokens from storage
       safeLocalStorage("remove", "auth_token");
-      safeLocalStorage("remove", "access_token");
+      safeLocalStorage("remove", "refresh_token");
+      safeLocalStorage("remove", "user_info");
 
-      // 重定向到首页或登录页
       navigateTo("/");
-
       return true;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : "登出失败";
+      error.value = err instanceof Error ? err.message : "Logout failed";
       throw err;
     } finally {
       loading.value = false;
@@ -346,9 +342,16 @@ export function useAuth() {
     }
   }
 
+  // 初始化调用
+  onMounted(() => {
+    init();
+  });
+
   return {
     user,
-    token,
+    token: accessToken, // Keep token for backward compatibility
+    accessToken,
+    refreshToken,
     loading,
     error,
     isLoggedIn,
@@ -357,5 +360,6 @@ export function useAuth() {
     register,
     init,
     updateUserProfile,
+    refreshAccessToken,
   };
 }

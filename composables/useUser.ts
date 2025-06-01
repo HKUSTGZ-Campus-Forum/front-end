@@ -1,11 +1,12 @@
 import { ref } from "vue";
 import { useAuth } from "./useAuth";
+import { useApi } from "./useApi";
 
 // 用户缓存
 const usersCache = ref<Record<string | number, any>>({});
 
 export function useUser() {
-  const { token } = useAuth();
+  const { fetchWithAuth } = useApi();
 
   // 根据ID获取用户信息
   async function getUserById(userId: string | number) {
@@ -23,15 +24,8 @@ export function useUser() {
     try {
       console.log(`尝试获取用户ID:${userId}的信息`);
 
-      const response = await fetch(
-        `https://dev.unikorn.axfff.com/api/users/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            // 确保正确使用token
-            ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
-          },
-        }
+      const response = await fetchWithAuth(
+        `https://dev.unikorn.axfff.com/api/users/${userId}`
       );
 
       if (!response.ok) {
