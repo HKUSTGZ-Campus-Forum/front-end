@@ -158,6 +158,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { uploadFileToOSS } from "~/utils/ossUpload";
+import { useApi } from "~/composables/useApi";
 
 const isUploading = ref(false);
 const uploadProgress = ref(0);
@@ -305,40 +306,6 @@ const handleCancel = () => {
 };
 
 // 提交表单
-
-// 在组件中添加这个方法
-// async function testApiConnection() {
-//   try {
-//     console.log("开始测试API连接...");
-
-//     // 使用相同的配置做一个更详细的测试
-//     const response = await fetch("https://dev.unikorn.axfff.com/api/posts", {
-//       method: "GET",
-//       mode: "cors", // 尝试明确使用CORS模式
-//       credentials: "include", // 尝试包含凭证
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-
-//     console.log("收到响应状态:", response.status);
-//     const data = await response.json();
-//     console.log("API 连接成功:", data);
-//     alert(`API 连接成功，返回数据: ${JSON.stringify(data)}`);
-//     return true;
-//   } catch (err) {
-//     console.error("API 连接失败:", err);
-//     alert(`API 连接失败类型: ${err.name}, 信息: ${err.message}`);
-//     return false;
-//   }
-// }
-
-// // 在组件加载时或通过按钮调用这个测试方法
-// onMounted(() => {
-//   testApiConnection();
-// });
-
-// 提交表单
 const handleSubmit = async () => {
   validateTitle();
   validateContent();
@@ -351,41 +318,20 @@ const handleSubmit = async () => {
     isLoading.value = true;
     errorMessage.value = "";
 
-    // 准备表单数据
-    // const formData = new FormData();
-    // formData.append("title", title.value);
-    // formData.append("category", category.value);
-    // formData.append("content", content.value);
-    // formData.append("tags", JSON.stringify(tags.value));
+    const { fetchWithAuth } = useApi();
 
     const jsonData = {
       title: title.value,
       category: category.value,
       content: content.value,
       tags: tags.value,
-      // 添加图片URL数组
       images: images.value.map((img) => img.ossUrl),
     };
 
-    // 添加图片附件
-    // images.value.forEach((image, index) => {
-    //   formData.append(`image_${index}`, image.file);
-    // });
-
-    // 发送请求到API
-    // const response = await fetch("c/api/posts", {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${token.value}`,
-    //   },
-    //   body: formData,
-    // });
-
-    const response = await fetch("https://dev.unikorn.axfff.com/api/posts", {
+    const response = await fetchWithAuth("https://dev.unikorn.axfff.com/api/posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token.value}`,
       },
       body: JSON.stringify(jsonData),
     });

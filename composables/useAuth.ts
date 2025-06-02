@@ -1,5 +1,6 @@
 // composables/useAuth.ts
 import { ref, computed } from "vue";
+import { useApi } from "./useApi";
 
 interface User {
   id: string;
@@ -15,6 +16,7 @@ export function useAuth() {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const isRefreshing = ref(false);
+  const { fetchWithAuth } = useApi();
 
   const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
 
@@ -92,12 +94,8 @@ export function useAuth() {
         return;
       }
 
-      const response = await fetch(
-        `https://dev.unikorn.axfff.com/api/users/${userId}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
+      const response = await fetchWithAuth(
+        `https://dev.unikorn.axfff.com/api/users/${userId}`
       );
 
       // 处理响应
@@ -108,7 +106,7 @@ export function useAuth() {
         return;
       }
 
-      // 解析并更新用户信息 - 这是关键修复
+      // 解析并更新用户信息
       const userData = await response.json();
       console.log("获取用户资料成功:", userData);
 
@@ -127,8 +125,7 @@ export function useAuth() {
     }
   }
 
-  // 更新用户资料 - 添加到useAuth中
-  // 注意！！！这个函数还没有和上面那个一样的处理令牌
+  // 更新用户资料
   async function updateUserProfile(userData: Partial<User>) {
     if (!process.client || !accessToken.value || !user.value) return null;
 
@@ -138,13 +135,12 @@ export function useAuth() {
     try {
       const userId = user.value.id;
 
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken.value}`,
           },
           body: JSON.stringify(userData),
         }
@@ -255,7 +251,7 @@ export function useAuth() {
     }
   }
 
-  // Modified logout function to clear both tokens
+  // Modified logout function to use fetchWithAuth
   async function logout() {
     loading.value = true;
     error.value = null;
@@ -263,9 +259,8 @@ export function useAuth() {
     try {
       if (accessToken.value) {
         // Call logout API to blacklist the token
-        await fetch("https://dev.unikorn.axfff.com/api/auth/logout", {
+        await fetchWithAuth("https://dev.unikorn.axfff.com/api/auth/logout", {
           method: "POST",
-          headers: { "Authorization": `Bearer ${accessToken.value}` }
         }).catch(console.error); // Ignore logout API errors
       }
 
