@@ -33,7 +33,36 @@
         @cancel="showReplyForm = false"
       />
     </div>
+    <!-- 确认删除弹窗 -->
+    <ConfirmModal
+      :show="showConfirmModal"
+      title="删除评论确认"
+      message="确定要删除这条评论吗？此操作无法撤销。"
+      confirm-text="删除"
+      cancel-text="取消"
+      @confirm="handleDeleteConfirm"
+      @cancel="showConfirmModal = false"
+      @close="showConfirmModal = false"
+    />
 
+    <!-- 成功提示弹窗 -->
+    <SuccessModal
+      :show="showSuccessModal"
+      title="删除成功"
+      message="评论已成功删除！"
+      :auto-close="true"
+      :auto-close-delay="2000"
+      :show-button="false"
+      @close="showSuccessModal = false"
+    />
+
+    <!-- 错误提示弹窗 -->
+    <ErrorModal
+      :show="showErrorModal"
+      title="删除失败"
+      :message="errorMsg"
+      @close="showErrorModal = false"
+    />
     <!-- 子评论列表 -->
     <div v-if="comment.replies && comment.replies.length > 0" class="replies">
       <Comment
@@ -55,10 +84,17 @@ import { useApi } from "~/composables/useApi";
 import { formatDate } from "~/utils/dateFormat";
 import type { Comment } from "~/types/comment";
 import { useUser } from "~/composables/useUser";
+import { onMounted } from "vue";
+import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
 
 interface Props {
   comment: Comment;
   isReply?: boolean;
+}
+
+interface Emits {
+  (e: "comment-deleted", commentId: number): void;
+  (e: "comment-updated", comment: Comment): void;
 }
 
 const props = defineProps<Props>();
@@ -70,6 +106,11 @@ const { getUserById } = useUser(); // 获取 getUserById 方法
 
 const showReplyForm = ref(false);
 const authorName = ref<string>(""); // 用于存储获取到的用户名
+// 弹窗状态
+const showConfirmModal = ref(false);
+const showSuccessModal = ref(false);
+const showErrorModal = ref(false);
+const errorMsg = ref("");
 
 const commentAuthor = computed(() => {
   // 1. 优先使用后端返回的 author 字段
@@ -100,8 +141,7 @@ const fetchUserName = async () => {
 
   try {
     const userData = await getUserById(props.comment.user_id);
-    authorName.value =
-      userData.username || `用户${props.comment.user_id}`;
+    authorName.value = userData.username || `用户${props.comment.user_id}`;
   } catch (error) {
     console.error("获取用户信息失败:", error);
     authorName.value = `用户${props.comment.user_id}`;
@@ -124,24 +164,18 @@ const handleReplyAdded = (newReply: Comment) => {
 };
 
 // 删除评论
-const deleteComment = async () => {
-  console.log("🔍 删除评论调试信息:", {
-    commentId: props.comment.id,
-    commentUserId: props.comment.user_id,
-    currentUser: user.value,
-    currentUserId: user.value?.id,
-    userIdType: typeof user.value?.id,
-    commentUserIdType: typeof props.comment.user_id,
-    canDelete: canDelete.value,
-    isAuthenticated: isAuthenticated.value,
-  });
-
+const deleteComment = () => {
   if (!canDelete.value) {
-    alert("您没有权限删除此评论");
+    errorMsg.value = "您没有权限删除此评论";
+    showErrorModal.value = true;
     return;
   }
+  showConfirmModal.value = true;
+};
 
-  if (!confirm("确定要删除这条评论吗？")) return;
+// 确认删除处理
+const handleDeleteConfirm = async () => {
+  // showConfirmModal.value = false;
 
   try {
     console.log(
@@ -163,24 +197,26 @@ const deleteComment = async () => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ 删除失败详情:", errorText);
-
-      if (response.status === 403) {
-        alert(
-          "没有权限删除此评论，这不是您的评论"
-        );
-      } else {
-        alert(`删除失败: ${response.status} ${response.statusText}`);
-      }
+      // 🔥 关闭确认弹窗，显示错误弹窗
+      showConfirmModal.value = false;
+      errorMsg.value = `删除失败: ${response.status}`;
+      showErrorModal.value = true;
       return;
     }
 
-    console.log("✅ 删除成功");
-    emit("comment-deleted", props.comment.id);
+    // 🔥 关闭确认弹窗，显示成功弹窗
+    showConfirmModal.value = false;
+    showSuccessModal.value = true;
+
+    // 🔥 延迟发送删除事件，让用户看到成功动画
+    setTimeout(() => {
+      emit("comment-deleted", props.comment.id);
+    }, 1500); // 延迟1.5秒，让动画播放完成
   } catch (error) {
-    console.error("💥 删除评论异常:", error);
-    alert("删除失败，请重试");
+    // 🔥 关闭确认弹窗，显示错误弹窗
+    showConfirmModal.value = false;
+    errorMsg.value = "删除失败，请重试";
+    showErrorModal.value = true;
   }
 };
 

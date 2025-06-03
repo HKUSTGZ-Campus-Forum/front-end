@@ -46,15 +46,14 @@
           </button>
         </div>
 
-        <div
+        <!-- <div
           class="test-actions"
           style="
             margin-bottom: 2rem;
             padding: 1rem;
             background: #f8f9fa;
             border-radius: 8px;
-          "
-        >
+          " -->
           <!-- <h4 style="margin: 0 0 1rem 0; color: #666">🧪 弹窗测试区域</h4>
           <div style="display: flex; gap: 1rem; flex-wrap: wrap">
             <button class="test-btn success-test" @click="testSuccessModal">
@@ -73,7 +72,7 @@
               🚫 测试权限错误
             </button>
           </div> -->
-        </div>
+        <!-- </div> -->
 
         <ConfirmModal
           :show="showConfirmModal"
@@ -173,7 +172,11 @@ const handleDeleteConfirm = async () => {
     );
 
     if (!response.ok) {
-      throw new Error(`删除失败: ${response.status}`);
+      const data = await response.json().catch(() => ({}));
+      errorMsg.value = data.message || `删除失败 (${response.status})`;
+      showErrorModal.value = true;
+      showConfirmModal.value = false;
+      return;
     }
 
     console.log("✅ 删除成功");
@@ -181,8 +184,18 @@ const handleDeleteConfirm = async () => {
     // 显示成功弹窗
     showSuccessModal.value = true;
   } catch (error) {
-    console.error("💥 删除帖子失败:", error);
-    alert("删除失败，请重试");
+    console.error("❌ 删除失败:", error);
+    
+    // 判断错误类型
+    if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('network')) {
+      errorMsg.value = "网络连接失败，请检查您的网络设置后重试";
+    } else if (error.message.includes('permission') || error.message.includes('权限') || error.message.includes('403')) {
+      errorMsg.value = "您没有权限执行此操作，请联系管理员获取相应权限";
+    } else {
+      errorMsg.value = error.message || "删除失败，请稍后重试";
+    }
+    
+    showErrorModal.value = true;
   }
 };
 
