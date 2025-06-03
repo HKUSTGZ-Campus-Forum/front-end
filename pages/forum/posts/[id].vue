@@ -2,29 +2,34 @@
   <HomeContainer>
     <div class="post-container">
       <!-- 加载状态 -->
-      <div v-if="isLoading" class="loading">
-        加载中...
-      </div>
-      
+      <div v-if="isLoading" class="loading">加载中...</div>
+
       <!-- 错误状态 -->
       <div v-else-if="errorMessage" class="error">
         {{ errorMessage }}
       </div>
-      
+
       <!-- 正常内容 -->
       <div v-else>
         <div class="post-header">
           <h1 class="post-title">{{ postData.title || "无标题" }}</h1>
           <div class="post-meta">
-            <span class="author">作者: {{ postData.author || "匿名用户" }}</span>
-            <span class="date">发布于: {{ formatDate(postData.publishDate) }}</span>
+            <span class="author"
+              >作者: {{ postData.author || "匿名用户" }}</span
+            >
+            <span class="date"
+              >发布于: {{ formatDate(postData.publishDate) }}</span
+            >
             <span class="views" v-if="postData.views_count !== undefined">
               <i class="fas fa-eye"></i> {{ postData.views_count }} 浏览
             </span>
           </div>
 
           <!-- 标签展示 -->
-          <div class="post-tags" v-if="postData.tags && postData.tags.length > 0">
+          <div
+            class="post-tags"
+            v-if="postData.tags && postData.tags.length > 0"
+          >
             <span v-for="tag in postData.tags" :key="tag.tag_id" class="tag">
               {{ tag.name }}
             </span>
@@ -35,6 +40,11 @@
           {{ postData.content }}
         </div>
 
+        <div class="post-actions" v-if="canDeletePost">
+          <button class="delete-button" @click="deletePost">
+            <i class="fas fa-trash"></i> 删除帖子
+          </button>
+        </div>
         <!-- 评论区域 -->
         <CommentList :post-id="parseInt(postId)" />
       </div>
@@ -109,14 +119,62 @@ const fetchPostData = async () => {
       comment_count: data.comment_count || 0,
       views_count: data.views_count || data.view_count || 0,
       tags: data.tags || [],
-      user_id: data.author_id || data.user_id
+      user_id: data.author_id || data.user_id,
     };
-
   } catch (error) {
     console.error("获取帖子失败:", error);
     errorMessage.value = "无法连接到服务器，请稍后重试";
   } finally {
     isLoading.value = false;
+  }
+};
+
+import { useAuth } from "~/composables/useAuth";
+
+const { isLoggedIn, user } = useAuth();
+
+const canDeletePost = computed(() => {
+  // 1. 用户必须已登录
+  if (!isLoggedIn.value) return false;
+
+  // 2. 必须有用户信息
+  if (!user.value) return false;
+
+  // 3. 帖子必须有作者ID
+  if (!postData.value.user_id) return false;
+
+  // 4. 当前用户ID必须等于帖子作者ID
+  return Number(user.value.id) === Number(postData.value.user_id);
+});
+
+const deletePost = async () => {
+  if (!canDeletePost.value) {
+    alert("您没有权限删除此帖子");
+    return;
+  }
+
+  if (!confirm("确定要删除这篇帖子吗？此操作无法撤销。")) {
+    return;
+  }
+
+  try {
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/posts/${postId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`删除失败: ${response.status}`);
+    }
+
+    alert("帖子删除成功");
+    // 跳转回论坛首页
+    router.push("/forum");
+  } catch (error) {
+    console.error("删除帖子失败:", error);
+    alert("删除失败，请重试");
   }
 };
 

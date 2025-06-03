@@ -374,10 +374,9 @@ const handleSubmit = async () => {
     // 触发成功事件
     emit("post-success", postData.id || postData.postId);
 
-    // 可选：3秒后跳转到新帖子
-    setTimeout(() => {
-      router.push(`/forum/posts/${postData.id || postData.postId}`);
-    }, 3000);
+    // setTimeout(() => {
+    //   router.push(`/forum/posts/${postData.id || postData.postId}`);
+    // }, 3000);
   } catch (err) {
     console.error("💥 发布异常:", err);
     errorMessage.value =
