@@ -78,7 +78,7 @@ const goToPostDetail = () => {
 <template>
   <div class="post-card" @click="goToPostDetail">
     <h2 class="post-title">
-      <NuxtLink :to="`/forum/post/${id}`">{{ title }}</NuxtLink>
+      <NuxtLink :to="`/forum/posts/${id}`">{{ title }}</NuxtLink>
     </h2>
 
     <div class="post-meta">

@@ -6,22 +6,18 @@
         <span class="comment-author">{{ commentAuthor }}</span>
         <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
       </div>
-      
+
       <div class="comment-text">{{ comment.content }}</div>
-      
+
       <div class="comment-actions">
-        <button 
-          @click="toggleReplyForm" 
+        <button
+          @click="toggleReplyForm"
           class="reply-btn"
           :disabled="!isAuthenticated"
         >
           回复
         </button>
-        <button 
-          v-if="canDelete" 
-          @click="deleteComment" 
-          class="delete-btn"
-        >
+        <button v-if="canDelete" @click="deleteComment" class="delete-btn">
           删除
         </button>
       </div>
@@ -29,7 +25,7 @@
 
     <!-- 回复表单 -->
     <div v-if="showReplyForm" class="reply-form">
-      <CommentForm 
+      <CommentForm
         :post-id="comment.post_id"
         :parent-comment-id="comment.id"
         placeholder="回复评论..."
@@ -53,12 +49,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useAuth } from '~/composables/useAuth';
-import { useApi } from '~/composables/useApi';
-import { formatDate } from '~/utils/dateFormat';
-import type { Comment } from '~/types/comment';
-import { useUser } from '~/composables/useUser';
+import { ref, computed } from "vue";
+import { useAuth } from "~/composables/useAuth";
+import { useApi } from "~/composables/useApi";
+import { formatDate } from "~/utils/dateFormat";
+import type { Comment } from "~/types/comment";
+import { useUser } from "~/composables/useUser";
 
 interface Props {
   comment: Comment;
@@ -66,31 +62,31 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits(['comment-deleted', 'comment-updated']);
+const emit = defineEmits(["comment-deleted", "comment-updated"]);
 
 const { user, isLoggedIn: isAuthenticated } = useAuth();
 const { fetchWithAuth } = useApi();
 const { getUserById } = useUser(); // 获取 getUserById 方法
 
 const showReplyForm = ref(false);
-const authorName = ref<string>(''); // 用于存储获取到的用户名
+const authorName = ref<string>(""); // 用于存储获取到的用户名
 
 const commentAuthor = computed(() => {
   // 1. 优先使用后端返回的 author 字段
   if (props.comment.author) {
     return props.comment.author;
   }
-  
+
   // 2. 使用获取到的用户名
   if (authorName.value) {
     return authorName.value;
   }
-  
+
   // 3. 如果是当前用户的评论
   if (user.value && Number(user.value.id) === props.comment.user_id) {
     return user.value.username || `用户${props.comment.user_id}`;
   }
-  
+
   // 4. 加载中显示
   return `用户${props.comment.user_id}`;
 });
@@ -101,21 +97,16 @@ const fetchUserName = async () => {
   if (props.comment.author || authorName.value) {
     return;
   }
-  
+
   try {
     const userData = await getUserById(props.comment.user_id);
-    authorName.value = userData.username || userData.name || `用户${props.comment.user_id}`;
+    authorName.value =
+      userData.username || userData.name || `用户${props.comment.user_id}`;
   } catch (error) {
-    console.error('获取用户信息失败:', error);
+    console.error("获取用户信息失败:", error);
     authorName.value = `用户${props.comment.user_id}`;
   }
 };
-
-// 检查是否可以删除评论
-const canDelete = computed(() => {
-  return isAuthenticated.value && 
-         Number(user.value?.id) === props.comment.user_id;
-});
 
 // 切换回复表单显示
 const toggleReplyForm = () => {
@@ -129,30 +120,95 @@ const handleReplyAdded = (newReply: Comment) => {
   }
   props.comment.replies.push(newReply);
   showReplyForm.value = false;
-  emit('comment-updated', props.comment);
+  emit("comment-updated", props.comment);
 };
 
 // 删除评论
 const deleteComment = async () => {
-  if (!confirm('确定要删除这条评论吗？')) return;
-  
+  console.log("🔍 删除评论调试信息:", {
+    commentId: props.comment.id,
+    commentUserId: props.comment.user_id,
+    currentUser: user.value,
+    currentUserId: user.value?.id,
+    userIdType: typeof user.value?.id,
+    commentUserIdType: typeof props.comment.user_id,
+    canDelete: canDelete.value,
+    isAuthenticated: isAuthenticated.value,
+  });
+
+  if (!canDelete.value) {
+    alert("您没有权限删除此评论");
+    return;
+  }
+
+  if (!confirm("确定要删除这条评论吗？")) return;
+
   try {
-    await fetchWithAuth(`https://dev.unikorn.axfff.com/api/comments/${props.comment.id}`, {
-      method: 'DELETE'
+    console.log(
+      "📤 发送删除请求:",
+      `https://dev.unikorn.axfff.com/api/comments/${props.comment.id}`
+    );
+
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/comments/${props.comment.id}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    console.log("📥 删除响应:", {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
     });
-    
-    emit('comment-deleted', props.comment.id);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ 删除失败详情:", errorText);
+
+      if (response.status === 403) {
+        alert(
+          "没有权限删除此评论，这不是您的评论"
+        );
+      } else {
+        alert(`删除失败: ${response.status} ${response.statusText}`);
+      }
+      return;
+    }
+
+    console.log("✅ 删除成功");
+    emit("comment-deleted", props.comment.id);
   } catch (error) {
-    console.error('删除评论失败:', error);
-    alert('删除失败，请重试');
+    console.error("💥 删除评论异常:", error);
+    alert("删除失败，请重试");
   }
 };
+
+// 权限检查
+const canDelete = computed(() => {
+  const result =
+    isAuthenticated.value && Number(user.value?.id) === props.comment.user_id;
+
+  console.log("🔐 权限检查结果:", {
+    isAuthenticated: isAuthenticated.value,
+    currentUserId: user.value?.id,
+    commentUserId: props.comment.user_id,
+    numberComparison: Number(user.value?.id) === props.comment.user_id,
+    canDelete: result,
+  });
+
+  return result;
+});
+
+onMounted(() => {
+  fetchUserName();
+});
 </script>
 
 <style lang="scss" scoped>
 .comment-item {
   margin-bottom: 1rem;
-  
+
   &.reply-comment {
     margin-left: 2rem;
     border-left: 2px solid #e0e0e0;
@@ -187,32 +243,32 @@ const deleteComment = async () => {
 .comment-actions {
   display: flex;
   gap: 0.5rem;
-  
+
   button {
     padding: 0.25rem 0.5rem;
     border: none;
     border-radius: 4px;
     font-size: 0.8rem;
     cursor: pointer;
-    
+
     &.reply-btn {
       background-color: #e3f2fd;
       color: #1976d2;
-      
+
       &:hover {
         background-color: #bbdefb;
       }
     }
-    
+
     &.delete-btn {
       background-color: #ffebee;
       color: #d32f2f;
-      
+
       &:hover {
         background-color: #ffcdd2;
       }
     }
-    
+
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;

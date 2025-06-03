@@ -328,30 +328,58 @@ const handleSubmit = async () => {
       images: images.value.map((img) => img.ossUrl),
     };
 
-    const response = await fetchWithAuth("https://dev.unikorn.axfff.com/api/posts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(jsonData),
-    });
+    const response = await fetchWithAuth(
+      "https://dev.unikorn.axfff.com/api/posts",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: JSON.stringify(jsonData),
+      }
+    );
 
-    // 处理响应
+    console.log("📥 发帖响应状态:", response.status, response.ok);
+
+    // 只读取一次响应体
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "发布失败");
+      // 处理错误响应
+      let errorMessage = "发布失败";
+      try {
+        const errorData = await response.json();
+        errorMessage =
+          errorData.message ||
+          errorData.error ||
+          `发布失败: ${response.status}`;
+      } catch (parseError) {
+        // 如果无法解析 JSON，使用默认错误信息
+        errorMessage = `发布失败: ${response.status} ${response.statusText}`;
+      }
+
+      console.error("❌ 发帖失败:", errorMessage);
+      throw new Error(errorMessage);
     }
 
-    // 解析成功响应
+    // 成功响应：解析 JSON
     const postData = await response.json();
+    console.log("✅ 发帖成功:", postData);
 
     // 显示成功消息
     successMessage.value = "帖子发布成功！";
 
-    // 触发成功事件，使用实际返回的帖子ID
+    // 清空表单
+    resetForm();
+
+    // 触发成功事件
     emit("post-success", postData.id || postData.postId);
+
+    // 可选：3秒后跳转到新帖子
+    setTimeout(() => {
+      router.push(`/forum/posts/${postData.id || postData.postId}`);
+    }, 3000);
   } catch (err) {
-    console.error("发布出错:", err);
+    console.error("💥 发布异常:", err);
     errorMessage.value =
       err instanceof Error ? err.message : "发布失败，请稍后重试";
   } finally {
