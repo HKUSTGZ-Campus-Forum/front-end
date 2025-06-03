@@ -17,3 +17,5 @@ onMounted(() => {
   }
 });
 </script>
+
+<!-- this is an example module -->
