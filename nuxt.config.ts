@@ -58,7 +58,7 @@ export default defineNuxtConfig({
         changeOrigin: true,
       },
     },
-    preset: "static",
+    // preset: "static",
     prerender: {
       crawlLinks: true, // prevent crawler from following <a> to /users etc.
       failOnError: false, // ignore 404 during prerender
