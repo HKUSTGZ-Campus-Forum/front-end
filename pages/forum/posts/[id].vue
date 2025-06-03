@@ -35,15 +35,6 @@
           {{ postData.content }}
         </div>
 
-        <div class="post-actions">
-          <button class="like-button">
-            <i class="fas fa-thumbs-up"></i> 点赞 ({{ postData.reaction_count || 0 }})
-          </button>
-          <button class="comment-button">
-            <i class="fas fa-comment"></i> 评论 ({{ postData.comment_count || 0 }})
-          </button>
-        </div>
-
         <!-- 评论区域 -->
         <CommentList :post-id="parseInt(postId)" />
       </div>
