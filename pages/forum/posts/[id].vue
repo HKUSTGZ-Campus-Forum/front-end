@@ -54,6 +54,7 @@ import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { formatDate } from "~/utils/dateFormat";
 import { useUser } from '~/composables/useUser';
+import { useApi } from '~/composables/useApi';
 
 const { getUsernameById } = useUser();
 
@@ -64,69 +65,42 @@ const post = ref({});
 const isLoading = ref(true);
 const errorMessage = ref("");
 
-// 获取认证令牌
-const { token } = useAuth();
+// Use the new API composable instead of direct token access
+const { fetchWithAuth } = useApi();
 
-// 获取文章数据
+// Get post data
 onMounted(async () => {
   try {
     isLoading.value = true;
-    // console.log(token.value, "token");
-    const response = await fetch(
-      `https://dev.unikorn.axfff.com/api/posts/${postId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          // 添加授权头
-          ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
-        },
-      }
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/posts/${postId}`
     );
 
     if (!response.ok) {
-      // 处理错误状态码
-      const errorText = await response.text().catch(() => "未知错误");
-      errorMessage.value = `获取文章失败 (${response.status}): ${errorText}`;
-      console.error("API错误:", {
-        状态: response.status,
-        响应: errorText,
+      const errorText = await response.text().catch(() => "Unknown error");
+      errorMessage.value = `Failed to get post (${response.status}): ${errorText}`;
+      console.error("API error:", {
+        status: response.status,
+        response: errorText,
       });
-
-      // 使用模拟数据继续渲染
-      useFallbackData();
       return;
     }
 
-    // 解析API返回的真实数据
     const data = await response.json();
-
+    
     if (data.author_id) {
       const username = await getUsernameById(data.author_id);
       post.value.author = username;
     } else {
-      post.value.author = "匿名用户";
+      post.value.author = "Anonymous";
     }
 
     post.value = data;
-
-
-    if (data.author_id) {
-      const username = await getUsernameById(data.author_id);
-      post.value.author = username;
-    } else {
-      post.value.author = "匿名用户";
-    }
-    
-    post.value.author = data.author;
     post.value.publishDate = data.time;
     post.value.view_count = data.view_count || 0;
   } catch (error) {
-    console.error("获取文章失败:", error);
-    errorMessage.value = "无法连接到服务器，请稍后再试";
-
-    // 连接失败时使用模拟数据
-    // useFallbackData();
+    console.error("Failed to get post:", error);
+    errorMessage.value = "Unable to connect to server, please try again later";
   } finally {
     isLoading.value = false;
   }
