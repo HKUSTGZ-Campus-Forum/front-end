@@ -7,7 +7,7 @@
       <div class="filter-action-bar">
         <div class="filter-options">
           <span class="filter-label">排序方式：</span>
-          <select v-model="sortBy" @change="fetchPosts" class="filter-select">
+          <select v-model="sortBy" @change="handleSortChange($event.target.value)" class="filter-select">
             <option value="latest">最新发布</option>
             <option value="oldest">最早发布</option>
             <option value="hot">热度优先</option>
@@ -50,12 +50,31 @@ import { ref, onMounted } from "vue";
 import ForumPost from "~/components/forum/Post.vue";
 import { formatDate } from "~/utils/dateFormat";
 import { useUser } from "~/composables/useUser";
+import { useApi } from '~/composables/useApi';
 
 const { getUsernameById } = useUser();
+const { fetchWithAuth } = useApi();
 const posts = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
-const sortBy = ref("latest"); // 默认按最新发布排序
+const sortBy = ref("created_at"); // Changed to match backend's sort_by field
+const sortOrder = ref("desc"); // Added to match backend's sort_order parameter
+const errorMessage = ref("");
+
+// Map frontend sort options to backend sort fields
+const sortMapping = {
+  "latest": { sort_by: "created_at", sort_order: "desc" },
+  "oldest": { sort_by: "created_at", sort_order: "asc" },
+  "hot": { sort_by: "reaction_count", sort_order: "desc" }
+};
+
+// Update sort handler
+function handleSortChange(value) {
+  const { sort_by, sort_order } = sortMapping[value] || sortMapping.latest;
+  sortBy.value = sort_by;
+  sortOrder.value = sort_order;
+  fetchPosts();
+}
 
 function prevPage() {
   if (currentPage.value > 1) {
@@ -73,11 +92,19 @@ function nextPage() {
 
 async function fetchPosts() {
   try {
-    // 实际项目中替换为API调用
-    const response = await fetch(
-      `https://dev.unikorn.axfff.com/api/posts?page=${currentPage.value}&sort=${sortBy.value}`
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/posts?` + new URLSearchParams({
+        page: currentPage.value.toString(),
+        limit: "20", // Using backend's default limit
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value
+      })
     );
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "获取文章列表失败");
+    }
 
     // 转换数据格式前获取所有作者信息
     const authorPromises = data.posts.map((post) =>
@@ -87,50 +114,21 @@ async function fetchPosts() {
     // 等待所有用户名获取完成
     const authorNames = await Promise.all(authorPromises);
 
-    console.log(authorPromises);
-
     // 转换数据格式
     posts.value = data.posts.map((post, index) => ({
       ...post,
       author_id: post.user_id,
       author: authorNames[index], // 使用获取到的用户名
-      comments: post.comments || post.comment_count || 0,
-      view_count: post.view_count || post.views || 0,
-      views: post.view_count || post.views || 0,
+      comments: post.comment_count || 0,
+      view_count: post.view_count || 0,
+      views: post.view_count || 0,
+      publishDate: post.created_at // Map created_at to publishDate for the component
     }));
 
-    totalPages.value = data.totalPages;
-
-    // 模拟数据
-    // posts.value = Array(10)
-    //   .fill()
-    //   .map((_, i) => ({
-    //     id: i + 1 + (currentPage.value - 1) * 10,
-    //     title: `文章标题 #${i + 1 + (currentPage.value - 1) * 10}`,
-    //     author: "用户名",
-    //     publishDate: new Date(Date.now() - i * 86400000).toISOString(), // 根据排序变化日期
-    //     excerpt: "这是文章摘要，简单介绍文章的内容...",
-    //     likes: Math.floor(Math.random() * 100),
-    //     comments: Math.floor(Math.random() * 20),
-    //     views: Math.floor(Math.random() * 500),
-    //     tags: [
-    //       { tag_id: 1, name: "标签1" },
-    //       { tag_id: 2, name: "标签2" },
-    //     ],
-    //   }));
-
-    // 根据排序方式调整数据顺序
-    if (sortBy.value === "oldest") {
-      posts.value.reverse();
-    } else if (sortBy.value === "hot") {
-      posts.value.sort(
-        (a, b) => b.views + b.comments * 2 - (a.views + a.comments * 2)
-      );
-    }
-
-    totalPages.value = 5;
+    totalPages.value = data.total_pages;
   } catch (error) {
     console.error("获取文章列表失败:", error);
+    errorMessage.value = error.message || "获取文章列表失败，请稍后重试";
   }
 }
 
