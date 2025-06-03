@@ -165,3 +165,4 @@ web/
 ├── nuxt.config.ts     # Nuxt配置文件
 └── package.json       # 项目依赖管理
 ```
+
