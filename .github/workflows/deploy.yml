@@ -45,4 +45,4 @@ jobs:
             source "$NVM_DIR/nvm.sh"
             nvm use 20
             ls -l /data/dev_unikorn/front-end/.output/server/index.mjs
-            pm2 reload unikorn-dev || pm2 start /data/dev_unikorn/front-end/.output/server/index.mjs --name unikorn-dev
+            PORT=3001 pm2 reload unikorn-dev || PORT=3001 pm2 start /data/dev_unikorn/front-end/.output/server/index.mjs --name unikorn-dev
