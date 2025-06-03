@@ -3,13 +3,12 @@
     <!-- 评论内容 -->
     <div class="comment-content">
       <div class="comment-header">
-        <span class="comment-author">{{ comment.author || '匿名用户' }}</span>
+        <span class="comment-author">{{ commentAuthor }}</span>
         <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
       </div>
       
       <div class="comment-text">{{ comment.content }}</div>
       
-      <!-- 评论操作 -->
       <div class="comment-actions">
         <button 
           @click="toggleReplyForm" 
@@ -59,6 +58,7 @@ import { useAuth } from '~/composables/useAuth';
 import { useApi } from '~/composables/useApi';
 import { formatDate } from '~/utils/dateFormat';
 import type { Comment } from '~/types/comment';
+import { useUser } from '~/composables/useUser';
 
 interface Props {
   comment: Comment;
@@ -70,8 +70,46 @@ const emit = defineEmits(['comment-deleted', 'comment-updated']);
 
 const { user, isLoggedIn: isAuthenticated } = useAuth();
 const { fetchWithAuth } = useApi();
+const { getUserById } = useUser(); // 获取 getUserById 方法
 
 const showReplyForm = ref(false);
+const authorName = ref<string>(''); // 用于存储获取到的用户名
+
+const commentAuthor = computed(() => {
+  // 1. 优先使用后端返回的 author 字段
+  if (props.comment.author) {
+    return props.comment.author;
+  }
+  
+  // 2. 使用获取到的用户名
+  if (authorName.value) {
+    return authorName.value;
+  }
+  
+  // 3. 如果是当前用户的评论
+  if (user.value && Number(user.value.id) === props.comment.user_id) {
+    return user.value.username || `用户${props.comment.user_id}`;
+  }
+  
+  // 4. 加载中显示
+  return `用户${props.comment.user_id}`;
+});
+
+// 异步获取用户名的函数
+const fetchUserName = async () => {
+  // 如果已经有作者信息，不需要获取
+  if (props.comment.author || authorName.value) {
+    return;
+  }
+  
+  try {
+    const userData = await getUserById(props.comment.user_id);
+    authorName.value = userData.username || userData.name || `用户${props.comment.user_id}`;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    authorName.value = `用户${props.comment.user_id}`;
+  }
+};
 
 // 检查是否可以删除评论
 const canDelete = computed(() => {

@@ -7,7 +7,7 @@ export interface Comment {
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
-  author?: string; // 从用户表获取的用户名
+  author?: string;
   replies?: Comment[]; // 子评论
 }
 
