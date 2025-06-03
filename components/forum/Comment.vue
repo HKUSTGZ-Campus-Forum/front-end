@@ -101,7 +101,7 @@ const fetchUserName = async () => {
   try {
     const userData = await getUserById(props.comment.user_id);
     authorName.value =
-      userData.username || userData.name || `用户${props.comment.user_id}`;
+      userData.username || `用户${props.comment.user_id}`;
   } catch (error) {
     console.error("获取用户信息失败:", error);
     authorName.value = `用户${props.comment.user_id}`;

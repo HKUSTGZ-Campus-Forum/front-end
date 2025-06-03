@@ -42,8 +42,37 @@
 
         <div class="post-actions" v-if="canDeletePost">
           <button class="delete-button" @click="showDeleteConfirm">
-            <i class="fas fa-trash"></i> 删除帖子
+            <i class="fas fa-trash"></i> 删除
           </button>
+        </div>
+
+        <div
+          class="test-actions"
+          style="
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+          "
+        >
+          <!-- <h4 style="margin: 0 0 1rem 0; color: #666">🧪 弹窗测试区域</h4>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap">
+            <button class="test-btn success-test" @click="testSuccessModal">
+              ✅ 测试成功弹窗
+            </button>
+            <button class="test-btn error-test" @click="testErrorModal">
+              ❌ 测试错误弹窗
+            </button>
+            <button class="test-btn confirm-test" @click="testConfirmModal">
+              ⚠️ 测试确认弹窗
+            </button>
+            <button
+              class="test-btn permission-test"
+              @click="testPermissionError"
+            >
+              🚫 测试权限错误
+            </button>
+          </div> -->
         </div>
 
         <ConfirmModal
@@ -67,6 +96,13 @@
           @close="handleSuccessClose"
         />
 
+        <ErrorModal
+          :show="showErrorModal"
+          title="删除失败"
+          :message="errorMsg"
+          @close="showErrorModal = false"
+        />
+
         <!-- 评论区域 -->
         <CommentList :post-id="parseInt(postId)" />
       </div>
@@ -82,8 +118,7 @@ import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
-import ConfirmModal from "~/components/ui/ConfirmModal.vue";
-import SuccessModal from "~/components/ui/SuccessModal.vue";
+import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 
 // Composables
 const route = useRoute();
@@ -95,6 +130,8 @@ const { isLoggedIn, user } = useAuth();
 // 弹窗状态
 const showConfirmModal = ref(false);
 const showSuccessModal = ref(false);
+const showErrorModal = ref(false);
+const errorMsg = ref("");
 
 // 响应式数据
 const postId = route.params.id;
@@ -115,7 +152,9 @@ const canDeletePost = computed(() => {
 // 显示删除确认弹窗
 const showDeleteConfirm = () => {
   if (!canDeletePost.value) {
-    alert("您没有权限删除此帖子");
+    // 也可以改为用错误弹窗显示权限错误
+    errorMsg.value = "您没有权限删除此帖子";
+    showErrorModal.value = true;
     return;
   }
   showConfirmModal.value = true;
@@ -147,14 +186,31 @@ const handleDeleteConfirm = async () => {
   }
 };
 
-// 添加：处理成功弹窗关闭
+// 处理成功弹窗关闭
 const handleSuccessClose = () => {
   showSuccessModal.value = false;
   // 跳转到论坛首页
   router.push("/forum");
 };
 
-// 原有的 fetchPostData 函数保持不变
+// const testSuccessModal = () => {
+//   showSuccessModal.value = true;
+// };
+
+// const testErrorModal = () => {
+//   errorMsg.value = "这是一个测试错误消息：网络连接失败，请检查您的网络设置后重试。";
+//   showErrorModal.value = true;
+// };
+
+// const testConfirmModal = () => {
+//   showConfirmModal.value = true;
+// };
+
+// const testPermissionError = () => {
+//   errorMsg.value = "您没有权限执行此操作，请联系管理员获取相应权限。";
+//   showErrorModal.value = true;
+// };
+
 const fetchPostData = async () => {
   try {
     isLoading.value = true;
@@ -303,20 +359,23 @@ onMounted(() => {
     background-color: #f0f0f0;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
 
     &:hover {
       background-color: #e0e0e0;
+      transform: translateY(-1px);
     }
 
-    &.like-button:hover {
-      background-color: #e8f5e8;
-      color: #27ae60;
-    }
+    // 添加删除按钮样式
+    &.delete-button {
+      background-color: #ffebee;
+      color: #d32f2f;
+      border: 1px solid #ffcdd2;
 
-    &.comment-button:hover {
-      background-color: #e8f4fd;
-      color: #3498db;
+      &:hover {
+        background-color: #ffcdd2;
+        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+      }
     }
   }
 }
