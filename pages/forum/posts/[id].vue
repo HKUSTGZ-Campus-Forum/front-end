@@ -54,14 +54,16 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { formatDate } from "~/utils/dateFormat";
 import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
 import CommentList from "~/components/forum/CommentList.vue";
+// import { useRoute, useRouter } from "vue-router";
 
 // Composables
 const route = useRoute();
+const router = useRouter();
 const { getUsernameById } = useUser();
 const { fetchWithAuth } = useApi();
 

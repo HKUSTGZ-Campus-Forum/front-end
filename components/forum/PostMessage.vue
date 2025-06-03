@@ -305,6 +305,21 @@ const handleCancel = () => {
   router.go(-1);
 };
 
+const resetForm = () => {
+  title.value = "";
+  category.value = "";
+  tagInput.value = "";
+  tags.value = [];
+  content.value = "";
+  images.value = [];
+  uploadMsg.value = "最多可上传5张图片";
+  errors.value = {
+    title: "",
+    content: "",
+  };
+  errorMessage.value = "";
+};
+
 // 提交表单
 const handleSubmit = async () => {
   validateTitle();
@@ -374,9 +389,9 @@ const handleSubmit = async () => {
     // 触发成功事件
     emit("post-success", postData.id || postData.postId);
 
-    // setTimeout(() => {
-    //   router.push(`/forum/posts/${postData.id || postData.postId}`);
-    // }, 3000);
+    setTimeout(() => {
+      router.push(`/forum/posts/${postData.id || postData.postId}`);
+    }, 3000);
   } catch (err) {
     console.error("💥 发布异常:", err);
     errorMessage.value =
