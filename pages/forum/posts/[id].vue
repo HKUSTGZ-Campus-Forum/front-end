@@ -1,84 +1,91 @@
 <template>
   <HomeContainer>
     <div class="post-container">
-      <div class="post-header">
-        <h1 class="post-title">{{ post.title || "加载中..." }}</h1>
-        <div class="post-meta">
-          <span class="author">作者: {{ post.author }}</span>
-          <span class="date">发布于: {{ formatDate(post.publishDate) }}</span>
-          <span class="views" v-if="post.views_count !== undefined">
-            <i class="fas fa-eye"></i> {{ post.views_count }} 浏览
-          </span>
-        </div>
-
-        <!-- 标签展示 -->
-        <div class="post-tags" v-if="post.tags && post.tags.length > 0">
-          <span v-for="tag in post.tags" :key="tag.tag_id" class="tag">
-            {{ tag.name }}
-          </span>
-        </div>
+      <!-- 加载状态 -->
+      <div v-if="isLoading" class="loading">
+        加载中...
       </div>
-
-      <div class="post-content">
-        {{ post.content }}
+      
+      <!-- 错误状态 -->
+      <div v-else-if="errorMessage" class="error">
+        {{ errorMessage }}
       </div>
+      
+      <!-- 正常内容 -->
+      <div v-else>
+        <div class="post-header">
+          <h1 class="post-title">{{ postData.title || "无标题" }}</h1>
+          <div class="post-meta">
+            <span class="author">作者: {{ postData.author || "匿名用户" }}</span>
+            <span class="date">发布于: {{ formatDate(postData.publishDate) }}</span>
+            <span class="views" v-if="postData.views_count !== undefined">
+              <i class="fas fa-eye"></i> {{ postData.views_count }} 浏览
+            </span>
+          </div>
 
-      <div class="post-actions">
-        <button class="like-button">
-          <i class="fas fa-thumbs-up"></i> 点赞 ({{ post.reaction_count }})
-        </button>
-        <button class="comment-button">
-          <i class="fas fa-comment"></i> 评论 ({{ post.comment_count }})
-        </button>
-      </div>
-
-      <div class="comments-section" v-if="post.comments?.length">
-        <h3>评论 ({{ post.comments.length }})</h3>
-        <div class="comment-list">
-          <div
-            v-for="comment in post.comments"
-            :key="comment.id"
-            class="comment"
-          >
-            <div class="comment-author">{{ comment.author }}</div>
-            <div class="comment-content">{{ comment.content }}</div>
+          <!-- 标签展示 -->
+          <div class="post-tags" v-if="postData.tags && postData.tags.length > 0">
+            <span v-for="tag in postData.tags" :key="tag.tag_id" class="tag">
+              {{ tag.name }}
+            </span>
           </div>
         </div>
+
+        <div class="post-content">
+          {{ postData.content }}
+        </div>
+
+        <div class="post-actions">
+          <button class="like-button">
+            <i class="fas fa-thumbs-up"></i> 点赞 ({{ postData.reaction_count || 0 }})
+          </button>
+          <button class="comment-button">
+            <i class="fas fa-comment"></i> 评论 ({{ postData.comment_count || 0 }})
+          </button>
+        </div>
+
+        <!-- 评论区域 -->
+        <CommentList :post-id="parseInt(postId)" />
       </div>
     </div>
   </HomeContainer>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { formatDate } from "~/utils/dateFormat";
-import { useUser } from '~/composables/useUser';
-import { useApi } from '~/composables/useApi';
+import { useUser } from "~/composables/useUser";
+import { useApi } from "~/composables/useApi";
+import CommentList from "~/components/forum/CommentList.vue";
 
-const { getUsernameById } = useUser();
-
-const { getUserById } = useUsers();
+// Composables
 const route = useRoute();
+const { getUsernameById } = useUser();
+const { fetchWithAuth } = useApi();
+
+// 响应式数据
 const postId = route.params.id;
 const post = ref({});
 const isLoading = ref(true);
 const errorMessage = ref("");
 
-// Use the new API composable instead of direct token access
-const { fetchWithAuth } = useApi();
+// 计算属性，避免模板中的变量冲突
+const postData = computed(() => post.value);
 
-// Get post data
-onMounted(async () => {
+// 获取帖子数据
+const fetchPostData = async () => {
   try {
     isLoading.value = true;
+    errorMessage.value = "";
+
     const response = await fetchWithAuth(
       `https://dev.unikorn.axfff.com/api/posts/${postId}`
     );
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");
-      errorMessage.value = `Failed to get post (${response.status}): ${errorText}`;
+      errorMessage.value = `获取帖子失败 (${response.status}): ${errorText}`;
       console.error("API error:", {
         status: response.status,
         response: errorText,
@@ -87,48 +94,45 @@ onMounted(async () => {
     }
 
     const data = await response.json();
-    
-    if (data.author_id) {
-      const username = await getUsernameById(data.author_id);
-      post.value.author = username;
-    } else {
-      post.value.author = "Anonymous";
+    console.log("获取到的帖子数据:", data);
+
+    // 获取作者用户名
+    let authorName = "匿名用户";
+    if (data.author_id || data.user_id) {
+      try {
+        const userId = data.author_id || data.user_id;
+        authorName = await getUsernameById(userId);
+      } catch (error) {
+        console.warn("获取作者用户名失败:", error);
+      }
     }
 
-    post.value = data;
-    post.value.publishDate = data.time;
-    post.value.view_count = data.view_count || 0;
+    // 统一数据格式
+    post.value = {
+      id: data.id || data.post_id,
+      title: data.title,
+      content: data.content,
+      author: authorName,
+      publishDate: data.created_at || data.time || new Date().toISOString(),
+      reaction_count: data.reaction_count || 0,
+      comment_count: data.comment_count || 0,
+      views_count: data.views_count || data.view_count || 0,
+      tags: data.tags || [],
+      user_id: data.author_id || data.user_id
+    };
+
   } catch (error) {
-    console.error("Failed to get post:", error);
-    errorMessage.value = "Unable to connect to server, please try again later";
+    console.error("获取帖子失败:", error);
+    errorMessage.value = "无法连接到服务器，请稍后重试";
   } finally {
     isLoading.value = false;
   }
-});
+};
 
-// 回退到模拟数据
-// function useFallbackData() {
-//   console.log("使用模拟数据...");
-//   post.value = {
-//     id: postId,
-//     title: `文章标题 #${postId}`,
-//     author: "张三",
-//     publishDate: new Date().toISOString(),
-//     content:
-//       "这里是文章内容，可以包含很长的文本。这里是文章内容，可以包含很长的文本。",
-//     reaction_count: 42,
-//     comment_count: 2,
-//     views_count: 156,
-//     tags: [
-//       { tag_id: 1, name: "标签1" },
-//       { tag_id: 2, name: "标签2" },
-//     ],
-//     comments: [
-//       { id: 1, author: "李四", content: "很棒的文章！" },
-//       { id: 2, author: "王五", content: "学习了，谢谢分享。" },
-//     ],
-//   };
-// }
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchPostData();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -141,6 +145,22 @@ onMounted(async () => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+.loading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: #e74c3c;
+  background-color: #ffebee;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
 .post-header {
   margin-bottom: 2rem;
   border-bottom: 1px solid #e0e0e0;
@@ -150,6 +170,7 @@ onMounted(async () => {
 .post-title {
   font-size: 2rem;
   margin-bottom: 0.5rem;
+  color: #2c3e50;
 }
 
 .post-meta {
@@ -157,6 +178,13 @@ onMounted(async () => {
   gap: 1rem;
   color: #666;
   font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.views {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .post-tags {
@@ -178,6 +206,7 @@ onMounted(async () => {
   font-size: 1.1rem;
   line-height: 1.6;
   margin-bottom: 2rem;
+  white-space: pre-wrap;
 }
 
 .post-actions {
@@ -194,37 +223,21 @@ onMounted(async () => {
     background-color: #f0f0f0;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s;
 
     &:hover {
       background-color: #e0e0e0;
     }
+
+    &.like-button:hover {
+      background-color: #e8f5e8;
+      color: #27ae60;
+    }
+
+    &.comment-button:hover {
+      background-color: #e8f4fd;
+      color: #3498db;
+    }
   }
-}
-
-.comments-section {
-  border-top: 1px solid #e0e0e0;
-  padding-top: 1rem;
-
-  h3 {
-    margin-bottom: 1rem;
-  }
-}
-
-.comment {
-  background-color: #f9f9f9;
-  border-radius: 4px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-
-  .comment-author {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-  }
-}
-
-.views {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
 }
 </style>

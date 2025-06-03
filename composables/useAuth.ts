@@ -1,6 +1,5 @@
 // composables/useAuth.ts
-import { ref, computed } from "vue";
-import { useApi } from "./useApi";
+import { ref, computed, onMounted } from "vue";
 
 interface User {
   id: string;
@@ -16,9 +15,44 @@ export function useAuth() {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const isRefreshing = ref(false);
-  const { fetchWithAuth } = useApi();
 
   const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
+
+  // 内部 fetch 函数，不依赖 useApi
+  async function authFetch(url: string, options: RequestInit = {}) {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> || {}),
+    };
+
+    // 如果有 token，添加到 headers
+    if (accessToken.value) {
+      headers['Authorization'] = `Bearer ${accessToken.value}`;
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  }
+
+  function safeLocalStorage(
+    action: "get" | "set" | "remove",
+    key: string,
+    value?: string
+  ): string | null {
+    if (process.client) {
+      if (action === "get") {
+        return localStorage.getItem(key);
+      } else if (action === "set" && value !== undefined) {
+        localStorage.setItem(key, value);
+        return value;
+      } else if (action === "remove") {
+        localStorage.removeItem(key);
+      }
+    }
+    return null;
+  }
 
   // Initialize function to check stored tokens
   function init() {
@@ -51,32 +85,13 @@ export function useAuth() {
     }
   }
 
-  function safeLocalStorage(
-    action: "get" | "set" | "remove",
-    key: string,
-    value?: string
-  ): string | null {
-    // 检查是否在客户端环境
-    if (process.client) {
-      if (action === "get") {
-        return localStorage.getItem(key);
-      } else if (action === "set" && value !== undefined) {
-        localStorage.setItem(key, value);
-        return value;
-      } else if (action === "remove") {
-        localStorage.removeItem(key);
-      }
-    }
-    return null;
-  }
-
   // 获取用户资料
   async function fetchUserProfile(authToken: string) {
     if (!process.client) return;
     loading.value = true;
 
     try {
-      // 解析令牌获取用户ID (不修改令牌本身)
+      // 解析令牌获取用户ID
       let userId = null;
       try {
         const tokenParts = authToken.split(".");
@@ -94,11 +109,10 @@ export function useAuth() {
         return;
       }
 
-      const response = await fetchWithAuth(
+      const response = await authFetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`
       );
 
-      // 处理响应
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`获取用户资料失败(${response.status}):`, errorText);
@@ -106,11 +120,9 @@ export function useAuth() {
         return;
       }
 
-      // 解析并更新用户信息
       const userData = await response.json();
       console.log("获取用户资料成功:", userData);
 
-      // 更新用户信息
       user.value = {
         id: userData.id || userId,
         username: userData.username || user.value?.username || "",
@@ -135,13 +147,10 @@ export function useAuth() {
     try {
       const userId = user.value.id;
 
-      const response = await fetchWithAuth(
+      const response = await authFetch(
         `https://dev.unikorn.axfff.com/api/users/${userId}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify(userData),
         }
       );
@@ -153,7 +162,6 @@ export function useAuth() {
         throw new Error(errorMessage);
       }
 
-      // 获取更新后的用户数据
       const responseData = await response.json();
       const updatedUserData = responseData.user || responseData;
       user.value = { ...user.value, ...updatedUserData };
@@ -191,7 +199,6 @@ export function useAuth() {
       return data.access_token;
     } catch (err) {
       console.error("Token refresh failed:", err);
-      // If refresh fails, logout the user
       await logout();
       throw err;
     } finally {
@@ -199,7 +206,7 @@ export function useAuth() {
     }
   }
 
-  // Modified login function to store both tokens
+  // Login function
   async function login(username: string, password: string) {
     loading.value = true;
     error.value = null;
@@ -228,7 +235,6 @@ export function useAuth() {
       refreshToken.value = data.refresh_token;
       user.value = data.user;
 
-      // Store both tokens and user info
       safeLocalStorage("set", "auth_token", data.access_token);
       safeLocalStorage("set", "refresh_token", data.refresh_token);
       if (data.user) {
@@ -251,25 +257,22 @@ export function useAuth() {
     }
   }
 
-  // Modified logout function to use fetchWithAuth
+  // Logout function
   async function logout() {
     loading.value = true;
     error.value = null;
 
     try {
       if (accessToken.value) {
-        // Call logout API to blacklist the token
-        await fetchWithAuth("https://dev.unikorn.axfff.com/api/auth/logout", {
+        await authFetch("https://dev.unikorn.axfff.com/api/auth/logout", {
           method: "POST",
-        }).catch(console.error); // Ignore logout API errors
+        }).catch(console.error);
       }
 
-      // Clear state
       user.value = null;
       accessToken.value = null;
       refreshToken.value = null;
 
-      // Remove tokens from storage
       safeLocalStorage("remove", "auth_token");
       safeLocalStorage("remove", "refresh_token");
       safeLocalStorage("remove", "user_info");
@@ -284,6 +287,7 @@ export function useAuth() {
     }
   }
 
+  // Register function
   async function register(username: string, email: string, password: string) {
     loading.value = true;
     error.value = null;
@@ -291,7 +295,6 @@ export function useAuth() {
     try {
       console.log("开始注册请求，发送数据:", { username, email });
 
-      // 调用API进行注册
       const response = await fetch("https://dev.unikorn.axfff.com/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -301,10 +304,8 @@ export function useAuth() {
       console.log("收到响应状态:", response.status);
 
       if (!response.ok) {
-        // 尝试读取错误响应内容
         let errorMessage = "注册失败";
         try {
-          // 尝试解析错误响应为JSON
           const errorData = await response.json();
           console.error("服务器错误详情:", errorData);
           errorMessage =
@@ -312,13 +313,9 @@ export function useAuth() {
             errorData.error ||
             `服务器错误(${response.status})`;
         } catch (parseError) {
-          // 如果JSON解析失败，尝试获取文本响应
           const errorText = await response.text();
           console.error("服务器返回非JSON错误:", errorText);
-          errorMessage = `服务器错误(${response.status}): ${errorText.substring(
-            0,
-            100
-          )}`;
+          errorMessage = `服务器错误(${response.status}): ${errorText.substring(0, 100)}`;
         }
 
         throw new Error(errorMessage);
@@ -337,14 +334,13 @@ export function useAuth() {
     }
   }
 
-  // 初始化调用
   onMounted(() => {
     init();
   });
 
   return {
     user,
-    token: accessToken, // Keep token for backward compatibility
+    token: accessToken,
     accessToken,
     refreshToken,
     loading,
@@ -356,5 +352,7 @@ export function useAuth() {
     init,
     updateUserProfile,
     refreshAccessToken,
+    // 导出内部 fetch 函数供其他地方使用
+    authFetch,
   };
 }

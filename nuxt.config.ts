@@ -3,6 +3,9 @@ import pkg from "./package.json";
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
   devtools: { enabled: false },
+  ui: {
+    fonts: false
+  },
   modules: [
     // Pinia 配置
     "@pinia/nuxt",
@@ -11,11 +14,23 @@ export default defineNuxtConfig({
     "@nuxtjs/i18n",
     "@nuxt/ui",
   ],
-  i18n: {
-    bundle: {
-      optimizeTranslationDirective: false, // 明确禁用此选项
-    },
-    // 其他 i18n 配置...
+    i18n: {
+    locales: [
+      { 
+        code: 'zh', 
+        name: '中文',
+        file: 'zh.json'
+      },
+      { 
+        code: 'en', 
+        name: 'English',
+        file: 'en.json'
+      }
+    ],
+    defaultLocale: 'zh',
+    strategy: 'no_prefix',
+    langDir: 'locales/',
+    lazy: true
   },
   imports: {
     dirs: ["store/**"],

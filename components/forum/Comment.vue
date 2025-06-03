@@ -68,7 +68,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits(['comment-deleted', 'comment-updated']);
 
-const { isAuthenticated, user } = useAuth();
+const { user, isLoggedIn: isAuthenticated } = useAuth();
 const { fetchWithAuth } = useApi();
 
 const showReplyForm = ref(false);
@@ -76,7 +76,7 @@ const showReplyForm = ref(false);
 // 检查是否可以删除评论
 const canDelete = computed(() => {
   return isAuthenticated.value && 
-         (user.value?.id === props.comment.user_id || user.value?.role === 'admin');
+         Number(user.value?.id) === props.comment.user_id;
 });
 
 // 切换回复表单显示
