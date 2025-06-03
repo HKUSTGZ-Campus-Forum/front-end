@@ -41,10 +41,32 @@
         </div>
 
         <div class="post-actions" v-if="canDeletePost">
-          <button class="delete-button" @click="deletePost">
+          <button class="delete-button" @click="showDeleteConfirm">
             <i class="fas fa-trash"></i> 删除帖子
           </button>
         </div>
+
+        <ConfirmModal
+          :show="showConfirmModal"
+          title="删除确认"
+          message="确定要删除这篇帖子吗？此操作无法撤销。"
+          confirm-text="删除"
+          cancel-text="取消"
+          @confirm="handleDeleteConfirm"
+          @cancel="showConfirmModal = false"
+          @close="showConfirmModal = false"
+        />
+
+        <SuccessModal
+          :show="showSuccessModal"
+          title="删除成功"
+          message="帖子已成功删除！即将跳转到论坛首页..."
+          :auto-close="true"
+          :auto-close-delay="3000"
+          :show-button="false"
+          @close="handleSuccessClose"
+        />
+
         <!-- 评论区域 -->
         <CommentList :post-id="parseInt(postId)" />
       </div>
@@ -58,14 +80,21 @@ import { useRoute, useRouter } from "vue-router";
 import { formatDate } from "~/utils/dateFormat";
 import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
+import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
-// import { useRoute, useRouter } from "vue-router";
+import ConfirmModal from "~/components/ui/ConfirmModal.vue";
+import SuccessModal from "~/components/ui/SuccessModal.vue";
 
 // Composables
 const route = useRoute();
 const router = useRouter();
 const { getUsernameById } = useUser();
 const { fetchWithAuth } = useApi();
+const { isLoggedIn, user } = useAuth();
+
+// 弹窗状态
+const showConfirmModal = ref(false);
+const showSuccessModal = ref(false);
 
 // 响应式数据
 const postId = route.params.id;
@@ -73,10 +102,59 @@ const post = ref({});
 const isLoading = ref(true);
 const errorMessage = ref("");
 
-// 计算属性，避免模板中的变量冲突
+// 计算属性
 const postData = computed(() => post.value);
 
-// 获取帖子数据
+const canDeletePost = computed(() => {
+  if (!isLoggedIn.value || !user.value || !postData.value.user_id) {
+    return false;
+  }
+  return Number(user.value.id) === Number(postData.value.user_id);
+});
+
+// 显示删除确认弹窗
+const showDeleteConfirm = () => {
+  if (!canDeletePost.value) {
+    alert("您没有权限删除此帖子");
+    return;
+  }
+  showConfirmModal.value = true;
+};
+
+// 处理删除确认
+const handleDeleteConfirm = async () => {
+  try {
+    console.log("🗑️ 开始删除帖子:", postId);
+
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/posts/${postId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`删除失败: ${response.status}`);
+    }
+
+    console.log("✅ 删除成功");
+
+    // 显示成功弹窗
+    showSuccessModal.value = true;
+  } catch (error) {
+    console.error("💥 删除帖子失败:", error);
+    alert("删除失败，请重试");
+  }
+};
+
+// 添加：处理成功弹窗关闭
+const handleSuccessClose = () => {
+  showSuccessModal.value = false;
+  // 跳转到论坛首页
+  router.push("/forum");
+};
+
+// 原有的 fetchPostData 函数保持不变
 const fetchPostData = async () => {
   try {
     isLoading.value = true;
@@ -128,55 +206,6 @@ const fetchPostData = async () => {
     errorMessage.value = "无法连接到服务器，请稍后重试";
   } finally {
     isLoading.value = false;
-  }
-};
-
-import { useAuth } from "~/composables/useAuth";
-
-const { isLoggedIn, user } = useAuth();
-
-const canDeletePost = computed(() => {
-  // 1. 用户必须已登录
-  if (!isLoggedIn.value) return false;
-
-  // 2. 必须有用户信息
-  if (!user.value) return false;
-
-  // 3. 帖子必须有作者ID
-  if (!postData.value.user_id) return false;
-
-  // 4. 当前用户ID必须等于帖子作者ID
-  return Number(user.value.id) === Number(postData.value.user_id);
-});
-
-const deletePost = async () => {
-  if (!canDeletePost.value) {
-    alert("您没有权限删除此帖子");
-    return;
-  }
-
-  if (!confirm("确定要删除这篇帖子吗？此操作无法撤销。")) {
-    return;
-  }
-
-  try {
-    const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/posts/${postId}`,
-      {
-        method: "DELETE",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`删除失败: ${response.status}`);
-    }
-
-    alert("帖子删除成功");
-    // 跳转回论坛首页
-    router.push("/forum");
-  } catch (error) {
-    console.error("删除帖子失败:", error);
-    alert("删除失败，请重试");
   }
 };
 
