@@ -40,7 +40,9 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            sleep 2
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
             nvm use 20
-            pm2 reload unikorn-dev || pm2 start .output/server/index.mjs --name unikorn-dev
+            ls -l /data/dev_unikorn/front-end/.output/server/index.mjs
+            pm2 reload unikorn-dev || pm2 start /data/dev_unikorn/front-end/.output/server/index.mjs --name unikorn-dev
