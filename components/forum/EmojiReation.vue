@@ -277,6 +277,20 @@ const selectEmoji = async (emoji) => {
 
       for (const existingEmoji of [...userReactions.value]) {
         try {
+          // 🔥 修复：检查计数为1的情况特殊处理
+          const currentCount = reactions.value[existingEmoji.id]?.count || 0;
+
+          if (currentCount === 1) {
+            console.log(`🔧 表情${existingEmoji.id}计数为1，直接删除本地状态`);
+
+            // 直接删除本地状态，不发送API请求
+            userReactions.value = userReactions.value.filter(
+              (e) => e.id !== existingEmoji.id
+            );
+            delete reactions.value[existingEmoji.id];
+            continue; // 跳过API请求
+          }
+
           let deleteUrl;
           if (props.type === "post") {
             deleteUrl = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${existingEmoji.id}`;
@@ -292,6 +306,14 @@ const selectEmoji = async (emoji) => {
           console.log(`✅ 删除表情: ${existingEmoji.id}`);
         } catch (error) {
           console.error(`❌ 删除表情失败: ${existingEmoji.id}`, error);
+
+          // 🔥 修复：删除失败时也强制删除本地状态
+          userReactions.value = userReactions.value.filter(
+            (e) => e.id !== existingEmoji.id
+          );
+          if (reactions.value[existingEmoji.id]) {
+            delete reactions.value[existingEmoji.id];
+          }
         }
       }
     }
