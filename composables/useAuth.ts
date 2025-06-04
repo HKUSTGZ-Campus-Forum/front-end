@@ -121,7 +121,7 @@ export function useAuth() {
       }
 
       const userData = await response.json();
-      console.log("获取用户资料成功:", userData);
+      // console.log("获取用户资料成功:", userData);
 
       user.value = {
         id: userData.id || userId,

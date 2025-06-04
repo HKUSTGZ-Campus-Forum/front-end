@@ -10,6 +10,36 @@ const props = defineProps({
   },
 });
 
+const { user, isLoggedIn } = useAuth();
+const { fetchWithAuth } = useApi();
+
+const currentUserId = computed(() => {
+  // console.log("🔍 当前用户状态:", isLoggedIn.value, user.value);
+
+  if (!isLoggedIn.value || !user.value) {
+    // console.log("⚠️ 用户未登录");
+    return 2; // 默认值
+  }
+
+  const userId = user.value.id;
+  // console.log("👤 用户ID:", userId);
+
+  // 🔥 修复：不在 computed 中进行异步操作
+  return userId && Number(userId) !== 0 ? userId : 1;
+});
+
+// 使用fetchWithAuth请求用户数据
+// const fetchUserData = async (userId: string | number) => {
+//   try {
+//     const response = await fetchWithAuth(`/api/users/${userId}`);
+//     console.log("👤 用户数据:", response);
+//     return response;
+//   } catch (error) {
+//     console.error("❌ 获取用户数据失败:", error);
+//     throw error;
+//   }
+// };
+
 // 添加emit用于通知父组件状态变化
 const emit = defineEmits(["update:folded"]);
 
@@ -49,13 +79,13 @@ watch(isHovered, (newValue) => {
     <div class="sidebar-content">
       <div class="sidebar-header">
         <div class="uniKonwn-logo">
-          <img src="/image/uniKorn.jpg" alt="uniKonwn" />
+          <img src="/public/image/uniKorn.jpg" alt="uniKonwn" />
         </div>
       </div>
       <ul class="nav-items">
         <li><NuxtLink to="/">首页</NuxtLink></li>
         <li><NuxtLink to="/forum">论坛</NuxtLink></li>
-        <li><NuxtLink to="/users">用户</NuxtLink></li>
+        <li><NuxtLink :to="`/users/${currentUserId}`">用户</NuxtLink></li>
         <!-- 更多菜单项 -->
       </ul>
     </div>
