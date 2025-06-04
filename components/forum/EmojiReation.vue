@@ -8,11 +8,21 @@
         :key="emojiId"
         @click="toggleReaction(reaction.emoji)"
         class="reaction-item"
-        :class="{ 'user-reacted': isUserReacted(reaction.emoji.id) }"
+        :class="{
+          'user-reacted': isUserReacted(reaction.emoji.id),
+          'single-selected':
+            userReactions.length === 1 && isUserReacted(reaction.emoji.id),
+        }"
       >
         <!-- 🔥 修复：使用 emoji_code 字段 -->
-        <span class="emoji">{{ getEmojiFromCode(reaction.emoji.emoji_code) || "❓" }}</span>
+        <span class="emoji">{{
+          getEmojiFromCode(reaction.emoji.emoji_code) || "❓"
+        }}</span>
         <span class="count">{{ reaction.count }}</span>
+        <!-- 🔥 添加用户选择指示器 -->
+        <span v-if="isUserReacted(reaction.emoji.id)" class="user-indicator"
+          >👤</span
+        >
       </button>
     </div>
 
@@ -104,6 +114,98 @@ const isUserReacted = (emojiId) => {
   return userReactions.value.some((emoji) => emoji.id === emojiId);
 };
 
+const removeUserOtherReactions = async (newEmojiId) => {
+  // 找到用户当前的反应（排除即将添加的表情）
+  const otherReactions = userReactions.value.filter(
+    (emoji) => emoji.id !== newEmojiId
+  );
+
+  if (otherReactions.length === 0) {
+    return; // 用户没有其他反应，无需移除
+  }
+
+  console.log("🔄 移除用户的其他表情反应:", otherReactions);
+
+  // 逐个删除其他反应
+  for (const emoji of otherReactions) {
+    try {
+      // 🔥 修复：检查是否是最后一个反应
+      const currentCount = reactions.value[emoji.id]?.count || 0;
+
+      if (currentCount <= 1) {
+        console.log(`🔄 表情${emoji.id}是最后一个反应，直接删除本地状态`);
+
+        // 直接更新本地状态
+        userReactions.value = userReactions.value.filter(
+          (e) => e.id !== emoji.id
+        );
+        delete reactions.value[emoji.id];
+        continue; // 跳过API请求
+      }
+
+      let url;
+      if (props.type === "post") {
+        url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`;
+      } else {
+        url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`;
+      }
+
+      console.log(`🔄 删除表情反应 ${emoji.id}，当前计数: ${currentCount}`);
+
+      const response = await fetchWithAuth(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        console.log(`✅ 成功移除表情反应: ${emoji.id}`);
+
+        // 更新本地状态
+        userReactions.value = userReactions.value.filter(
+          (e) => e.id !== emoji.id
+        );
+        if (reactions.value[emoji.id]) {
+          reactions.value[emoji.id].count--;
+          if (reactions.value[emoji.id].count <= 0) {
+            delete reactions.value[emoji.id];
+          }
+        }
+      } else {
+        const errorText = await response.text();
+        console.warn(`⚠️ 移除表情反应失败: ${emoji.id}`, errorText);
+
+        // 🔥 如果是约束错误，直接删除本地状态
+        if (
+          errorText.includes("valid_counts") ||
+          errorText.includes("CheckViolation")
+        ) {
+          console.log("🔧 检测到约束错误，直接删除本地状态");
+          userReactions.value = userReactions.value.filter(
+            (e) => e.id !== emoji.id
+          );
+          delete reactions.value[emoji.id];
+        }
+      }
+    } catch (error) {
+      console.error(`❌ 移除表情反应出错: ${emoji.id}`, error);
+
+      // 🔥 如果是约束错误，直接删除本地状态
+      if (
+        error.message.includes("valid_counts") ||
+        error.message.includes("CheckViolation")
+      ) {
+        console.log("🔧 检测到约束错误，直接删除本地状态");
+        userReactions.value = userReactions.value.filter(
+          (e) => e.id !== emoji.id
+        );
+        delete reactions.value[emoji.id];
+      }
+    }
+  }
+};
+
 const getEmojiFromCode = (emojiCode) => {
   const emojiMap = {
     plus_one: "👍",
@@ -163,6 +265,7 @@ const toggleEmojiPicker = async () => {
     console.log("availableEmojis.value.length:", availableEmojis.value.length);
   }
 };
+
 const selectEmoji = async (emoji) => {
   try {
     await toggleReaction(emoji);
@@ -185,26 +288,31 @@ const toggleReaction = async (emoji) => {
     let url, body;
 
     if (props.type === "post") {
-      url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
       if (method === "DELETE") {
-        // 🔥 DELETE 使用查询参数
-        url += `?emoji_id=${emoji.id}`;
+        url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`;
         body = undefined;
       } else {
-        // 🔥 POST 使用请求体
+        url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
         body = JSON.stringify({ emoji_id: emoji.id });
       }
     } else {
-      url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
       if (method === "DELETE") {
-        url += `?emoji_id=${emoji.id}`;
+        url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`;
         body = undefined;
       } else {
+        url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
         body = JSON.stringify({ emoji_id: emoji.id });
       }
     }
 
-    // 🔥 修复：始终包含 Content-Type 头部
+    // 🔥 添加URL验证
+    console.log("🎭 构建的请求URL:", url);
+
+    if (!url.includes("/reactions")) {
+      console.error("❌ URL构建错误:", url);
+      throw new Error("请求URL构建错误");
+    }
+
     const requestOptions = {
       method,
       headers: {
@@ -212,7 +320,6 @@ const toggleReaction = async (emoji) => {
       },
     };
 
-    // 只有在有 body 的时候才添加 body
     if (body !== undefined) {
       requestOptions.body = body;
     }
@@ -234,7 +341,7 @@ const toggleReaction = async (emoji) => {
 
     console.log("✅ 表情反应操作成功");
 
-    // 立即更新本地状态
+    // 🔥 修复问题2：实现单选表情逻辑
     if (isCurrentlyReacted) {
       // 移除反应
       userReactions.value = userReactions.value.filter(
@@ -247,7 +354,10 @@ const toggleReaction = async (emoji) => {
         }
       }
     } else {
-      // 添加反应
+      // 🔥 问题2修复：添加反应前先清除用户的其他反应
+      await removeUserOtherReactions(emoji.id);
+
+      // 添加新反应
       userReactions.value.push(emoji);
       if (reactions.value[emoji.id]) {
         reactions.value[emoji.id].count++;
@@ -263,7 +373,6 @@ const toggleReaction = async (emoji) => {
     alert(error.message || "操作失败，请重试");
   }
 };
-
 // 获取可用表情列表
 const fetchAvailableEmojis = async () => {
   try {
@@ -370,6 +479,23 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.reaction-item {
+  // 原有样式保持不变...
+
+  &.single-selected {
+    background: #e8f5e8;
+    border-color: #4caf50;
+    color: #2e7d32;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  }
+
+  .user-indicator {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-left: 0.2rem;
+  }
 }
 
 .reaction-item {
