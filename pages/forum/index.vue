@@ -7,7 +7,11 @@
       <div class="filter-action-bar">
         <div class="filter-options">
           <span class="filter-label">排序方式：</span>
-          <select v-model="sortBy" @change="handleSortChange($event.target.value)" class="filter-select">
+          <select
+            v-model="sortBy"
+            @change="handleSortChange($event.target.value)"
+            class="filter-select"
+          >
             <option value="latest">最新发布</option>
             <option value="oldest">最早发布</option>
             <option value="hot">热度优先</option>
@@ -50,29 +54,29 @@ import { ref, onMounted } from "vue";
 import ForumPost from "~/components/forum/Post.vue";
 import { formatDate } from "~/utils/dateFormat";
 import { useUser } from "~/composables/useUser";
-import { useApi } from '~/composables/useApi';
+import { useApi } from "~/composables/useApi";
 
 const { getUsernameById } = useUser();
 const { fetchWithAuth } = useApi();
 const posts = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
-const sortBy = ref("created_at"); // Changed to match backend's sort_by field
+const sortBy = ref("latest"); // Changed to match backend's sort_by field
 const sortOrder = ref("desc"); // Added to match backend's sort_order parameter
 const errorMessage = ref("");
 
 // Map frontend sort options to backend sort fields
 const sortMapping = {
-  "latest": { sort_by: "created_at", sort_order: "desc" },
-  "oldest": { sort_by: "created_at", sort_order: "asc" },
-  "hot": { sort_by: "reaction_count", sort_order: "desc" }
+  latest: { sort_by: "created_at", sort_order: "desc" },
+  oldest: { sort_by: "created_at", sort_order: "asc" },
+  hot: { sort_by: "reaction_count", sort_order: "desc" },
 };
 
 // Update sort handler
 function handleSortChange(value) {
-  const { sort_by, sort_order } = sortMapping[value] || sortMapping.latest;
-  sortBy.value = sort_by;
-  sortOrder.value = sort_order;
+  // const { sort_by, sort_order } = sortMapping[value] || sortMapping.latest;
+  sortBy.value = value;
+  // sortOrder.value = sort_order;
   fetchPosts();
 }
 
@@ -92,13 +96,17 @@ function nextPage() {
 
 async function fetchPosts() {
   try {
+    const { sort_by, sort_order } =
+      sortMapping[sortBy.value] || sortMapping.latest;
+
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/posts?` + new URLSearchParams({
-        page: currentPage.value.toString(),
-        limit: "20", // Using backend's default limit
-        sort_by: sortBy.value,
-        sort_order: sortOrder.value
-      })
+      `https://dev.unikorn.axfff.com/api/posts?` +
+        new URLSearchParams({
+          page: currentPage.value.toString(),
+          limit: "20", // Using backend's default limit
+          sort_by: sort_by, // ✅ 使用转换后的后端字段
+          sort_order: sort_order,
+        })
     );
     const data = await response.json();
 
@@ -122,7 +130,7 @@ async function fetchPosts() {
       comments: post.comment_count || 0,
       view_count: post.view_count || 0,
       views: post.view_count || 0,
-      publishDate: post.created_at // Map created_at to publishDate for the component
+      publishDate: post.created_at, // Map created_at to publishDate for the component
     }));
 
     totalPages.value = data.total_pages;

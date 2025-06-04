@@ -98,9 +98,8 @@ const goToPostDetail = () => {
     <p class="post-excerpt">{{ displayExcerpt }}</p>
 
     <div class="post-stats">
-      <span class="reactions">
-        <i class="fas fa-thumbs-up"></i> {{ `点赞数量：${reaction_count}` }}
-      </span>
+      <!-- <span class="emojireactions">
+      </span> -->
       <span class="comments">
         <i class="fas fa-comment"></i> {{ `评论数量：${comment_count}` }}
       </span>

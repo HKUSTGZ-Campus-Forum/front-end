@@ -40,6 +40,10 @@
           {{ postData.content }}
         </div>
 
+        <div class="post-reactions">
+          <EmojiReactions :post-id="parseInt(postId)" type="post" />
+        </div>
+
         <div class="post-actions" v-if="canDeletePost">
           <button class="delete-button" @click="showDeleteConfirm">
             <i class="fas fa-trash"></i> 删除
@@ -54,7 +58,7 @@
             background: #f8f9fa;
             border-radius: 8px;
           " -->
-          <!-- <h4 style="margin: 0 0 1rem 0; color: #666">🧪 弹窗测试区域</h4>
+        <!-- <h4 style="margin: 0 0 1rem 0; color: #666">🧪 弹窗测试区域</h4>
           <div style="display: flex; gap: 1rem; flex-wrap: wrap">
             <button class="test-btn success-test" @click="testSuccessModal">
               ✅ 测试成功弹窗
@@ -118,6 +122,7 @@ import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
+import EmojiReactions from "~/components/forum/EmojiReation.vue";
 
 // Composables
 const route = useRoute();
@@ -185,16 +190,24 @@ const handleDeleteConfirm = async () => {
     showSuccessModal.value = true;
   } catch (error) {
     console.error("❌ 删除失败:", error);
-    
+
     // 判断错误类型
-    if (error.name === 'TypeError' || error.message.includes('fetch') || error.message.includes('network')) {
+    if (
+      error.name === "TypeError" ||
+      error.message.includes("fetch") ||
+      error.message.includes("network")
+    ) {
       errorMsg.value = "网络连接失败，请检查您的网络设置后重试";
-    } else if (error.message.includes('permission') || error.message.includes('权限') || error.message.includes('403')) {
+    } else if (
+      error.message.includes("permission") ||
+      error.message.includes("权限") ||
+      error.message.includes("403")
+    ) {
       errorMsg.value = "您没有权限执行此操作，请联系管理员获取相应权限";
     } else {
       errorMsg.value = error.message || "删除失败，请稍后重试";
     }
-    
+
     showErrorModal.value = true;
   }
 };
@@ -285,6 +298,16 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.post-reactions {
+  margin: 2rem 0;
+  padding: 1.5rem 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  background: rgba(248, 249, 250, 0.5);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
 .post-container {
   max-width: 800px;
   margin: 0 auto;

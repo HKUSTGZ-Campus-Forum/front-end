@@ -361,15 +361,33 @@ const handleSubmit = async () => {
     if (!response.ok) {
       // 处理错误响应
       let errorMessage = "发布失败";
+      
+      if (response.status === 401) {
+      errorMessage = "请先登录后再发布帖子";
+      } else if (response.status === 403) {
+      errorMessage = "您没有权限发布帖子";
+      } else if (response.status === 400) {
       try {
         const errorData = await response.json();
-        errorMessage =
-          errorData.message ||
-          errorData.error ||
-          `发布失败: ${response.status}`;
+        errorMessage = errorData.message || "请求参数错误，请检查输入内容";
+      } catch {
+        errorMessage = "请求参数错误，请检查输入内容";
+      }
+      } else if (response.status === 413) {
+      errorMessage = "上传内容过大，请减少图片数量或压缩图片";
+      } else if (response.status === 429) {
+      errorMessage = "发布过于频繁，请稍后再试";
+      } else if (response.status >= 500) {
+      errorMessage = "服务器错误，请稍后重试";
+      } else if (response.status === 0 || !navigator.onLine) {
+      errorMessage = "网络连接失败，请检查网络后重试";
+      } else {
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || `发布失败: ${response.status}`;
       } catch (parseError) {
-        // 如果无法解析 JSON，使用默认错误信息
         errorMessage = `发布失败: ${response.status} ${response.statusText}`;
+      }
       }
 
       console.error("❌ 发帖失败:", errorMessage);
