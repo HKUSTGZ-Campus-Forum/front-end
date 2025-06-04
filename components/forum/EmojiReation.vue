@@ -268,10 +268,64 @@ const toggleEmojiPicker = async () => {
 
 const selectEmoji = async (emoji) => {
   try {
-    await toggleReaction(emoji);
+    // 🔥 修复：从列表选择时强制单选
+    console.log("📝 从列表选择表情:", emoji.id);
+
+    // 先删除所有现有反应
+    if (userReactions.value.length > 0) {
+      console.log("🔄 清除现有反应:", userReactions.value);
+
+      for (const existingEmoji of [...userReactions.value]) {
+        try {
+          let deleteUrl;
+          if (props.type === "post") {
+            deleteUrl = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${existingEmoji.id}`;
+          } else {
+            deleteUrl = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${existingEmoji.id}`;
+          }
+
+          await fetchWithAuth(deleteUrl, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          console.log(`✅ 删除表情: ${existingEmoji.id}`);
+        } catch (error) {
+          console.error(`❌ 删除表情失败: ${existingEmoji.id}`, error);
+        }
+      }
+    }
+
+    // 检查是否要添加新表情（如果点击的不是当前已选择的）
+    const wasAlreadySelected = isUserReacted(emoji.id);
+
+    if (!wasAlreadySelected) {
+      // 添加新表情
+      let addUrl, body;
+      if (props.type === "post") {
+        addUrl = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
+      } else {
+        addUrl = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
+      }
+
+      body = JSON.stringify({ emoji_id: emoji.id });
+
+      await fetchWithAuth(addUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body,
+      });
+
+      console.log(`✅ 添加表情: ${emoji.id}`);
+    }
+
+    // 重新获取数据
+    await fetchReactions();
     showEmojiPicker.value = false;
   } catch (error) {
     console.error("选择表情失败:", error);
+    showEmojiPicker.value = false;
+    alert("选择表情失败，请重试");
   }
 };
 
