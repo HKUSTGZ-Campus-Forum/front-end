@@ -284,13 +284,14 @@ const toggleReaction = async (emoji) => {
   try {
     const isCurrentlyReacted = isUserReacted(emoji.id);
     const method = isCurrentlyReacted ? "DELETE" : "POST";
-
+    if (!isCurrentlyReacted) {
+      await removeUserOtherReactions(emoji.id);
+    }
     let url, body;
 
     if (props.type === "post") {
       if (method === "DELETE") {
         url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`;
-        body = undefined;
       } else {
         url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
         body = JSON.stringify({ emoji_id: emoji.id });
@@ -298,81 +299,40 @@ const toggleReaction = async (emoji) => {
     } else {
       if (method === "DELETE") {
         url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`;
-        body = undefined;
       } else {
         url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
         body = JSON.stringify({ emoji_id: emoji.id });
       }
     }
 
-    // 🔥 添加URL验证
-    console.log("🎭 构建的请求URL:", url);
-
-    if (!url.includes("/reactions")) {
-      console.error("❌ URL构建错误:", url);
-      throw new Error("请求URL构建错误");
-    }
-
     const requestOptions = {
       method,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     };
 
     if (body !== undefined) {
       requestOptions.body = body;
     }
 
-    console.log("🎭 发送表情反应请求:", {
-      url,
-      method,
-      headers: requestOptions.headers,
-      body: requestOptions.body,
-    });
+    console.log("🎭 发送请求:", { url, method, emojiId: emoji.id });
 
     const response = await fetchWithAuth(url, requestOptions);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ 请求失败:", errorText);
       throw new Error(`操作失败 (${response.status}): ${errorText}`);
     }
 
-    console.log("✅ 表情反应操作成功");
+    console.log("✅ 操作成功");
 
-    // 🔥 修复问题2：实现单选表情逻辑
-    if (isCurrentlyReacted) {
-      // 移除反应
-      userReactions.value = userReactions.value.filter(
-        (e) => e.id !== emoji.id
-      );
-      if (reactions.value[emoji.id]) {
-        reactions.value[emoji.id].count--;
-        if (reactions.value[emoji.id].count <= 0) {
-          delete reactions.value[emoji.id];
-        }
-      }
-    } else {
-      // 🔥 问题2修复：添加反应前先清除用户的其他反应
-      await removeUserOtherReactions(emoji.id);
-
-      // 添加新反应
-      userReactions.value.push(emoji);
-      if (reactions.value[emoji.id]) {
-        reactions.value[emoji.id].count++;
-      } else {
-        reactions.value[emoji.id] = {
-          emoji: emoji,
-          count: 1,
-        };
-      }
-    }
+    // 重新获取数据确保同步
+    await fetchReactions();
   } catch (error) {
-    console.error("表情反应操作失败:", error);
+    console.error("操作失败:", error);
     alert(error.message || "操作失败，请重试");
   }
 };
+
 // 获取可用表情列表
 const fetchAvailableEmojis = async () => {
   try {
