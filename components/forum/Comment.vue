@@ -85,6 +85,7 @@ import { formatDate } from "~/utils/dateFormat";
 import type { Comment } from "~/types/comment";
 import { useUser } from "~/composables/useUser";
 import { onMounted } from "vue";
+import CommentForm from "./CommentForm.vue";
 import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
 
 interface Props {
