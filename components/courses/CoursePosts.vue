@@ -1,0 +1,532 @@
+<!-- components/course/CoursePosts.vue -->
+<template>
+  <div class="course-posts-section">
+    <!-- 学期选择 -->
+    <div class="semester-section">
+      <h3>
+        <i class="fas fa-calendar-alt"></i>
+        选择学期
+      </h3>
+      <div class="semester-tabs">
+        <button
+          v-for="semester in availableSemesters"
+          :key="semester"
+          @click="selectSemester(semester)"
+          :class="['semester-tab', { active: selectedSemester === semester }]"
+        >
+          {{ semester }}
+        </button>
+        <button
+          @click="selectSemester(null)"
+          :class="['semester-tab', { active: selectedSemester === null }]"
+        >
+          全部学期
+        </button>
+      </div>
+    </div>
+
+    <!-- 评课帖子列表 -->
+    <div class="posts-section">
+      <div class="posts-header">
+        <h3>
+          <i class="fas fa-comments"></i>
+          评课帖子
+          <span v-if="selectedSemester">({{ selectedSemester }})</span>
+          <span class="posts-count">({{ postsData.total_count || 0 }})</span>
+        </h3>
+        <NuxtLink
+          :to="`/forum/create?course=${courseCode}&semester=${
+            selectedSemester || ''
+          }`"
+          class="create-post-btn"
+        >
+          <i class="fas fa-plus"></i>
+          发表评课
+        </NuxtLink>
+      </div>
+
+      <!-- 帖子加载状态 -->
+      <div v-if="isLoadingPosts" class="posts-loading">
+        <div class="loading-spinner small"></div>
+        <p>加载评课帖子中...</p>
+      </div>
+
+      <!-- 无帖子状态 -->
+      <div v-else-if="!posts.length" class="no-posts">
+        <i class="fas fa-comments"></i>
+        <h4>暂无评课帖子</h4>
+        <p>成为第一个评价这门课程的同学吧！</p>
+        <NuxtLink
+          :to="`/forum/create?course=${courseCode}&semester=${
+            selectedSemester || ''
+          }`"
+          class="create-first-post-btn"
+        >
+          发表第一篇评课
+        </NuxtLink>
+      </div>
+
+      <!-- 帖子列表 -->
+      <div v-else class="posts-list">
+        <div v-for="post in posts" :key="post.id" class="post-card">
+          <div class="post-header">
+            <h4 class="post-title">
+              <NuxtLink :to="`/forum/posts/${post.id}`">
+                {{ post.title }}
+              </NuxtLink>
+            </h4>
+            <div class="post-meta">
+              <span class="post-author">{{
+                post.author?.username || "匿名"
+              }}</span>
+              <span class="post-date">{{ formatDate(post.created_at) }}</span>
+            </div>
+          </div>
+
+          <div class="post-content">
+            {{ truncateContent(post.content, 150) }}
+          </div>
+
+          <div class="post-tags" v-if="post.tags?.length">
+            <span v-for="tag in post.tags" :key="tag.id" class="post-tag">
+              {{ tag.name }}
+            </span>
+          </div>
+
+          <div class="post-stats">
+            <span class="post-views">
+              <i class="fas fa-eye"></i>
+              {{ post.view_count || 0 }}
+            </span>
+            <span class="post-likes">
+              <i class="fas fa-heart"></i>
+              {{ post.like_count || 0 }}
+            </span>
+            <span class="post-comments">
+              <i class="fas fa-comment"></i>
+              {{ post.comment_count || 0 }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div v-if="postsData.total_pages > 1" class="pagination">
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage <= 1"
+          class="page-btn"
+        >
+          上一页
+        </button>
+        <span class="page-info">
+          第 {{ currentPage }} 页，共 {{ postsData.total_pages }} 页
+        </span>
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage >= postsData.total_pages"
+          class="page-btn"
+        >
+          下一页
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useApi } from "~/composables/useApi";
+
+// 🔥 Props 定义
+interface Props {
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+}
+
+const props = defineProps<Props>();
+
+// 🔥 接口定义
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  author?: {
+    username: string;
+  };
+  created_at: string;
+  view_count?: number;
+  like_count?: number;
+  comment_count?: number;
+  tags?: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
+interface PostsData {
+  posts: Post[];
+  total_count: number;
+  total_pages: number;
+  current_page: number;
+}
+
+// 🔥 Composables
+const { fetchWithAuth } = useApi();
+
+// 🔥 响应式数据
+const postsData = ref<PostsData>({
+  posts: [],
+  total_count: 0,
+  total_pages: 0,
+  current_page: 1,
+});
+
+const posts = computed(() => postsData.value.posts);
+const currentPage = ref(1);
+const selectedSemester = ref<string | null>(null);
+const availableSemesters = ref<string[]>(["2024春", "2024秋", "2025春"]);
+const isLoadingPosts = ref(false);
+
+// 🔥 核心业务逻辑
+
+// 🔥 使用后端API获取课程帖子
+const fetchCoursePosts = async () => {
+  try {
+    isLoadingPosts.value = true;
+
+    const params = new URLSearchParams({
+      page: currentPage.value.toString(),
+      limit: "10",
+    });
+
+    if (selectedSemester.value) {
+      params.append("semester", selectedSemester.value);
+    }
+
+    console.log("📤 获取课程帖子:", params.toString());
+
+    // 🔥 使用后端提供的API端点
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/courses/${props.courseId}/posts?${params}`
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      postsData.value = data;
+      console.log("✅ 课程帖子获取成功:", data);
+    } else {
+      console.error("❌ 获取课程帖子失败:", response.status);
+      // 🔥 设置空数据，不影响页面显示
+      postsData.value = {
+        posts: [],
+        total_count: 0,
+        total_pages: 0,
+        current_page: 1,
+      };
+    }
+  } catch (error) {
+    console.error("❌ 获取课程帖子失败:", error);
+    // 🔥 设置空数据
+    postsData.value = {
+      posts: [],
+      total_count: 0,
+      total_pages: 0,
+      current_page: 1,
+    };
+  } finally {
+    isLoadingPosts.value = false;
+  }
+};
+
+// 🔥 选择学期并重新加载帖子
+const selectSemester = (semester: string | null) => {
+  selectedSemester.value = semester;
+  currentPage.value = 1; // 重置到第一页
+  fetchCoursePosts();
+};
+
+// 分页处理
+const changePage = (page: number) => {
+  if (page >= 1 && page <= postsData.value.total_pages) {
+    currentPage.value = page;
+    fetchCoursePosts();
+  }
+};
+
+// 🔥 工具函数
+const formatDate = (dateString: string) => {
+  if (!dateString) return "未知";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  } catch {
+    return "日期格式错误";
+  }
+};
+
+const truncateContent = (content: string, maxLength: number) => {
+  if (!content) return "";
+  if (content.length <= maxLength) return content;
+  return content.substring(0, maxLength) + "...";
+};
+
+// 🔥 生命周期
+onMounted(() => {
+  console.log("🔄 课程帖子组件加载，课程ID:", props.courseId);
+  fetchCoursePosts();
+});
+</script>
+
+<style lang="scss" scoped>
+.course-posts-section {
+  border-top: 1px solid #f0f0f0;
+}
+
+.semester-section,
+.posts-section {
+  padding: 2rem;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+
+    i {
+      color: #3498db;
+    }
+
+    .posts-count {
+      color: #666;
+      font-size: 0.9rem;
+      font-weight: normal;
+    }
+  }
+}
+
+// 学期选择
+.semester-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.semester-tab {
+  padding: 0.5rem 1rem;
+  border: 2px solid #ddd;
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #3498db;
+  }
+
+  &.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+  }
+}
+
+// 帖子区域样式（与原来的保持一致）
+.posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .create-post-btn {
+    background: #4caf50;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: #45a049;
+    }
+  }
+}
+
+.posts-loading {
+  text-align: center;
+  padding: 2rem;
+
+  .loading-spinner.small {
+    width: 30px;
+    height: 30px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+.no-posts {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #666;
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .create-first-post-btn {
+    background: #3498db;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 1rem;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: #2980b9;
+    }
+  }
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.post-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.post-header {
+  margin-bottom: 1rem;
+
+  .post-title a {
+    color: #2c3e50;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+
+    &:hover {
+      color: #3498db;
+    }
+  }
+
+  .post-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #666;
+  }
+}
+
+.post-content {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.post-tags {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  .post-tag {
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+  }
+}
+
+.post-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #666;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+
+  .page-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+
+    &:hover:not(:disabled) {
+      background: #f8f9fa;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-info {
+    color: #666;
+    font-size: 0.875rem;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>

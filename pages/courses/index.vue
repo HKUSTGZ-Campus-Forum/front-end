@@ -34,9 +34,13 @@
             <span class="course-credits">{{ course.credits }} 学分</span>
           </div>
           <h3 class="course-name">{{ course.name }}</h3>
-          <p class="course-description">{{ course.description || '暂无课程描述' }}</p>
+          <p class="course-description">
+            {{ course.description || "暂无课程描述" }}
+          </p>
           <div class="course-footer">
-            <span class="instructor">讲师: {{ course.instructor?.username || '未分配' }}</span>
+            <span class="instructor"
+              >讲师: {{ course.instructor?.username || "未分配" }}</span
+            >
             <NuxtLink :to="`/courses/${course.id}`" class="view-course">
               查看课程
             </NuxtLink>
@@ -58,9 +62,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useApi } from '~/composables/useApi';
-import { useAuth } from '~/composables/useAuth';
+import { ref, onMounted } from "vue";
+import { useApi } from "~/composables/useApi";
+import { useAuth } from "~/composables/useAuth";
 
 interface Course {
   id: number;
@@ -85,9 +89,9 @@ const { isLoggedIn } = useAuth();
 
 const courses = ref<Course[]>([]);
 const isLoading = ref(true);
-const searchQuery = ref('');
-const sortBy = ref('code');
-const sortOrder = ref('asc');
+const searchQuery = ref("");
+const sortBy = ref("code");
+const sortOrder = ref("asc");
 
 // 防抖函数
 const debounce = (fn: Function, delay: number) => {
@@ -101,17 +105,19 @@ const debounce = (fn: Function, delay: number) => {
 // 获取讲师信息
 const fetchInstructorInfo = async (instructorId: number) => {
   try {
-    const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/public/${instructorId}`);
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/users/public/${instructorId}`
+    );
     if (!response.ok) {
-      throw new Error('Failed to fetch instructor info');
+      throw new Error("Failed to fetch instructor info");
     }
     const data = await response.json();
     return {
       id: data.id,
-      username: data.username
+      username: data.username,
     };
   } catch (error) {
-    console.error('获取讲师信息失败:', error);
+    console.error("获取讲师信息失败:", error);
     return null;
   }
 };
@@ -123,15 +129,17 @@ const fetchCourses = async () => {
     const queryParams = new URLSearchParams({
       q: searchQuery.value,
       sort_by: sortBy.value,
-      sort_order: sortOrder.value
+      sort_order: sortOrder.value,
     });
 
-    const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/courses?${queryParams.toString()}`);
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/courses?${queryParams.toString()}`
+    );
     if (!response.ok) {
-      throw new Error('Failed to fetch courses');
+      throw new Error("Failed to fetch courses");
     }
     const data = await response.json();
-    
+
     // 获取所有课程的讲师信息
     const coursesWithInstructors = await Promise.all(
       data.map(async (course: Course) => {
@@ -142,10 +150,10 @@ const fetchCourses = async () => {
         return course;
       })
     );
-    
+
     courses.value = coursesWithInstructors;
   } catch (error) {
-    console.error('获取课程列表失败:', error);
+    console.error("获取课程列表失败:", error);
   } finally {
     isLoading.value = false;
   }
@@ -298,6 +306,7 @@ onMounted(() => {
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -357,4 +366,4 @@ onMounted(() => {
     font-size: 1.125rem;
   }
 }
-</style> 
+</style>
