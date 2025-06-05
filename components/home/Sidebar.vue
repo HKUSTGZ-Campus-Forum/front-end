@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 导入国际化相关功能（如果需要）
 import { useI18n } from "vue-i18n";
+import { useRoute } from '#app';  // Use Nuxt's built-in composables
 const { t } = useI18n();
 
 const props = defineProps({
@@ -12,6 +13,8 @@ const props = defineProps({
 
 const { user, isLoggedIn } = useAuth();
 const { fetchWithAuth } = useApi();
+
+const route = useRoute();
 
 const currentUserId = computed(() => {
   // console.log("🔍 当前用户状态:", isLoggedIn.value, user.value);
@@ -61,7 +64,7 @@ function handleMouseLeave() {
 }
 
 // 监控悬停状态变化
-watch(isHovered, (newValue) => {
+watch(isHovered, (newValue: boolean) => {
   // 只在折叠状态下才触发展开
   if (props.folded) {
     emit("update:folded", !newValue);
@@ -83,11 +86,30 @@ watch(isHovered, (newValue) => {
         </div>
       </div>
       <ul class="nav-items">
-        <li><NuxtLink to="/">首页</NuxtLink></li>
-        <li><NuxtLink to="/forum">论坛</NuxtLink></li>
-        <li><NuxtLink to="/courses">课程</NuxtLink></li>
-        <li><NuxtLink :to="`/users/${currentUserId}`">用户</NuxtLink></li>
-        <!-- 更多菜单项 -->
+        <li>
+          <NuxtLink 
+            to="/" 
+            :class="{ active: route.path === '/' }"
+          >首页</NuxtLink>
+        </li>
+        <li>
+          <NuxtLink 
+            to="/forum" 
+            :class="{ active: route.path.startsWith('/forum') }"
+          >论坛</NuxtLink>
+        </li>
+        <li>
+          <NuxtLink 
+            to="/courses" 
+            :class="{ active: route.path.startsWith('/courses') }"
+          >课程</NuxtLink>
+        </li>
+        <li>
+          <NuxtLink 
+            :to="`/users/${currentUserId}`"
+            :class="{ active: route.path.startsWith('/users/') }"
+          >用户</NuxtLink>
+        </li>
       </ul>
     </div>
   </div>
@@ -98,6 +120,8 @@ watch(isHovered, (newValue) => {
   display: flex;
   justify-content: center;
   padding: 1rem 0;
+  height: 120px; /* Reserve space for logo expansion */
+  position: relative; /* For absolute positioning of logo */
 }
 
 .uniKonwn-logo {
@@ -106,16 +130,24 @@ watch(isHovered, (newValue) => {
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &:hover {
-    transform: scale(1.12) rotate(360deg);
+    img {
+      transform: scale(1.12) rotate(360deg);
+    }
     border-color: rgba(255, 255, 255, 0.8);
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
   }
@@ -125,7 +157,11 @@ watch(isHovered, (newValue) => {
 .sidebar.collapsed .uniKonwn-logo {
   width: 50px;
   height: 50px;
-  margin: 0 auto;
+  transform: translate(-50%, -50%);
+  
+  img {
+    transform: none;
+  }
 }
 
 .sidebar {
@@ -156,10 +192,13 @@ watch(isHovered, (newValue) => {
   .nav-items {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 1rem 0 0 0; /* Add top margin to prevent overlap */
+    position: relative; /* Ensure proper stacking context */
 
     li {
       margin-bottom: 0.5rem;
+      position: relative; /* For proper stacking */
+      z-index: 1; /* Ensure items stay above other elements */
     }
 
     a {
@@ -168,12 +207,32 @@ watch(isHovered, (newValue) => {
       display: block;
       padding: 0.5rem;
       border-radius: 4px;
-      font-size: 16px; // 大小
-      font-weight: 500; // 字体粗细
+      font-size: 16px;
+      font-weight: 500;
       margin-left: -10px;
-      &:hover,
-      &.active {
+      transition: all 0.3s ease;
+      position: relative;
+
+      &:hover {
         background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+
+      &.active {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+        font-weight: 600;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          left: -10px;
+          top: 0;
+          height: 100%;
+          width: 4px;
+          background-color: white;
+          border-radius: 0 2px 2px 0;
+        }
       }
     }
   }
