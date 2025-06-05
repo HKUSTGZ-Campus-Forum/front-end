@@ -14,10 +14,16 @@
             userReactions.length === 1 && isUserReacted(reaction.emoji.id),
         }"
       >
-        <!-- 🔥 修复：使用 emoji_code 字段 -->
-        <span class="emoji">{{
-          getEmojiFromCode(reaction.emoji.emoji_code) || "❓"
-        }}</span>
+        <!-- Modified: Use image URL if available, fallback to emoji code -->
+        <span class="emoji">
+          <img 
+            v-if="reaction.emoji.image_url" 
+            :src="reaction.emoji.image_url" 
+            :alt="reaction.emoji.description || 'emoji'"
+            class="emoji-image"
+          />
+          <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "❓" }}</span>
+        </span>
         <span class="count">{{ reaction.count }}</span>
         <!-- 🔥 添加用户选择指示器 -->
         <span v-if="isUserReacted(reaction.emoji.id)" class="user-indicator"
@@ -54,7 +60,14 @@
                 class="emoji-option"
                 :title="`${emoji.description || '表情'} (ID: ${emoji.id})`"
               >
-                {{ emoji.emoji_code || "❓" }}
+                <!-- Modified: Use image URL if available, fallback to emoji code -->
+                <img 
+                  v-if="emoji.image_url" 
+                  :src="emoji.image_url" 
+                  :alt="emoji.description || 'emoji'"
+                  class="emoji-image"
+                />
+                <span v-else>{{ emoji.emoji_code || "❓" }}</span>
               </button>
             </div>
 
@@ -558,7 +571,15 @@ onUnmounted(() => {
   }
 
   .emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1rem;
+    
+    img {
+      width: 1.2em;
+      height: 1.2em;
+    }
   }
 
   .count {
@@ -663,6 +684,12 @@ onUnmounted(() => {
   &:active {
     transform: scale(1.1);
   }
+
+  img {
+    width: 1.2em;
+    height: 1.2em;
+    object-fit: contain;
+  }
 }
 
 @keyframes emojiPickerSlideIn {
@@ -693,5 +720,12 @@ onUnmounted(() => {
   &:hover {
     background: #a8a8a8;
   }
+}
+
+.emoji-image {
+  width: 1.2em;
+  height: 1.2em;
+  object-fit: contain;
+  vertical-align: middle;
 }
 </style>
