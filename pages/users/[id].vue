@@ -20,8 +20,6 @@ interface UserInfo {
   bio?: string;
   createdAt?: string;
   created_at?: string;
-  lastActiveAt?: string;
-  last_active_at?: string;
   role_name?: string; // 🔥 后端返回的角色名
 }
 
@@ -62,22 +60,25 @@ const fetchUserInfo = async () => {
     // console.log("🔍 用户登录状态:", isLoggedIn.value);
 
     let response;
+    let statsResponse;
 
     if (isLoggedIn.value) {
       // 🔥 已登录：使用认证API获取完整信息
       //   console.log("🔐 使用认证API");
-      response = await fetchWithAuth(
-        `https://dev.unikorn.axfff.com/api/users/${userId}`
-      );
+      [response, statsResponse] = await Promise.all([
+        fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/${userId}`),
+        fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/${userId}/stats`)
+      ]);
     } else {
       // 🔥 未登录：使用公开API获取基本信息
       console.log("🌐 使用公开API");
-      response = await fetch(
-        `https://dev.unikorn.axfff.com/api/users/public/${userId}`
-      );
+      [response, statsResponse] = await Promise.all([
+        fetch(`https://dev.unikorn.axfff.com/api/users/public/${userId}`),
+        fetch(`https://dev.unikorn.axfff.com/api/users/${userId}/stats`)
+      ]);
     }
 
-    console.log("📡 响应状态:", response.status);
+    console.log("📡 响应状态:", response.status, statsResponse.status);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -106,8 +107,15 @@ const fetchUserInfo = async () => {
       }
     }
 
+    if (!statsResponse.ok) {
+      console.warn("获取用户统计数据失败:", statsResponse.status);
+      // Don't throw error for stats, just use default values
+    }
+
     const data = await response.json();
+    const statsData = statsResponse.ok ? await statsResponse.json() : null;
     // console.log("📥 获取到的用户数据:", data);
+    // console.log("📊 获取到的统计数据:", statsData);
 
     // 🔥 适配后端返回的数据结构
     userInfo.value = {
@@ -119,19 +127,19 @@ const fetchUserInfo = async () => {
       bio: data.bio,
       createdAt: data.created_at,
       created_at: data.created_at,
-      lastActiveAt: data.last_active_at,
-      last_active_at: data.last_active_at,
       role_name: data.role_name,
     };
 
-    // 🔥 统计数据（可能需要单独API获取）
-    userStats.value = {
-      postCount: data.post_count || 0,
-      commentCount: data.comment_count || 0,
-      likesReceived: data.likes_received || 0,
-      viewCount: data.view_count || 0,
-      totalScore: data.total_score || 0,
-    };
+    // 🔥 使用新的统计数据API
+    if (statsData) {
+      userStats.value = {
+        postCount: statsData.post_count || 0,
+        commentCount: statsData.comment_count || 0,
+        likesReceived: statsData.likes_received || 0,
+        viewCount: statsData.view_count || 0,
+        totalScore: statsData.total_score || 0,
+      };
+    }
   } catch (err: any) {
     console.error("获取用户信息失败:", err);
     error.value = err.message || "获取用户信息失败";
@@ -168,6 +176,11 @@ const formatDate = (dateString?: string) => {
   } catch {
     return "日期格式错误";
   }
+};
+
+// Add a function to format UID
+const formatUID = (id: number) => {
+  return id.toString().padStart(10, '0');
 };
 
 onMounted(() => {
@@ -271,8 +284,8 @@ useHead({
           <!-- 详细信息 -->
           <div class="user-details">
             <div class="detail-item">
-              <span class="detail-label">注册序号</span>
-              <span class="detail-value">{{ userInfo.id || "未知" }}</span>
+              <span class="detail-label">UID</span>
+              <span class="detail-value">{{ formatUID(userInfo.id) || "未知" }}</span>
             </div>
 
             <div class="detail-item">
@@ -282,31 +295,18 @@ useHead({
 
             <div class="detail-item">
               <span class="detail-label">评论数</span>
-              <span class="detail-value">{{
-                userStats.commentCount || 0
-              }}</span>
+              <span class="detail-value">{{ userStats.commentCount || 0 }}</span>
             </div>
 
             <div class="detail-item">
               <span class="detail-label">注册时间</span>
-              <span class="detail-value">{{
-                formatDate(userInfo.created_at)
-              }}</span>
-            </div>
-
-            <div class="detail-item" v-if="userInfo.last_active_at">
-              <span class="detail-label">最后活跃</span>
-              <span class="detail-value">{{
-                formatDate(userInfo.last_active_at)
-              }}</span>
+              <span class="detail-value">{{ formatDate(userInfo.created_at) }}</span>
             </div>
 
             <!-- 🔥 只有登录用户查看自己信息时显示邮箱 -->
             <div
               class="detail-item"
-              v-if="
-                isLoggedIn && user?.id == String(userInfo.id) && userInfo.email
-              "
+              v-if="isLoggedIn && user?.id == String(userInfo.id) && userInfo.email"
             >
               <span class="detail-label">邮箱</span>
               <span class="detail-value">{{ userInfo.email }}</span>
@@ -317,7 +317,7 @@ useHead({
           <div class="user-bio-section">
             <h3 class="bio-title">个人简介</h3>
             <div class="bio-content">
-              {{ userInfo.bio || "这个用户很懒，什么都没有留下..." }}
+              This guy's not lazy, but developer haven't implement it yet XD
             </div>
           </div>
         </div>
