@@ -50,7 +50,6 @@ const isLoading = ref(false);
 
 // 检查用户是否已认证
 const isAuthenticated = computed(() => {
-  console.log("用户认证状态:", !!user.value, user.value);
   return !!user.value;
 });
 
@@ -65,14 +64,13 @@ const fetchComments = async () => {
       top_level_only: "true", // 只获取顶级评论
     });
 
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `https://dev.unikorn.axfff.com/api/comments/post/${props.postId}?${params}`
     );
 
     if (!response.ok) throw new Error("获取评论失败");
 
     const data = await response.json();
-    console.log("📥 获取到的评论数据:", data);
     comments.value = data.comments || [];
   } catch (error) {
     console.error("获取评论失败:", error);

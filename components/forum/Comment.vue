@@ -176,26 +176,13 @@ const deleteComment = () => {
 
 // 确认删除处理
 const handleDeleteConfirm = async () => {
-  // showConfirmModal.value = false;
-
   try {
-    console.log(
-      "📤 发送删除请求:",
-      `https://dev.unikorn.axfff.com/api/comments/${props.comment.id}`
-    );
-
     const response = await fetchWithAuth(
       `https://dev.unikorn.axfff.com/api/comments/${props.comment.id}`,
       {
         method: "DELETE",
       }
     );
-
-    console.log("📥 删除响应:", {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-    });
 
     if (!response.ok) {
       // 🔥 关闭确认弹窗，显示错误弹窗
@@ -223,18 +210,7 @@ const handleDeleteConfirm = async () => {
 
 // 权限检查
 const canDelete = computed(() => {
-  const result =
-    isAuthenticated.value && Number(user.value?.id) === props.comment.user_id;
-
-  console.log("🔐 权限检查结果:", {
-    isAuthenticated: isAuthenticated.value,
-    currentUserId: user.value?.id,
-    commentUserId: props.comment.user_id,
-    numberComparison: Number(user.value?.id) === props.comment.user_id,
-    canDelete: result,
-  });
-
-  return result;
+  return isAuthenticated.value && Number(user.value?.id) === props.comment.user_id;
 });
 
 onMounted(() => {

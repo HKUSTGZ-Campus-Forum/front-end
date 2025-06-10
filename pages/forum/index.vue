@@ -99,7 +99,7 @@ async function fetchPosts() {
     const { sort_by, sort_order } =
       sortMapping[sortBy.value] || sortMapping.latest;
 
-    const response = await fetchWithAuth(
+    const response = await fetch(
       `https://dev.unikorn.axfff.com/api/posts?` +
         new URLSearchParams({
           page: currentPage.value.toString(),

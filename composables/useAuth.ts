@@ -116,6 +116,14 @@ export function useAuth() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`获取用户资料失败(${response.status}):`, errorText);
+        
+        // If unauthorized, clear tokens and don't show error (silent fail)
+        if (response.status === 401) {
+          console.warn("Token expired or invalid, clearing auth state");
+          logout();
+          return;
+        }
+        
         error.value = `获取用户资料失败(${response.status})`;
         return;
       }
@@ -178,10 +186,19 @@ export function useAuth() {
 
   // Token refresh function
   async function refreshAccessToken() {
-    if (!refreshToken.value || isRefreshing.value) return null;
+    console.log('🔄 Attempting token refresh...', {
+      hasRefreshToken: !!refreshToken.value,
+      isRefreshing: isRefreshing.value
+    });
+    
+    if (!refreshToken.value || isRefreshing.value) {
+      console.warn('❌ Cannot refresh: missing refresh token or already refreshing');
+      return null;
+    }
     
     isRefreshing.value = true;
     try {
+      console.log('📤 Sending refresh request to:', "https://dev.unikorn.axfff.com/api/auth/refresh");
       const response = await fetch("https://dev.unikorn.axfff.com/api/auth/refresh", {
         method: "POST",
         headers: {
@@ -189,16 +206,25 @@ export function useAuth() {
         }
       });
 
+      console.log('📥 Refresh response:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
+
       if (!response.ok) {
-        throw new Error("Failed to refresh token");
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('❌ Refresh failed:', response.status, errorText);
+        throw new Error(`Failed to refresh token: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ Token refresh successful, new token received');
       accessToken.value = data.access_token;
       safeLocalStorage("set", "auth_token", data.access_token);
       return data.access_token;
     } catch (err) {
-      console.error("Token refresh failed:", err);
+      console.error("❌ Token refresh failed:", err);
       await logout();
       throw err;
     } finally {
@@ -231,15 +257,29 @@ export function useAuth() {
       }
 
       const data = await response.json();
+      console.log('🔑 Login response data:', {
+        hasAccessToken: !!data.access_token,
+        hasRefreshToken: !!data.refresh_token,
+        hasUser: !!data.user,
+        dataKeys: Object.keys(data)
+      });
+      
       accessToken.value = data.access_token;
       refreshToken.value = data.refresh_token;
       user.value = data.user;
 
+      console.log('💾 Storing tokens in localStorage...');
       safeLocalStorage("set", "auth_token", data.access_token);
       safeLocalStorage("set", "refresh_token", data.refresh_token);
       if (data.user) {
         safeLocalStorage("set", "user_info", JSON.stringify(data.user));
       }
+      
+      console.log('✅ Tokens stored. Current state:', {
+        accessTokenSet: !!accessToken.value,
+        refreshTokenSet: !!refreshToken.value,
+        userSet: !!user.value
+      });
 
       if (user.value?.isFirstLogin) {
         navigateTo("/setting/background");
@@ -259,16 +299,19 @@ export function useAuth() {
 
   // Logout function
   async function logout() {
+    console.log('🚪 Logging out user...');
     loading.value = true;
     error.value = null;
 
     try {
       if (accessToken.value) {
+        console.log('📤 Sending logout request to server...');
         await authFetch("https://dev.unikorn.axfff.com/api/auth/logout", {
           method: "POST",
         }).catch(console.error);
       }
 
+      console.log('🧹 Clearing auth state and localStorage...');
       user.value = null;
       accessToken.value = null;
       refreshToken.value = null;
@@ -277,6 +320,7 @@ export function useAuth() {
       safeLocalStorage("remove", "refresh_token");
       safeLocalStorage("remove", "user_info");
 
+      console.log('✅ Logout complete, redirecting to home');
       navigateTo("/");
       return true;
     } catch (err) {

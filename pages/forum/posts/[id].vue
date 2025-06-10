@@ -40,6 +40,41 @@
           {{ postData.content }}
         </div>
 
+        <!-- Debug URLs -->
+        <div v-if="postData?.files?.length > 0" class="debug-urls" style="background: #f0f0f0; padding: 1rem; margin: 1rem 0; font-size: 0.875rem;">
+          <strong>Debug URLs:</strong>
+          <div v-for="file in postData.files" :key="file?.id || Math.random()" style="margin: 0.5rem 0; word-break: break-all;">
+            <div><strong>{{ file?.original_filename || 'Unknown' }}:</strong></div>
+            <div>{{ file?.url || 'No URL' }}</div>
+          </div>
+        </div>
+
+        <!-- Post Images -->
+        <div v-if="postData?.files?.length > 0" class="post-images">
+          <div class="image-gallery">
+            <div 
+              v-for="file in postData.files.filter(f => f && isImageFile(f))" 
+              :key="file.id"
+              class="image-item"
+            >
+              <div class="image-container">
+                <img 
+                  :src="file.url" 
+                  :alt="file.original_filename || 'Image'"
+                  class="post-image"
+                  @click="openImageModal(file)"
+                  @error="handleImageError"
+                  @load="handleImageLoad"
+                  :data-filename="file.original_filename || 'unknown'"
+                />
+                <div class="image-overlay">
+                  <span class="image-filename">{{ file.original_filename || 'Unknown' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="post-reactions">
           <EmojiReactions :post-id="parseInt(postId)" type="post" />
         </div>
@@ -167,7 +202,6 @@ const showDeleteConfirm = () => {
 // 处理删除确认
 const handleDeleteConfirm = async () => {
   try {
-    console.log("🗑️ 开始删除帖子:", postId);
 
     const response = await fetchWithAuth(
       `https://dev.unikorn.axfff.com/api/posts/${postId}`,
@@ -183,8 +217,6 @@ const handleDeleteConfirm = async () => {
       showConfirmModal.value = false;
       return;
     }
-
-    console.log("✅ 删除成功");
 
     // 显示成功弹窗
     showSuccessModal.value = true;
@@ -257,7 +289,6 @@ const fetchPostData = async () => {
     }
 
     const data = await response.json();
-    console.log("获取到的帖子数据:", data);
 
     // 获取作者用户名
     let authorName = "匿名用户";
@@ -282,6 +313,7 @@ const fetchPostData = async () => {
       views_count: data.views_count || data.view_count || 0,
       tags: data.tags || [],
       user_id: data.author_id || data.user_id,
+      files: data.files || [], // Include files from API response
     };
   } catch (error) {
     console.error("获取帖子失败:", error);
@@ -289,6 +321,38 @@ const fetchPostData = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// Helper functions
+const isImageFile = (file) => {
+  if (!file) return false;
+  
+  // Check by MIME type first (more reliable)
+  if (file.mime_type && file.mime_type.startsWith('image/')) {
+    return true;
+  }
+  
+  // Fallback to filename extension
+  if (file.original_filename) {
+    return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(file.original_filename);
+  }
+  
+  return false;
+};
+
+const openImageModal = (file) => {
+  // TODO: Implement image modal for full-size viewing
+  window.open(file.url, '_blank');
+};
+
+const handleImageError = (event) => {
+  console.error('Image failed to load:', event.target.src);
+  // You could show a placeholder image here
+  // event.target.src = '/path/to/placeholder.png';
+};
+
+const handleImageLoad = (event) => {
+  // Image loaded successfully
 };
 
 // 组件挂载时获取数据
@@ -379,6 +443,94 @@ onMounted(() => {
   line-height: 1.6;
   margin-bottom: 2rem;
   white-space: pre-wrap;
+}
+
+.post-images {
+  margin: 2rem 0;
+  
+  .image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    max-width: 100%;
+    
+    // Responsive adjustments
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    @media (min-width: 769px) and (max-width: 1024px) {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    
+    .image-item {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f5;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      }
+      
+      .image-container {
+        position: relative;
+        width: 100%;
+        
+        .post-image {
+          width: 100%;
+          max-width: 100%;
+          height: auto;
+          max-height: 400px;
+          object-fit: contain;
+          cursor: pointer;
+          transition: opacity 0.3s ease;
+          display: block;
+          background: white;
+          
+          // Responsive image sizes
+          @media (max-width: 768px) {
+            max-height: 300px;
+          }
+          
+          @media (min-width: 1200px) {
+            max-height: 500px;
+          }
+          
+          &:hover {
+            opacity: 0.9;
+          }
+        }
+        
+        .image-overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+          color: white;
+          padding: 0.5rem;
+          transform: translateY(100%);
+          transition: transform 0.3s ease;
+          
+          .image-filename {
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+          }
+        }
+        
+        &:hover .image-overlay {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
 }
 
 .post-actions {

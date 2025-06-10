@@ -79,54 +79,33 @@
       </div>
 
       <!-- 上传图片 -->
-      <!-- 修改以下部分，添加到图片上传部分 -->
       <div class="form-group">
         <label>图片附件</label>
-        <div class="upload-container">
-          <input
-            type="file"
-            ref="fileInput"
-            accept="image/*"
-            multiple
-            @change="handleImageUpload"
-            class="file-input"
-          />
-          <button
-            type="button"
-            class="upload-btn"
-            @click="$refs.fileInput.click()"
-            :disabled="isUploading"
-          >
-            选择图片
-          </button>
-          <span class="upload-info">{{ uploadMsg }}</span>
-        </div>
-
-        <!-- 添加上传进度条 -->
-        <div v-if="isUploading" class="upload-progress">
-          <div class="progress-bar">
-            <div
-              class="progress-fill"
-              :style="`width: ${uploadProgress}%`"
-            ></div>
-          </div>
-          <div class="progress-text">上传中... {{ uploadProgress }}%</div>
-        </div>
-
-        <div v-if="images.length > 0" class="image-previews">
-          <div
-            v-for="(image, index) in images"
-            :key="index"
-            class="image-preview"
-          >
-            <img :src="image.url" :alt="`Preview ${index}`" />
-            <button
-              type="button"
-              class="image-remove"
-              @click="removeImage(index)"
-            >
-              &times;
-            </button>
+        <FileUpload
+          file-type="post_image"
+          accept="image/*"
+          :max-size="5 * 1024 * 1024"
+          show-preview
+          allow-delete
+          drag-text="点击或拖拽图片到此处上传"
+          @upload-success="handleImageUploadSuccess"
+          @upload-error="handleImageUploadError"
+          @delete-success="handleImageDeleteSuccess"
+          @delete-error="handleImageDeleteError"
+        />
+        <span class="upload-hint">最多可上传5张图片，每张不超过5MB</span>
+        
+        <!-- 已上传图片预览 -->
+        <div v-if="uploadedImages.length > 0" class="uploaded-images">
+          <h4>已上传图片 ({{ uploadedImages.length }}/5):</h4>
+          <div class="image-grid">
+            <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
+              <img :src="image.url" :alt="image.original_filename" class="preview-img">
+              <div class="image-info">
+                <span class="filename">{{ image.original_filename }}</span>
+                <button type="button" @click="removeUploadedImage(index)" class="remove-btn">×</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -153,17 +132,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
-import { uploadFileToOSS } from "~/utils/ossUpload";
 import { useApi } from "~/composables/useApi";
+import { useFileUpload } from "~/composables/useFileUpload";
+import FileUpload from "~/components/FileUpload.vue";
+import type { FileRecord } from "~/types/file";
 
 const isUploading = ref(false);
+const { deleteFile } = useFileUpload();
 const uploadProgress = ref(0);
 
 const { token } = useAuth();
+const { fetchWithAuth } = useApi();
 const router = useRouter();
 
 // 表单数据
@@ -172,7 +155,7 @@ const category = ref("");
 const tagInput = ref("");
 const tags = ref([]);
 const content = ref("");
-const images = ref([]);
+const uploadedImages = ref<FileRecord[]>([]);
 const uploadMsg = ref("最多可上传5张图片");
 
 // 错误和状态
@@ -226,61 +209,45 @@ const addTag = () => {
 };
 
 // 删除标签
-const removeTag = (index) => {
+const removeTag = (index: number) => {
   tags.value.splice(index, 1);
 };
 
-// 处理图片上传
-const handleImageUpload = async (event) => {
-  const files = event.target.files;
-  if (!files || !files.length) return;
-
-  // 检查上传数量限制
-  if (images.value.length + files.length > 5) {
-    uploadMsg.value = "最多只能上传5张图片";
+// 图片上传相关
+const handleImageUploadSuccess = (file: FileRecord) => {
+  if (uploadedImages.value.length >= 5) {
+    errorMessage.value = "最多只能上传5张图片";
     return;
   }
-
-  isUploading.value = true;
-  uploadMsg.value = "正在上传...";
-
-  try {
-    // 处理每个文件
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) {
-        uploadMsg.value = "只能上传图片文件";
-        continue;
-      }
-
-      // 上传到OSS
-      const result = await uploadFileToOSS(file, (progress) => {
-        uploadProgress.value = progress;
-      });
-
-      // 添加到图片列表
-      images.value.push({
-        file: file,
-        url: result.url,
-        ossUrl: result.url, // 保存OSS URL以便提交表单时使用
-      });
-    }
-
-    uploadMsg.value = `已上传${images.value.length}张图片，最多可上传5张`;
-  } catch (error) {
-    console.error("上传失败:", error);
-    uploadMsg.value = `上传失败: ${error.message || "未知错误"}`;
-  } finally {
-    isUploading.value = false;
-    uploadProgress.value = 0;
-    // 清空文件输入框，允许再次选择相同文件
-    event.target.value = "";
-  }
+  uploadedImages.value.push(file);
 };
 
-// 删除图片
-const removeImage = (index) => {
-  images.value.splice(index, 1);
-  uploadMsg.value = `已选择${images.value.length}张图片，最多可上传5张`;
+const handleImageUploadError = (error: Error) => {
+  errorMessage.value = `图片上传失败: ${error.message}`;
+};
+
+const handleImageDeleteSuccess = () => {
+  // 图片删除成功，不需要特别处理，因为FileUpload组件会自己处理预览
+};
+
+const handleImageDeleteError = (error: Error) => {
+  errorMessage.value = `图片删除失败: ${error.message}`;
+};
+
+// 删除已上传的图片
+const removeUploadedImage = async (index: number) => {
+  const imageToRemove = uploadedImages.value[index];
+  
+  try {
+    // 从后端删除文件
+    await deleteFile(imageToRemove.id);
+    
+    // 从数组中移除
+    uploadedImages.value.splice(index, 1);
+  } catch (error) {
+    console.error('Delete error:', error);
+    errorMessage.value = `删除图片失败: ${error.message}`;
+  }
 };
 
 // 计算表单是否有效
@@ -297,7 +264,7 @@ const formValid = computed(() => {
 // 取消按钮处理
 const handleCancel = () => {
   // 询问用户是否确认放弃编辑
-  if (title.value || content.value || images.value.length > 0) {
+  if (title.value || content.value || uploadedImages.value.length > 0) {
     if (!confirm("确定要放弃当前编辑的内容吗？")) {
       return;
     }
@@ -311,7 +278,7 @@ const resetForm = () => {
   tagInput.value = "";
   tags.value = [];
   content.value = "";
-  images.value = [];
+  uploadedImages.value = [];
   uploadMsg.value = "最多可上传5张图片";
   errors.value = {
     title: "",
@@ -333,14 +300,12 @@ const handleSubmit = async () => {
     isLoading.value = true;
     errorMessage.value = "";
 
-    const { fetchWithAuth } = useApi();
-
     const jsonData = {
       title: title.value,
       category: category.value,
       content: content.value,
       tags: tags.value,
-      images: images.value.map((img) => img.ossUrl),
+      file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
     };
 
     const response = await fetchWithAuth(
@@ -349,13 +314,10 @@ const handleSubmit = async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify(jsonData),
       }
     );
-
-    console.log("📥 发帖响应状态:", response.status, response.ok);
 
     // 只读取一次响应体
     if (!response.ok) {
@@ -390,13 +352,11 @@ const handleSubmit = async () => {
       }
       }
 
-      console.error("❌ 发帖失败:", errorMessage);
       throw new Error(errorMessage);
     }
 
     // 成功响应：解析 JSON
     const postData = await response.json();
-    console.log("✅ 发帖成功:", postData);
 
     // 显示成功消息
     successMessage.value = "帖子发布成功！";
@@ -411,7 +371,6 @@ const handleSubmit = async () => {
       router.push(`/forum/posts/${postData.id || postData.postId}`);
     }, 3000);
   } catch (err) {
-    console.error("💥 发布异常:", err);
     errorMessage.value =
       err instanceof Error ? err.message : "发布失败，请稍后重试";
   } finally {
@@ -656,6 +615,79 @@ const emit = defineEmits(["post-success"]);
     color: #666;
     margin-top: 0.25rem;
     text-align: center;
+  }
+}
+
+.upload-hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.uploaded-images {
+  margin-top: 1rem;
+  
+  h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+  }
+  
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    
+    .image-preview {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f9f9f9;
+      
+      .preview-img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        display: block;
+      }
+      
+      .image-info {
+        padding: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        .filename {
+          font-size: 0.8rem;
+          color: #666;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          flex: 1;
+          margin-right: 0.5rem;
+        }
+        
+        .remove-btn {
+          background: #ff4757;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          font-size: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.3s ease;
+          
+          &:hover {
+            background: #ff3742;
+          }
+        }
+      }
+    }
   }
 }
 </style>
