@@ -251,6 +251,7 @@
                 v-for="review in reviews"
                 :key="review.id"
                 class="review-item"
+                @click="goToPostDetail(review.id)"
               >
                 <div class="review-header">
                   <div class="reviewer-info">
@@ -286,15 +287,19 @@
                 <!-- 评价操作 -->
                 <div class="review-actions">
                   <button
-                    @click="toggleLike(review)"
+                    @click.stop="toggleLike(review)"
                     :class="['action-btn', { liked: review.isLiked }]"
                   >
                     <i class="fas fa-thumbs-up"></i>
                     {{ review.like_count || 0 }}
                   </button>
-                  <button @click="toggleReply(review.id)" class="action-btn">
+                  <button @click.stop="toggleReply(review.id)" class="action-btn">
                     <i class="fas fa-reply"></i>
                     回复
+                  </button>
+                  <button @click.stop="goToPostDetail(review.id)" class="action-btn view-detail-btn">
+                    <i class="fas fa-external-link-alt"></i>
+                    查看详情
                   </button>
                 </div>
 
@@ -388,7 +393,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
@@ -446,6 +451,7 @@ const { user, isLoggedIn } = useAuth();
 const { fetchWithAuth } = useApi();
 const { deleteFile } = useFileUpload();
 const route = useRoute();
+const router = useRouter();
 
 // 响应式数据
 const courseDetail = ref<Course>({
@@ -817,6 +823,10 @@ const toggleLike = async (review: Review) => {
 const toggleReply = (reviewId: number) => {
   showReplyForm.value = showReplyForm.value === reviewId ? null : reviewId;
   replyContent.value = "";
+};
+
+const goToPostDetail = (postId: number) => {
+  router.push(`/forum/posts/${postId}`);
 };
 
 const submitReply = async (reviewId: number) => {
@@ -1410,10 +1420,13 @@ useHead({
     border: 1px solid #e1e8ed;
     border-radius: 12px;
     padding: 1.5rem;
-    transition: box-shadow 0.3s ease;
+    cursor: pointer;
+    transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      border-color: #3498db;
     }
 
     .review-header {
@@ -1507,6 +1520,16 @@ useHead({
 
         &.liked {
           color: #3498db;
+        }
+
+        &.view-detail-btn {
+          color: #3498db;
+          font-weight: 500;
+          
+          &:hover {
+            background: #e3f2fd;
+            color: #1976d2;
+          }
         }
       }
     }
