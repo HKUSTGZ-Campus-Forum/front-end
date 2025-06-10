@@ -1,10 +1,12 @@
 import { ref } from 'vue'
 import type { UploadOptions, UploadUrlResponse, FileRecord, FileType } from '~/types/file'
+import { useApi } from './useApi'
 
 export const useFileUpload = () => {
   const isUploading = ref(false)
   const uploadProgress = ref(0)
   const error = ref<Error | null>(null)
+  const { fetchWithAuth } = useApi()
 
   const uploadFile = async (options: UploadOptions) => {
     const { file, fileType, entityType, entityId, onProgress, onSuccess, onError } = options
@@ -15,21 +17,26 @@ export const useFileUpload = () => {
       uploadProgress.value = 0
 
       // Step 1: Get signed URL from backend
-      const { data: uploadUrlData } = await useFetch<UploadUrlResponse>('/api/files/upload', {
+      const response = await fetchWithAuth('https://dev.unikorn.axfff.com/api/files/upload', {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           filename: file.name,
           file_type: fileType,
           entity_type: entityType,
-          entity_id: entityId
-        }
+          entity_id: entityId,
+          content_type: file.type
+        })
       })
 
-      if (!uploadUrlData.value) {
+      if (!response.ok) {
         throw new Error('Failed to get upload URL')
       }
 
-      const { signed_url, file_id } = uploadUrlData.value
+      const uploadUrlData = await response.json() as UploadUrlResponse
+      const { signed_url, file_id } = uploadUrlData
 
       // Step 2: Upload file to OSS using signed URL
       const xhr = new XMLHttpRequest()
@@ -69,17 +76,19 @@ export const useFileUpload = () => {
       let attempts = 0
 
       const pollFileStatus = async (): Promise<FileRecord> => {
-        const { data: fileData } = await useFetch<FileRecord>(`/api/files/${file_id}`)
+        const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/files/${file_id}`)
         
-        if (!fileData.value) {
+        if (!response.ok) {
           throw new Error('Failed to get file status')
         }
 
-        if (fileData.value.status === 'uploaded') {
-          return fileData.value
+        const fileData = await response.json() as FileRecord
+
+        if (fileData.status === 'uploaded') {
+          return fileData
         }
 
-        if (fileData.value.status === 'error') {
+        if (fileData.status === 'error') {
           throw new Error('File upload failed')
         }
 
@@ -108,10 +117,22 @@ export const useFileUpload = () => {
 
   const deleteFile = async (fileId: number) => {
     try {
-      await useFetch(`/api/files/${fileId}`, {
+      console.log('Deleting file:', fileId);
+      const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/files/${fileId}`, {
         method: 'DELETE'
       })
+      
+      console.log('Delete response status:', response.status, response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('Delete failed:', response.status, errorText);
+        throw new Error(`Failed to delete file: ${response.status} ${errorText}`)
+      }
+      
+      console.log('File deleted successfully');
     } catch (err) {
+      console.error('Delete error caught:', err);
       const deleteError = err instanceof Error ? err : new Error('Failed to delete file')
       error.value = deleteError
       throw deleteError

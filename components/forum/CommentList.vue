@@ -65,7 +65,7 @@ const fetchComments = async () => {
       top_level_only: "true", // 只获取顶级评论
     });
 
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `https://dev.unikorn.axfff.com/api/comments/post/${props.postId}?${params}`
     );
 

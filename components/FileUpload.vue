@@ -300,16 +300,24 @@ const formatFileSize = (bytes: number): string => {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  padding: 0.25rem;
-  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  background: rgba(255, 0, 0, 0.8);
   border: none;
   border-radius: 50%;
   color: white;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
 }
 
 .delete-button:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(255, 0, 0, 1);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
 }
 </style> 

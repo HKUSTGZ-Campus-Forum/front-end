@@ -94,6 +94,20 @@
           @delete-error="handleImageDeleteError"
         />
         <span class="upload-hint">最多可上传5张图片，每张不超过5MB</span>
+        
+        <!-- 已上传图片预览 -->
+        <div v-if="uploadedImages.length > 0" class="uploaded-images">
+          <h4>已上传图片 ({{ uploadedImages.length }}/5):</h4>
+          <div class="image-grid">
+            <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
+              <img :src="image.url" :alt="image.original_filename" class="preview-img">
+              <div class="image-info">
+                <span class="filename">{{ image.original_filename }}</span>
+                <button type="button" @click="removeUploadedImage(index)" class="remove-btn">×</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 错误信息 -->
@@ -123,10 +137,12 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
+import { useFileUpload } from "~/composables/useFileUpload";
 import FileUpload from "~/components/FileUpload.vue";
 import type { FileRecord } from "~/types/file";
 
 const isUploading = ref(false);
+const { deleteFile } = useFileUpload();
 const uploadProgress = ref(0);
 
 const { token } = useAuth();
@@ -217,6 +233,24 @@ const handleImageDeleteError = (error: Error) => {
   errorMessage.value = `图片删除失败: ${error.message}`;
 };
 
+// 删除已上传的图片
+const removeUploadedImage = async (index: number) => {
+  const imageToRemove = uploadedImages.value[index];
+  console.log('Removing image:', imageToRemove);
+  console.log('Current token:', token.value ? 'exists' : 'missing');
+  
+  try {
+    // 从后端删除文件
+    await deleteFile(imageToRemove.id);
+    
+    // 从数组中移除
+    uploadedImages.value.splice(index, 1);
+  } catch (error) {
+    console.error('Delete error:', error);
+    errorMessage.value = `删除图片失败: ${error.message}`;
+  }
+};
+
 // 计算表单是否有效
 const formValid = computed(() => {
   return (
@@ -274,7 +308,7 @@ const handleSubmit = async () => {
       category: category.value,
       content: content.value,
       tags: tags.value,
-      images: uploadedImages.value.map((img: FileRecord) => img.url),
+      file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
     };
 
     const response = await fetchWithAuth(
@@ -598,5 +632,71 @@ const emit = defineEmits(["post-success"]);
   margin-top: 0.5rem;
   font-size: 0.875rem;
   color: #666;
+}
+
+.uploaded-images {
+  margin-top: 1rem;
+  
+  h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+  }
+  
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    
+    .image-preview {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f9f9f9;
+      
+      .preview-img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        display: block;
+      }
+      
+      .image-info {
+        padding: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        .filename {
+          font-size: 0.8rem;
+          color: #666;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          flex: 1;
+          margin-right: 0.5rem;
+        }
+        
+        .remove-btn {
+          background: #ff4757;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          font-size: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.3s ease;
+          
+          &:hover {
+            background: #ff3742;
+          }
+        }
+      }
+    }
+  }
 }
 </style>

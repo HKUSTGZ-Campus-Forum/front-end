@@ -116,6 +116,14 @@ export function useAuth() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`获取用户资料失败(${response.status}):`, errorText);
+        
+        // If unauthorized, clear tokens and don't show error (silent fail)
+        if (response.status === 401) {
+          console.warn("Token expired or invalid, clearing auth state");
+          logout();
+          return;
+        }
+        
         error.value = `获取用户资料失败(${response.status})`;
         return;
       }
