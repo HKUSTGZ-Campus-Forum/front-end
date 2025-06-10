@@ -444,6 +444,7 @@ interface ReviewForm {
 // Composables
 const { user, isLoggedIn } = useAuth();
 const { fetchWithAuth } = useApi();
+const { deleteFile } = useFileUpload();
 const route = useRoute();
 
 // 响应式数据
@@ -789,8 +790,7 @@ const removeUploadedImage = async (index: number) => {
   const image = uploadedImages.value[index];
   
   try {
-    // Delete from server
-    const { deleteFile } = useFileUpload();
+    // Delete from server using the composable defined at top level
     await deleteFile(image.id);
     
     // Remove from local arrays
