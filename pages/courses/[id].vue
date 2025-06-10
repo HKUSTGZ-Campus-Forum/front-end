@@ -173,32 +173,34 @@
                     <i class="fas fa-images"></i>
                     上传图片
                   </label>
-                  <div class="file-upload-container">
-                    <FileUpload
-                      v-for="(upload, index) in fileUploaders"
-                      :key="index"
-                      :file-type="'post_image'"
-                      :entity-type="'post'"
-                      :accept="'image/*'"
-                      :max-size="5 * 1024 * 1024"
-                      :show-preview="true"
-                      :allow-delete="true"
-                      @upload-success="(file) => onFileUploadSuccess(file, index)"
-                      @upload-error="onUploadError"
-                      @delete-success="() => onFileDelete(index)"
-                    />
-                    <button
-                      v-if="fileUploaders.length < 3"
-                      @click="addFileUploader"
-                      class="add-file-btn"
-                      type="button"
-                    >
-                      <i class="fas fa-plus"></i>
-                      添加图片
-                    </button>
-                  </div>
+                  <FileUpload
+                    v-if="uploadedImages.length < 3"
+                    :file-type="'post_image'"
+                    :entity-type="'post'"
+                    :accept="'image/*'"
+                    :max-size="5 * 1024 * 1024"
+                    :show-preview="false"
+                    :allow-delete="false"
+                    :drag-text="'点击或拖拽图片到此处上传'"
+                    @upload-success="onFileUploadSuccess"
+                    @upload-error="onUploadError"
+                  />
                   <div class="form-hint">
-                    最多上传3张图片，支持JPG、PNG、GIF格式，单张图片最大5MB
+                    最多上传3张图片，支持JPG、PNG、GIF格式，单张图片最大5MB ({{ uploadedImages.length }}/3)
+                  </div>
+                  
+                  <!-- 已上传图片预览 -->
+                  <div v-if="uploadedImages.length > 0" class="uploaded-images">
+                    <h4>已上传图片 ({{ uploadedImages.length }}/3):</h4>
+                    <div class="image-grid">
+                      <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
+                        <img :src="image.url" :alt="image.original_filename" class="preview-img">
+                        <div class="image-info">
+                          <span class="filename">{{ image.original_filename }}</span>
+                          <button type="button" @click="removeUploadedImage(index)" class="remove-btn">×</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -391,6 +393,7 @@ import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
 import FileUpload from "~/components/FileUpload.vue";
+import { useFileUpload } from "~/composables/useFileUpload";
 // 🔥 导入统一弹窗组件
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 
@@ -465,7 +468,7 @@ const reviewForm = ref<ReviewForm>({
   semester: "",
 });
 const uploadedFileIds = ref<number[]>([]);
-const fileUploaders = ref([{}]); // Start with one uploader
+const uploadedImages = ref<any[]>([]); // Store uploaded image objects
 const availableSemesters = ref<Array<{
   code: string;
   display_name: string;
@@ -657,7 +660,7 @@ const submitReview = async () => {
         semester: "",
       };
       uploadedFileIds.value = [];
-      fileUploaders.value = [{}]; // Reset to single uploader
+      uploadedImages.value = []; // Reset uploaded images
       showReviewForm.value = false;
 
       // 🔥 重新加载评价列表
@@ -772,29 +775,33 @@ const cancelReview = () => {
     semester: "",
   };
   uploadedFileIds.value = [];
-  fileUploaders.value = [{}]; // Reset to single uploader
+  uploadedImages.value = []; // Reset uploaded images
 };
 
 // File upload handlers
-const addFileUploader = () => {
-  if (fileUploaders.value.length < 3) {
-    fileUploaders.value.push({});
-  }
-};
-
-const onFileUploadSuccess = (file: any, index: number) => {
+const onFileUploadSuccess = (file: any) => {
   console.log('✅ 图片上传成功:', file);
+  uploadedImages.value.push(file);
   uploadedFileIds.value.push(file.id);
 };
 
-const onFileDelete = (index: number) => {
-  // Remove the file ID from the uploaded list if it exists
-  if (fileUploaders.value[index]) {
-    fileUploaders.value.splice(index, 1);
-    // Ensure we always have at least one uploader
-    if (fileUploaders.value.length === 0) {
-      fileUploaders.value.push({});
-    }
+const removeUploadedImage = async (index: number) => {
+  const image = uploadedImages.value[index];
+  
+  try {
+    // Delete from server
+    const { deleteFile } = useFileUpload();
+    await deleteFile(image.id);
+    
+    // Remove from local arrays
+    uploadedImages.value.splice(index, 1);
+    uploadedFileIds.value.splice(uploadedFileIds.value.indexOf(image.id), 1);
+    
+    console.log('✅ 图片删除成功:', image.original_filename);
+  } catch (error) {
+    console.error('❌ 图片删除失败:', error);
+    errorMsg.value = `图片删除失败: ${error.message}`;
+    showErrorModal.value = true;
   }
 };
 
@@ -1169,34 +1176,78 @@ useHead({
         font-style: italic;
       }
 
-      .file-upload-container {
-        display: flex;
-        flex-direction: column;
+      .uploaded-images {
+        margin-top: 1rem;
+        
+        h4 {
+          color: #2c3e50;
+          margin-bottom: 1rem;
+          font-size: 1rem;
+          font-weight: 600;
+        }
+      }
+
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 1rem;
       }
 
-      .add-file-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        border: 2px dashed #ddd;
+      .image-preview {
+        position: relative;
         border-radius: 8px;
-        background: #fafafa;
-        color: #666;
-        font-size: 0.875rem;
-        cursor: pointer;
+        overflow: hidden;
+        background: #f8f9fa;
+        border: 1px solid #e1e8ed;
         transition: all 0.3s ease;
 
         &:hover {
-          border-color: #999;
-          background: #f5f5f5;
-          color: #333;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        i {
-          font-size: 1rem;
+        .preview-img {
+          width: 100%;
+          height: 120px;
+          object-fit: cover;
+          display: block;
+        }
+
+        .image-info {
+          padding: 0.75rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+
+          .filename {
+            font-size: 0.75rem;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+          }
+
+          .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.875rem;
+            line-height: 1;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: #c82333;
+              transform: scale(1.1);
+            }
+          }
         }
       }
     }
