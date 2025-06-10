@@ -173,16 +173,32 @@
                     <i class="fas fa-images"></i>
                     上传图片
                   </label>
-                  <FileUpload
-                    ref="fileUploadRef"
-                    :entity-type="'post'"
-                    :multiple="true"
-                    :max-files="3"
-                    @files-uploaded="onFilesUploaded"
-                    @upload-error="onUploadError"
-                  />
+                  <div class="file-upload-container">
+                    <FileUpload
+                      v-for="(upload, index) in fileUploaders"
+                      :key="index"
+                      :file-type="'post_image'"
+                      :entity-type="'post'"
+                      :accept="'image/*'"
+                      :max-size="5 * 1024 * 1024"
+                      :show-preview="true"
+                      :allow-delete="true"
+                      @upload-success="(file) => onFileUploadSuccess(file, index)"
+                      @upload-error="onUploadError"
+                      @delete-success="() => onFileDelete(index)"
+                    />
+                    <button
+                      v-if="fileUploaders.length < 3"
+                      @click="addFileUploader"
+                      class="add-file-btn"
+                      type="button"
+                    >
+                      <i class="fas fa-plus"></i>
+                      添加图片
+                    </button>
+                  </div>
                   <div class="form-hint">
-                    最多上传3张图片，支持JPG、PNG、GIF格式
+                    最多上传3张图片，支持JPG、PNG、GIF格式，单张图片最大5MB
                   </div>
                 </div>
 
@@ -449,6 +465,7 @@ const reviewForm = ref<ReviewForm>({
   semester: "",
 });
 const uploadedFileIds = ref<number[]>([]);
+const fileUploaders = ref([{}]); // Start with one uploader
 const availableSemesters = ref<Array<{
   code: string;
   display_name: string;
@@ -640,10 +657,7 @@ const submitReview = async () => {
         semester: "",
       };
       uploadedFileIds.value = [];
-      // Reset file upload component
-      if (fileUploadRef.value) {
-        fileUploadRef.value.clearFiles();
-      }
+      fileUploaders.value = [{}]; // Reset to single uploader
       showReviewForm.value = false;
 
       // 🔥 重新加载评价列表
@@ -758,22 +772,34 @@ const cancelReview = () => {
     semester: "",
   };
   uploadedFileIds.value = [];
-  // Reset file upload component
-  if (fileUploadRef.value) {
-    fileUploadRef.value.clearFiles();
-  }
+  fileUploaders.value = [{}]; // Reset to single uploader
 };
 
 // File upload handlers
-const fileUploadRef = ref();
-
-const onFilesUploaded = (fileIds: number[]) => {
-  uploadedFileIds.value = fileIds;
-  console.log('✅ 图片上传成功:', fileIds);
+const addFileUploader = () => {
+  if (fileUploaders.value.length < 3) {
+    fileUploaders.value.push({});
+  }
 };
 
-const onUploadError = (error: string) => {
-  errorMsg.value = `图片上传失败: ${error}`;
+const onFileUploadSuccess = (file: any, index: number) => {
+  console.log('✅ 图片上传成功:', file);
+  uploadedFileIds.value.push(file.id);
+};
+
+const onFileDelete = (index: number) => {
+  // Remove the file ID from the uploaded list if it exists
+  if (fileUploaders.value[index]) {
+    fileUploaders.value.splice(index, 1);
+    // Ensure we always have at least one uploader
+    if (fileUploaders.value.length === 0) {
+      fileUploaders.value.push({});
+    }
+  }
+};
+
+const onUploadError = (error: Error) => {
+  errorMsg.value = `图片上传失败: ${error.message}`;
   showErrorModal.value = true;
 };
 
@@ -1141,6 +1167,37 @@ useHead({
         color: #999;
         margin-top: 0.25rem;
         font-style: italic;
+      }
+
+      .file-upload-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .add-file-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+        color: #666;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: #999;
+          background: #f5f5f5;
+          color: #333;
+        }
+
+        i {
+          font-size: 1rem;
+        }
       }
     }
 
