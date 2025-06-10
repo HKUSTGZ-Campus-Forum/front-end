@@ -174,15 +174,33 @@
                     上传图片
                   </label>
                   <FileUpload
-                    ref="fileUploadRef"
+                    v-if="uploadedImages.length < 3"
+                    :file-type="'post_image'"
                     :entity-type="'post'"
-                    :multiple="true"
-                    :max-files="3"
-                    @files-uploaded="onFilesUploaded"
+                    :accept="'image/*'"
+                    :max-size="5 * 1024 * 1024"
+                    :show-preview="false"
+                    :allow-delete="false"
+                    :drag-text="'点击或拖拽图片到此处上传'"
+                    @upload-success="onFileUploadSuccess"
                     @upload-error="onUploadError"
                   />
                   <div class="form-hint">
-                    最多上传3张图片，支持JPG、PNG、GIF格式
+                    最多上传3张图片，支持JPG、PNG、GIF格式，单张图片最大5MB ({{ uploadedImages.length }}/3)
+                  </div>
+                  
+                  <!-- 已上传图片预览 -->
+                  <div v-if="uploadedImages.length > 0" class="uploaded-images">
+                    <h4>已上传图片 ({{ uploadedImages.length }}/3):</h4>
+                    <div class="image-grid">
+                      <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
+                        <img :src="image.url" :alt="image.original_filename" class="preview-img">
+                        <div class="image-info">
+                          <span class="filename">{{ image.original_filename }}</span>
+                          <button type="button" @click="removeUploadedImage(index)" class="remove-btn">×</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -233,6 +251,7 @@
                 v-for="review in reviews"
                 :key="review.id"
                 class="review-item"
+                @click="goToPostDetail(review.id)"
               >
                 <div class="review-header">
                   <div class="reviewer-info">
@@ -268,15 +287,19 @@
                 <!-- 评价操作 -->
                 <div class="review-actions">
                   <button
-                    @click="toggleLike(review)"
+                    @click.stop="toggleLike(review)"
                     :class="['action-btn', { liked: review.isLiked }]"
                   >
                     <i class="fas fa-thumbs-up"></i>
                     {{ review.like_count || 0 }}
                   </button>
-                  <button @click="toggleReply(review.id)" class="action-btn">
+                  <button @click.stop="toggleReply(review.id)" class="action-btn">
                     <i class="fas fa-reply"></i>
                     回复
+                  </button>
+                  <button @click.stop="goToPostDetail(review.id)" class="action-btn view-detail-btn">
+                    <i class="fas fa-external-link-alt"></i>
+                    查看详情
                   </button>
                 </div>
 
@@ -370,11 +393,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
 import FileUpload from "~/components/FileUpload.vue";
+import { useFileUpload } from "~/composables/useFileUpload";
 // 🔥 导入统一弹窗组件
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 
@@ -425,7 +449,9 @@ interface ReviewForm {
 // Composables
 const { user, isLoggedIn } = useAuth();
 const { fetchWithAuth } = useApi();
+const { deleteFile } = useFileUpload();
 const route = useRoute();
+const router = useRouter();
 
 // 响应式数据
 const courseDetail = ref<Course>({
@@ -449,6 +475,7 @@ const reviewForm = ref<ReviewForm>({
   semester: "",
 });
 const uploadedFileIds = ref<number[]>([]);
+const uploadedImages = ref<any[]>([]); // Store uploaded image objects
 const availableSemesters = ref<Array<{
   code: string;
   display_name: string;
@@ -640,10 +667,7 @@ const submitReview = async () => {
         semester: "",
       };
       uploadedFileIds.value = [];
-      // Reset file upload component
-      if (fileUploadRef.value) {
-        fileUploadRef.value.clearFiles();
-      }
+      uploadedImages.value = []; // Reset uploaded images
       showReviewForm.value = false;
 
       // 🔥 重新加载评价列表
@@ -758,22 +782,37 @@ const cancelReview = () => {
     semester: "",
   };
   uploadedFileIds.value = [];
-  // Reset file upload component
-  if (fileUploadRef.value) {
-    fileUploadRef.value.clearFiles();
-  }
+  uploadedImages.value = []; // Reset uploaded images
 };
 
 // File upload handlers
-const fileUploadRef = ref();
-
-const onFilesUploaded = (fileIds: number[]) => {
-  uploadedFileIds.value = fileIds;
-  console.log('✅ 图片上传成功:', fileIds);
+const onFileUploadSuccess = (file: any) => {
+  console.log('✅ 图片上传成功:', file);
+  uploadedImages.value.push(file);
+  uploadedFileIds.value.push(file.id);
 };
 
-const onUploadError = (error: string) => {
-  errorMsg.value = `图片上传失败: ${error}`;
+const removeUploadedImage = async (index: number) => {
+  const image = uploadedImages.value[index];
+  
+  try {
+    // Delete from server using the composable defined at top level
+    await deleteFile(image.id);
+    
+    // Remove from local arrays
+    uploadedImages.value.splice(index, 1);
+    uploadedFileIds.value.splice(uploadedFileIds.value.indexOf(image.id), 1);
+    
+    console.log('✅ 图片删除成功:', image.original_filename);
+  } catch (error) {
+    console.error('❌ 图片删除失败:', error);
+    errorMsg.value = `图片删除失败: ${error.message}`;
+    showErrorModal.value = true;
+  }
+};
+
+const onUploadError = (error: Error) => {
+  errorMsg.value = `图片上传失败: ${error.message}`;
   showErrorModal.value = true;
 };
 
@@ -784,6 +823,10 @@ const toggleLike = async (review: Review) => {
 const toggleReply = (reviewId: number) => {
   showReplyForm.value = showReplyForm.value === reviewId ? null : reviewId;
   replyContent.value = "";
+};
+
+const goToPostDetail = (postId: number) => {
+  router.push(`/forum/posts/${postId}`);
 };
 
 const submitReply = async (reviewId: number) => {
@@ -1142,6 +1185,81 @@ useHead({
         margin-top: 0.25rem;
         font-style: italic;
       }
+
+      .uploaded-images {
+        margin-top: 1rem;
+        
+        h4 {
+          color: #2c3e50;
+          margin-bottom: 1rem;
+          font-size: 1rem;
+          font-weight: 600;
+        }
+      }
+
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+      }
+
+      .image-preview {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f8f9fa;
+        border: 1px solid #e1e8ed;
+        transition: all 0.3s ease;
+
+        &:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-img {
+          width: 100%;
+          height: 120px;
+          object-fit: cover;
+          display: block;
+        }
+
+        .image-info {
+          padding: 0.75rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+
+          .filename {
+            font-size: 0.75rem;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+          }
+
+          .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.875rem;
+            line-height: 1;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: #c82333;
+              transform: scale(1.1);
+            }
+          }
+        }
+      }
     }
 
     // 评分输入样式
@@ -1302,10 +1420,13 @@ useHead({
     border: 1px solid #e1e8ed;
     border-radius: 12px;
     padding: 1.5rem;
-    transition: box-shadow 0.3s ease;
+    cursor: pointer;
+    transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      border-color: #3498db;
     }
 
     .review-header {
@@ -1399,6 +1520,16 @@ useHead({
 
         &.liked {
           color: #3498db;
+        }
+
+        &.view-detail-btn {
+          color: #3498db;
+          font-weight: 500;
+          
+          &:hover {
+            background: #e3f2fd;
+            color: #1976d2;
+          }
         }
       }
     }

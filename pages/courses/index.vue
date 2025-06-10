@@ -28,7 +28,12 @@
       </div>
 
       <div class="courses-grid" v-if="!isLoading">
-        <div v-for="course in courses" :key="course.id" class="course-card">
+        <NuxtLink 
+          v-for="course in courses" 
+          :key="course.id" 
+          :to="`/courses/${course.id}`"
+          class="course-card"
+        >
           <div class="course-header">
             <h2 class="course-code">{{ course.code }}</h2>
             <span class="course-credits">{{ course.credits }} 学分</span>
@@ -41,11 +46,11 @@
             <span class="instructor"
               >讲师: {{ course.instructor?.username || "未分配" }}</span
             >
-            <NuxtLink :to="`/courses/${course.id}`" class="view-course">
-              查看课程
-            </NuxtLink>
+            <span class="view-course-hint">
+              点击查看课程详情
+            </span>
           </div>
-        </div>
+        </NuxtLink>
       </div>
 
       <div v-else class="loading-state">
@@ -264,10 +269,16 @@ onMounted(() => {
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    color: inherit;
   }
 }
 
@@ -322,17 +333,12 @@ onMounted(() => {
     font-size: 0.875rem;
   }
 
-  .view-course {
+  .view-course-hint {
     color: #3498db;
-    text-decoration: none;
+    font-size: 0.875rem;
     font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: #e3f2fd;
-    }
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
   }
 }
 
