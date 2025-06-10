@@ -117,10 +117,10 @@
                     <option value="">选择学期（可选）</option>
                     <option 
                       v-for="semester in availableSemesters" 
-                      :key="semester"
-                      :value="semester"
+                      :key="semester.code"
+                      :value="semester.code"
                     >
-                      {{ semester }}
+                      {{ semester.display_name }}
                     </option>
                   </select>
                 </div>
@@ -404,7 +404,13 @@ const reviewForm = ref<ReviewForm>({
   rating: null,
   semester: "",
 });
-const availableSemesters = ref<string[]>([]);
+const availableSemesters = ref<Array<{
+  code: string;
+  display_name: string;
+  year: string;
+  season: string;
+  season_display: string;
+}>>([]);
 
 const isLoading = ref(true);
 const isLoadingReviews = ref(false);
@@ -500,7 +506,7 @@ const fetchCourseReviews = async () => {
 const fetchAvailableSemesters = async () => {
   try {
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/semesters`
+      `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/semesters?lang=zh`
     );
 
     if (response.ok) {
@@ -510,12 +516,22 @@ const fetchAvailableSemesters = async () => {
     } else {
       console.error("❌ 获取可用学期失败:", response.status);
       // Fallback to some default semesters if API fails
-      availableSemesters.value = ["2024春", "2024秋", "2025春", "2025秋"];
+      availableSemesters.value = [
+        { code: "2024spring", display_name: "2024春", year: "2024", season: "spring", season_display: "春" },
+        { code: "2024fall", display_name: "2024秋", year: "2024", season: "fall", season_display: "秋" },
+        { code: "2025spring", display_name: "2025春", year: "2025", season: "spring", season_display: "春" },
+        { code: "2025fall", display_name: "2025秋", year: "2025", season: "fall", season_display: "秋" }
+      ];
     }
   } catch (error) {
     console.error("❌ 获取可用学期失败:", error);
     // Fallback to some default semesters if API fails
-    availableSemesters.value = ["2024春", "2024秋", "2025春", "2025秋"];
+    availableSemesters.value = [
+      { code: "2024spring", display_name: "2024春", year: "2024", season: "spring", season_display: "春" },
+      { code: "2024fall", display_name: "2024秋", year: "2024", season: "fall", season_display: "秋" },
+      { code: "2025spring", display_name: "2025春", year: "2025", season: "spring", season_display: "春" },
+      { code: "2025fall", display_name: "2025秋", year: "2025", season: "fall", season_display: "秋" }
+    ];
   }
 };
 
@@ -532,7 +548,13 @@ const submitReview = async () => {
     // 构造标签
     const tags = [courseDetail.value.code];
     if (reviewForm.value.semester) {
-      tags.push(`${courseDetail.value.code}-${reviewForm.value.semester}`);
+      // reviewForm.value.semester now contains the semester code (e.g., "2024fall")
+      // Need to convert it to the tag format used in backend
+      const selectedSemester = availableSemesters.value.find(s => s.code === reviewForm.value.semester);
+      if (selectedSemester) {
+        // Create tag in format: "COURSE_CODE-YEARseason" (e.g., "AIAA 1010-2024fall")
+        tags.push(`${courseDetail.value.code}-${selectedSemester.code}`);
+      }
     }
 
     // 构造帖子内容（包含评分）
@@ -619,10 +641,44 @@ const extractRating = (content: string) => {
 
 const extractSemester = (tags: any[]) => {
   if (!tags || !Array.isArray(tags)) return null;
-  const semesterTag = tags.find(
-    (tag) => tag.name && tag.name.includes("-") && tag.name.match(/\d{4}[春秋]/)
-  );
-  return semesterTag ? semesterTag.name.split("-")[1] : null;
+  
+  // Look for semester tags in new format: "COURSE_CODE-YEARseason"
+  const semesterTag = tags.find((tag) => {
+    if (!tag.name || !tag.name.includes("-")) return false;
+    
+    const parts = tag.name.split("-");
+    if (parts.length < 2) return false;
+    
+    const semesterPart = parts[1];
+    // Match patterns like "2024fall", "2024spring", "2024春", "2024秋"
+    return /^\d{4}(spring|summer|fall|winter|春|夏|秋|冬)$/i.test(semesterPart);
+  });
+  
+  if (semesterTag) {
+    const semesterCode = semesterTag.name.split("-")[1];
+    
+    // Convert to display format for Chinese UI
+    const year = semesterCode.match(/\d{4}/)?.[0] || "";
+    const seasonMatch = semesterCode.match(/(spring|summer|fall|winter|春|夏|秋|冬)$/i);
+    
+    if (seasonMatch) {
+      const season = seasonMatch[1].toLowerCase();
+      const seasonMap: Record<string, string> = {
+        'spring': '春',
+        'summer': '夏', 
+        'fall': '秋',
+        'winter': '冬',
+        '春': '春',
+        '夏': '夏',
+        '秋': '秋',
+        '冬': '冬'
+      };
+      
+      return `${year}${seasonMap[season] || season}`;
+    }
+  }
+  
+  return null;
 };
 
 const formatDate = (dateString: string) => {
