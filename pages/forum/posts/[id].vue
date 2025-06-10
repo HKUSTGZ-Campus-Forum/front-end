@@ -40,14 +40,6 @@
           {{ postData.content }}
         </div>
 
-        <!-- Debug URLs -->
-        <div v-if="postData?.files?.length > 0" class="debug-urls" style="background: #f0f0f0; padding: 1rem; margin: 1rem 0; font-size: 0.875rem;">
-          <strong>Debug URLs:</strong>
-          <div v-for="file in postData.files" :key="file?.id || Math.random()" style="margin: 0.5rem 0; word-break: break-all;">
-            <div><strong>{{ file?.original_filename || 'Unknown' }}:</strong></div>
-            <div>{{ file?.url || 'No URL' }}</div>
-          </div>
-        </div>
 
         <!-- Post Images -->
         <div v-if="postData?.files?.length > 0" class="post-images">
