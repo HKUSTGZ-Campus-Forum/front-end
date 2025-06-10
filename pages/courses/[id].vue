@@ -125,6 +125,28 @@
                   </select>
                 </div>
 
+                <!-- 评价标题 -->
+                <div class="form-group">
+                  <label for="title" class="form-label">
+                    <i class="fas fa-heading"></i>
+                    评价标题
+                  </label>
+                  <input
+                    id="title"
+                    v-model="reviewForm.title"
+                    type="text"
+                    class="form-input"
+                    :placeholder="`${courseDetail.name} 课程评价`"
+                    maxlength="100"
+                  />
+                  <div class="char-count">
+                    {{ reviewForm.title.length }}/100
+                  </div>
+                  <div class="form-hint">
+                    留空将使用默认标题
+                  </div>
+                </div>
+
                 <!-- 评价内容 -->
                 <div class="form-group">
                   <label for="content" class="form-label">
@@ -142,6 +164,25 @@
                   ></textarea>
                   <div class="char-count">
                     {{ reviewForm.content.length }}/500
+                  </div>
+                </div>
+
+                <!-- 图片上传 -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-images"></i>
+                    上传图片
+                  </label>
+                  <FileUpload
+                    ref="fileUploadRef"
+                    :entity-type="'post'"
+                    :multiple="true"
+                    :max-files="3"
+                    @files-uploaded="onFilesUploaded"
+                    @upload-error="onUploadError"
+                  />
+                  <div class="form-hint">
+                    最多上传3张图片，支持JPG、PNG、GIF格式
                   </div>
                 </div>
 
@@ -333,6 +374,7 @@ import { useRoute } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
+import FileUpload from "~/components/FileUpload.vue";
 // 🔥 导入统一弹窗组件
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 
@@ -374,6 +416,7 @@ interface Reply {
 }
 
 interface ReviewForm {
+  title: string;
   content: string;
   rating: number | null;
   semester: string;
@@ -400,10 +443,12 @@ const courseDetail = ref<Course>({
 
 const reviews = ref<Review[]>([]);
 const reviewForm = ref<ReviewForm>({
+  title: "",
   content: "",
   rating: null,
   semester: "",
 });
+const uploadedFileIds = ref<number[]>([]);
 const availableSemesters = ref<Array<{
   code: string;
   display_name: string;
@@ -564,9 +609,10 @@ const submitReview = async () => {
     }
 
     const postData = {
-      title: `${courseDetail.value.name} 课程评价`,
+      title: reviewForm.value.title.trim() || `${courseDetail.value.name} 课程评价`,
       content: content,
       tags: tags,
+      file_ids: uploadedFileIds.value,
     };
 
     console.log("📤 发布课程评价:", postData);
@@ -588,10 +634,16 @@ const submitReview = async () => {
 
       // 🔥 重置表单
       reviewForm.value = {
+        title: "",
         content: "",
         rating: null,
         semester: "",
       };
+      uploadedFileIds.value = [];
+      // Reset file upload component
+      if (fileUploadRef.value) {
+        fileUploadRef.value.clearFiles();
+      }
       showReviewForm.value = false;
 
       // 🔥 重新加载评价列表
@@ -700,10 +752,29 @@ const formatDate = (dateString: string) => {
 const cancelReview = () => {
   showReviewForm.value = false;
   reviewForm.value = {
+    title: "",
     content: "",
     rating: null,
     semester: "",
   };
+  uploadedFileIds.value = [];
+  // Reset file upload component
+  if (fileUploadRef.value) {
+    fileUploadRef.value.clearFiles();
+  }
+};
+
+// File upload handlers
+const fileUploadRef = ref();
+
+const onFilesUploaded = (fileIds: number[]) => {
+  uploadedFileIds.value = fileIds;
+  console.log('✅ 图片上传成功:', fileIds);
+};
+
+const onUploadError = (error: string) => {
+  errorMsg.value = `图片上传失败: ${error}`;
+  showErrorModal.value = true;
 };
 
 const toggleLike = async (review: Review) => {
@@ -1037,6 +1108,7 @@ useHead({
       }
 
       .form-select,
+      .form-input,
       .form-textarea {
         width: 100%;
         padding: 0.75rem;
@@ -1062,6 +1134,13 @@ useHead({
         font-size: 0.875rem;
         color: #666;
         margin-top: 0.25rem;
+      }
+
+      .form-hint {
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 0.25rem;
+        font-style: italic;
       }
     }
 
