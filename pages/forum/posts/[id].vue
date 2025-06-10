@@ -53,10 +53,9 @@
         <div v-if="postData?.files?.length > 0" class="post-images">
           <div class="image-gallery">
             <div 
-              v-for="file in postData.files" 
-              :key="file?.id || Math.random()"
+              v-for="file in postData.files.filter(f => f && isImageFile(f))" 
+              :key="file.id"
               class="image-item"
-              v-if="file && isImageFile(file)"
             >
               <div class="image-container">
                 <img 
@@ -203,7 +202,6 @@ const showDeleteConfirm = () => {
 // 处理删除确认
 const handleDeleteConfirm = async () => {
   try {
-    console.log("🗑️ 开始删除帖子:", postId);
 
     const response = await fetchWithAuth(
       `https://dev.unikorn.axfff.com/api/posts/${postId}`,
@@ -219,8 +217,6 @@ const handleDeleteConfirm = async () => {
       showConfirmModal.value = false;
       return;
     }
-
-    console.log("✅ 删除成功");
 
     // 显示成功弹窗
     showSuccessModal.value = true;
@@ -293,9 +289,6 @@ const fetchPostData = async () => {
     }
 
     const data = await response.json();
-    console.log("获取到的帖子数据:", data);
-    console.log("Files in response:", data.files);
-    console.log("Files length:", data.files ? data.files.length : 'no files');
 
     // 获取作者用户名
     let authorName = "匿名用户";
@@ -322,9 +315,6 @@ const fetchPostData = async () => {
       user_id: data.author_id || data.user_id,
       files: data.files || [], // Include files from API response
     };
-    
-    console.log("Processed post data:", post.value);
-    console.log("Post files:", post.value.files);
   } catch (error) {
     console.error("获取帖子失败:", error);
     errorMessage.value = "无法连接到服务器，请稍后重试";
@@ -357,15 +347,12 @@ const openImageModal = (file) => {
 
 const handleImageError = (event) => {
   console.error('Image failed to load:', event.target.src);
-  console.error('Filename:', event.target.dataset.filename);
-  console.error('Full event:', event);
   // You could show a placeholder image here
   // event.target.src = '/path/to/placeholder.png';
 };
 
 const handleImageLoad = (event) => {
-  console.log('Image loaded successfully:', event.target.dataset.filename);
-  console.log('Image URL:', event.target.src);
+  // Image loaded successfully
 };
 
 // 组件挂载时获取数据
@@ -463,8 +450,19 @@ onMounted(() => {
   
   .image-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    max-width: 100%;
+    
+    // Responsive adjustments
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    @media (min-width: 769px) and (max-width: 1024px) {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
     
     .image-item {
       border-radius: 8px;
@@ -480,13 +478,27 @@ onMounted(() => {
       
       .image-container {
         position: relative;
+        width: 100%;
         
         .post-image {
           width: 100%;
-          height: 200px;
-          object-fit: cover;
+          max-width: 100%;
+          height: auto;
+          max-height: 400px;
+          object-fit: contain;
           cursor: pointer;
           transition: opacity 0.3s ease;
+          display: block;
+          background: white;
+          
+          // Responsive image sizes
+          @media (max-width: 768px) {
+            max-height: 300px;
+          }
+          
+          @media (min-width: 1200px) {
+            max-height: 500px;
+          }
           
           &:hover {
             opacity: 0.9;

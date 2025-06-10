@@ -117,22 +117,15 @@ export const useFileUpload = () => {
 
   const deleteFile = async (fileId: number) => {
     try {
-      console.log('Deleting file:', fileId);
       const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/files/${fileId}`, {
         method: 'DELETE'
       })
       
-      console.log('Delete response status:', response.status, response.ok);
-      
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
-        console.error('Delete failed:', response.status, errorText);
         throw new Error(`Failed to delete file: ${response.status} ${errorText}`)
       }
-      
-      console.log('File deleted successfully');
     } catch (err) {
-      console.error('Delete error caught:', err);
       const deleteError = err instanceof Error ? err : new Error('Failed to delete file')
       error.value = deleteError
       throw deleteError

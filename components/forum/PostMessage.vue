@@ -146,6 +146,7 @@ const { deleteFile } = useFileUpload();
 const uploadProgress = ref(0);
 
 const { token } = useAuth();
+const { fetchWithAuth } = useApi();
 const router = useRouter();
 
 // 表单数据
@@ -236,8 +237,6 @@ const handleImageDeleteError = (error: Error) => {
 // 删除已上传的图片
 const removeUploadedImage = async (index: number) => {
   const imageToRemove = uploadedImages.value[index];
-  console.log('Removing image:', imageToRemove);
-  console.log('Current token:', token.value ? 'exists' : 'missing');
   
   try {
     // 从后端删除文件
@@ -301,8 +300,6 @@ const handleSubmit = async () => {
     isLoading.value = true;
     errorMessage.value = "";
 
-    const { fetchWithAuth } = useApi();
-
     const jsonData = {
       title: title.value,
       category: category.value,
@@ -317,13 +314,10 @@ const handleSubmit = async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token.value}`,
         },
         body: JSON.stringify(jsonData),
       }
     );
-
-    console.log("📥 发帖响应状态:", response.status, response.ok);
 
     // 只读取一次响应体
     if (!response.ok) {
@@ -358,13 +352,11 @@ const handleSubmit = async () => {
       }
       }
 
-      console.error("❌ 发帖失败:", errorMessage);
       throw new Error(errorMessage);
     }
 
     // 成功响应：解析 JSON
     const postData = await response.json();
-    console.log("✅ 发帖成功:", postData);
 
     // 显示成功消息
     successMessage.value = "帖子发布成功！";
@@ -379,7 +371,6 @@ const handleSubmit = async () => {
       router.push(`/forum/posts/${postData.id || postData.postId}`);
     }, 3000);
   } catch (err) {
-    console.error("💥 发布异常:", err);
     errorMessage.value =
       err instanceof Error ? err.message : "发布失败，请稍后重试";
   } finally {

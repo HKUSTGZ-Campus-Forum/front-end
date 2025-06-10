@@ -50,7 +50,6 @@ const isLoading = ref(false);
 
 // 检查用户是否已认证
 const isAuthenticated = computed(() => {
-  console.log("用户认证状态:", !!user.value, user.value);
   return !!user.value;
 });
 
@@ -72,7 +71,6 @@ const fetchComments = async () => {
     if (!response.ok) throw new Error("获取评论失败");
 
     const data = await response.json();
-    console.log("📥 获取到的评论数据:", data);
     comments.value = data.comments || [];
   } catch (error) {
     console.error("获取评论失败:", error);
