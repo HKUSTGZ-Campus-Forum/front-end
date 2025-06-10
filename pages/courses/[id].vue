@@ -117,12 +117,34 @@
                     <option value="">选择学期（可选）</option>
                     <option 
                       v-for="semester in availableSemesters" 
-                      :key="semester"
-                      :value="semester"
+                      :key="semester.code"
+                      :value="semester.code"
                     >
-                      {{ semester }}
+                      {{ semester.display_name }}
                     </option>
                   </select>
+                </div>
+
+                <!-- 评价标题 -->
+                <div class="form-group">
+                  <label for="title" class="form-label">
+                    <i class="fas fa-heading"></i>
+                    评价标题
+                  </label>
+                  <input
+                    id="title"
+                    v-model="reviewForm.title"
+                    type="text"
+                    class="form-input"
+                    :placeholder="`${courseDetail.name} 课程评价`"
+                    maxlength="100"
+                  />
+                  <div class="char-count">
+                    {{ reviewForm.title.length }}/100
+                  </div>
+                  <div class="form-hint">
+                    留空将使用默认标题
+                  </div>
                 </div>
 
                 <!-- 评价内容 -->
@@ -142,6 +164,25 @@
                   ></textarea>
                   <div class="char-count">
                     {{ reviewForm.content.length }}/500
+                  </div>
+                </div>
+
+                <!-- 图片上传 -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <i class="fas fa-images"></i>
+                    上传图片
+                  </label>
+                  <FileUpload
+                    ref="fileUploadRef"
+                    :entity-type="'post'"
+                    :multiple="true"
+                    :max-files="3"
+                    @files-uploaded="onFilesUploaded"
+                    @upload-error="onUploadError"
+                  />
+                  <div class="form-hint">
+                    最多上传3张图片，支持JPG、PNG、GIF格式
                   </div>
                 </div>
 
@@ -333,6 +374,7 @@ import { useRoute } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
+import FileUpload from "~/components/FileUpload.vue";
 // 🔥 导入统一弹窗组件
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 
@@ -374,6 +416,7 @@ interface Reply {
 }
 
 interface ReviewForm {
+  title: string;
   content: string;
   rating: number | null;
   semester: string;
@@ -400,11 +443,19 @@ const courseDetail = ref<Course>({
 
 const reviews = ref<Review[]>([]);
 const reviewForm = ref<ReviewForm>({
+  title: "",
   content: "",
   rating: null,
   semester: "",
 });
-const availableSemesters = ref<string[]>([]);
+const uploadedFileIds = ref<number[]>([]);
+const availableSemesters = ref<Array<{
+  code: string;
+  display_name: string;
+  year: string;
+  season: string;
+  season_display: string;
+}>>([]);
 
 const isLoading = ref(true);
 const isLoadingReviews = ref(false);
@@ -500,7 +551,7 @@ const fetchCourseReviews = async () => {
 const fetchAvailableSemesters = async () => {
   try {
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/semesters`
+      `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/semesters?lang=zh`
     );
 
     if (response.ok) {
@@ -510,12 +561,22 @@ const fetchAvailableSemesters = async () => {
     } else {
       console.error("❌ 获取可用学期失败:", response.status);
       // Fallback to some default semesters if API fails
-      availableSemesters.value = ["2024春", "2024秋", "2025春", "2025秋"];
+      availableSemesters.value = [
+        { code: "2024spring", display_name: "2024春", year: "2024", season: "spring", season_display: "春" },
+        { code: "2024fall", display_name: "2024秋", year: "2024", season: "fall", season_display: "秋" },
+        { code: "2025spring", display_name: "2025春", year: "2025", season: "spring", season_display: "春" },
+        { code: "2025fall", display_name: "2025秋", year: "2025", season: "fall", season_display: "秋" }
+      ];
     }
   } catch (error) {
     console.error("❌ 获取可用学期失败:", error);
     // Fallback to some default semesters if API fails
-    availableSemesters.value = ["2024春", "2024秋", "2025春", "2025秋"];
+    availableSemesters.value = [
+      { code: "2024spring", display_name: "2024春", year: "2024", season: "spring", season_display: "春" },
+      { code: "2024fall", display_name: "2024秋", year: "2024", season: "fall", season_display: "秋" },
+      { code: "2025spring", display_name: "2025春", year: "2025", season: "spring", season_display: "春" },
+      { code: "2025fall", display_name: "2025秋", year: "2025", season: "fall", season_display: "秋" }
+    ];
   }
 };
 
@@ -532,7 +593,13 @@ const submitReview = async () => {
     // 构造标签
     const tags = [courseDetail.value.code];
     if (reviewForm.value.semester) {
-      tags.push(`${courseDetail.value.code}-${reviewForm.value.semester}`);
+      // reviewForm.value.semester now contains the semester code (e.g., "2024fall")
+      // Need to convert it to the tag format used in backend
+      const selectedSemester = availableSemesters.value.find(s => s.code === reviewForm.value.semester);
+      if (selectedSemester) {
+        // Create tag in format: "COURSE_CODE-YEARseason" (e.g., "AIAA 1010-2024fall")
+        tags.push(`${courseDetail.value.code}-${selectedSemester.code}`);
+      }
     }
 
     // 构造帖子内容（包含评分）
@@ -542,9 +609,10 @@ const submitReview = async () => {
     }
 
     const postData = {
-      title: `${courseDetail.value.name} 课程评价`,
+      title: reviewForm.value.title.trim() || `${courseDetail.value.name} 课程评价`,
       content: content,
       tags: tags,
+      file_ids: uploadedFileIds.value,
     };
 
     console.log("📤 发布课程评价:", postData);
@@ -566,10 +634,16 @@ const submitReview = async () => {
 
       // 🔥 重置表单
       reviewForm.value = {
+        title: "",
         content: "",
         rating: null,
         semester: "",
       };
+      uploadedFileIds.value = [];
+      // Reset file upload component
+      if (fileUploadRef.value) {
+        fileUploadRef.value.clearFiles();
+      }
       showReviewForm.value = false;
 
       // 🔥 重新加载评价列表
@@ -619,10 +693,44 @@ const extractRating = (content: string) => {
 
 const extractSemester = (tags: any[]) => {
   if (!tags || !Array.isArray(tags)) return null;
-  const semesterTag = tags.find(
-    (tag) => tag.name && tag.name.includes("-") && tag.name.match(/\d{4}[春秋]/)
-  );
-  return semesterTag ? semesterTag.name.split("-")[1] : null;
+  
+  // Look for semester tags in new format: "COURSE_CODE-YEARseason"
+  const semesterTag = tags.find((tag) => {
+    if (!tag.name || !tag.name.includes("-")) return false;
+    
+    const parts = tag.name.split("-");
+    if (parts.length < 2) return false;
+    
+    const semesterPart = parts[1];
+    // Match patterns like "2024fall", "2024spring", "2024春", "2024秋"
+    return /^\d{4}(spring|summer|fall|winter|春|夏|秋|冬)$/i.test(semesterPart);
+  });
+  
+  if (semesterTag) {
+    const semesterCode = semesterTag.name.split("-")[1];
+    
+    // Convert to display format for Chinese UI
+    const year = semesterCode.match(/\d{4}/)?.[0] || "";
+    const seasonMatch = semesterCode.match(/(spring|summer|fall|winter|春|夏|秋|冬)$/i);
+    
+    if (seasonMatch) {
+      const season = seasonMatch[1].toLowerCase();
+      const seasonMap: Record<string, string> = {
+        'spring': '春',
+        'summer': '夏', 
+        'fall': '秋',
+        'winter': '冬',
+        '春': '春',
+        '夏': '夏',
+        '秋': '秋',
+        '冬': '冬'
+      };
+      
+      return `${year}${seasonMap[season] || season}`;
+    }
+  }
+  
+  return null;
 };
 
 const formatDate = (dateString: string) => {
@@ -644,10 +752,29 @@ const formatDate = (dateString: string) => {
 const cancelReview = () => {
   showReviewForm.value = false;
   reviewForm.value = {
+    title: "",
     content: "",
     rating: null,
     semester: "",
   };
+  uploadedFileIds.value = [];
+  // Reset file upload component
+  if (fileUploadRef.value) {
+    fileUploadRef.value.clearFiles();
+  }
+};
+
+// File upload handlers
+const fileUploadRef = ref();
+
+const onFilesUploaded = (fileIds: number[]) => {
+  uploadedFileIds.value = fileIds;
+  console.log('✅ 图片上传成功:', fileIds);
+};
+
+const onUploadError = (error: string) => {
+  errorMsg.value = `图片上传失败: ${error}`;
+  showErrorModal.value = true;
 };
 
 const toggleLike = async (review: Review) => {
@@ -981,6 +1108,7 @@ useHead({
       }
 
       .form-select,
+      .form-input,
       .form-textarea {
         width: 100%;
         padding: 0.75rem;
@@ -1006,6 +1134,13 @@ useHead({
         font-size: 0.875rem;
         color: #666;
         margin-top: 0.25rem;
+      }
+
+      .form-hint {
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 0.25rem;
+        font-style: italic;
       }
     }
 
