@@ -115,10 +115,13 @@
                     class="form-select"
                   >
                     <option value="">选择学期（可选）</option>
-                    <option value="2024春">2024春</option>
-                    <option value="2024秋">2024秋</option>
-                    <option value="2025春">2025春</option>
-                    <option value="2025秋">2025秋</option>
+                    <option 
+                      v-for="semester in availableSemesters" 
+                      :key="semester"
+                      :value="semester"
+                    >
+                      {{ semester }}
+                    </option>
                   </select>
                 </div>
 
@@ -401,6 +404,7 @@ const reviewForm = ref<ReviewForm>({
   rating: null,
   semester: "",
 });
+const availableSemesters = ref<string[]>([]);
 
 const isLoading = ref(true);
 const isLoadingReviews = ref(false);
@@ -448,7 +452,10 @@ const fetchCourseDetail = async () => {
     courseDetail.value = data;
 
     console.log("✅ 课程详情获取成功:", data);
-    await fetchCourseReviews();
+    await Promise.all([
+      fetchCourseReviews(),
+      fetchAvailableSemesters()
+    ]);
   } catch (err: any) {
     console.error("❌ 获取课程详情失败:", err);
     error.value = err.message || "获取课程详情失败";
@@ -487,6 +494,28 @@ const fetchCourseReviews = async () => {
     console.error("❌ 获取课程评价失败:", error);
   } finally {
     isLoadingReviews.value = false;
+  }
+};
+
+const fetchAvailableSemesters = async () => {
+  try {
+    const response = await fetchWithAuth(
+      `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/semesters`
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      availableSemesters.value = data.semesters || [];
+      console.log("✅ 可用学期获取成功:", availableSemesters.value);
+    } else {
+      console.error("❌ 获取可用学期失败:", response.status);
+      // Fallback to some default semesters if API fails
+      availableSemesters.value = ["2024春", "2024秋", "2025春", "2025秋"];
+    }
+  } catch (error) {
+    console.error("❌ 获取可用学期失败:", error);
+    // Fallback to some default semesters if API fails
+    availableSemesters.value = ["2024春", "2024秋", "2025春", "2025秋"];
   }
 };
 
