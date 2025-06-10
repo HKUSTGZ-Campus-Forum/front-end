@@ -24,7 +24,7 @@ useHead({
 });
 
 // Composables
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, fetchPublic } = useApi();
 const router = useRouter();
 
 // 响应式数据
@@ -53,7 +53,7 @@ interface HotPost {
 // 获取热门帖子
 const fetchHotPosts = async () => {
   try {
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       "https://dev.unikorn.axfff.com/api/analytics/hot-posts?limit=8&hours=72"
     );
 
