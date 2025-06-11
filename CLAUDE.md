@@ -228,6 +228,105 @@ const isImageFile = (file) => {
 - **Pinia**: State management
 - **vue-i18n**: Internationalization
 
+## Critical Navigation System Architecture
+
+### **Navigation Component Structure** ⚠️ **IMPORTANT**
+The navigation system uses an **auto-import naming convention** that must be respected:
+
+```
+/components/home/
+├── HomeContainer.vue          # Main layout wrapper
+├── Pinned.vue                 # Top navigation bar
+└── Sidebar.vue                # Left sidebar navigation
+```
+
+**CRITICAL**: In templates, these are referenced as:
+- `Pinned.vue` → `<HomePinned>` component
+- `Sidebar.vue` → `<HomeSidebar>` component
+
+**❌ NEVER change component references to match file names** - this breaks the navigation system:
+```vue
+<!-- ❌ WRONG - breaks navigation -->
+<Pinned :sidebarFolded="fold.updates" />
+<Sidebar :folded="fold.updates" />
+
+<!-- ✅ CORRECT - works with auto-import -->
+<HomePinned :sidebarFolded="fold.updates" />
+<HomeSidebar :folded="fold.updates" />
+```
+
+### **Avatar System Integration Story**
+
+#### **The Challenge**: Top Navigation Avatar Fix
+The user reported that while posts and comments correctly showed real user avatars, the top navigation bar was still showing a hardcoded default avatar instead of the user's actual profile picture.
+
+#### **Critical Mistakes and Learning**
+1. **First Attempt** - Direct replacement of hardcoded props with real user data:
+   - ❌ **Result**: Navigation bars completely disappeared
+   - 🎓 **Lesson**: Component props serve as essential fallbacks
+
+2. **Second Attempt** - "Fixed" component naming from `<HomePinned>` to `<Pinned>`:
+   - ❌ **Result**: Navigation bars disappeared again
+   - 🎓 **Lesson**: Nuxt auto-import naming convention must be respected
+
+3. **Third Attempt** - Removed hardcoded props entirely:
+   - ❌ **Result**: Broke backward compatibility
+   - 🎓 **Lesson**: Existing architecture dependencies must be preserved
+
+#### **Successful Solution**: Priority-Based Avatar System
+```vue
+<!-- 3-tier priority system in Pinned.vue -->
+<!-- Priority 1: Real authenticated user avatar -->
+<div v-if="isLoggedIn && user?.profile_picture_url" class="user-avatar">
+  <img :src="user.profile_picture_url" :alt="user.username" />
+</div>
+<!-- Priority 2: Fallback to component props -->
+<div v-else-if="props.userAvatar" class="user-avatar">
+  <img :src="props.userAvatar" :alt="props.username" />
+</div>
+<!-- Priority 3: Default fallback icon -->
+<span v-else class="user-icon-fallback">👤</span>
+```
+
+**✅ Key Success Factors**:
+- **Preserved original component naming** (`HomePinned`/`HomeSidebar`)
+- **Maintained prop compatibility** for existing usage
+- **Implemented graceful degradation** with 3-tier priority system
+- **Added real user data access** via `useAuth` composable
+
+## Icon System Solutions
+
+### **Font Awesome Loading Issues**
+When Font Awesome icons don't load or show up, use Unicode fallbacks:
+
+```vue
+<!-- ❌ Problematic Font Awesome -->
+<i class="fas fa-edit"></i>
+
+<!-- ✅ Unicode fallback solution -->
+<span class="icon-fallback">✏️</span>
+```
+
+**Available Unicode Icons**:
+- ✏️ Edit/Pencil
+- ✓ Save/Check
+- ✕ Cancel/Close  
+- 📷 Camera
+- ⟳ Loading spinner (with CSS animation)
+- 👤 User/Person
+
+**CSS for fallbacks**:
+```scss
+.icon-fallback {
+  font-size: 1rem;
+  display: inline-block;
+  
+  &.spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+```
+
 ## Commands
 - **Dev**: `npm run dev`
 - **Build**: `npm run build`
@@ -241,17 +340,32 @@ const isImageFile = (file) => {
 2. **Images Not Loading**: Check OSS signed URL generation and CORS
 3. **Vue Warnings**: Usually related to accessing undefined properties, use optional chaining
 4. **File Upload Fails**: Check STS token configuration and OSS permissions
+5. **Navigation Disappears**: Check component naming (`HomePinned` not `Pinned`)
+6. **Icons Missing**: Use Unicode fallbacks instead of Font Awesome
+
+### Component Development Rules
+⚠️ **CRITICAL RULES** for component modifications:
+
+1. **Never change navigation component references** in templates
+2. **Always test navigation system** after any layout changes
+3. **Implement fallbacks** for user data (auth state can be inconsistent)
+4. **Use priority systems** instead of replacing existing functionality
+5. **Test both authenticated and guest states**
 
 ### Useful Console Commands
 ```javascript
 // Check auth state
 localStorage.getItem('auth_token')
 localStorage.getItem('refresh_token')
+localStorage.getItem('user_info')
 
-// Clear auth state
+// Clear auth state for testing
 localStorage.removeItem('auth_token')
 localStorage.removeItem('refresh_token')
 localStorage.removeItem('user_info')
+
+// Check component mounting
+console.log('Navigation components loaded:', !!document.querySelector('.top-nav'))
 ```
 
 ### API Testing
@@ -259,7 +373,7 @@ localStorage.removeItem('user_info')
 # Test file upload endpoint
 curl -X POST https://dev.unikorn.axfff.com/api/files/upload \
   -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
+  -H "Content-Type": "application/json" \
   -d '{"filename": "test.jpg", "file_type": "post_image"}'
 ```
 
@@ -275,7 +389,24 @@ curl -X POST https://dev.unikorn.axfff.com/api/files/upload \
 - File upload with progress tracking
 - Responsive image gallery with CSS Grid
 
+## Lessons Learned for Future Development
+
+### **Critical Success Patterns**
+1. **Incremental Enhancement**: Add new functionality while preserving existing behavior
+2. **Priority-Based Systems**: Layer new features on top of existing systems rather than replacing them
+3. **Fallback Strategies**: Always provide graceful degradation when data is unavailable
+4. **Component Contract Respect**: Don't change how components are referenced without understanding the import system
+5. **State-Aware Development**: Account for different authentication states in UI logic
+
+### **Avoid These Mistakes**
+1. **Direct Prop Replacement**: Don't replace working props with computed data without fallbacks
+2. **Component Naming Changes**: Don't "fix" component names that seem wrong without testing
+3. **Dependency Assumptions**: Don't assume external libraries (Font Awesome) are reliably loaded
+4. **Single-State Testing**: Don't only test in one authentication state
+5. **Architecture Changes Without Understanding**: Don't modify component relationships without understanding the full system
+
 ---
 
-*Last Updated: Current session*
+*Last Updated: December 2024*
 *Key Contributors: Claude Code AI Assistant*
+*Critical Issues Resolved: Navigation system stability, avatar integration, icon fallbacks*
