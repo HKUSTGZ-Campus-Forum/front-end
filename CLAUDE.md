@@ -327,6 +327,101 @@ When Font Awesome icons don't load or show up, use Unicode fallbacks:
 }
 ```
 
+## Avatar URL Expiration Fix (December 2024)
+
+### **Problem**: Signed URL Expiration
+Avatar images would fail to load after approximately 1 hour because the Alibaba Cloud OSS signed URLs expire, causing broken avatar displays across the application.
+
+### **Solution**: Smart Avatar Refresh System
+Implemented a comprehensive avatar URL refresh mechanism with the following features:
+
+#### **1. Enhanced UserAvatar Component**
+- **Smart Error Detection**: Recognizes OSS signed URL patterns and expiration timestamps
+- **Automatic URL Refresh**: Fetches fresh URLs from backend when expiration is detected
+- **Retry Logic**: Implements exponential backoff for transient failures
+- **Visual Feedback**: Shows refresh indicator during retry attempts
+- **Proactive Refresh**: Checks for near-expiring URLs every 45 minutes
+
+**Key Props**:
+```vue
+<UserAvatar 
+  :avatar-url="user.profile_picture_url"
+  :user-id="user.id"
+  :username="user.username"
+  :enable-auto-refresh="true"  // Enable smart refresh (default: true)
+  @avatar-refreshed="handleAvatarUpdate"
+/>
+```
+
+#### **2. Updated useUser Composable**
+- **Cache Expiration**: Automatically invalidates cached user data after 1 hour
+- **OSS URL Validation**: Detects expired OSS URLs and triggers refresh
+- **Smart Fallbacks**: Uses cached data as fallback when refresh fails
+- **New Methods**: `refreshUserById()`, `getFreshAvatarUrl()`, `clearExpiredCache()`
+
+#### **3. Refresh Logic Flow**
+```
+1. Image load fails → Check if OSS signed URL
+2. Parse URL expiration timestamp
+3. If expired/near expiry → Fetch fresh user data from backend
+4. Update avatar URL and clear cache
+5. If still fails → Show initials placeholder
+```
+
+#### **4. Performance Optimizations**
+- **Proactive Refresh**: Refreshes URLs 5-10 minutes before expiration
+- **Rate Limiting**: Maximum 3 retries per avatar, 2 refresh attempts
+- **Cache Management**: Automatic cleanup of expired cache entries
+- **Exponential Backoff**: 1s, 2s, 4s retry intervals
+
+### **Technical Implementation Details**
+
+**OSS URL Detection**:
+```typescript
+const isOSSSignedUrl = (url: string): boolean => {
+  return url.includes('aliyuncs.com') && 
+         (url.includes('Expires=') || url.includes('x-oss-expires'));
+};
+```
+
+**Expiration Parsing**:
+```typescript
+const getUrlExpiration = (url: string): Date | null => {
+  const urlObj = new URL(url);
+  const expires = urlObj.searchParams.get('Expires') || urlObj.searchParams.get('x-oss-expires');
+  return expires ? new Date(parseInt(expires) * 1000) : null;
+};
+```
+
+**Smart Cache Management**:
+```typescript
+// Cache includes timestamp for expiration checking
+interface PublicUserData {
+  username: string;
+  profile_picture_url?: string;
+  role_name?: string;
+  cached_at?: number; // Added for expiration tracking
+}
+```
+
+### **User Experience Improvements**
+- **Seamless Recovery**: Users don't see broken avatars, just smooth refresh
+- **Visual Feedback**: Small spinner indicates refresh in progress
+- **Graceful Degradation**: Falls back to colored initials if all else fails
+- **No User Action Required**: Everything happens automatically
+
+### **Backward Compatibility**
+- All existing UserAvatar usage continues to work unchanged
+- Auto-refresh is enabled by default but can be disabled
+- Existing props and events remain the same
+- No breaking changes to component API
+
+### **Future Enhancements**
+- **Background Refresh**: Refresh URLs in background without affecting display
+- **Bulk Refresh**: Refresh multiple avatar URLs simultaneously
+- **URL Prefetching**: Pre-generate fresh URLs before current ones expire
+- **Analytics**: Track avatar refresh success rates
+
 ## Commands
 - **Dev**: `npm run dev`
 - **Build**: `npm run build`

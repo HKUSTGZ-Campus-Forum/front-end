@@ -6,8 +6,8 @@
     :title="showTooltip ? `${username}` : ''"
   >
     <img 
-      v-if="avatarUrl" 
-      :src="avatarUrl" 
+      v-if="currentAvatarUrl && !imageError" 
+      :src="currentAvatarUrl" 
       :alt="`${username}的头像`"
       class="avatar-image"
       @error="handleImageError"
@@ -19,11 +19,17 @@
     
     <!-- Online indicator -->
     <div v-if="showOnlineStatus && isOnline" class="online-indicator"></div>
+    
+    <!-- Refresh indicator when retrying -->
+    <div v-if="isRetrying" class="refresh-indicator">
+      <i class="fas fa-sync-alt fa-spin"></i>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useApi } from '~/composables/useApi';
 
 export interface Props {
   avatarUrl?: string | null;
@@ -34,11 +40,13 @@ export interface Props {
   showTooltip?: boolean;
   showOnlineStatus?: boolean;
   isOnline?: boolean;
+  enableAutoRefresh?: boolean;
 }
 
 interface Emits {
   (e: 'click', userId?: number): void;
   (e: 'imageError'): void;
+  (e: 'avatarRefreshed', newUrl: string): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -48,12 +56,179 @@ const props = withDefaults(defineProps<Props>(), {
   showTooltip: true,
   showOnlineStatus: false,
   isOnline: false,
+  enableAutoRefresh: true,
 });
 
 const emit = defineEmits<Emits>();
 
+const { fetchWithAuth } = useApi();
+
 const imageLoaded = ref(false);
 const imageError = ref(false);
+const isRetrying = ref(false);
+const retryCount = ref(0);
+const currentAvatarUrl = ref<string | null>(null);
+const refreshAttempts = ref(0);
+
+// Maximum retry attempts
+const MAX_RETRY_ATTEMPTS = 3;
+const MAX_REFRESH_ATTEMPTS = 2;
+
+// Initialize avatar URL
+const initializeAvatarUrl = () => {
+  currentAvatarUrl.value = props.avatarUrl;
+  imageError.value = false;
+  retryCount.value = 0;
+  refreshAttempts.value = 0;
+};
+
+// Watch for changes in avatarUrl prop
+watch(() => props.avatarUrl, (newUrl) => {
+  if (newUrl !== currentAvatarUrl.value) {
+    initializeAvatarUrl();
+  }
+});
+
+// Check if URL appears to be expired OSS signed URL
+const isOSSSignedUrl = (url: string): boolean => {
+  if (!url) return false;
+  // Check for OSS URL patterns with signature parameters
+  return url.includes('aliyuncs.com') && 
+         (url.includes('Expires=') || url.includes('x-oss-expires'));
+};
+
+// Extract expiration time from OSS signed URL
+const getUrlExpiration = (url: string): Date | null => {
+  if (!isOSSSignedUrl(url)) return null;
+  
+  try {
+    const urlObj = new URL(url);
+    const expires = urlObj.searchParams.get('Expires') || urlObj.searchParams.get('x-oss-expires');
+    if (expires) {
+      // OSS expires is usually a Unix timestamp
+      return new Date(parseInt(expires) * 1000);
+    }
+  } catch (error) {
+    console.warn('Failed to parse URL expiration:', error);
+  }
+  
+  return null;
+};
+
+// Check if URL is likely expired
+const isUrlLikelyExpired = (url: string): boolean => {
+  if (!isOSSSignedUrl(url)) return false;
+  
+  const expiration = getUrlExpiration(url);
+  if (expiration) {
+    // Consider expired if within 5 minutes of expiration or already expired
+    const now = new Date();
+    const timeUntilExpiry = expiration.getTime() - now.getTime();
+    return timeUntilExpiry <= 5 * 60 * 1000; // 5 minutes buffer
+  }
+  
+  // If we can't determine expiration, assume it might be expired if it's an OSS URL
+  return false;
+};
+
+// Refresh avatar URL from backend
+const refreshAvatarUrl = async (): Promise<string | null> => {
+  if (!props.userId || refreshAttempts.value >= MAX_REFRESH_ATTEMPTS) {
+    return null;
+  }
+  
+  try {
+    refreshAttempts.value++;
+    const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/public/${props.userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to refresh avatar: ${response.status}`);
+    }
+    
+    const userData = await response.json();
+    const newAvatarUrl = userData.profile_picture_url;
+    
+    if (newAvatarUrl && newAvatarUrl !== currentAvatarUrl.value) {
+      emit('avatarRefreshed', newAvatarUrl);
+      return newAvatarUrl;
+    }
+    
+    return newAvatarUrl;
+  } catch (error) {
+    console.warn('Failed to refresh avatar URL:', error);
+    return null;
+  }
+};
+
+// Handle image loading error with smart retry logic
+const handleImageError = async () => {
+  console.log('Avatar image load failed:', currentAvatarUrl.value);
+  
+  // If we haven't tried too many times and auto refresh is enabled
+  if (retryCount.value < MAX_RETRY_ATTEMPTS && props.enableAutoRefresh) {
+    retryCount.value++;
+    isRetrying.value = true;
+    
+    // Check if this looks like an expired signed URL
+    if (currentAvatarUrl.value && isUrlLikelyExpired(currentAvatarUrl.value)) {
+      console.log('URL appears expired, attempting to refresh...');
+      
+      try {
+        const newUrl = await refreshAvatarUrl();
+        if (newUrl) {
+          console.log('Successfully refreshed avatar URL');
+          currentAvatarUrl.value = newUrl;
+          imageError.value = false;
+          isRetrying.value = false;
+          return;
+        }
+      } catch (error) {
+        console.warn('Avatar URL refresh failed:', error);
+      }
+    }
+    
+    // Simple retry with exponential backoff
+    setTimeout(() => {
+      if (currentAvatarUrl.value) {
+        // Force refresh by adding cache-busting parameter
+        const url = new URL(currentAvatarUrl.value);
+        url.searchParams.set('retry', retryCount.value.toString());
+        url.searchParams.set('t', Date.now().toString());
+        currentAvatarUrl.value = url.toString();
+      }
+      isRetrying.value = false;
+    }, Math.pow(2, retryCount.value - 1) * 1000); // 1s, 2s, 4s
+    
+  } else {
+    // Give up and show placeholder
+    imageError.value = true;
+    isRetrying.value = false;
+    emit('imageError');
+  }
+};
+
+// Handle successful image load
+const handleImageLoad = () => {
+  imageLoaded.value = true;
+  imageError.value = false;
+  isRetrying.value = false;
+  retryCount.value = 0; // Reset retry count on successful load
+};
+
+// Proactively check and refresh URL if near expiration
+const proactiveRefresh = async () => {
+  if (!props.enableAutoRefresh || !currentAvatarUrl.value || !props.userId) {
+    return;
+  }
+  
+  if (isUrlLikelyExpired(currentAvatarUrl.value)) {
+    console.log('Proactively refreshing avatar URL before expiration');
+    const newUrl = await refreshAvatarUrl();
+    if (newUrl) {
+      currentAvatarUrl.value = newUrl;
+    }
+  }
+};
 
 // Generate initials from username
 const initials = computed(() => {
@@ -106,17 +281,20 @@ const handleClick = () => {
   }
 };
 
-// Handle image error
-const handleImageError = () => {
-  imageError.value = true;
-  emit('imageError');
-};
-
-// Handle image load
-const handleImageLoad = () => {
-  imageLoaded.value = true;
-  imageError.value = false;
-};
+// Initialize on mount
+onMounted(() => {
+  initializeAvatarUrl();
+  
+  // Set up proactive refresh interval (every 45 minutes)
+  if (props.enableAutoRefresh) {
+    const interval = setInterval(proactiveRefresh, 45 * 60 * 1000);
+    
+    // Cleanup interval on unmount
+    onUnmounted(() => {
+      clearInterval(interval);
+    });
+  }
+});
 </script>
 
 <style lang="scss" scoped>
@@ -230,6 +408,25 @@ const handleImageLoad = () => {
     border: 2px solid #fff;
     border-radius: 50%;
     z-index: 1;
+  }
+
+  .refresh-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    padding: 2px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    i {
+      color: white;
+      font-size: 0.6em;
+    }
   }
 }
 
