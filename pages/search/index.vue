@@ -233,263 +233,264 @@ onMounted(() => {
   <HomeContainer>
     <div class="search-page">
       <div class="search-container">
-      <!-- Breadcrumb and back navigation -->
-      <div class="navigation-header">
-        <button class="back-button" @click="$router.back()">
-          <i class="fas fa-arrow-left"></i>
-          返回
-        </button>
-        <nav class="breadcrumb">
-          <NuxtLink to="/" class="breadcrumb-item">首页</NuxtLink>
-          <span class="breadcrumb-separator">/</span>
-          <span class="breadcrumb-item current">搜索结果</span>
-        </nav>
-      </div>
-
-      <!-- Search header -->
-      <div class="search-header">
-        <div class="search-input-section">
-          <SearchDropdown
-            v-model="currentQuery"
-            placeholder="搜索帖子、用户、课程..."
-            :show-history="true"
-            @search="handleNewSearch"
-          />
+        <!-- Breadcrumb and back navigation -->
+        <div class="navigation-header">
+          <button class="back-button" @click="$router.back()">
+            <i class="fas fa-arrow-left"></i>
+            返回
+          </button>
+          <nav class="breadcrumb">
+            <NuxtLink to="/" class="breadcrumb-item">首页</NuxtLink>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item current">搜索结果</span>
+          </nav>
         </div>
-        
-        <!-- Search summary -->
-        <div v-if="currentQuery" class="search-summary">
-          <span class="search-query">搜索：<strong>"{{ currentQuery }}"</strong></span>
-          <span v-if="!isLoading && hasResults" class="result-count">
-            找到相关结果
-          </span>
+
+        <!-- Search header -->
+        <div class="search-header">
+          <div class="search-input-section">
+            <SearchDropdown
+              v-model="currentQuery"
+              placeholder="搜索帖子、用户、课程..."
+              :show-history="true"
+              @search="handleNewSearch"
+            />
+          </div>
+          
+          <!-- Search summary -->
+          <div v-if="currentQuery" class="search-summary">
+            <span class="search-query">搜索：<strong>"{{ currentQuery }}"</strong></span>
+            <span v-if="!isLoading && hasResults" class="result-count">
+              找到相关结果
+            </span>
+          </div>
         </div>
-      </div>
 
-      <!-- Search tabs -->
-      <div class="search-tabs">
-        <button
-          v-for="tab in searchTabs"
-          :key="tab.id"
-          class="tab-button"
-          :class="{ active: activeTab === tab.id }"
-          @click="changeTab(tab.id)"
-        >
-          <i :class="tab.icon"></i>
-          {{ tab.label }}
-        </button>
-      </div>
-
-      <!-- Sort options (only for posts) -->
-      <div v-if="activeTab === 'posts' && hasResults" class="sort-options">
-        <label>排序方式：</label>
-        <select v-model="sortBy" @change="changeSortBy(sortBy)" class="sort-select">
-          <option
-            v-for="option in sortOptions"
-            :key="option.value"
-            :value="option.value"
+        <!-- Search tabs -->
+        <div class="search-tabs">
+          <button
+            v-for="tab in searchTabs"
+            :key="tab.id"
+            class="tab-button"
+            :class="{ active: activeTab === tab.id }"
+            @click="changeTab(tab.id)"
           >
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
+            <i :class="tab.icon"></i>
+            {{ tab.label }}
+          </button>
+        </div>
 
-      <!-- Loading state -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>搜索中...</p>
-      </div>
+        <!-- Sort options (only for posts) -->
+        <div v-if="activeTab === 'posts' && hasResults" class="sort-options">
+          <label>排序方式：</label>
+          <select v-model="sortBy" @change="changeSortBy(sortBy)" class="sort-select">
+            <option
+              v-for="option in sortOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
 
-      <!-- Error state -->
-      <div v-else-if="searchError" class="error-state">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>{{ searchError }}</p>
-        <button @click="performSearch(currentQuery, activeTab)" class="retry-btn">
-          重试
-        </button>
-      </div>
+        <!-- Loading state -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>搜索中...</p>
+        </div>
 
-      <!-- Search results -->
-      <div v-else-if="hasResults" class="search-results">
-        <!-- Posts results -->
-        <div v-if="activeTab === 'posts'" class="posts-results">
-          <div
-            v-for="post in detailedPosts"
-            :key="post.id"
-            class="post-result"
-            @click="goToPost(post.id)"
-          >
-            <div class="post-content">
-              <h3 class="post-title" v-html="post.title_highlighted"></h3>
-              <p class="post-excerpt">{{ post.content_excerpt }}</p>
-              
-              <div class="post-meta">
-                <div class="author-info">
-                  <UserAvatar
-                    :avatar-url="post.author_avatar"
-                    :username="post.author"
-                    size="xs"
-                    :clickable="false"
-                  />
-                  <span class="author-name">{{ post.author }}</span>
+        <!-- Error state -->
+        <div v-else-if="searchError" class="error-state">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>{{ searchError }}</p>
+          <button @click="performSearch(currentQuery, activeTab)" class="retry-btn">
+            重试
+          </button>
+        </div>
+
+        <!-- Search results -->
+        <div v-else-if="hasResults" class="search-results">
+          <!-- Posts results -->
+          <div v-if="activeTab === 'posts'" class="posts-results">
+            <div
+              v-for="post in detailedPosts"
+              :key="post.id"
+              class="post-result"
+              @click="goToPost(post.id)"
+            >
+              <div class="post-content">
+                <h3 class="post-title" v-html="post.title_highlighted"></h3>
+                <p class="post-excerpt">{{ post.content_excerpt }}</p>
+                
+                <div class="post-meta">
+                  <div class="author-info">
+                    <UserAvatar
+                      :avatar-url="post.author_avatar"
+                      :username="post.author"
+                      size="xs"
+                      :clickable="false"
+                    />
+                    <span class="author-name">{{ post.author }}</span>
+                  </div>
+                  
+                  <div class="post-stats">
+                    <span class="stat">
+                      <i class="fas fa-heart"></i>
+                      {{ post.reaction_count }}
+                    </span>
+                    <span class="stat">
+                      <i class="fas fa-comment"></i>
+                      {{ post.comment_count }}
+                    </span>
+                    <span class="stat">
+                      <i class="fas fa-eye"></i>
+                      {{ post.view_count }}
+                    </span>
+                    <span class="post-time">
+                      {{ formatTimeAgo(post.created_at) }}
+                    </span>
+                  </div>
                 </div>
                 
-                <div class="post-stats">
-                  <span class="stat">
-                    <i class="fas fa-heart"></i>
-                    {{ post.reaction_count }}
-                  </span>
-                  <span class="stat">
-                    <i class="fas fa-comment"></i>
-                    {{ post.comment_count }}
-                  </span>
-                  <span class="stat">
-                    <i class="fas fa-eye"></i>
-                    {{ post.view_count }}
-                  </span>
-                  <span class="post-time">
-                    {{ formatTimeAgo(post.created_at) }}
+                <!-- Tags -->
+                <div v-if="post.tags && post.tags.length > 0" class="post-tags">
+                  <span
+                    v-for="tag in post.tags.slice(0, 3)"
+                    :key="tag.name"
+                    class="tag"
+                    :class="tag.type"
+                  >
+                    {{ tag.name }}
                   </span>
                 </div>
               </div>
-              
-              <!-- Tags -->
-              <div v-if="post.tags && post.tags.length > 0" class="post-tags">
-                <span
-                  v-for="tag in post.tags.slice(0, 3)"
-                  :key="tag.name"
-                  class="tag"
-                  :class="tag.type"
-                >
-                  {{ tag.name }}
-                </span>
+            </div>
+          </div>
+
+          <!-- Users results -->
+          <div v-else-if="activeTab === 'users'" class="users-results">
+            <div
+              v-for="user in usersResults"
+              :key="user.id"
+              class="user-result"
+              @click="goToUser(user.id)"
+            >
+              <UserAvatar
+                :avatar-url="user.profile_picture_url"
+                :username="user.username"
+                size="md"
+                :clickable="false"
+              />
+              <div class="user-info">
+                <h3 class="user-name" v-html="user.username_highlighted"></h3>
+                <p class="user-role">{{ user.role_name }}</p>
+                <p v-if="user.last_active_at" class="user-activity">
+                  最后活跃：{{ formatTimeAgo(user.last_active_at) }}
+                </p>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Users results -->
-        <div v-else-if="activeTab === 'users'" class="users-results">
-          <div
-            v-for="user in usersResults"
-            :key="user.id"
-            class="user-result"
-            @click="goToUser(user.id)"
-          >
-            <UserAvatar
-              :avatar-url="user.profile_picture_url"
-              :username="user.username"
-              size="md"
-              :clickable="false"
-            />
-            <div class="user-info">
-              <h3 class="user-name" v-html="user.username_highlighted"></h3>
-              <p class="user-role">{{ user.role_name }}</p>
-              <p v-if="user.last_active_at" class="user-activity">
-                最后活跃：{{ formatTimeAgo(user.last_active_at) }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tags results -->
-        <div v-else-if="activeTab === 'tags'" class="tags-results">
-          <div
-            v-for="tag in tagsResults"
-            :key="tag.id"
-            class="tag-result"
-            @click="goToPost(0)" 
-          >
-            <i class="fas fa-tag"></i>
-            <div class="tag-info">
-              <h3 class="tag-name" v-html="tag.name_highlighted"></h3>
-              <p class="tag-count">{{ tag.post_count }} 个帖子</p>
-              <span class="tag-type" :class="tag.type">{{ tag.type }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Courses results -->
-        <div v-else-if="activeTab === 'courses'" class="courses-results">
-          <div
-            v-for="course in coursesResults"
-            :key="course.id"
-            class="course-result"
-            @click="goToCourse(course.id)"
-          >
-            <i class="fas fa-graduation-cap"></i>
-            <div class="course-info">
-              <h3 class="course-code" v-html="course.code_highlighted"></h3>
-              <p class="course-name" v-html="course.name_highlighted"></p>
-              <span class="course-credits">{{ course.credits }} 学分</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="currentPagination && currentPagination.pages > 1" class="pagination">
-          <button
-            v-if="currentPagination.has_prev"
-            @click="goToPage(currentPagination.page - 1)"
-            class="pagination-btn"
-          >
-            <i class="fas fa-chevron-left"></i>
-            上一页
-          </button>
-          
-          <div class="page-numbers">
-            <button
-              v-for="page in Math.min(currentPagination.pages, 10)"
-              :key="page"
-              @click="goToPage(page)"
-              class="page-btn"
-              :class="{ active: page === currentPagination.page }"
+          <!-- Tags results -->
+          <div v-else-if="activeTab === 'tags'" class="tags-results">
+            <div
+              v-for="tag in tagsResults"
+              :key="tag.id"
+              class="tag-result"
+              @click="goToPost(0)" 
             >
-              {{ page }}
+              <i class="fas fa-tag"></i>
+              <div class="tag-info">
+                <h3 class="tag-name" v-html="tag.name_highlighted"></h3>
+                <p class="tag-count">{{ tag.post_count }} 个帖子</p>
+                <span class="tag-type" :class="tag.type">{{ tag.type }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Courses results -->
+          <div v-else-if="activeTab === 'courses'" class="courses-results">
+            <div
+              v-for="course in coursesResults"
+              :key="course.id"
+              class="course-result"
+              @click="goToCourse(course.id)"
+            >
+              <i class="fas fa-graduation-cap"></i>
+              <div class="course-info">
+                <h3 class="course-code" v-html="course.code_highlighted"></h3>
+                <p class="course-name" v-html="course.name_highlighted"></p>
+                <span class="course-credits">{{ course.credits }} 学分</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="currentPagination && currentPagination.pages > 1" class="pagination">
+            <button
+              v-if="currentPagination.has_prev"
+              @click="goToPage(currentPagination.page - 1)"
+              class="pagination-btn"
+            >
+              <i class="fas fa-chevron-left"></i>
+              上一页
+            </button>
+            
+            <div class="page-numbers">
+              <button
+                v-for="page in Math.min(currentPagination.pages, 10)"
+                :key="page"
+                @click="goToPage(page)"
+                class="page-btn"
+                :class="{ active: page === currentPagination.page }"
+              >
+                {{ page }}
+              </button>
+            </div>
+            
+            <button
+              v-if="currentPagination.has_next"
+              @click="goToPage(currentPagination.page + 1)"
+              class="pagination-btn"
+            >
+              下一页
+              <i class="fas fa-chevron-right"></i>
             </button>
           </div>
-          
-          <button
-            v-if="currentPagination.has_next"
-            @click="goToPage(currentPagination.page + 1)"
-            class="pagination-btn"
-          >
-            下一页
-            <i class="fas fa-chevron-right"></i>
-          </button>
         </div>
-      </div>
 
-      <!-- No results state -->
-      <div v-else-if="currentQuery && !isLoading" class="no-results">
-        <i class="fas fa-search"></i>
-        <h3>没有找到相关结果</h3>
-        <p>尝试使用不同的关键词或检查拼写</p>
-        <div class="search-suggestions">
-          <h4>搜索建议：</h4>
-          <ul>
-            <li>使用更简短的关键词</li>
-            <li>检查拼写错误</li>
-            <li>尝试相关的同义词</li>
-            <li>移除一些搜索词</li>
-          </ul>
+        <!-- No results state -->
+        <div v-else-if="currentQuery && !isLoading" class="no-results">
+          <i class="fas fa-search"></i>
+          <h3>没有找到相关结果</h3>
+          <p>尝试使用不同的关键词或检查拼写</p>
+          <div class="search-suggestions">
+            <h4>搜索建议：</h4>
+            <ul>
+              <li>使用更简短的关键词</li>
+              <li>检查拼写错误</li>
+              <li>尝试相关的同义词</li>
+              <li>移除一些搜索词</li>
+            </ul>
+          </div>
         </div>
-      </div>
 
-      <!-- Empty state -->
-      <div v-else class="empty-state">
-        <i class="fas fa-search"></i>
-        <h3>开始搜索</h3>
-        <p>在上方输入关键词来搜索帖子、用户、标签或课程</p>
-        <div class="quick-actions">
-          <NuxtLink to="/forum" class="quick-action-btn">
-            <i class="fas fa-comments"></i>
-            浏览论坛
-          </NuxtLink>
-          <NuxtLink to="/" class="quick-action-btn">
-            <i class="fas fa-home"></i>
-            返回首页
-          </NuxtLink>
+        <!-- Empty state -->
+        <div v-else class="empty-state">
+          <i class="fas fa-search"></i>
+          <h3>开始搜索</h3>
+          <p>在上方输入关键词来搜索帖子、用户、标签或课程</p>
+          <div class="quick-actions">
+            <NuxtLink to="/forum" class="quick-action-btn">
+              <i class="fas fa-comments"></i>
+              浏览论坛
+            </NuxtLink>
+            <NuxtLink to="/" class="quick-action-btn">
+              <i class="fas fa-home"></i>
+              返回首页
+            </NuxtLink>
+          </div>
         </div>
       </div>
     </div>
