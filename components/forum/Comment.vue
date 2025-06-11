@@ -13,7 +13,8 @@
         <button
           @click="toggleReplyForm"
           class="reply-btn"
-          :disabled="!isAuthenticated"
+          :disabled="!isAuthenticated || !canReply"
+          :title="!canReply && isAuthenticated ? '已达到最大回复层级' : ''"
         >
           回复
         </button>
@@ -70,6 +71,7 @@
         :key="reply.id"
         :comment="reply"
         :is-reply="true"
+        :depth="currentDepth + 1"
         @comment-deleted="$emit('comment-deleted', $event)"
         @comment-updated="$emit('comment-updated', $event)"
       />
@@ -91,6 +93,7 @@ import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
 interface Props {
   comment: Comment;
   isReply?: boolean;
+  depth?: number;
 }
 
 interface Emits {
@@ -98,10 +101,21 @@ interface Emits {
   (e: "comment-updated", comment: Comment): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  depth: 0
+});
 const emit = defineEmits(["comment-deleted", "comment-updated"]);
 
 const { user, isLoggedIn: isAuthenticated } = useAuth();
+
+// Constants for comment depth control
+const MAX_COMMENT_DEPTH = 1; // 0: top-level, 1: first reply level (total 2 levels)
+const currentDepth = computed(() => props.depth || 0);
+
+// Can reply if authenticated and not at max depth
+const canReply = computed(() => {
+  return isAuthenticated.value && currentDepth.value < MAX_COMMENT_DEPTH;
+});
 const { fetchWithAuth } = useApi();
 const { getUserById } = useUser(); // 获取 getUserById 方法
 
