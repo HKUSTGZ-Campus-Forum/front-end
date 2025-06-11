@@ -11,10 +11,10 @@
 
       <div class="comment-actions">
         <button
+          v-if="canReply"
           @click="toggleReplyForm"
           class="reply-btn"
-          :disabled="!isAuthenticated || !canReply"
-          :title="!canReply && isAuthenticated ? '已达到最大回复层级' : ''"
+          :disabled="!isAuthenticated"
         >
           回复
         </button>
