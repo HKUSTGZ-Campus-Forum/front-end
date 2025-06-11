@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
-import { useAuth } from "~/composables/useAuth"; // 引入认证相关组合式函数
-import { useRouter } from "vue-router";
+import { ref } from "vue"
+import { useI18n } from "vue-i18n"
+import { useAuth } from "~/composables/useAuth"
+import { useRouter } from "vue-router"
+import SearchDropdown from "~/components/ui/SearchDropdown.vue"
 
 const router = useRouter();
 
@@ -50,6 +52,23 @@ const handleLoginOrLogout = async () => {
     router.push("/login");
   }
 };
+
+// Search functionality
+const searchQuery = ref("")
+
+const handleSearch = (query: string) => {
+  if (query.trim()) {
+    router.push({
+      path: "/search",
+      query: { q: query.trim() }
+    })
+  }
+}
+
+const handleSearchSelect = (type: string, item: any) => {
+  console.log("Search item selected:", type, item)
+  // The SearchDropdown component handles navigation automatically
+}
 </script>
 
 <template>
@@ -67,18 +86,15 @@ const handleLoginOrLogout = async () => {
     <!-- 右侧功能区 -->
     <div class="right-section">
       <!-- 搜索框 -->
-      <form v-if="showSearch" class="search-form">
-        <div class="search-group">
-          <input
-            class="search-input"
-            type="text"
-            :placeholder="t('search.placeholder', '搜索...')"
-          />
-          <button class="search-button" type="button">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
-      </form>
+      <div v-if="showSearch" class="search-form">
+        <SearchDropdown
+          v-model="searchQuery"
+          placeholder="搜索帖子、用户、课程..."
+          :show-history="true"
+          @search="handleSearch"
+          @select="handleSearchSelect"
+        />
+      </div>
 
       <!-- 用户下拉菜单 -->
       <div class="user-menu">
@@ -193,37 +209,16 @@ const handleLoginOrLogout = async () => {
 }
 
 .search-form {
-  display: flex;
+  min-width: 300px;
+  max-width: 400px;
+
+  @media (max-width: 1024px) {
+    min-width: 250px;
+    max-width: 300px;
+  }
 
   @media (max-width: 767px) {
     display: none;
-  }
-}
-
-.search-group {
-  display: flex;
-  position: relative;
-}
-
-.search-input {
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem 0 0 0.25rem;
-  outline: none;
-}
-
-.search-button {
-  background-color: var(--kungalgame-blue-5, #0d6efd);
-  border: 1px solid var(--kungalgame-blue-5, #0d6efd);
-  color: white;
-  border-radius: 0 0.25rem 0.25rem 0;
-  padding: 0.375rem 0.75rem;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--kungalgame-blue-6, #0a58ca);
-    border-color: var(--kungalgame-blue-6, #0a58ca);
   }
 }
 
