@@ -14,9 +14,17 @@
         <div class="post-header">
           <h1 class="post-title">{{ postData.title || "无标题" }}</h1>
           <div class="post-meta">
-            <span class="author"
-              >作者: {{ postData.author || "匿名用户" }}</span
-            >
+            <div class="author-info">
+              <UserAvatar 
+                :avatar-url="postData.author_avatar"
+                :username="postData.author"
+                :user-id="postData.user_id"
+                size="sm"
+                :clickable="true"
+                @click="goToUserProfile"
+              />
+              <span class="author">{{ postData.author || "匿名用户" }}</span>
+            </div>
             <span class="date"
               >发布于: {{ formatDate(postData.publishDate) }}</span
             >
@@ -150,6 +158,7 @@ import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 import EmojiReactions from "~/components/forum/EmojiReation.vue";
+import UserAvatar from "~/components/user/UserAvatar.vue";
 
 // Composables
 const route = useRoute();
@@ -243,6 +252,13 @@ const handleSuccessClose = () => {
   router.push("/forum");
 };
 
+// Navigate to user profile
+const goToUserProfile = () => {
+  if (postData.value.user_id) {
+    router.push(`/users/${postData.value.user_id}`);
+  }
+};
+
 // const testSuccessModal = () => {
 //   showSuccessModal.value = true;
 // };
@@ -282,23 +298,13 @@ const fetchPostData = async () => {
 
     const data = await response.json();
 
-    // 获取作者用户名
-    let authorName = "匿名用户";
-    if (data.author_id || data.user_id) {
-      try {
-        const userId = data.author_id || data.user_id;
-        authorName = await getUsernameById(userId);
-      } catch (error) {
-        console.warn("获取作者用户名失败:", error);
-      }
-    }
-
-    // 统一数据格式
+    // 统一数据格式 - 使用后端提供的 author 和 author_avatar 字段
     post.value = {
       id: data.id || data.post_id,
       title: data.title,
       content: data.content,
-      author: authorName,
+      author: data.author || "匿名用户", // 使用后端提供的 author 字段
+      author_avatar: data.author_avatar, // 使用后端提供的 author_avatar 字段
       publishDate: data.created_at || data.time || new Date().toISOString(),
       reaction_count: data.reaction_count || 0,
       comment_count: data.comment_count || 0,
@@ -407,6 +413,18 @@ onMounted(() => {
   color: #666;
   font-size: 0.9rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  .author {
+    font-weight: 500;
+    color: #2c3e50;
+  }
 }
 
 .views {

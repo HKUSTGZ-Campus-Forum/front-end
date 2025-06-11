@@ -29,9 +29,10 @@
           v-for="post in posts"
           :key="post.id"
           :id="post.id"
-          :user_id="post.author"
+          :user_id="post.user_id"
           :title="post.title"
           :author="post.author"
+          :author_avatar="post.author_avatar"
           :publish-date="post.publishDate"
           :excerpt="post.content"
           :content="post.content"
@@ -114,19 +115,12 @@ async function fetchPosts() {
       throw new Error(data.error || "获取文章列表失败");
     }
 
-    // 转换数据格式前获取所有作者信息
-    const authorPromises = data.posts.map((post) =>
-      getUsernameById(post.user_id)
-    );
-
-    // 等待所有用户名获取完成
-    const authorNames = await Promise.all(authorPromises);
-
-    // 转换数据格式
-    posts.value = data.posts.map((post, index) => ({
+    // 转换数据格式 - 使用后端提供的 author 和 author_avatar 字段
+    posts.value = data.posts.map((post) => ({
       ...post,
       author_id: post.user_id,
-      author: authorNames[index], // 使用获取到的用户名
+      author: post.author || "匿名用户", // 使用后端提供的 author 字段
+      author_avatar: post.author_avatar, // 使用后端提供的 author_avatar 字段
       comments: post.comment_count || 0,
       view_count: post.view_count || 0,
       views: post.view_count || 0,
