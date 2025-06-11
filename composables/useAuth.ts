@@ -15,6 +15,9 @@ export function useAuth() {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const isRefreshing = ref(false);
+  
+  // Global promise to prevent race conditions
+  let refreshPromise: Promise<string | null> | null = null;
 
   const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
 
@@ -60,27 +63,59 @@ export function useAuth() {
 
     const storedAccessToken = safeLocalStorage("get", "auth_token");
     const storedRefreshToken = safeLocalStorage("get", "refresh_token");
+    const storedUserInfo = safeLocalStorage("get", "user_info");
 
     if (storedAccessToken && storedRefreshToken) {
       accessToken.value = storedAccessToken;
       refreshToken.value = storedRefreshToken;
 
-      // Parse basic user info from access token
+      // First try to restore from saved user info
+      if (storedUserInfo) {
+        try {
+          const savedUser = JSON.parse(storedUserInfo);
+          user.value = savedUser;
+          console.log('👤 Restored user from localStorage:', savedUser.username);
+        } catch (e) {
+          console.error("Failed to parse stored user info:", e);
+        }
+      }
+
+      // If no saved user info, parse basic info from access token
+      if (!user.value) {
+        try {
+          const tokenParts = storedAccessToken.split(".");
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            user.value = {
+              id: payload.sub || payload.id,
+              username: payload.username || "",
+              isFirstLogin: false,
+            };
+            console.log('🔑 Parsed user from token:', user.value.username);
+          }
+        } catch (e) {
+          console.error("Failed to parse token:", e);
+        }
+      }
+
+      // Validate token and fetch fresh user profile if needed
       try {
         const tokenParts = storedAccessToken.split(".");
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
-          user.value = {
-            id: payload.sub || payload.id,
-            username: payload.username || "",
-            isFirstLogin: false,
-          };
+          const currentTime = Math.floor(Date.now() / 1000);
+          
+          // If token expires within 5 minutes, refresh it
+          if (payload.exp - currentTime < 300) {
+            console.log('🔄 Token expires soon, refreshing...');
+            refreshAccessToken().catch(console.error);
+          }
         }
       } catch (e) {
-        console.error("Failed to parse token:", e);
+        console.error("Failed to check token expiry:", e);
       }
 
-      // Fetch full user profile
+      // Fetch full user profile to ensure data is fresh
       fetchUserProfile(storedAccessToken);
     }
   }
@@ -117,10 +152,11 @@ export function useAuth() {
         const errorText = await response.text();
         console.error(`获取用户资料失败(${response.status}):`, errorText);
         
-        // If unauthorized, clear tokens and don't show error (silent fail)
+        // If unauthorized, don't immediately logout - let useApi handle token refresh
         if (response.status === 401) {
-          console.warn("Token expired or invalid, clearing auth state");
-          logout();
+          console.warn("User profile fetch got 401, token may be expired");
+          // Don't logout here - this might be normal token expiry
+          // The useApi layer will handle token refresh if needed
           return;
         }
         
@@ -188,48 +224,67 @@ export function useAuth() {
   async function refreshAccessToken() {
     console.log('🔄 Attempting token refresh...', {
       hasRefreshToken: !!refreshToken.value,
-      isRefreshing: isRefreshing.value
+      isRefreshing: isRefreshing.value,
+      hasExistingPromise: !!refreshPromise
     });
     
-    if (!refreshToken.value || isRefreshing.value) {
-      console.warn('❌ Cannot refresh: missing refresh token or already refreshing');
+    if (!refreshToken.value) {
+      console.warn('❌ Cannot refresh: missing refresh token');
       return null;
+    }
+
+    // If already refreshing, return existing promise
+    if (refreshPromise) {
+      console.log('🔄 Token refresh already in progress, waiting...');
+      return refreshPromise;
     }
     
     isRefreshing.value = true;
-    try {
-      console.log('📤 Sending refresh request to:', "https://dev.unikorn.axfff.com/api/auth/refresh");
-      const response = await fetch("https://dev.unikorn.axfff.com/api/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${refreshToken.value}`
+    refreshPromise = (async () => {
+      try {
+        console.log('📤 Sending refresh request to:', "https://dev.unikorn.axfff.com/api/auth/refresh");
+        const response = await fetch("https://dev.unikorn.axfff.com/api/auth/refresh", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${refreshToken.value}`
+          }
+        });
+
+        console.log('📥 Refresh response:', {
+          status: response.status,
+          ok: response.ok,
+          statusText: response.statusText
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('❌ Refresh failed:', response.status, errorText);
+          throw new Error(`Failed to refresh token: ${response.status} ${errorText}`);
         }
-      });
 
-      console.log('📥 Refresh response:', {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error('❌ Refresh failed:', response.status, errorText);
-        throw new Error(`Failed to refresh token: ${response.status} ${errorText}`);
+        const data = await response.json();
+        console.log('✅ Token refresh successful, new token received');
+        accessToken.value = data.access_token;
+        safeLocalStorage("set", "auth_token", data.access_token);
+        
+        // Update refresh token if provided
+        if (data.refresh_token) {
+          refreshToken.value = data.refresh_token;
+          safeLocalStorage("set", "refresh_token", data.refresh_token);
+        }
+        
+        return data.access_token;
+      } catch (err) {
+        console.error("❌ Token refresh failed:", err);
+        await logout();
+        throw err;
+      } finally {
+        isRefreshing.value = false;
+        refreshPromise = null; // Clear the promise
       }
-
-      const data = await response.json();
-      console.log('✅ Token refresh successful, new token received');
-      accessToken.value = data.access_token;
-      safeLocalStorage("set", "auth_token", data.access_token);
-      return data.access_token;
-    } catch (err) {
-      console.error("❌ Token refresh failed:", err);
-      await logout();
-      throw err;
-    } finally {
-      isRefreshing.value = false;
-    }
+    })();
+    
+    return refreshPromise;
   }
 
   // Login function

@@ -22,71 +22,46 @@ export function useApi() {
       console.error('❌ No access token available for authenticated request');
       throw new Error('Authentication required - please login first');
     }
-    
-    // If we have a token, check if it's expired
-    if (isTokenExpired(accessToken.value)) {
-      console.log('Token expired, attempting refresh...');
-      
-      if (refreshToken.value) {
-        try {
-          const newToken = await refreshAccessToken();
-          if (!newToken) {
-            console.warn('Token refresh failed, redirecting to login');
-            logout();
-            throw new Error('Authentication required - please login');
-          }
-        } catch (error) {
-          console.error('Token refresh error:', error);
-          logout();
-          throw new Error('Authentication required - please login');
-        }
-      } else {
-        console.warn('No refresh token available');
-        logout();
-        throw new Error('Authentication required - please login');
-      }
-    }
 
-    // Prepare headers
-    const headers = {
-      ...options.headers,
-      ...(accessToken.value ? { Authorization: `Bearer ${accessToken.value}` } : {}),
+    // Helper function to make the actual request
+    const makeRequest = async (token: string) => {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+      };
+
+      return fetch(url, { ...options, headers });
     };
 
     try {
-      const response = await fetch(url, { ...options, headers });
+      // First attempt with current token
+      let response = await makeRequest(accessToken.value);
 
-      // Handle 401 responses
+      // Handle 401 responses - token might be expired
       if (response.status === 401) {
-        console.log('Received 401, attempting token refresh...');
+        console.log('🔄 Received 401, attempting token refresh...');
         
         if (refreshToken.value) {
           try {
             const newToken = await refreshAccessToken();
             
             if (newToken) {
-              // Retry with new token
-              const retryHeaders = {
-                ...options.headers,
-                Authorization: `Bearer ${newToken}`,
-              };
-              
-              const retryResponse = await fetch(url, {
-                ...options,
-                headers: retryHeaders,
-              });
-              
-              return retryResponse;
+              console.log('✅ Token refreshed, retrying request...');
+              response = await makeRequest(newToken);
+            } else {
+              console.warn('❌ Token refresh returned null');
+              throw new Error('Token refresh failed');
             }
           } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
+            console.error('❌ Token refresh failed:', refreshError);
+            throw new Error('Authentication failed - please login again');
           }
+        } else {
+          console.warn('❌ No refresh token available for retry');
+          logout();
+          throw new Error('Authentication required - please login');
         }
-        
-        // If we get here, auth failed completely
-        console.warn('Authentication failed, clearing session');
-        logout();
-        throw new Error('Authentication failed - please login again');
       }
 
       return response;
