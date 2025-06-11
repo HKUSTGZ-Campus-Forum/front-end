@@ -5,6 +5,8 @@ import { useRoute } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
+import UserAvatar from "~/components/user/UserAvatar.vue";
+import AvatarUpload from "~/components/user/AvatarUpload.vue";
 
 const { isLoggedIn, user } = useAuth();
 const { fetchWithAuth } = useApi();
@@ -47,8 +49,14 @@ const userStats = ref<UserStats>({
 
 const isLoading = ref(false);
 const error = ref("");
+const showAvatarUpload = ref(false);
 
 const userId = route.params.id;
+
+// Check if this is the current user's profile
+const isOwnProfile = computed(() => {
+  return isLoggedIn.value && user.value && String(user.value.id) === String(userId);
+});
 
 // 🔥 修复：获取用户信息，根据登录状态选择API
 const fetchUserInfo = async () => {
@@ -183,6 +191,15 @@ const formatUID = (id: number) => {
   return id.toString().padStart(10, '0');
 };
 
+// Handle avatar update
+const handleAvatarUpdated = (newAvatarUrl: string) => {
+  // Update local user info
+  userInfo.value.profile_picture_url = newAvatarUrl;
+  
+  // Close avatar upload section
+  showAvatarUpload.value = false;
+};
+
 onMounted(() => {
   //   console.log("🔄 页面加载，用户ID:", userId);
   if (userId && userId !== "0") {
@@ -228,16 +245,24 @@ useHead({
           <!-- 用户头像和基本信息 -->
           <div class="user-header">
             <div class="user-avatar-section">
-              <img
-                :src="
-                  userInfo.profile_picture_url ||
-                  userInfo.avatar ||
-                  '/image/default-avatar.jpg'
-                "
-                :alt="userInfo.username"
-                class="user-avatar"
-                @error="handleImageError"
+              <UserAvatar 
+                :avatar-url="userInfo.profile_picture_url"
+                :username="userInfo.username"
+                :user-id="userInfo.id"
+                size="xl"
+                :clickable="false"
               />
+              
+              <!-- Edit Avatar Button for Own Profile -->
+              <button 
+                v-if="isOwnProfile" 
+                @click="showAvatarUpload = !showAvatarUpload"
+                class="edit-avatar-btn"
+                :class="{ active: showAvatarUpload }"
+              >
+                <i class="fas fa-camera"></i>
+                {{ showAvatarUpload ? '取消' : '更换头像' }}
+              </button>
             </div>
 
             <div class="user-basic-info">
@@ -256,6 +281,14 @@ useHead({
                 <div class="stat-label">积分</div>
               </div>
             </div>
+          </div>
+
+          <!-- Avatar Upload Section -->
+          <div v-if="showAvatarUpload && isOwnProfile" class="avatar-upload-section">
+            <AvatarUpload 
+              :user-id="userInfo.id" 
+              @avatar-updated="handleAvatarUpdated"
+            />
           </div>
 
           <!-- 统计数据网格 -->
@@ -363,19 +396,47 @@ useHead({
 
 .user-avatar-section {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
-.user-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 4px solid #f0f0f0;
+.edit-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 25px;
+  background: white;
+  color: #666;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
 
-  @media (max-width: 768px) {
-    width: 80px;
-    height: 80px;
+  &:hover {
+    border-color: #3498db;
+    color: #3498db;
   }
+
+  &.active {
+    background: #3498db;
+    border-color: #3498db;
+    color: white;
+  }
+
+  i {
+    font-size: 0.875rem;
+  }
+}
+
+.avatar-upload-section {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #e0e0e0;
 }
 
 .user-basic-info {

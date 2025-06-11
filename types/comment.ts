@@ -8,6 +8,7 @@ export interface Comment {
   created_at: string;
   updated_at: string;
   author?: string;
+  author_avatar?: string | null;
   replies?: Comment[]; // 子评论
 }
 

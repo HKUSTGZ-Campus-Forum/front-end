@@ -3,7 +3,17 @@
     <!-- 评论内容 -->
     <div class="comment-content">
       <div class="comment-header">
-        <span class="comment-author">{{ commentAuthor }}</span>
+        <div class="comment-author-info">
+          <UserAvatar 
+            :avatar-url="comment.author_avatar"
+            :username="commentAuthor"
+            :user-id="comment.user_id"
+            size="xs"
+            :clickable="true"
+            @click="goToUserProfile"
+          />
+          <span class="comment-author">{{ commentAuthor }}</span>
+        </div>
         <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
       </div>
 
@@ -97,6 +107,7 @@ import { useUser } from "~/composables/useUser";
 import { onMounted } from "vue";
 import CommentForm from "./CommentForm.vue";
 import EmojiReation from "./EmojiReation.vue";
+import UserAvatar from "~/components/user/UserAvatar.vue";
 import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
 
 interface Props {
@@ -236,6 +247,13 @@ const canDelete = computed(() => {
   return isAuthenticated.value && Number(user.value?.id) === props.comment.user_id;
 });
 
+// 导航到用户资料页
+const goToUserProfile = (userId?: number) => {
+  if (userId) {
+    navigateTo(`/users/${userId}`);
+  }
+};
+
 onMounted(() => {
   fetchUserName();
 });
@@ -264,6 +282,13 @@ onMounted(() => {
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
   color: #666;
+  align-items: center;
+}
+
+.comment-author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .comment-author {

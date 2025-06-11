@@ -4,6 +4,7 @@ import { useHead } from "#imports";
 import { hkustgz } from "~/config/hkustgz";
 import { useApi } from "~/composables/useApi";
 import { useRouter } from "vue-router";
+import UserAvatar from "~/components/user/UserAvatar.vue";
 
 // 设置页面的元信息
 useHead({
@@ -39,6 +40,8 @@ interface HotPost {
   title: string;
   content: string;
   author_id: number;
+  author: string;
+  author_avatar?: string;
   reaction_count: number;
   comment_count: number;
   view_count: number;
@@ -102,6 +105,11 @@ const goToForum = () => {
 // 跳转到发帖页面
 const goToPostMessage = () => {
   router.push("/forum/postMessage");
+};
+
+// 跳转到用户个人页面
+const goToUserProfile = (userId: number) => {
+  router.push(`/users/${userId}`);
 };
 
 // 生命周期钩子
@@ -185,6 +193,18 @@ onUnmounted(() => {
                 <i class="fas fa-fire"></i>
                 {{ post.hot_score }}
               </div>
+            </div>
+
+            <div class="post-author" v-if="post.author">
+              <UserAvatar 
+                :avatar-url="post.author_avatar"
+                :username="post.author"
+                :user-id="post.author_id"
+                size="xs"
+                :clickable="true"
+                @click.stop="goToUserProfile(post.author_id)"
+              />
+              <span class="author-name">{{ post.author }}</span>
             </div>
 
             <p class="post-content">{{ post.content }}</p>
@@ -463,6 +483,19 @@ onUnmounted(() => {
         align-items: center;
         gap: 0.25rem;
         margin-left: 1rem;
+      }
+    }
+
+    .post-author {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      
+      .author-name {
+        color: #555;
+        font-weight: 500;
       }
     }
 

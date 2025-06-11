@@ -4,6 +4,7 @@ import { defineProps, withDefaults, computed } from "vue";
 // 从正确的地方导入 useRouter
 import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
 import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
+import UserAvatar from "~/components/user/UserAvatar.vue";
 
 // 定义帖子属性接口，基于数据库结构
 interface PostProps {
@@ -11,6 +12,7 @@ interface PostProps {
   title: string;
   user_id?: number;
   author: string;
+  author_avatar?: string | null;
   content?: string;
   excerpt?: string;
   publishDate: string; // 实际应该对应数据库中的created_at
@@ -73,6 +75,12 @@ const router = useRouter();
 const goToPostDetail = () => {
   router.push(`/forum/posts/${props.id}`);
 };
+
+const goToUserProfile = (userId?: number) => {
+  if (userId) {
+    router.push(`/users/${userId}`);
+  }
+};
 </script>
 
 <template>
@@ -82,7 +90,17 @@ const goToPostDetail = () => {
     </h2>
 
     <div class="post-meta">
-      <span class="author">{{ displayAuthor }}</span>
+      <div class="author-info">
+        <UserAvatar 
+          :avatar-url="author_avatar"
+          :username="author"
+          :user-id="user_id"
+          size="sm"
+          :clickable="!!user_id"
+          @click="goToUserProfile"
+        />
+        <span class="author">{{ displayAuthor }}</span>
+      </div>
       <span class="date">{{ formatDate(publishDate) }}</span>
       <span class="views" v-if="view_count !== undefined">
         <i class="fas fa-eye"></i> {{ `浏览量：${view_count}` }}
@@ -144,6 +162,17 @@ const goToPostDetail = () => {
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
   align-items: center;
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .author {
+      font-weight: 500;
+      color: #333;
+    }
+  }
 
   .views {
     display: flex;
