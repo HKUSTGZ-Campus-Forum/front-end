@@ -16,6 +16,7 @@
         v-for="comment in comments"
         :key="comment.id"
         :comment="comment"
+        :depth="0"
         @comment-deleted="handleCommentDeleted"
         @comment-updated="handleCommentUpdated"
       />

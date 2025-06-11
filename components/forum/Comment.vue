@@ -11,6 +11,7 @@
 
       <div class="comment-actions">
         <button
+          v-if="canReply"
           @click="toggleReplyForm"
           class="reply-btn"
           :disabled="!isAuthenticated"
@@ -21,6 +22,14 @@
           删除
         </button>
       </div>
+    </div>
+
+    <!-- 评论表情反应 -->
+    <div class="comment-reactions">
+      <EmojiReation 
+        :post-id="comment.id" 
+        type="comment" 
+      />
     </div>
 
     <!-- 回复表单 -->
@@ -70,6 +79,7 @@
         :key="reply.id"
         :comment="reply"
         :is-reply="true"
+        :depth="currentDepth + 1"
         @comment-deleted="$emit('comment-deleted', $event)"
         @comment-updated="$emit('comment-updated', $event)"
       />
@@ -86,11 +96,13 @@ import type { Comment } from "~/types/comment";
 import { useUser } from "~/composables/useUser";
 import { onMounted } from "vue";
 import CommentForm from "./CommentForm.vue";
+import EmojiReation from "./EmojiReation.vue";
 import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
 
 interface Props {
   comment: Comment;
   isReply?: boolean;
+  depth?: number;
 }
 
 interface Emits {
@@ -98,10 +110,21 @@ interface Emits {
   (e: "comment-updated", comment: Comment): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  depth: 0
+});
 const emit = defineEmits(["comment-deleted", "comment-updated"]);
 
 const { user, isLoggedIn: isAuthenticated } = useAuth();
+
+// Constants for comment depth control
+const MAX_COMMENT_DEPTH = 1; // 0: top-level, 1: first reply level (total 2 levels)
+const currentDepth = computed(() => props.depth || 0);
+
+// Can reply if authenticated and not at max depth
+const canReply = computed(() => {
+  return isAuthenticated.value && currentDepth.value < MAX_COMMENT_DEPTH;
+});
 const { fetchWithAuth } = useApi();
 const { getUserById } = useUser(); // 获取 getUserById 方法
 
@@ -291,6 +314,11 @@ onMounted(() => {
 
 .reply-form {
   margin-top: 1rem;
+  margin-left: 1rem;
+}
+
+.comment-reactions {
+  margin-top: 0.75rem;
   margin-left: 1rem;
 }
 
