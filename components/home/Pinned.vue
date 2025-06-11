@@ -6,9 +6,9 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const { t } = useI18n();
-const { isLoggedIn, logout } = useAuth(); // 获取登录状态
+const { isLoggedIn, logout, user } = useAuth(); // 获取登录状态和用户信息
 // 定义组件属性，允许自定义
-defineProps({
+const props = defineProps({
   brandName: {
     type: String,
     default: "uniKorn",
@@ -17,12 +17,12 @@ defineProps({
     type: Boolean,
     default: true,
   },
-  // 添加用户头像URL属性
+  // 添加用户头像URL属性（作为fallback）
   userAvatar: {
     type: String,
     default: "/image/testpic1.jpg",
   },
-  // 添加用户名属性
+  // 添加用户名属性（作为fallback）
   username: {
     type: String,
     default: "测试",
@@ -84,13 +84,24 @@ const handleLoginOrLogout = async () => {
       <div class="user-menu">
         <div class="dropdown">
           <a class="dropdown-toggle" href="#" role="button">
-            <div v-if="userAvatar" class="user-avatar">
-              <img :src="userAvatar" :alt="username" />
+            <!-- Priority 1: Real authenticated user avatar -->
+            <div v-if="isLoggedIn && user?.profile_picture_url" class="user-avatar">
+              <img :src="user.profile_picture_url" :alt="user.username" />
             </div>
-            <i v-else class="fas fa-user"></i>
+            <!-- Priority 2: Fallback to prop avatar -->
+            <div v-else-if="props.userAvatar" class="user-avatar">
+              <img :src="props.userAvatar" :alt="props.username" />
+            </div>
+            <!-- Priority 3: Default icon -->
+            <span v-else class="user-icon-fallback">👤</span>
           </a>
           <ul class="dropdown-menu">
-            <li class="dropdown-header" v-if="username">{{ username }}</li>
+            <!-- Priority 1: Real authenticated user name -->
+            <li class="dropdown-header" v-if="isLoggedIn && user?.username">{{ user.username }}</li>
+            <!-- Priority 2: Fallback to prop username -->
+            <li class="dropdown-header" v-else-if="props.username">{{ props.username }}</li>
+            <!-- Priority 3: Default guest text -->
+            <li class="dropdown-header" v-else>访客用户</li>
             <li>
               <NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink>
             </li>
@@ -234,8 +245,9 @@ const handleLoginOrLogout = async () => {
       color: rgba(255, 255, 255, 0.75);
     }
 
-    i {
-      font-size: 1rem;
+    .user-icon-fallback {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.75);
     }
   }
 
