@@ -8,7 +8,7 @@ import HomeContainer from "~/components/home/HomeContainer.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import AvatarUpload from "~/components/user/AvatarUpload.vue";
 
-const { isLoggedIn, user } = useAuth();
+const { isLoggedIn, user, updateLocalUserData } = useAuth();
 const { fetchWithAuth } = useApi();
 const route = useRoute();
 
@@ -50,6 +50,12 @@ const userStats = ref<UserStats>({
 const isLoading = ref(false);
 const error = ref("");
 const showAvatarUpload = ref(false);
+
+// Username editing state
+const isEditingUsername = ref(false);
+const editedUsername = ref("");
+const usernameError = ref("");
+const isSavingUsername = ref(false);
 
 const userId = route.params.id;
 
@@ -200,6 +206,93 @@ const handleAvatarUpdated = (newAvatarUrl: string) => {
   showAvatarUpload.value = false;
 };
 
+// Username editing functions
+const startEditingUsername = () => {
+  isEditingUsername.value = true;
+  editedUsername.value = userInfo.value.username;
+  usernameError.value = "";
+};
+
+const cancelEditingUsername = () => {
+  isEditingUsername.value = false;
+  editedUsername.value = "";
+  usernameError.value = "";
+};
+
+const validateUsername = (username: string): string | null => {
+  if (!username.trim()) {
+    return "用户名不能为空";
+  }
+  if (username.length < 2) {
+    return "用户名至少需要2个字符";
+  }
+  if (username.length > 50) {
+    return "用户名不能超过50个字符";
+  }
+  if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username)) {
+    return "用户名只能包含字母、数字、下划线和中文字符";
+  }
+  return null;
+};
+
+const saveUsername = async () => {
+  const trimmedUsername = editedUsername.value.trim();
+  
+  // Validate username
+  const validationError = validateUsername(trimmedUsername);
+  if (validationError) {
+    usernameError.value = validationError;
+    return;
+  }
+  
+  // Check if username actually changed
+  if (trimmedUsername === userInfo.value.username) {
+    cancelEditingUsername();
+    return;
+  }
+  
+  try {
+    isSavingUsername.value = true;
+    usernameError.value = "";
+    
+    const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/${userInfo.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: trimmedUsername
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `更新失败 (${response.status})`);
+    }
+    
+    const responseData = await response.json();
+    const updatedUserData = responseData.user || responseData;
+    
+    // Update local user info
+    userInfo.value.username = updatedUserData.username || trimmedUsername;
+    
+    // Update auth user data if this is current user
+    if (isOwnProfile.value && user.value) {
+      updateLocalUserData({ username: updatedUserData.username || trimmedUsername });
+    }
+    
+    // Close editing mode
+    isEditingUsername.value = false;
+    editedUsername.value = "";
+    
+  } catch (err: any) {
+    console.error('Failed to update username:', err);
+    usernameError.value = err.message || '更新用户名失败，请稍后重试';
+  } finally {
+    isSavingUsername.value = false;
+  }
+};
+
 onMounted(() => {
   //   console.log("🔄 页面加载，用户ID:", userId);
   if (userId && userId !== "0") {
@@ -266,7 +359,64 @@ useHead({
             </div>
 
             <div class="user-basic-info">
-              <h1 class="user-name">{{ userInfo.username || "匿名用户" }}</h1>
+              <!-- Username Display/Edit Section -->
+              <div class="username-section">
+                <!-- View Mode -->
+                <div v-if="!isEditingUsername" class="username-display">
+                  <h1 class="user-name">{{ userInfo.username || "匿名用户" }}</h1>
+                  <button 
+                    v-if="isOwnProfile" 
+                    @click="startEditingUsername"
+                    class="edit-username-btn"
+                    title="编辑用户名"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </div>
+                
+                <!-- Edit Mode -->
+                <div v-else class="username-edit">
+                  <div class="username-input-group">
+                    <input
+                      v-model="editedUsername"
+                      type="text"
+                      class="username-input"
+                      :class="{ 'error': usernameError }"
+                      placeholder="输入新用户名"
+                      :disabled="isSavingUsername"
+                      @keyup.enter="saveUsername"
+                      @keyup.escape="cancelEditingUsername"
+                      maxlength="50"
+                    />
+                    <div class="username-actions">
+                      <button 
+                        @click="saveUsername"
+                        class="save-btn"
+                        :disabled="isSavingUsername"
+                        title="保存"
+                      >
+                        <i class="fas fa-check" v-if="!isSavingUsername"></i>
+                        <i class="fas fa-spinner fa-spin" v-else></i>
+                      </button>
+                      <button 
+                        @click="cancelEditingUsername"
+                        class="cancel-btn"
+                        :disabled="isSavingUsername"
+                        title="取消"
+                      >
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div v-if="usernameError" class="username-error">
+                    {{ usernameError }}
+                  </div>
+                  <div class="username-help">
+                    按回车保存，按ESC取消
+                  </div>
+                </div>
+              </div>
+              
               <div class="user-badges">
                 <span class="badge badge-primary">{{
                   userInfo.role_name || "用户"
@@ -442,11 +592,142 @@ useHead({
 .user-basic-info {
   flex: 1;
 
-  .user-name {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2c3e50;
+  .username-section {
     margin-bottom: 0.5rem;
+  }
+
+  .username-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .user-name {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    .edit-username-btn {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+
+      &:hover {
+        background: #f0f0f0;
+        color: #3498db;
+        transform: scale(1.1);
+      }
+
+      i {
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  .username-edit {
+    .username-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+
+      .username-input {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        background: white;
+        transition: border-color 0.2s ease;
+        min-width: 200px;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        &.error {
+          border-color: #e74c3c;
+        }
+
+        &:disabled {
+          background: #f8f9fa;
+          color: #999;
+          cursor: not-allowed;
+        }
+      }
+
+      .username-actions {
+        display: flex;
+        gap: 0.25rem;
+
+        button {
+          width: 36px;
+          height: 36px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          i {
+            font-size: 0.875rem;
+          }
+        }
+
+        .save-btn {
+          background: #27ae60;
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: #229954;
+            transform: scale(1.05);
+          }
+        }
+
+        .cancel-btn {
+          background: #e74c3c;
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: #c0392b;
+            transform: scale(1.05);
+          }
+        }
+      }
+    }
+
+    .username-error {
+      color: #e74c3c;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+
+    .username-help {
+      color: #666;
+      font-size: 0.75rem;
+      font-style: italic;
+    }
   }
 
   .user-badges {
