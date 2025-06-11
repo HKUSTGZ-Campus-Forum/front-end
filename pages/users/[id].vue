@@ -353,7 +353,7 @@ useHead({
                 class="edit-avatar-btn"
                 :class="{ active: showAvatarUpload }"
               >
-                <i class="fas fa-camera"></i>
+                <span class="icon-fallback">📷</span>
                 {{ showAvatarUpload ? '取消' : '更换头像' }}
               </button>
             </div>
@@ -370,7 +370,8 @@ useHead({
                     class="edit-username-btn"
                     title="编辑用户名"
                   >
-                    <i class="fas fa-edit"></i>
+                    <!-- Fallback text icon until Font Awesome loads or custom icons are added -->
+                    <span class="icon-fallback">✏️</span>
                   </button>
                 </div>
                 
@@ -395,8 +396,9 @@ useHead({
                         :disabled="isSavingUsername"
                         title="保存"
                       >
-                        <i class="fas fa-check" v-if="!isSavingUsername"></i>
-                        <i class="fas fa-spinner fa-spin" v-else></i>
+                        <!-- Fallback icons until Font Awesome loads or custom icons are added -->
+                        <span class="icon-fallback" v-if="!isSavingUsername">✓</span>
+                        <span class="icon-fallback spinning" v-else>⟳</span>
                       </button>
                       <button 
                         @click="cancelEditingUsername"
@@ -404,7 +406,7 @@ useHead({
                         :disabled="isSavingUsername"
                         title="取消"
                       >
-                        <i class="fas fa-times"></i>
+                        <span class="icon-fallback">✕</span>
                       </button>
                     </div>
                   </div>
@@ -576,8 +578,9 @@ useHead({
     color: white;
   }
 
-  i {
+  .icon-fallback {
     font-size: 0.875rem;
+    margin-right: 0.25rem;
   }
 }
 
@@ -628,8 +631,9 @@ useHead({
         transform: scale(1.1);
       }
 
-      i {
-        font-size: 0.875rem;
+      .icon-fallback {
+        font-size: 1rem;
+        display: inline-block;
       }
     }
   }
@@ -689,8 +693,13 @@ useHead({
             cursor: not-allowed;
           }
 
-          i {
-            font-size: 0.875rem;
+          .icon-fallback {
+            font-size: 1rem;
+            display: inline-block;
+            
+            &.spinning {
+              animation: spin 1s linear infinite;
+            }
           }
         }
 
