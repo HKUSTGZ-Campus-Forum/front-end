@@ -38,6 +38,9 @@ export const useFileUpload = () => {
       const uploadUrlData = await response.json() as UploadUrlResponse
       const { signed_url, file_id } = uploadUrlData
 
+      // Fix Mixed Content issue: Force HTTPS for OSS uploads
+      const httpsSignedUrl = signed_url.replace(/^http:\/\//, 'https://')
+
       // Step 2: Upload file to OSS using signed URL
       const xhr = new XMLHttpRequest()
       
@@ -63,7 +66,7 @@ export const useFileUpload = () => {
       })
 
       // Start the upload
-      xhr.open('PUT', signed_url)
+      xhr.open('PUT', httpsSignedUrl)
       xhr.setRequestHeader('Content-Type', file.type)
       xhr.send(file)
 

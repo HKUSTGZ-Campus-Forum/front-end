@@ -433,6 +433,28 @@ export function useAuth() {
     }
   }
 
+  // 强制刷新用户资料数据
+  async function forceRefreshUserProfile() {
+    if (!process.client || !accessToken.value) return;
+    console.log('🔄 强制刷新用户资料...');
+    await fetchUserProfile(accessToken.value);
+  }
+
+  // 更新本地用户数据（用于用户名修改等场景）
+  function updateLocalUserData(updates: Partial<User>) {
+    if (!user.value) return;
+    
+    // Update user data
+    user.value = { ...user.value, ...updates };
+    
+    // Update localStorage
+    if (process.client) {
+      safeLocalStorage("set", "user_info", JSON.stringify(user.value));
+    }
+    
+    console.log('👤 本地用户数据已更新:', updates);
+  }
+
   onMounted(() => {
     init();
   });
@@ -451,6 +473,8 @@ export function useAuth() {
     init,
     updateUserProfile,
     refreshAccessToken,
+    forceRefreshUserProfile,
+    updateLocalUserData,
     // 导出内部 fetch 函数供其他地方使用
     authFetch,
   };

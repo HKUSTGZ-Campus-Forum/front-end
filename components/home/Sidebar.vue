@@ -105,10 +105,18 @@ watch(isHovered, (newValue: boolean) => {
           >课程</NuxtLink>
         </li>
         <li>
+          <!-- Show user profile link only when logged in -->
           <NuxtLink 
-            :to="`/users/${currentUserId}`"
+            v-if="isLoggedIn && user?.id"
+            :to="`/users/${user.id}`"
             :class="{ active: route.path.startsWith('/users/') }"
           >用户</NuxtLink>
+          <!-- Show login link when not logged in -->
+          <NuxtLink 
+            v-else
+            to="/login"
+            :class="{ active: route.path === '/login' }"
+          >登录</NuxtLink>
         </li>
       </ul>
     </div>
