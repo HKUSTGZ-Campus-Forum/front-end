@@ -234,6 +234,7 @@ const handleLoginOrLogout = async () => {
     position: relative;
     display: inline-block;
 
+    /* Show dropdown on hover of dropdown container */
     &:hover .dropdown-menu {
       display: block;
     }
@@ -295,14 +296,25 @@ const handleLoginOrLogout = async () => {
     display: none;
     position: absolute;
     right: 0;
+    top: calc(100% - 2px); /* Slight overlap to prevent gap */
     background-color: white;
     min-width: 10rem;
     padding: 0.5rem 0;
-    margin: 0.125rem 0 0;
+    margin: 0; /* Remove gap-causing margin */
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 0.25rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     z-index: 1000;
+
+    /* Add padding-top to create invisible hover zone */
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px; /* Extend upward to bridge gap */
+      left: 0;
+      right: 0;
+      height: 4px; /* Invisible hover bridge */
+    }
 
     li {
       list-style: none;

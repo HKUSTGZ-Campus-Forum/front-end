@@ -110,7 +110,7 @@ watch(isHovered, (newValue: boolean) => {
             v-if="isLoggedIn && user?.id"
             :to="`/users/${user.id}`"
             :class="{ active: route.path.startsWith('/users/') }"
-          >个人资料</NuxtLink>
+          >用户</NuxtLink>
           <!-- Show login link when not logged in -->
           <NuxtLink 
             v-else
