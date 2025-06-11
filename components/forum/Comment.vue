@@ -24,6 +24,14 @@
       </div>
     </div>
 
+    <!-- 评论表情反应 -->
+    <div class="comment-reactions">
+      <EmojiReation 
+        :post-id="comment.id" 
+        type="comment" 
+      />
+    </div>
+
     <!-- 回复表单 -->
     <div v-if="showReplyForm" class="reply-form">
       <CommentForm
@@ -88,6 +96,7 @@ import type { Comment } from "~/types/comment";
 import { useUser } from "~/composables/useUser";
 import { onMounted } from "vue";
 import CommentForm from "./CommentForm.vue";
+import EmojiReation from "./EmojiReation.vue";
 import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
 
 interface Props {
@@ -305,6 +314,11 @@ onMounted(() => {
 
 .reply-form {
   margin-top: 1rem;
+  margin-left: 1rem;
+}
+
+.comment-reactions {
+  margin-top: 0.75rem;
   margin-left: 1rem;
 }
 
