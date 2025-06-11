@@ -84,42 +84,47 @@ const handleLoginOrLogout = async () => {
       <div class="user-menu">
         <div class="dropdown">
           <a class="dropdown-toggle" href="#" role="button">
-            <!-- Priority 1: Real authenticated user avatar -->
+            <!-- Logged in with avatar -->
             <div v-if="isLoggedIn && user?.profile_picture_url" class="user-avatar">
               <img :src="user.profile_picture_url" :alt="user.username" />
             </div>
-            <!-- Priority 2: Fallback to prop avatar -->
-            <div v-else-if="props.userAvatar" class="user-avatar">
-              <img :src="props.userAvatar" :alt="props.username" />
+            <!-- Logged in without avatar -->
+            <span v-else-if="isLoggedIn" class="user-icon-fallback">👤</span>
+            <!-- Not logged in - show login button -->
+            <div v-else class="login-button">
+              <span class="login-text">登录</span>
             </div>
-            <!-- Priority 3: Default icon -->
-            <span v-else class="user-icon-fallback">👤</span>
           </a>
           <ul class="dropdown-menu">
-            <!-- Priority 1: Real authenticated user name -->
-            <li class="dropdown-header" v-if="isLoggedIn && user?.username">{{ user.username }}</li>
-            <!-- Priority 2: Fallback to prop username -->
-            <li class="dropdown-header" v-else-if="props.username">{{ props.username }}</li>
-            <!-- Priority 3: Default guest text -->
-            <li class="dropdown-header" v-else>访客用户</li>
-            <li>
-              <NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink>
-            </li>
-            <li>
-              <NuxtLink class="dropdown-item" to="/setting/background"
-                >设置</NuxtLink
-              >
-            </li>
-            <li><hr class="divider" /></li>
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                @click.prevent="handleLoginOrLogout"
-              >
-                {{ isLoggedIn ? "退出登录" : "登录" }}
-              </a>
-            </li>
+            <!-- Logged in user menu -->
+            <template v-if="isLoggedIn">
+              <li class="dropdown-header" v-if="user?.username">{{ user.username }}</li>
+              <li class="dropdown-header" v-else>用户</li>
+              <li>
+                <NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink>
+              </li>
+              <li>
+                <NuxtLink class="dropdown-item" to="/setting/background">设置</NuxtLink>
+              </li>
+              <li><hr class="divider" /></li>
+              <li>
+                <a class="dropdown-item" href="#" @click.prevent="handleLoginOrLogout">
+                  退出登录
+                </a>
+              </li>
+            </template>
+            <!-- Guest user menu -->
+            <template v-else>
+              <li class="dropdown-header">访客用户</li>
+              <li>
+                <a class="dropdown-item" href="#" @click.prevent="handleLoginOrLogout">
+                  登录
+                </a>
+              </li>
+              <li>
+                <NuxtLink class="dropdown-item" to="/register">注册</NuxtLink>
+              </li>
+            </template>
           </ul>
         </div>
       </div>
@@ -248,6 +253,26 @@ const handleLoginOrLogout = async () => {
     .user-icon-fallback {
       font-size: 1.2rem;
       color: rgba(255, 255, 255, 0.75);
+    }
+
+    .login-button {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 0.375rem 0.75rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-1px);
+      }
+
+      .login-text {
+        color: white;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
     }
   }
 
