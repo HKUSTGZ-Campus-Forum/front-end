@@ -230,8 +230,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="search-page">
-    <div class="search-container">
+  <HomeContainer>
+    <div class="search-page">
+      <div class="search-container">
+      <!-- Breadcrumb and back navigation -->
+      <div class="navigation-header">
+        <button class="back-button" @click="$router.back()">
+          <i class="fas fa-arrow-left"></i>
+          返回
+        </button>
+        <nav class="breadcrumb">
+          <NuxtLink to="/" class="breadcrumb-item">首页</NuxtLink>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-item current">搜索结果</span>
+        </nav>
+      </div>
+
       <!-- Search header -->
       <div class="search-header">
         <div class="search-input-section">
@@ -467,9 +481,19 @@ onMounted(() => {
         <i class="fas fa-search"></i>
         <h3>开始搜索</h3>
         <p>在上方输入关键词来搜索帖子、用户、标签或课程</p>
+        <div class="quick-actions">
+          <NuxtLink to="/forum" class="quick-action-btn">
+            <i class="fas fa-comments"></i>
+            浏览论坛
+          </NuxtLink>
+          <NuxtLink to="/" class="quick-action-btn">
+            <i class="fas fa-home"></i>
+            返回首页
+          </NuxtLink>
+        </div>
       </div>
     </div>
-  </div>
+  </HomeContainer>
 </template>
 
 <style lang="scss" scoped>
@@ -483,6 +507,66 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+
+.navigation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  
+  &:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateX(-2px);
+  }
+  
+  i {
+    font-size: 0.75rem;
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+  
+  .breadcrumb-item {
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    
+    &:hover:not(.current) {
+      color: #3b82f6;
+    }
+    
+    &.current {
+      color: #1f2937;
+      font-weight: 500;
+    }
+  }
+  
+  .breadcrumb-separator {
+    margin: 0 0.5rem;
+    color: #d1d5db;
+  }
 }
 
 .search-header {
@@ -623,6 +707,38 @@ onMounted(() => {
     
     &:hover {
       background: #2563eb;
+    }
+  }
+  
+  .quick-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: center;
+  }
+  
+  .quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    color: #374151;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      border-color: #3b82f6;
+      color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    
+    i {
+      font-size: 0.875rem;
     }
   }
 }
@@ -951,6 +1067,17 @@ onMounted(() => {
     
     .post-stats {
       gap: 0.5rem;
+    }
+  }
+  
+  .navigation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    
+    .breadcrumb {
+      align-self: stretch;
+      justify-content: center;
     }
   }
   
