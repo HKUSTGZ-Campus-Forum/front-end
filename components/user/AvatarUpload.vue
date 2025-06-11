@@ -104,7 +104,12 @@ interface Props {
   userId?: number;
 }
 
+interface Emits {
+  (e: 'avatar-updated', url: string): void;
+}
+
 const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const { user, updateUserProfile } = useAuth();
 const { fetchWithAuth } = useApi();
@@ -194,12 +199,14 @@ const uploadAvatar = async (file: File) => {
 
   try {
     // Upload file using existing file upload system
-    const uploadResult = await uploadFile(file, {
-      file_type: 'avatar',
-      entity_type: 'user',
-      entity_id: targetUserId.value
-    }, (progress) => {
-      uploadProgress.value = progress;
+    const uploadResult = await uploadFile({
+      file: file,
+      fileType: 'avatar',
+      entityType: 'user',
+      entityId: targetUserId.value,
+      onProgress: (progress) => {
+        uploadProgress.value = progress;
+      }
     });
 
     if (uploadResult?.url) {
@@ -210,6 +217,9 @@ const uploadAvatar = async (file: File) => {
 
       currentAvatarUrl.value = uploadResult.url;
       showSuccess.value = true;
+      
+      // Emit event to parent to refresh user data
+      emit('avatar-updated', uploadResult.url);
       
       // Hide success message after 3 seconds
       setTimeout(() => {

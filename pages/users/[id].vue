@@ -191,6 +191,15 @@ const formatUID = (id: number) => {
   return id.toString().padStart(10, '0');
 };
 
+// Handle avatar update
+const handleAvatarUpdated = (newAvatarUrl: string) => {
+  // Update local user info
+  userInfo.value.profile_picture_url = newAvatarUrl;
+  
+  // Close avatar upload section
+  showAvatarUpload.value = false;
+};
+
 onMounted(() => {
   //   console.log("🔄 页面加载，用户ID:", userId);
   if (userId && userId !== "0") {
@@ -276,7 +285,10 @@ useHead({
 
           <!-- Avatar Upload Section -->
           <div v-if="showAvatarUpload && isOwnProfile" class="avatar-upload-section">
-            <AvatarUpload :user-id="userInfo.id" />
+            <AvatarUpload 
+              :user-id="userInfo.id" 
+              @avatar-updated="handleAvatarUpdated"
+            />
           </div>
 
           <!-- 统计数据网格 -->
