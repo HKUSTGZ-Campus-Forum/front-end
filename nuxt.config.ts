@@ -43,7 +43,13 @@ export default defineNuxtConfig({
     layoutTransition: false,
     keepalive: false,
     head: {
-      // 可以在这里自定义 head 内容
+      link: [
+        {
+          rel: "icon",
+          type: "image/x-icon",
+          href: "/favicon.ico",
+        },
+      ],
     },
   },
   css: [

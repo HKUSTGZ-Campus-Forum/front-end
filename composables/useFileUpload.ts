@@ -17,7 +17,7 @@ export const useFileUpload = () => {
       uploadProgress.value = 0
 
       // Step 1: Get signed URL from backend
-      const response = await fetchWithAuth('https://dev.unikorn.axfff.com/api/files/upload', {
+      const response = await fetchWithAuth('/api/files/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ export const useFileUpload = () => {
       let attempts = 0
 
       const pollFileStatus = async (): Promise<FileRecord> => {
-        const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/files/${file_id}`)
+        const response = await fetchWithAuth(`/api/files/${file_id}`)
         
         if (!response.ok) {
           throw new Error('Failed to get file status')
@@ -120,7 +120,7 @@ export const useFileUpload = () => {
 
   const deleteFile = async (fileId: number) => {
     try {
-      const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/files/${fileId}`, {
+      const response = await fetchWithAuth(`/api/files/${fileId}`, {
         method: 'DELETE'
       })
       

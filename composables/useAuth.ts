@@ -18,6 +18,10 @@ export function useAuth() {
   
   // Global promise to prevent race conditions
   let refreshPromise: Promise<string | null> | null = null;
+  
+  // Get API base URL from runtime config
+  const config = useRuntimeConfig();
+  const apiBaseUrl = config.public.apiBaseUrl;
 
   const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
 
@@ -145,7 +149,7 @@ export function useAuth() {
       }
 
       const response = await authFetch(
-        `https://dev.unikorn.axfff.com/api/users/${userId}`
+        `${apiBaseUrl}/api/users/${userId}`
       );
 
       if (!response.ok) {
@@ -192,7 +196,7 @@ export function useAuth() {
       const userId = user.value.id;
 
       const response = await authFetch(
-        `https://dev.unikorn.axfff.com/api/users/${userId}`,
+        `${apiBaseUrl}/api/users/${userId}`,
         {
           method: "PUT",
           body: JSON.stringify(userData),
@@ -242,8 +246,8 @@ export function useAuth() {
     isRefreshing.value = true;
     refreshPromise = (async () => {
       try {
-        console.log('📤 Sending refresh request to:', "https://dev.unikorn.axfff.com/api/auth/refresh");
-        const response = await fetch("https://dev.unikorn.axfff.com/api/auth/refresh", {
+        console.log('📤 Sending refresh request to:', `${apiBaseUrl}/api/auth/refresh`);
+        const response = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${refreshToken.value}`
@@ -293,7 +297,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await fetch("https://dev.unikorn.axfff.com/api/auth/login", {
+      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -361,7 +365,7 @@ export function useAuth() {
     try {
       if (accessToken.value) {
         console.log('📤 Sending logout request to server...');
-        await authFetch("https://dev.unikorn.axfff.com/api/auth/logout", {
+        await authFetch(`${apiBaseUrl}/api/auth/logout`, {
           method: "POST",
         }).catch(console.error);
       }
@@ -394,7 +398,7 @@ export function useAuth() {
     try {
       console.log("开始注册请求，发送数据:", { username, email: email || undefined });
 
-      const response = await fetch("https://dev.unikorn.axfff.com/api/users", {
+      const response = await fetch(`${apiBaseUrl}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
