@@ -108,7 +108,6 @@ const router = useRouter();
 
 // 表单数据
 const title = ref("");
-const category = ref("");
 const tagInput = ref("");
 const tags = ref([]);
 const content = ref("");
@@ -124,13 +123,6 @@ const errorMessage = ref("");
 const successMessage = ref("");
 const isLoading = ref(false);
 
-// 模拟分类数据
-const categories = ref([
-  { id: "tech", name: "技术讨论" },
-  { id: "share", name: "资源分享" },
-  { id: "question", name: "问题求助" },
-  { id: "chat", name: "灌水闲聊" },
-]);
 
 // 验证标题
 const validateTitle = () => {
@@ -211,7 +203,6 @@ const removeUploadedImage = async (index: number) => {
 const formValid = computed(() => {
   return (
     title.value &&
-    category.value &&
     content.value &&
     !errors.value.title &&
     !errors.value.content
@@ -231,7 +222,6 @@ const handleCancel = () => {
 
 const resetForm = () => {
   title.value = "";
-  category.value = "";
   tagInput.value = "";
   tags.value = [];
   content.value = "";
@@ -259,7 +249,6 @@ const handleSubmit = async () => {
 
     const jsonData = {
       title: title.value,
-      category: category.value,
       content: content.value,
       tags: tags.value,
       file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
@@ -376,13 +365,6 @@ const emit = defineEmits(["post-success"]);
   }
 }
 
-.category-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 12px;
-}
 
 .tags-container {
   .tags-list {
