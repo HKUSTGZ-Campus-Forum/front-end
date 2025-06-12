@@ -34,6 +34,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // Mobile state
+  isMobile: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // 处理侧边栏切换
@@ -72,15 +77,23 @@ const handleSearchSelect = (type: string, item: any) => {
 </script>
 
 <template>
-  <nav class="top-nav">
+  <nav class="top-nav" :class="{ 'mobile-nav': isMobile }">
+    <!-- Mobile hamburger menu -->
+    <button class="mobile-menu-btn" v-if="isMobile" @click="toggleSidebar">
+      <span class="hamburger-icon">☰</span>
+    </button>
+
     <!-- 品牌/Logo -->
-    <a class="brand" :class="{ 'sidebar-expanded': !sidebarFolded }" href="/">
+    <a class="brand" :class="{ 
+      'sidebar-expanded': !sidebarFolded && !isMobile,
+      'mobile-brand': isMobile 
+    }" href="/">
       {{ brandName }}
     </a>
 
-    <!-- 侧边栏切换按钮 -->
-    <button class="sidebar-toggle" @click="toggleSidebar">
-      <i class="fas fa-bars"></i>
+    <!-- Desktop sidebar toggle -->
+    <button class="sidebar-toggle" v-if="!isMobile" @click="toggleSidebar">
+      <span class="toggle-icon">☰</span>
     </button>
 
     <!-- 右侧功能区 -->
@@ -107,7 +120,7 @@ const handleSearchSelect = (type: string, item: any) => {
             <!-- Logged in without avatar -->
             <span v-else-if="isLoggedIn" class="user-icon-fallback">👤</span>
             <!-- Not logged in - show login button -->
-            <div v-else class="login-button">
+            <div v-else class="login-button" :class="{ 'mobile-login': isMobile }">
               <span class="login-text">登录</span>
             </div>
           </a>
@@ -157,11 +170,46 @@ const handleSearchSelect = (type: string, item: any) => {
   padding: 0.5rem 1rem;
   color: white;
   height: 70px;
-  width: 99%;
+  width: 100%;
   position: fixed;
-  z-index: 1010; /* 确保在侧边栏之上 */
+  z-index: 1010;
   top: 0;
   left: 0;
+  
+  &.mobile-nav {
+    height: 60px;
+    padding: 0.25rem 0.75rem;
+  }
+}
+
+.mobile-menu-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1.125rem;
+  margin-right: 0.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+
+  .hamburger-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &:active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .brand {
@@ -171,15 +219,22 @@ const handleSearchSelect = (type: string, item: any) => {
   padding: 0.5rem 1rem;
   margin-right: 1rem;
   white-space: nowrap;
-  margin-left: 170px; // 展开时的位置
-  transition: margin-left 0.3s ease; // 添加过渡效果
+  margin-left: 170px;
+  transition: margin-left 0.3s ease;
 
   &.sidebar-expanded {
-    margin-left: 180px; // 展开时的位置
+    margin-left: 180px;
   }
 
   &:not(.sidebar-expanded) {
-    margin-left: 80px; // 折叠时的位置
+    margin-left: 80px;
+  }
+  
+  &.mobile-brand {
+    margin-left: 0;
+    padding: 0.5rem;
+    font-size: 1.125rem;
+    flex: 1;
   }
 
   &:hover {
@@ -190,13 +245,26 @@ const handleSearchSelect = (type: string, item: any) => {
 .sidebar-toggle {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
-  font-size: 1.25rem;
+  padding: 0.5rem;
+  font-size: 1.125rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  .toggle-icon {
+    font-size: 1.125rem;
+    line-height: 1;
+  }
 
   &:hover {
-    color: rgba(255, 255, 255, 0.75);
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -206,6 +274,10 @@ const handleSearchSelect = (type: string, item: any) => {
   display: flex;
   align-items: center;
   gap: 50px;
+  
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+  }
 }
 
 .search-form {
@@ -257,6 +329,14 @@ const handleSearchSelect = (type: string, item: any) => {
       border-radius: 20px;
       padding: 0.375rem 0.75rem;
       transition: all 0.2s ease;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+
+      &.mobile-login {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+      }
 
       &:hover {
         background: rgba(255, 255, 255, 0.2);
@@ -352,9 +432,39 @@ const handleSearchSelect = (type: string, item: any) => {
   }
 }
 
-@media (max-width: 700px) {
+// Mobile responsive adjustments
+@media (max-width: 768px) {
   .search-form {
     display: none;
+  }
+  
+  .user-menu .dropdown-menu {
+    min-width: 12rem;
+    right: -1rem; // Adjust position for mobile
+    
+    .dropdown-item {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+  }
+  
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .right-section {
+    gap: 0.5rem;
+  }
+  
+  .user-menu .dropdown-menu {
+    right: -0.5rem;
+    min-width: 10rem;
   }
 }
 </style>

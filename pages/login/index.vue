@@ -111,16 +111,37 @@ async function handleLogin() {
 <style lang="scss" scoped>
 .login-container {
   max-width: 400px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.8);
+  margin: 1rem auto;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 480px) {
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    margin: 2rem auto;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .page-title {
   text-align: center;
   margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+
+  @media (min-width: 480px) {
+    font-size: 1.75rem;
+  }
+
+  @media (min-width: 768px) {
+    font-size: 2rem;
+  }
 }
 
 .login-form {
@@ -136,20 +157,37 @@ async function handleLogin() {
 
   label {
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+
+    @media (max-width: 479px) {
+      font-size: 1rem;
+    }
   }
 
   input {
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 1rem;
     transition: border-color 0.3s;
+    min-height: 44px; // Touch-friendly minimum height
+    -webkit-appearance: none; // Remove iOS styling
+    
+    @media (min-width: 480px) {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      min-height: auto;
+    }
 
     &:focus {
       outline: none;
       border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+
+    // Prevent zoom on iOS
+    @media (max-width: 479px) {
+      font-size: 16px;
     }
   }
 }
@@ -159,22 +197,42 @@ async function handleLogin() {
 
   input {
     width: 100%;
-    padding-right: 70px;
+    padding-right: 80px;
+
+    @media (max-width: 479px) {
+      padding-right: 90px;
+    }
   }
 
   .toggle-password {
     position: absolute;
-    right: 10px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: #666;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    min-height: 44px; // Touch-friendly size
+    display: flex;
+    align-items: center;
+
+    @media (min-width: 480px) {
+      font-size: 0.8rem;
+      padding: 0.25rem;
+      min-height: auto;
+      right: 10px;
+    }
 
     &:hover {
       color: #333;
+    }
+
+    &:active {
+      background-color: rgba(0, 0, 0, 0.05);
+      border-radius: 4px;
     }
   }
 }
@@ -184,20 +242,53 @@ async function handleLogin() {
   justify-content: space-between;
   align-items: center;
   font-size: 0.9rem;
+  gap: 1rem;
+
+  @media (max-width: 479px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
 
   label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
+    min-height: 44px; // Touch-friendly size
+
+    @media (min-width: 480px) {
+      min-height: auto;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
   }
 
   .forgot-password {
     color: #3498db;
     text-decoration: none;
+    padding: 0.5rem;
+    min-height: 44px; // Touch-friendly size
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @media (min-width: 480px) {
+      padding: 0.25rem;
+      min-height: auto;
+    }
 
     &:hover {
       text-decoration: underline;
+    }
+
+    &:active {
+      background-color: rgba(52, 152, 219, 0.1);
+      border-radius: 4px;
     }
   }
 }
@@ -205,24 +296,45 @@ async function handleLogin() {
 .error-message {
   background-color: #ffecec;
   color: #e74c3c;
-  padding: 0.75rem;
-  border-radius: 4px;
+  padding: 1rem;
+  border-radius: 6px;
   font-size: 0.9rem;
+  border-left: 4px solid #e74c3c;
+
+  @media (min-width: 480px) {
+    padding: 0.75rem;
+    border-radius: 4px;
+  }
 }
 
 .login-button {
-  padding: 0.75rem;
+  padding: 0.875rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background-color: #3498db;
   color: white;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  min-height: 44px; // Touch-friendly minimum height
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (min-width: 480px) {
+    padding: 0.75rem;
+    border-radius: 4px;
+    min-height: auto;
+  }
 
   &:hover:not(:disabled) {
     background-color: #2980b9;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   &:disabled {
@@ -234,15 +346,34 @@ async function handleLogin() {
 .register-link {
   text-align: center;
   margin-top: 1.5rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+
+  @media (max-width: 479px) {
+    font-size: 1rem;
+  }
 
   a {
     color: #3498db;
     text-decoration: none;
     font-weight: 500;
+    padding: 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    min-height: 44px;
+    line-height: 1.2;
+
+    @media (min-width: 480px) {
+      padding: 0.25rem;
+      min-height: auto;
+    }
 
     &:hover {
       text-decoration: underline;
+      background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    &:active {
+      background-color: rgba(52, 152, 219, 0.1);
     }
   }
 }

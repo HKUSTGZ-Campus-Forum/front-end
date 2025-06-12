@@ -263,11 +263,27 @@ onMounted(() => {
 <style lang="scss" scoped>
 .comment-item {
   margin-bottom: 1rem;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin-bottom: 0.75rem;
+  }
 
   &.reply-comment {
     margin-left: 2rem;
     border-left: 2px solid #e0e0e0;
     padding-left: 1rem;
+    
+    // Mobile reply indentation
+    @media (max-width: 480px) {
+      margin-left: 1rem;
+      padding-left: 0.75rem;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      margin-left: 1.5rem;
+      padding-left: 0.875rem;
+    }
   }
 }
 
@@ -275,6 +291,16 @@ onMounted(() => {
   background-color: #f9f9f9;
   border-radius: 8px;
   padding: 1rem;
+  
+  // Mobile padding adjustments
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    border-radius: 6px;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    padding: 0.875rem;
+  }
 }
 
 .comment-header {
@@ -284,12 +310,30 @@ onMounted(() => {
   font-size: 0.9rem;
   color: #666;
   align-items: center;
+  flex-wrap: wrap;
+  
+  // Mobile layout adjustments
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+    font-size: 0.85rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    font-size: 0.875rem;
+  }
 }
 
 .comment-author-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  
+  // Mobile adjustments
+  @media (max-width: 480px) {
+    gap: 0.375rem;
+  }
 }
 
 .comment-author {
@@ -300,11 +344,31 @@ onMounted(() => {
 .comment-text {
   margin-bottom: 0.75rem;
   line-height: 1.5;
+  word-wrap: break-word;
+  
+  // Mobile typography adjustments
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    font-size: 0.95rem;
+    margin-bottom: 0.875rem;
+  }
 }
 
 .comment-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  
+  // Mobile layout adjustments
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    justify-content: flex-start;
+  }
 
   button {
     padding: 0.25rem 0.5rem;
@@ -312,6 +376,21 @@ onMounted(() => {
     border-radius: 4px;
     font-size: 0.8rem;
     cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 32px; // Touch-friendly minimum height
+    
+    // Mobile button optimizations
+    @media (max-width: 480px) {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      min-height: 44px; // Larger touch target on mobile
+      min-width: 60px;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      padding: 0.375rem 0.625rem;
+      min-height: 36px;
+    }
 
     &.reply-btn {
       background-color: #e3f2fd;
@@ -319,6 +398,14 @@ onMounted(() => {
 
       &:hover {
         background-color: #bbdefb;
+      }
+      
+      // Touch feedback
+      &:active {
+        @media (max-width: 768px) {
+          background-color: #90caf9;
+          transform: translateY(1px);
+        }
       }
     }
 
@@ -328,6 +415,14 @@ onMounted(() => {
 
       &:hover {
         background-color: #ffcdd2;
+      }
+      
+      // Touch feedback
+      &:active {
+        @media (max-width: 768px) {
+          background-color: #ffb3ba;
+          transform: translateY(1px);
+        }
       }
     }
 
@@ -341,14 +436,45 @@ onMounted(() => {
 .reply-form {
   margin-top: 1rem;
   margin-left: 1rem;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin-left: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    margin-left: 0.75rem;
+    margin-top: 0.875rem;
+  }
 }
 
 .comment-reactions {
   margin-top: 0.75rem;
   margin-left: 1rem;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin-left: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    margin-left: 0.75rem;
+    margin-top: 0.625rem;
+  }
 }
 
 .replies {
   margin-top: 1rem;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin-top: 0.75rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    margin-top: 0.875rem;
+  }
 }
 </style>
