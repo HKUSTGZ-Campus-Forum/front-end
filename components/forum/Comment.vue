@@ -136,7 +136,8 @@ const currentDepth = computed(() => props.depth || 0);
 const canReply = computed(() => {
   return isAuthenticated.value && currentDepth.value < MAX_COMMENT_DEPTH;
 });
-const { fetchWithAuth } = useApi();
+
+const { fetchWithAuth, fetchPublic } = useApi();
 const { getUserById } = useUser(); // 获取 getUserById 方法
 
 const showReplyForm = ref(false);
