@@ -39,6 +39,20 @@ jobs:
           NODE_ENV: production
           NUXT_PUBLIC_API_BASE: https://unikorn.axfff.com/api
 
+      - name: Verify build completeness
+        run: |
+          echo "=== Build Verification ==="
+          echo "Checking build output structure..."
+          ls -la .output/
+          echo "Server file exists:"
+          ls -la .output/server/index.mjs
+          echo "Public assets count:"
+          find .output/public/_nuxt -name "*.js" | wc -l
+          find .output/public/_nuxt -name "*.css" | wc -l
+          echo "Sample asset files:"
+          ls .output/public/_nuxt/ | head -10
+          echo "Build verification complete"
+
       - name: Backup previous version
         uses: appleboy/ssh-action@master
         with:
@@ -58,6 +72,8 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           source: ".output/"
           target: "/data/prod_unikorn/front-end/"
+          strip_components: 0
+          overwrite: true
 
       - name: Deploy and restart production server
         uses: appleboy/ssh-action@master
@@ -72,10 +88,24 @@ jobs:
             nvm use 20
             
             # Verify deployment
+            echo "=== Deployment Verification ==="
             if [ ! -f "/data/prod_unikorn/front-end/.output/server/index.mjs" ]; then
-              echo "Deployment verification failed!"
+              echo "Deployment verification failed - server file missing!"
               exit 1
             fi
+            
+            echo "Checking deployed assets..."
+            asset_count=$(find /data/prod_unikorn/front-end/.output/public/_nuxt -name "*.js" | wc -l)
+            css_count=$(find /data/prod_unikorn/front-end/.output/public/_nuxt -name "*.css" | wc -l)
+            echo "Deployed JS files: $asset_count"
+            echo "Deployed CSS files: $css_count"
+            
+            if [ "$asset_count" -lt 10 ]; then
+              echo "Warning: Low JS asset count ($asset_count), possible incomplete deployment"
+            fi
+            
+            echo "Sample deployed assets:"
+            ls /data/prod_unikorn/front-end/.output/public/_nuxt/ | head -5
             
             # Graceful restart with zero downtime
             if pm2 list | grep -q "prod-unikorn-frontend"; then
