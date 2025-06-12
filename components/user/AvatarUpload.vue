@@ -341,16 +341,33 @@ onMounted(() => {
     cursor: pointer;
     transition: all 0.3s ease;
     background: #fafbfc;
+    -webkit-tap-highlight-color: transparent; // Remove iOS tap highlight
+
+    @media (max-width: 479px) {
+      padding: 2rem 1rem;
+      border-radius: 8px;
+    }
 
     &:hover {
       border-color: #0969da;
       background: #f6f8fa;
     }
 
+    // Enhanced touch feedback for mobile
+    &:active {
+      transform: scale(0.98);
+      border-color: #0969da;
+      background: #f0f6ff;
+    }
+
     &.dragover {
       border-color: #0969da;
       background: #dbeafe;
       transform: scale(1.02);
+
+      @media (max-width: 479px) {
+        transform: scale(1.01);
+      }
     }
 
     &.uploading {
@@ -512,7 +529,108 @@ onMounted(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 479px) {
+  .avatar-upload {
+    padding: 0;
+  }
+
+  .current-avatar {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+
+    .avatar-image,
+    .avatar-placeholder {
+      width: 80px;
+      height: 80px;
+    }
+
+    .avatar-info {
+      h4 {
+        font-size: 1.1rem;
+      }
+
+      .avatar-description {
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  .upload-dropzone {
+    padding: 1.5rem 1rem !important;
+    margin: 0 -0.5rem;
+
+    .upload-prompt {
+      i {
+        font-size: 2rem !important;
+      }
+
+      p {
+        font-size: 1rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+
+      .file-restrictions {
+        font-size: 0.85rem !important;
+      }
+    }
+
+    .upload-progress {
+      i {
+        font-size: 1.5rem !important;
+      }
+
+      p {
+        font-size: 0.95rem !important;
+      }
+    }
+
+    .upload-error {
+      i {
+        font-size: 1.5rem !important;
+      }
+
+      p {
+        font-size: 0.95rem !important;
+      }
+
+      .retry-btn {
+        padding: 0.75rem 1.25rem;
+        min-height: 44px;
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .upload-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+
+    button {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      font-size: 1rem;
+      min-height: 44px;
+
+      &.upload-btn {
+        order: 1;
+      }
+
+      &.remove-btn {
+        order: 2;
+      }
+    }
+  }
+
+  .success-message {
+    margin: 1rem -0.5rem 0;
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 768px) {
   .current-avatar {
     flex-direction: column;
     text-align: center;

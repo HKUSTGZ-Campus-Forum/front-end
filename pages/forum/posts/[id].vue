@@ -377,6 +377,24 @@ onMounted(() => {
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  
+  // Mobile responsiveness
+  @media (max-width: 480px) {
+    margin: 0;
+    border-radius: 0;
+    padding: 1rem;
+    box-shadow: none;
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    margin: 0 0.5rem;
+    padding: 1.25rem;
+  }
+  
+  @media (min-width: 769px) and (max-width: 1024px) {
+    margin: 0 1rem;
+  }
 }
 
 .loading {
@@ -405,6 +423,20 @@ onMounted(() => {
   font-size: 2rem;
   margin-bottom: 0.5rem;
   color: #2c3e50;
+  line-height: 1.3;
+  word-wrap: break-word;
+  
+  // Responsive typography
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    font-size: 1.75rem;
+    margin-bottom: 0.625rem;
+  }
 }
 
 .post-meta {
@@ -414,6 +446,18 @@ onMounted(() => {
   font-size: 0.9rem;
   flex-wrap: wrap;
   align-items: center;
+  
+  // Mobile layout optimizations
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    gap: 0.75rem;
+  }
 }
 
 .author-info {
@@ -421,9 +465,18 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   
+  // Mobile layout
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+  
   .author {
     font-weight: 500;
     color: #2c3e50;
+    
+    @media (max-width: 480px) {
+      font-size: 0.9rem;
+    }
   }
 }
 
@@ -438,6 +491,12 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
+  
+  // Mobile optimizations
+  @media (max-width: 480px) {
+    margin-top: 0.75rem;
+    gap: 0.375rem;
+  }
 
   .tag {
     font-size: 0.8rem;
@@ -445,6 +504,12 @@ onMounted(() => {
     color: #3182ce;
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
+    
+    // Mobile touch-friendly sizing
+    @media (max-width: 480px) {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
   }
 }
 
@@ -453,10 +518,28 @@ onMounted(() => {
   line-height: 1.6;
   margin-bottom: 2rem;
   white-space: pre-wrap;
+  word-wrap: break-word;
+  
+  // Mobile typography adjustments
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    font-size: 1.05rem;
+    margin-bottom: 1.75rem;
+  }
 }
 
 .post-images {
   margin: 2rem 0;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin: 1.5rem 0;
+  }
   
   .image-gallery {
     display: grid;
@@ -464,10 +547,15 @@ onMounted(() => {
     gap: 1.5rem;
     max-width: 100%;
     
-    // Responsive adjustments
-    @media (max-width: 768px) {
+    // Mobile-first responsive adjustments
+    @media (max-width: 480px) {
       grid-template-columns: 1fr;
       gap: 1rem;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
     }
     
     @media (min-width: 769px) and (max-width: 1024px) {
@@ -501,9 +589,18 @@ onMounted(() => {
           display: block;
           background: white;
           
-          // Responsive image sizes
-          @media (max-width: 768px) {
+          // Mobile-optimized image sizes
+          @media (max-width: 480px) {
+            max-height: 250px;
+            object-fit: cover;
+          }
+          
+          @media (min-width: 481px) and (max-width: 768px) {
             max-height: 300px;
+          }
+          
+          @media (min-width: 769px) and (max-width: 1024px) {
+            max-height: 350px;
           }
           
           @media (min-width: 1200px) {
@@ -547,6 +644,17 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
+  
+  // Mobile layout adjustments
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    gap: 0.75rem;
+  }
 
   button {
     display: flex;
@@ -558,13 +666,31 @@ onMounted(() => {
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-height: 44px; // Touch-friendly minimum height
+    
+    // Mobile optimizations
+    @media (max-width: 480px) {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      padding: 0.625rem 1.25rem;
+    }
 
     &:hover {
       background-color: #e0e0e0;
       transform: translateY(-1px);
     }
+    
+    // Touch feedback for mobile
+    &:active {
+      transform: translateY(1px);
+    }
 
-    // 添加删除按钮样式
+    // Delete button styling
     &.delete-button {
       background-color: #ffebee;
       color: #d32f2f;
@@ -573,6 +699,10 @@ onMounted(() => {
       &:hover {
         background-color: #ffcdd2;
         box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+      }
+      
+      &:active {
+        background-color: #ffb3ba;
       }
     }
   }

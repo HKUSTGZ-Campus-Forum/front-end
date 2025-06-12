@@ -1605,22 +1605,281 @@ useHead({
 }
 
 // 响应式设计
+@media (max-width: 1024px) {
+  .course-detail-page {
+    padding: 1.5rem;
+  }
+  
+  .course-header {
+    padding: 1.5rem;
+  }
+  
+  .course-description-section {
+    padding: 1.5rem;
+  }
+  
+  .course-reviews-section {
+    padding: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   .course-detail-page {
     padding: 1rem;
   }
+  
+  .course-header {
+    padding: 1.25rem;
+    
+    .course-title-section {
+      margin-bottom: 0.75rem;
+      
+      .course-name {
+        font-size: 1.75rem;
+        line-height: 1.3;
+      }
+    }
+    
+    .course-meta {
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: flex-start;
+      
+      span {
+        font-size: 0.8125rem;
+        padding: 0.375rem 0.75rem;
+      }
+    }
+  }
+
+  .course-description-section {
+    padding: 1.25rem;
+    
+    h3 {
+      font-size: 1.125rem;
+    }
+  }
 
   .course-reviews-section {
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
 
   .reviews-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.75rem;
+    
+    h3 {
+      font-size: 1.125rem;
+    }
+    
+    .btn {
+      width: 100%;
+      justify-content: center;
+      min-height: 44px;
+    }
   }
 
   .review-form-section {
     padding: 1rem;
+    
+    .form-group {
+      margin-bottom: 1.25rem;
+      
+      .form-label {
+        font-size: 0.9375rem;
+      }
+      
+      .form-select,
+      .form-input,
+      .form-textarea {
+        min-height: 44px;
+        font-size: 16px; // Prevent zoom on iOS
+      }
+      
+      .form-textarea {
+        min-height: 88px;
+      }
+    }
+    
+    .form-actions {
+      flex-direction: column;
+      gap: 0.75rem;
+      
+      .btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+      }
+    }
+  }
+  
+  .review-item {
+    padding: 1.25rem;
+    
+    .review-header {
+      .reviewer-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+    }
+    
+    .review-actions {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      
+      .action-btn {
+        min-height: 36px;
+        padding: 0.5rem 0.75rem;
+      }
+    }
+  }
+  
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-detail-page {
+    padding: 0.75rem;
+  }
+  
+  .course-header {
+    padding: 1rem;
+    
+    .course-title-section {
+      .course-name {
+        font-size: 1.5rem;
+        line-height: 1.25;
+      }
+      
+      .course-code {
+        font-size: 0.8125rem;
+        padding: 0.1875rem 0.625rem;
+      }
+    }
+    
+    .course-meta {
+      gap: 0.5rem;
+      
+      span {
+        font-size: 0.75rem;
+        padding: 0.3125rem 0.625rem;
+      }
+    }
+  }
+  
+  .course-description-section {
+    padding: 1rem;
+  }
+  
+  .course-reviews-section {
+    padding: 1rem;
+  }
+  
+  .review-form-section {
+    padding: 0.875rem;
+    border-radius: 8px;
+    
+    .image-grid {
+      grid-template-columns: 1fr 1fr; // Two columns on very small screens
+      gap: 0.5rem;
+    }
+    
+    .image-preview {
+      .preview-img {
+        height: 80px;
+      }
+      
+      .image-info {
+        padding: 0.5rem;
+        
+        .filename {
+          font-size: 0.6875rem;
+        }
+        
+        .remove-btn {
+          width: 20px;
+          height: 20px;
+          font-size: 0.75rem;
+        }
+      }
+    }
+  }
+  
+  .review-item {
+    padding: 1rem;
+    
+    .review-actions {
+      .action-btn {
+        font-size: 0.8125rem;
+        min-height: 32px;
+        padding: 0.375rem 0.625rem;
+      }
+    }
+  }
+  
+  .reply-form {
+    .reply-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      .btn {
+        width: 100%;
+        min-height: 40px;
+      }
+    }
+  }
+  
+  // Pagination mobile optimization
+  .pagination {
+    flex-direction: column;
+    gap: 0.75rem;
+    
+    .page-btn {
+      width: 100%;
+      min-height: 44px;
+    }
+  }
+  
+  // Touch-friendly button sizing
+  .btn {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    
+    &.btn-small {
+      min-height: 36px;
+      padding: 0.5rem 0.75rem;
+    }
+  }
+  
+  // Loading state mobile optimization
+  .loading-state {
+    padding: 2rem 1rem;
+    
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+    }
+  }
+  
+  // Error state mobile optimization
+  .error-state {
+    padding: 2rem 1rem;
+    
+    .error-actions {
+      flex-direction: column;
+      width: 100%;
+      
+      .retry-btn,
+      .back-btn {
+        width: 100%;
+        min-height: 44px;
+      }
+    }
   }
 }
 </style>

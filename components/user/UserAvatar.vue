@@ -431,7 +431,73 @@ onMounted(() => {
 }
 
 // Responsive adjustments
-@media (max-width: 768px) {
+@media (max-width: 479px) {
+  .user-avatar {
+    &.size-sm {
+      width: 28px;
+      height: 28px;
+      
+      .avatar-image,
+      .avatar-placeholder {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+    }
+
+    &.size-md {
+      width: 36px;
+      height: 36px;
+      
+      .avatar-image,
+      .avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+      }
+    }
+
+    &.size-lg {
+      width: 44px;
+      height: 44px;
+      
+      .avatar-image,
+      .avatar-placeholder {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+      }
+    }
+
+    &.size-xl {
+      width: 60px;
+      height: 60px;
+      
+      .avatar-image,
+      .avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+      }
+    }
+
+    &.clickable {
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .online-indicator {
+      width: 20%;
+      height: 20%;
+      min-width: 6px;
+      min-height: 6px;
+      border-width: 1px;
+    }
+  }
+}
+
+@media (min-width: 480px) and (max-width: 768px) {
   .user-avatar {
     &.size-lg {
       width: 48px;

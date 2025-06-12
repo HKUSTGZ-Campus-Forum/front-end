@@ -185,6 +185,15 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
 }
 
 .courses-header {
@@ -194,6 +203,26 @@ onMounted(() => {
     font-size: 2rem;
     color: #2c3e50;
     margin-bottom: 1.5rem;
+    
+    // Mobile optimization
+    @media (max-width: 768px) {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 480px) {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 1rem;
   }
 }
 
@@ -205,6 +234,13 @@ onMounted(() => {
 
   @media (max-width: 768px) {
     flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 }
 
@@ -220,11 +256,20 @@ onMounted(() => {
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.3s ease;
+    // Ensure touch-friendly input height
+    min-height: 44px;
+    box-sizing: border-box;
 
     &:focus {
       border-color: #3498db;
       box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
       outline: none;
+    }
+    
+    // Mobile optimization
+    @media (max-width: 480px) {
+      font-size: 16px; // Prevent zoom on iOS
+      padding: 0.875rem 1rem 0.875rem 2.5rem;
     }
   }
 
@@ -234,6 +279,17 @@ onMounted(() => {
     top: 50%;
     transform: translateY(-50%);
     color: #95a5a6;
+    // Ensure touch target is large enough
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    min-width: 100%;
   }
 }
 
@@ -249,11 +305,34 @@ onMounted(() => {
     background-color: white;
     cursor: pointer;
     transition: all 0.3s ease;
+    // Ensure touch-friendly select height
+    min-height: 44px;
+    box-sizing: border-box;
 
     &:focus {
       border-color: #3498db;
       outline: none;
     }
+    
+    // Mobile optimization
+    @media (max-width: 480px) {
+      font-size: 16px; // Prevent zoom on iOS
+      padding: 0.875rem 1rem;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    
+    select {
+      width: 100%;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.5rem;
   }
 }
 
@@ -261,6 +340,22 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
+  
+  // Mobile optimization - responsive grid
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr; // Single column on mobile
+    gap: 0.75rem;
+  }
 }
 
 .course-card {
@@ -273,12 +368,44 @@ onMounted(() => {
   color: inherit;
   display: block;
   cursor: pointer;
+  // Ensure minimum touch target size
+  min-height: 44px;
+  position: relative;
 
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     text-decoration: none;
     color: inherit;
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    border-radius: 10px;
+    
+    // Adjust hover effect for mobile
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+    border-radius: 8px;
+    
+    // Remove hover transform on small screens to prevent layout issues
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+    
+    // Add active state for touch feedback
+    &:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
   }
 }
 
@@ -287,11 +414,23 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  gap: 0.75rem;
 
   .course-code {
     font-size: 1.25rem;
     color: #2c3e50;
     margin: 0;
+    flex: 1;
+    min-width: 0; // Allow text to truncate
+    
+    // Mobile optimization
+    @media (max-width: 768px) {
+      font-size: 1.125rem;
+    }
+    
+    @media (max-width: 480px) {
+      font-size: 1rem;
+    }
   }
 
   .course-credits {
@@ -301,6 +440,25 @@ onMounted(() => {
     border-radius: 16px;
     font-size: 0.875rem;
     font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    
+    // Mobile optimization
+    @media (max-width: 480px) {
+      font-size: 0.8125rem;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    
+    .course-credits {
+      align-self: flex-end;
+    }
   }
 }
 
@@ -308,6 +466,19 @@ onMounted(() => {
   font-size: 1.125rem;
   color: #34495e;
   margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    font-size: 1.0625rem;
+    margin-bottom: 0.625rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
 }
 
 .course-description {
@@ -327,10 +498,18 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
+  gap: 0.5rem;
 
   .instructor {
     color: #666;
     font-size: 0.875rem;
+    flex: 1;
+    min-width: 0; // Allow text to truncate
+    
+    // Mobile optimization
+    @media (max-width: 480px) {
+      font-size: 0.8125rem;
+    }
   }
 
   .view-course-hint {
@@ -339,6 +518,24 @@ onMounted(() => {
     font-weight: 500;
     opacity: 0.8;
     transition: opacity 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    
+    // Mobile optimization
+    @media (max-width: 480px) {
+      font-size: 0.8125rem;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    
+    .view-course-hint {
+      align-self: flex-end;
+    }
   }
 }
 

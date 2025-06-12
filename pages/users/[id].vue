@@ -516,33 +516,60 @@ useHead({
 // 现有样式...
 </style>
 
-<!-- 样式保持不变 -->
+<!-- Mobile-optimized styles -->
 <style lang="scss" scoped>
 .user-profile-page {
   min-height: calc(100vh - 140px);
   background-color: #f8f9fa;
+  padding: 0.5rem;
+
+  @media (min-width: 768px) {
+    padding: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 2rem;
+  }
 }
 
 .user-profile-card {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
   max-width: 1000px;
   margin: 0 auto;
+
+  @media (min-width: 480px) {
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 }
 
 .user-header {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid #e0e0e0;
+  flex-direction: column;
+  text-align: center;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
+  @media (min-width: 480px) {
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    text-align: left;
   }
 }
 
@@ -551,14 +578,18 @@ useHead({
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+
+  @media (min-width: 480px) {
+    gap: 1rem;
+  }
 }
 
 .edit-avatar-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   border: 2px solid #e0e0e0;
   border-radius: 25px;
   background: white;
@@ -566,6 +597,15 @@ useHead({
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px; // Touch-friendly minimum size
+  min-width: 120px;
+  justify-content: center;
+
+  @media (min-width: 480px) {
+    padding: 0.5rem 1rem;
+    min-height: auto;
+    min-width: auto;
+  }
 
   &:hover {
     border-color: #3498db;
@@ -579,36 +619,75 @@ useHead({
   }
 
   .icon-fallback {
-    font-size: 0.875rem;
+    font-size: 1rem;
     margin-right: 0.25rem;
+
+    @media (min-width: 480px) {
+      font-size: 0.875rem;
+    }
   }
 }
 
 .avatar-upload-section {
-  margin: 2rem 0;
-  padding: 2rem;
+  margin: 1rem 0;
+  padding: 1rem;
   background: #f8f9fa;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 2px dashed #e0e0e0;
+
+  @media (min-width: 480px) {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    border-radius: 12px;
+  }
+
+  @media (min-width: 768px) {
+    margin: 2rem 0;
+    padding: 2rem;
+  }
 }
 
 .user-basic-info {
   flex: 1;
+  min-width: 0; // Prevent flex overflow
 
   .username-section {
     margin-bottom: 0.5rem;
+
+    @media (max-width: 767px) {
+      text-align: center;
+    }
   }
 
   .username-display {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    @media (min-width: 480px) {
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      justify-content: flex-start;
+    }
 
     .user-name {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: #2c3e50;
       margin: 0;
+      word-break: break-word;
+
+      @media (min-width: 480px) {
+        font-size: 1.75rem;
+      }
+
+      @media (min-width: 768px) {
+        font-size: 2rem;
+      }
     }
 
     .edit-username-btn {
@@ -616,14 +695,22 @@ useHead({
       border: none;
       color: #666;
       cursor: pointer;
-      padding: 0.5rem;
+      padding: 0.75rem;
       border-radius: 50%;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
+      min-width: 44px; // Touch-friendly minimum size
+
+      @media (min-width: 480px) {
+        padding: 0.5rem;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+      }
 
       &:hover {
         background: #f0f0f0;
@@ -632,8 +719,12 @@ useHead({
       }
 
       .icon-fallback {
-        font-size: 1rem;
+        font-size: 1.2rem;
         display: inline-block;
+
+        @media (min-width: 480px) {
+          font-size: 1rem;
+        }
       }
     }
   }
@@ -644,17 +735,34 @@ useHead({
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+
+      @media (max-width: 479px) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
 
       .username-input {
-        font-size: 2rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #2c3e50;
         border: 2px solid #e0e0e0;
         border-radius: 8px;
-        padding: 0.5rem 0.75rem;
+        padding: 0.75rem;
         background: white;
         transition: border-color 0.2s ease;
         min-width: 200px;
+        flex: 1;
+
+        @media (min-width: 480px) {
+          font-size: 1.5rem;
+          padding: 0.5rem 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+          font-size: 2rem;
+        }
 
         &:focus {
           outline: none;
@@ -675,18 +783,33 @@ useHead({
 
       .username-actions {
         display: flex;
-        gap: 0.25rem;
+        gap: 0.5rem;
+
+        @media (max-width: 479px) {
+          justify-content: center;
+          width: 100%;
+        }
+
+        @media (min-width: 480px) {
+          gap: 0.25rem;
+        }
 
         button {
-          width: 36px;
-          height: 36px;
+          width: 44px;
+          height: 44px;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.2s ease;
+
+          @media (min-width: 480px) {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+          }
 
           &:disabled {
             opacity: 0.6;
@@ -694,8 +817,12 @@ useHead({
           }
 
           .icon-fallback {
-            font-size: 1rem;
+            font-size: 1.2rem;
             display: inline-block;
+
+            @media (min-width: 480px) {
+              font-size: 1rem;
+            }
             
             &.spinning {
               animation: spin 1s linear infinite;
@@ -790,46 +917,90 @@ useHead({
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
 }
 
 .stat-card {
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   text-align: center;
   transition: transform 0.2s ease;
+
+  @media (min-width: 480px) {
+    padding: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
+  &:active {
+    transform: translateY(0);
+  }
+
   .stat-number {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #2c3e50;
     margin-bottom: 0.25rem;
+
+    @media (min-width: 480px) {
+      font-size: 1.375rem;
+    }
+
+    @media (min-width: 768px) {
+      font-size: 1.5rem;
+    }
   }
 
   .stat-text {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: #666;
+
+    @media (min-width: 480px) {
+      font-size: 0.875rem;
+    }
   }
 }
 
 .user-details {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 768px) {
+    margin-bottom: 2rem;
+  }
 }
 
 .detail-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
+  align-items: flex-start;
+  padding: 0.875rem 0;
   border-bottom: 1px solid #f0f0f0;
+  gap: 1rem;
+
+  @media (min-width: 480px) {
+    align-items: center;
+    padding: 0.75rem 0;
+  }
 
   &:last-child {
     border-bottom: none;
@@ -838,11 +1009,25 @@ useHead({
   .detail-label {
     font-weight: 500;
     color: #666;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+
+    @media (min-width: 480px) {
+      font-size: 1rem;
+    }
   }
 
   .detail-value {
     font-weight: 600;
     color: #2c3e50;
+    text-align: right;
+    word-break: break-all;
+    font-size: 0.9rem;
+
+    @media (min-width: 480px) {
+      font-size: 1rem;
+      word-break: break-word;
+    }
   }
 }
 

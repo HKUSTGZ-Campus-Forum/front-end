@@ -9,6 +9,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isMobile: {
+    type: Boolean,
+    default: false,
+  },
+  showOnMobile: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const { user, isLoggedIn } = useAuth();
@@ -44,22 +52,31 @@ const currentUserId = computed(() => {
 // };
 
 // 添加emit用于通知父组件状态变化
-const emit = defineEmits(["update:folded"]);
+const emit = defineEmits(["update:folded", "close-mobile"]);
 
 // 本地状态，用于处理悬停效果
 const isHovered = ref(false);
 
 function handleMouseEnter() {
-  if (props.folded) {
+  // Only handle hover on desktop
+  if (!props.isMobile && props.folded) {
     isHovered.value = true;
     emit("update:folded", false); // 直接发射展开事件
   }
 }
 
 function handleMouseLeave() {
-  if (!props.folded) {
+  // Only handle hover on desktop
+  if (!props.isMobile && !props.folded) {
     isHovered.value = false;
     emit("update:folded", true); // 直接发射折叠事件
+  }
+}
+
+// Handle mobile navigation clicks
+function handleNavClick() {
+  if (props.isMobile) {
+    emit("close-mobile");
   }
 }
 
@@ -75,7 +92,11 @@ watch(isHovered, (newValue: boolean) => {
 <template>
   <div
     class="sidebar"
-    :class="{ collapsed: folded }"
+    :class="{ 
+      collapsed: folded && !props.isMobile,
+      'mobile-sidebar': props.isMobile,
+      'mobile-visible': props.isMobile && props.showOnMobile
+    }"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
@@ -90,19 +111,31 @@ watch(isHovered, (newValue: boolean) => {
           <NuxtLink 
             to="/" 
             :class="{ active: route.path === '/' }"
-          >首页</NuxtLink>
+            @click="handleNavClick"
+          >
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">首页</span>
+          </NuxtLink>
         </li>
         <li>
           <NuxtLink 
             to="/forum" 
             :class="{ active: route.path.startsWith('/forum') }"
-          >论坛</NuxtLink>
+            @click="handleNavClick"
+          >
+            <span class="nav-icon">💬</span>
+            <span class="nav-text">论坛</span>
+          </NuxtLink>
         </li>
         <li>
           <NuxtLink 
             to="/courses" 
             :class="{ active: route.path.startsWith('/courses') }"
-          >课程</NuxtLink>
+            @click="handleNavClick"
+          >
+            <span class="nav-icon">📚</span>
+            <span class="nav-text">课程</span>
+          </NuxtLink>
         </li>
         <li>
           <!-- Show user profile link only when logged in -->
@@ -110,13 +143,21 @@ watch(isHovered, (newValue: boolean) => {
             v-if="isLoggedIn && user?.id"
             :to="`/users/${user.id}`"
             :class="{ active: route.path.startsWith('/users/') }"
-          >用户</NuxtLink>
+            @click="handleNavClick"
+          >
+            <span class="nav-icon">👤</span>
+            <span class="nav-text">用户</span>
+          </NuxtLink>
           <!-- Show login link when not logged in -->
           <NuxtLink 
             v-else
             to="/login"
             :class="{ active: route.path === '/login' }"
-          >登录</NuxtLink>
+            @click="handleNavClick"
+          >
+            <span class="nav-icon">🔑</span>
+            <span class="nav-text">登录</span>
+          </NuxtLink>
         </li>
       </ul>
     </div>
@@ -176,20 +217,40 @@ watch(isHovered, (newValue: boolean) => {
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
   position: fixed;
   left: 0;
-  top: 0; /* 从页面顶部开始 */
+  top: 0;
   height: 100vh;
   width: 200px;
   background-color: #677d94;
   color: white;
   transition: all 0.3s ease;
-  z-index: 1010; /* 提高z-index使其在顶部栏之上 */
+  z-index: 1010;
   padding: 0;
 
   &.collapsed {
     width: 100px;
 
-    .nav-items span {
+    .nav-items .nav-text {
       display: none;
+    }
+    
+    .nav-items a {
+      text-align: center;
+      justify-content: center;
+      
+      .nav-icon {
+        margin-right: 0;
+      }
+    }
+  }
+
+  // Mobile-specific styles
+  &.mobile-sidebar {
+    transform: translateX(-100%);
+    width: 250px;
+    z-index: 1015; // Above mobile overlay
+    
+    &.mobile-visible {
+      transform: translateX(0);
     }
   }
 
@@ -200,26 +261,43 @@ watch(isHovered, (newValue: boolean) => {
   .nav-items {
     list-style: none;
     padding: 0;
-    margin: 1rem 0 0 0; /* Add top margin to prevent overlap */
-    position: relative; /* Ensure proper stacking context */
+    margin: 1rem 0 0 0;
+    position: relative;
 
     li {
       margin-bottom: 0.5rem;
-      position: relative; /* For proper stacking */
-      z-index: 1; /* Ensure items stay above other elements */
+      position: relative;
+      z-index: 1;
     }
 
     a {
       color: rgba(255, 255, 255, 0.8);
       text-decoration: none;
-      display: block;
-      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 0.5rem;
       border-radius: 4px;
       font-size: 16px;
       font-weight: 500;
       margin-left: -10px;
       transition: all 0.3s ease;
       position: relative;
+      min-height: 44px; // Touch-friendly minimum height
+
+      .nav-icon {
+        font-size: 18px;
+        margin-right: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+      }
+
+      .nav-text {
+        flex: 1;
+        white-space: nowrap;
+      }
 
       &:hover {
         background-color: rgba(255, 255, 255, 0.1);
@@ -242,6 +320,55 @@ watch(isHovered, (newValue: boolean) => {
           border-radius: 0 2px 2px 0;
         }
       }
+    }
+  }
+}
+
+// Mobile responsive styles
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    z-index: 1015;
+    
+    &.mobile-visible {
+      transform: translateX(0);
+    }
+    
+    .sidebar-content {
+      padding: 1.5rem 1rem;
+    }
+    
+    .nav-items a {
+      padding: 1rem 0.75rem;
+      font-size: 17px;
+      min-height: 48px; // Larger touch targets on mobile
+      
+      .nav-icon {
+        font-size: 20px;
+        margin-right: 1rem;
+      }
+    }
+  }
+}
+
+// Small mobile devices
+@media (max-width: 480px) {
+  .sidebar {
+    width: 260px;
+    
+    .nav-items a {
+      padding: 0.875rem 0.5rem;
+      font-size: 16px;
+    }
+  }
+}
+
+// Tablet adjustments
+@media (max-width: 1024px) and (min-width: 769px) {
+  .sidebar {
+    &.collapsed {
+      width: 80px;
     }
   }
 }

@@ -112,6 +112,11 @@ const submitComment = async () => {
 
 <style lang="scss" scoped>
 .comment-form {
+  // Mobile form optimizations
+  @media (max-width: 480px) {
+    margin: 0;
+  }
+  
   textarea {
     width: 100%;
     padding: 0.75rem;
@@ -119,10 +124,33 @@ const submitComment = async () => {
     border-radius: 4px;
     resize: vertical;
     font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    
+    // Mobile textarea optimizations
+    @media (max-width: 480px) {
+      padding: 1rem;
+      font-size: 1rem; // Prevent zoom on iOS
+      border-radius: 6px;
+      min-height: 120px;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      padding: 0.875rem;
+      font-size: 0.95rem;
+    }
 
     &:focus {
       outline: none;
       border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+    
+    // Placeholder styling for mobile
+    &::placeholder {
+      @media (max-width: 480px) {
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
     }
   }
 }
@@ -132,12 +160,40 @@ const submitComment = async () => {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.5rem;
+  
+  // Mobile layout adjustments
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    gap: 0.75rem;
+    margin-top: 0.625rem;
+  }
 
   button {
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px; // Touch-friendly minimum height
+    font-weight: 500;
+    
+    // Mobile button optimizations
+    @media (max-width: 480px) {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 6px;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      padding: 0.625rem 1.25rem;
+      min-height: 40px;
+    }
 
     &.cancel-btn {
       background-color: #f5f5f5;
@@ -145,6 +201,14 @@ const submitComment = async () => {
 
       &:hover {
         background-color: #e0e0e0;
+      }
+      
+      // Touch feedback
+      &:active {
+        @media (max-width: 768px) {
+          background-color: #d5d5d5;
+          transform: translateY(1px);
+        }
       }
     }
 
@@ -160,6 +224,14 @@ const submitComment = async () => {
         opacity: 0.5;
         cursor: not-allowed;
       }
+      
+      // Touch feedback
+      &:active:not(:disabled) {
+        @media (max-width: 768px) {
+          background-color: #2574a9;
+          transform: translateY(1px);
+        }
+      }
     }
   }
 }
@@ -168,5 +240,22 @@ const submitComment = async () => {
   color: #e74c3c;
   font-size: 0.9rem;
   margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(231, 76, 60, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #e74c3c;
+  
+  // Mobile error message styling
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    margin-top: 0.625rem;
+    padding: 0.625rem;
+  }
 }
 </style>
