@@ -44,7 +44,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { user } = useAuth();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, fetchPublic } = useApi();
 
 const comments = ref<CommentType[]>([]);
 const isLoading = ref(false);
@@ -65,7 +65,7 @@ const fetchComments = async () => {
       top_level_only: "true", // 只获取顶级评论
     });
 
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/comments/post/${props.postId}?${params}`
     );
 

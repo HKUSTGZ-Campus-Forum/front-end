@@ -2,6 +2,38 @@
   --background-color: #97d4f3;
   --background-image: none;
   --background-opacity: 1;
+  
+  /* Mobile-first responsive breakpoints */
+  --mobile-small: 480px;
+  --mobile-large: 768px;
+  --tablet: 1024px;
+  --desktop: 1200px;
+  
+  /* Layout dimensions */
+  --header-height: 70px;
+  --sidebar-width-expanded: 200px;
+  --sidebar-width-collapsed: 100px;
+  --sidebar-width-mobile: 280px;
+  
+  /* Touch targets (minimum 44px for accessibility) */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  
+  /* Z-index layers */
+  --z-sidebar-mobile: 1050;
+  --z-header: 1010;
+  --z-overlay: 1040;
+  --z-dropdown: 1060;
+  
+  /* Mobile spacing */
+  --mobile-padding: 1rem;
+  --mobile-margin: 0.5rem;
+  --desktop-padding: 2rem;
+  
+  /* Animation durations */
+  --transition-fast: 0.2s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.4s;
 }
 
 body {

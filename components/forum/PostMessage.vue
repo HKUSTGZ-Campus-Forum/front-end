@@ -19,49 +19,6 @@
         <span v-if="errors.title" class="error-text">{{ errors.title }}</span>
       </div>
 
-      <!-- 帖子分类 -->
-      <div class="form-group">
-        <label for="postCategory">分类</label>
-        <select
-          id="postCategory"
-          v-model="category"
-          required
-          class="category-select"
-        >
-          <option value="" disabled>请选择分类</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-      </div>
-
-      <!-- 帖子标签 -->
-      <div class="form-group">
-        <label for="postTags">标签</label>
-        <div class="tags-container">
-          <input
-            id="postTags"
-            v-model="tagInput"
-            type="text"
-            placeholder="输入标签后按回车添加"
-            @keydown.enter.prevent="addTag"
-            @blur="addTag"
-          />
-          <div v-if="tags.length > 0" class="tags-list">
-            <span v-for="(tag, index) in tags" :key="index" class="tag">
-              {{ tag }}
-              <button
-                type="button"
-                class="tag-remove"
-                @click="removeTag(index)"
-              >
-                &times;
-              </button>
-            </span>
-          </div>
-        </div>
-      </div>
-
       <!-- 帖子内容 -->
       <div class="form-group">
         <label for="postContent">内容</label>
@@ -151,7 +108,6 @@ const router = useRouter();
 
 // 表单数据
 const title = ref("");
-const category = ref("");
 const tagInput = ref("");
 const tags = ref([]);
 const content = ref("");
@@ -167,13 +123,6 @@ const errorMessage = ref("");
 const successMessage = ref("");
 const isLoading = ref(false);
 
-// 模拟分类数据
-const categories = ref([
-  { id: "tech", name: "技术讨论" },
-  { id: "share", name: "资源分享" },
-  { id: "question", name: "问题求助" },
-  { id: "chat", name: "灌水闲聊" },
-]);
 
 // 验证标题
 const validateTitle = () => {
@@ -254,7 +203,6 @@ const removeUploadedImage = async (index: number) => {
 const formValid = computed(() => {
   return (
     title.value &&
-    category.value &&
     content.value &&
     !errors.value.title &&
     !errors.value.content
@@ -274,7 +222,6 @@ const handleCancel = () => {
 
 const resetForm = () => {
   title.value = "";
-  category.value = "";
   tagInput.value = "";
   tags.value = [];
   content.value = "";
@@ -302,7 +249,6 @@ const handleSubmit = async () => {
 
     const jsonData = {
       title: title.value,
-      category: category.value,
       content: content.value,
       tags: tags.value,
       file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
