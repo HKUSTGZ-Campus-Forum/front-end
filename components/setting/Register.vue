@@ -225,10 +225,17 @@
   
   <style lang="scss" scoped>
   .register-setting {
-    padding: 1.5rem;
-    // background-color: white;
+    padding: 1rem;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    @media (min-width: 480px) {
+      padding: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      padding: 1.5rem;
+    }
   }
   
 //   .section-title {
@@ -250,19 +257,37 @@
       margin-bottom: 0.5rem;
       font-weight: 500;
       color: #333;
+      font-size: 0.95rem;
+
+      @media (max-width: 479px) {
+        font-size: 1rem;
+      }
     }
     
     input {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.875rem;
       border: 1px solid #ddd;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 1rem;
+      min-height: 44px; // Touch-friendly minimum height
+      -webkit-appearance: none; // Remove iOS styling
+
+      @media (min-width: 480px) {
+        padding: 0.75rem;
+        border-radius: 4px;
+        min-height: auto;
+      }
       
       &:focus {
         outline: none;
         border-color: var(--color-blue-7, #9fc3e7);
-        box-shadow: 0 0 0 2px rgba(159, 195, 231, 0.2);
+        box-shadow: 0 0 0 3px rgba(159, 195, 231, 0.2);
+      }
+
+      // Prevent zoom on iOS
+      @media (max-width: 479px) {
+        font-size: 16px;
       }
     }
   }
@@ -271,21 +296,42 @@
     position: relative;
     
     input {
-      padding-right: 80px;
+      padding-right: 90px;
+
+      @media (min-width: 480px) {
+        padding-right: 80px;
+      }
     }
     
     .toggle-password {
       position: absolute;
-      right: 8px;
+      right: 12px;
       top: 50%;
       transform: translateY(-50%);
       background: none;
       border: none;
       color: #666;
       cursor: pointer;
+      padding: 0.5rem;
+      min-height: 44px; // Touch-friendly minimum size
+      display: flex;
+      align-items: center;
+      font-size: 0.85rem;
+
+      @media (min-width: 480px) {
+        right: 8px;
+        padding: 0.25rem;
+        min-height: auto;
+        font-size: 0.8rem;
+      }
       
       &:hover {
         color: #333;
+      }
+
+      &:active {
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
       }
     }
   }
@@ -295,30 +341,59 @@
     color: #dc3545;
     font-size: 0.85rem;
     margin-top: 0.25rem;
+
+    @media (max-width: 479px) {
+      font-size: 0.9rem;
+    }
   }
   
   .global-error {
     color: #dc3545;
     margin-bottom: 1rem;
-    padding: 0.75rem;
+    padding: 1rem;
     background-color: rgba(220, 53, 69, 0.1);
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 0.9rem;
+    border-left: 4px solid #dc3545;
+
+    @media (min-width: 480px) {
+      padding: 0.75rem;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 479px) {
+      font-size: 1rem;
+    }
   }
   
   .register-btn {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.875rem;
     background-color: var(--color-blue-7, #9fc3e7);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    min-height: 44px; // Touch-friendly minimum height
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @media (min-width: 480px) {
+      padding: 0.75rem;
+      border-radius: 4px;
+      min-height: auto;
+    }
     
     &:hover:not(:disabled) {
       background-color: #7ba8d6; // 手动指定的较深蓝色
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
     }
     
     &:disabled {
@@ -330,8 +405,18 @@
   .success-message {
     padding: 1rem;
     background-color: rgba(40, 167, 69, 0.1);
-    border-radius: 4px;
+    border-radius: 6px;
     color: #28a745;
     margin-bottom: 1rem;
+    border-left: 4px solid #28a745;
+    font-size: 0.95rem;
+
+    @media (min-width: 480px) {
+      border-radius: 4px;
+    }
+
+    @media (max-width: 479px) {
+      font-size: 1rem;
+    }
   }
   </style>

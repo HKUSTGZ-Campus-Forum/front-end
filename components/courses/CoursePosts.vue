@@ -304,15 +304,44 @@ onMounted(() => {
     color: #2c3e50;
     margin-bottom: 1.5rem;
     font-size: 1.25rem;
+    flex-wrap: wrap;
 
     i {
       color: #3498db;
+      min-width: 20px;
     }
 
     .posts-count {
       color: #666;
       font-size: 0.9rem;
       font-weight: normal;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    
+    h3 {
+      font-size: 1.125rem;
+      margin-bottom: 1.25rem;
+      
+      .posts-count {
+        font-size: 0.8125rem;
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+    
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      
+      .posts-count {
+        font-size: 0.75rem;
+      }
     }
   }
 }
@@ -322,6 +351,11 @@ onMounted(() => {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  
+  // Mobile optimization
+  @media (max-width: 480px) {
+    gap: 0.375rem;
+  }
 }
 
 .semester-tab {
@@ -331,6 +365,14 @@ onMounted(() => {
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
+  // Ensure touch-friendly sizing
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  white-space: nowrap;
 
   &:hover {
     border-color: #3498db;
@@ -341,6 +383,20 @@ onMounted(() => {
     color: white;
     border-color: #3498db;
   }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    min-height: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    min-height: 36px;
+    border-radius: 16px;
+  }
 }
 
 // 帖子区域样式（与原来的保持一致）
@@ -349,11 +405,18 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  gap: 1rem;
 
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
+    margin-bottom: 1.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
   }
 
   .create-post-btn {
@@ -367,9 +430,24 @@ onMounted(() => {
     justify-content: center;
     gap: 0.5rem;
     transition: background 0.3s ease;
+    // Ensure touch-friendly sizing
+    min-height: 44px;
+    box-sizing: border-box;
+    font-weight: 500;
 
     &:hover {
       background: #45a049;
+    }
+    
+    // Mobile optimization
+    @media (max-width: 768px) {
+      width: 100%;
+      padding: 0.75rem 1rem;
+    }
+    
+    @media (max-width: 480px) {
+      padding: 0.875rem 1rem;
+      font-size: 0.9375rem;
     }
   }
 }
@@ -377,6 +455,7 @@ onMounted(() => {
 .posts-loading {
   text-align: center;
   padding: 2rem;
+  color: #666;
 
   .loading-spinner.small {
     width: 30px;
@@ -385,6 +464,30 @@ onMounted(() => {
     border-top: 4px solid #3498db;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  p {
+    font-size: 0.9375rem;
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    
+    .loading-spinner.small {
+      width: 24px;
+      height: 24px;
+      border-width: 3px;
+    }
+    
+    p {
+      font-size: 0.875rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
   }
 }
 
@@ -398,6 +501,16 @@ onMounted(() => {
     margin-bottom: 1rem;
     opacity: 0.5;
   }
+  
+  h4 {
+    margin-bottom: 0.5rem;
+    color: #555;
+  }
+  
+  p {
+    margin-bottom: 1.5rem;
+    font-size: 0.9375rem;
+  }
 
   .create-first-post-btn {
     background: #3498db;
@@ -408,9 +521,54 @@ onMounted(() => {
     display: inline-block;
     margin-top: 1rem;
     transition: background 0.3s ease;
+    // Ensure touch-friendly sizing
+    min-height: 44px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
       background: #2980b9;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+    
+    i {
+      font-size: 2.5rem;
+    }
+    
+    h4 {
+      font-size: 1.125rem;
+    }
+    
+    p {
+      font-size: 0.875rem;
+    }
+    
+    .create-first-post-btn {
+      width: 100%;
+      max-width: 280px;
+      padding: 1rem 1.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1.5rem 1rem;
+    
+    i {
+      font-size: 2rem;
+    }
+    
+    h4 {
+      font-size: 1rem;
+    }
+    
+    p {
+      font-size: 0.8125rem;
     }
   }
 }
@@ -426,24 +584,60 @@ onMounted(() => {
   border-radius: 8px;
   padding: 1.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #ced4da;
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem;
+    border-radius: 6px;
+    
+    // Remove hover transform on small screens, add touch feedback
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    
+    // Add active state for touch feedback
+    &:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
   }
 }
 
 .post-header {
   margin-bottom: 1rem;
 
-  .post-title a {
-    color: #2c3e50;
-    text-decoration: none;
-    font-size: 1.1rem;
-    font-weight: 600;
+  .post-title {
+    a {
+      color: #2c3e50;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.4;
+      display: block;
+      // Ensure touch-friendly link
+      min-height: 24px;
 
-    &:hover {
-      color: #3498db;
+      &:hover {
+        color: #3498db;
+      }
     }
   }
 
@@ -453,6 +647,33 @@ onMounted(() => {
     margin-top: 0.5rem;
     font-size: 0.875rem;
     color: #666;
+    flex-wrap: wrap;
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    .post-title a {
+      font-size: 1.0625rem;
+    }
+    
+    .post-meta {
+      font-size: 0.8125rem;
+      gap: 0.75rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .post-title a {
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+    
+    .post-meta {
+      font-size: 0.75rem;
+      gap: 0.5rem;
+      flex-direction: column;
+      margin-top: 0.375rem;
+    }
   }
 }
 
@@ -482,11 +703,39 @@ onMounted(() => {
   gap: 1rem;
   font-size: 0.875rem;
   color: #666;
+  flex-wrap: wrap;
 
   span {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    // Ensure touch-friendly spacing
+    min-height: 24px;
+    
+    i {
+      width: 14px;
+      flex-shrink: 0;
+    }
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    font-size: 0.8125rem;
+    gap: 0.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+    gap: 0.5rem;
+    
+    span {
+      min-height: 20px;
+      gap: 0.1875rem;
+      
+      i {
+        width: 12px;
+      }
+    }
   }
 }
 
@@ -504,9 +753,17 @@ onMounted(() => {
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.3s ease;
+    // Ensure touch-friendly sizing
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
 
     &:hover:not(:disabled) {
       background: #f8f9fa;
+      border-color: #adb5bd;
     }
 
     &:disabled {
@@ -518,6 +775,41 @@ onMounted(() => {
   .page-info {
     color: #666;
     font-size: 0.875rem;
+    white-space: nowrap;
+  }
+  
+  // Mobile optimization
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    
+    .page-btn {
+      padding: 0.625rem 1rem;
+      font-size: 0.8125rem;
+      min-height: 40px;
+    }
+    
+    .page-info {
+      font-size: 0.8125rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    
+    .page-btn {
+      width: 100%;
+      max-width: 200px;
+      padding: 0.75rem 1rem;
+      min-height: 44px;
+    }
+    
+    .page-info {
+      order: -1;
+      font-size: 0.75rem;
+    }
   }
 }
 

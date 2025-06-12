@@ -135,22 +135,75 @@ const goToUserProfile = (userId?: number) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
+  
+  // Mobile optimizations
+  @media (max-width: 480px) {
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 0 0.25rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    padding: 1.25rem;
+  }
 
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+    // Reduce hover effect on mobile for better touch experience
+    @media (max-width: 768px) {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+  
+  // Touch feedback for mobile
+  &:active {
+    @media (max-width: 768px) {
+      transform: translateY(0);
+      transition: transform 0.1s;
+    }
   }
 }
 
 .post-title {
   margin-bottom: 0.5rem;
+  line-height: 1.3;
+  
+  // Mobile typography adjustments
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    font-size: 1.4rem;
+    margin-bottom: 0.625rem;
+  }
 
   a {
     color: #2c3e50;
     text-decoration: none;
+    word-wrap: break-word;
+    display: block;
+    
+    // Touch target optimization
+    @media (max-width: 768px) {
+      padding: 0.25rem 0;
+      margin: -0.25rem 0;
+    }
 
     &:hover {
       color: #3498db;
+    }
+    
+    // Touch feedback
+    &:active {
+      @media (max-width: 768px) {
+        color: #2980b9;
+      }
     }
   }
 }
@@ -162,15 +215,40 @@ const goToUserProfile = (userId?: number) => {
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
+  
+  // Mobile layout adjustments
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    gap: 0.75rem;
+    font-size: 0.875rem;
+  }
 
   .author-info {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    
+    // Ensure adequate touch target on mobile
+    @media (max-width: 480px) {
+      width: 100%;
+      padding: 0.25rem 0;
+    }
 
     .author {
       font-weight: 500;
       color: #333;
+      
+      @media (max-width: 480px) {
+        font-size: 0.9rem;
+      }
     }
   }
 
@@ -178,6 +256,10 @@ const goToUserProfile = (userId?: number) => {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    
+    @media (max-width: 480px) {
+      font-size: 0.8rem;
+    }
   }
 }
 
@@ -186,6 +268,12 @@ const goToUserProfile = (userId?: number) => {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    gap: 0.375rem;
+    margin-bottom: 1rem;
+  }
 
   .tag {
     font-size: 0.8rem;
@@ -193,6 +281,12 @@ const goToUserProfile = (userId?: number) => {
     color: #3182ce;
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
+    
+    // Mobile tag sizing
+    @media (max-width: 480px) {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
   }
 }
 
@@ -205,6 +299,22 @@ const goToUserProfile = (userId?: number) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.5;
+  word-wrap: break-word;
+  
+  // Mobile typography adjustments
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    -webkit-line-clamp: 2; // Show fewer lines on mobile
+    line-clamp: 2;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    font-size: 0.95rem;
+    margin-bottom: 1.125rem;
+  }
 }
 
 .post-stats {
@@ -213,12 +323,25 @@ const goToUserProfile = (userId?: number) => {
   color: #666;
   font-size: 0.9rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  
+  // Mobile layout adjustments
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
 
   .reactions,
   .comments {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    
+    // Touch-friendly spacing on mobile
+    @media (max-width: 480px) {
+      gap: 0.375rem;
+    }
   }
 }
 
@@ -226,9 +349,32 @@ const goToUserProfile = (userId?: number) => {
   color: #3498db;
   text-decoration: none;
   font-weight: 500;
+  display: inline-block;
+  transition: color 0.2s ease;
+  
+  // Touch-friendly sizing on mobile
+  @media (max-width: 768px) {
+    padding: 0.375rem 0.5rem;
+    margin: -0.375rem -0.5rem;
+    border-radius: 4px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    margin: -0.5rem -0.75rem;
+  }
 
   &:hover {
     text-decoration: underline;
+  }
+  
+  // Touch feedback
+  &:active {
+    @media (max-width: 768px) {
+      color: #2980b9;
+      background-color: rgba(52, 152, 219, 0.1);
+    }
   }
 }
 </style>

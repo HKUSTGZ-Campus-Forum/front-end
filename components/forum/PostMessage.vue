@@ -108,7 +108,6 @@ const router = useRouter();
 
 // 表单数据
 const title = ref("");
-const category = ref("");
 const tagInput = ref("");
 const tags = ref([]);
 const content = ref("");
@@ -124,13 +123,6 @@ const errorMessage = ref("");
 const successMessage = ref("");
 const isLoading = ref(false);
 
-// 模拟分类数据
-const categories = ref([
-  { id: "tech", name: "技术讨论" },
-  { id: "share", name: "资源分享" },
-  { id: "question", name: "问题求助" },
-  { id: "chat", name: "灌水闲聊" },
-]);
 
 // 验证标题
 const validateTitle = () => {
@@ -211,7 +203,6 @@ const removeUploadedImage = async (index: number) => {
 const formValid = computed(() => {
   return (
     title.value &&
-    category.value &&
     content.value &&
     !errors.value.title &&
     !errors.value.content
@@ -231,7 +222,6 @@ const handleCancel = () => {
 
 const resetForm = () => {
   title.value = "";
-  category.value = "";
   tagInput.value = "";
   tags.value = [];
   content.value = "";
@@ -259,7 +249,6 @@ const handleSubmit = async () => {
 
     const jsonData = {
       title: title.value,
-      category: category.value,
       content: content.value,
       tags: tags.value,
       file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
@@ -342,16 +331,36 @@ const emit = defineEmits(["post-success"]);
 <style lang="scss" scoped>
 .post-message-component {
   width: 100%;
+  
+  // Mobile optimizations
+  @media (max-width: 480px) {
+    padding: 0;
+  }
 }
 
 .form-group {
   margin-bottom: 1.5rem;
+  
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin-bottom: 1.25rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    margin-bottom: 1.375rem;
+  }
 
   label {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
     color: #333;
+    
+    // Mobile label styling
+    @media (max-width: 480px) {
+      font-size: 0.95rem;
+      margin-bottom: 0.625rem;
+    }
   }
 
   input,
@@ -362,17 +371,47 @@ const emit = defineEmits(["post-success"]);
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    
+    // Mobile input optimizations
+    @media (max-width: 480px) {
+      padding: 1rem;
+      font-size: 1rem; // Prevent zoom on iOS
+      border-radius: 6px;
+      min-height: 44px; // Touch-friendly minimum height
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      padding: 0.875rem;
+    }
 
     &:focus {
       outline: none;
       border-color: var(--color-blue-7, #9fc3e7);
       box-shadow: 0 0 0 2px rgba(159, 195, 231, 0.2);
     }
+    
+    // Placeholder styling for mobile
+    &::placeholder {
+      @media (max-width: 480px) {
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
+    }
   }
 
   textarea {
     resize: vertical;
     min-height: 150px;
+    
+    // Mobile textarea adjustments
+    @media (max-width: 480px) {
+      min-height: 120px;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      min-height: 135px;
+    }
   }
 }
 
@@ -382,6 +421,14 @@ const emit = defineEmits(["post-success"]);
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 12px;
+  cursor: pointer;
+  
+  // Mobile select optimizations
+  @media (max-width: 480px) {
+    background-position: right 1rem center;
+    background-size: 14px;
+    padding-right: 3rem; // Extra space for arrow
+  }
 }
 
 .tags-container {
@@ -390,6 +437,12 @@ const emit = defineEmits(["post-success"]);
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 0.5rem;
+    
+    // Mobile tag spacing
+    @media (max-width: 480px) {
+      gap: 0.375rem;
+      margin-top: 0.625rem;
+    }
 
     .tag {
       display: inline-flex;
@@ -399,6 +452,12 @@ const emit = defineEmits(["post-success"]);
       padding: 0.35rem 0.75rem;
       border-radius: 50px;
       font-size: 0.875rem;
+      
+      // Mobile tag sizing
+      @media (max-width: 480px) {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8rem;
+      }
 
       .tag-remove {
         background: none;
@@ -411,6 +470,16 @@ const emit = defineEmits(["post-success"]);
         display: flex;
         align-items: center;
         justify-content: center;
+        min-width: 18px;
+        min-height: 18px;
+        
+        // Touch-friendly remove button on mobile
+        @media (max-width: 480px) {
+          font-size: 1.3rem;
+          margin-left: 0.5rem;
+          min-width: 24px;
+          min-height: 24px;
+        }
       }
     }
   }
@@ -490,6 +559,18 @@ const emit = defineEmits(["post-success"]);
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 2rem;
+  
+  // Mobile button layout
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
 }
 
 .submit-btn,
@@ -499,7 +580,23 @@ const emit = defineEmits(["post-success"]);
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  min-height: 44px; // Touch-friendly minimum height
+  font-weight: 500;
+  
+  // Mobile button optimizations
+  @media (max-width: 480px) {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    min-height: 50px;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    padding: 0.875rem 1.75rem;
+    min-height: 46px;
+  }
 }
 
 .submit-btn {
@@ -514,6 +611,14 @@ const emit = defineEmits(["post-success"]);
     opacity: 0.7;
     cursor: not-allowed;
   }
+  
+  // Touch feedback for mobile
+  &:active:not(:disabled) {
+    @media (max-width: 768px) {
+      background-color: #6b9ac9;
+      transform: translateY(1px);
+    }
+  }
 }
 
 .cancel-btn {
@@ -523,6 +628,14 @@ const emit = defineEmits(["post-success"]);
   &:hover {
     background-color: #e4e4e4;
   }
+  
+  // Touch feedback for mobile
+  &:active {
+    @media (max-width: 768px) {
+      background-color: #d7d7d7;
+      transform: translateY(1px);
+    }
+  }
 }
 
 .error-text {
@@ -530,6 +643,14 @@ const emit = defineEmits(["post-success"]);
   color: #dc3545;
   font-size: 0.85rem;
   margin-top: 0.25rem;
+  padding: 0.375rem 0;
+  
+  // Mobile error text styling
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    margin-top: 0.375rem;
+    padding: 0.5rem 0;
+  }
 }
 
 .global-error {
@@ -539,6 +660,20 @@ const emit = defineEmits(["post-success"]);
   background-color: rgba(220, 53, 69, 0.1);
   border-radius: 4px;
   font-size: 0.9rem;
+  border-left: 3px solid #dc3545;
+  
+  // Mobile error styling
+  @media (max-width: 480px) {
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+  }
+  
+  @media (min-width: 481px) and (max-width: 768px) {
+    padding: 0.875rem;
+    margin-bottom: 1.125rem;
+  }
 }
 
 .success-message {
@@ -580,15 +715,32 @@ const emit = defineEmits(["post-success"]);
   margin-top: 0.5rem;
   font-size: 0.875rem;
   color: #666;
+  
+  // Mobile upload hint styling
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    margin-top: 0.625rem;
+  }
 }
 
 .uploaded-images {
   margin-top: 1rem;
   
+  // Mobile spacing adjustments
+  @media (max-width: 480px) {
+    margin-top: 0.75rem;
+  }
+  
   h4 {
     margin: 0 0 1rem 0;
     color: #333;
     font-size: 1rem;
+    
+    // Mobile title styling
+    @media (max-width: 480px) {
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
   }
   
   .image-grid {
@@ -596,17 +748,42 @@ const emit = defineEmits(["post-success"]);
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 1rem;
     
+    // Mobile grid adjustments
+    @media (max-width: 480px) {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.875rem;
+    }
+    
     .image-preview {
       border: 1px solid #ddd;
       border-radius: 8px;
       overflow: hidden;
       background: #f9f9f9;
       
+      // Mobile image preview styling
+      @media (max-width: 480px) {
+        border-radius: 6px;
+      }
+      
       .preview-img {
         width: 100%;
         height: 120px;
         object-fit: cover;
         display: block;
+        
+        // Mobile image sizing
+        @media (max-width: 480px) {
+          height: 100px;
+        }
+        
+        @media (min-width: 481px) and (max-width: 768px) {
+          height: 110px;
+        }
       }
       
       .image-info {
@@ -614,6 +791,11 @@ const emit = defineEmits(["post-success"]);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        
+        // Mobile image info styling
+        @media (max-width: 480px) {
+          padding: 0.375rem;
+        }
         
         .filename {
           font-size: 0.8rem;
@@ -623,6 +805,12 @@ const emit = defineEmits(["post-success"]);
           white-space: nowrap;
           flex: 1;
           margin-right: 0.5rem;
+          
+          // Mobile filename styling
+          @media (max-width: 480px) {
+            font-size: 0.75rem;
+            margin-right: 0.375rem;
+          }
         }
         
         .remove-btn {
@@ -637,10 +825,31 @@ const emit = defineEmits(["post-success"]);
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: background 0.3s ease;
+          transition: all 0.3s ease;
+          
+          // Touch-friendly remove button on mobile
+          @media (max-width: 480px) {
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+          }
+          
+          @media (min-width: 481px) and (max-width: 768px) {
+            width: 24px;
+            height: 24px;
+            font-size: 15px;
+          }
           
           &:hover {
             background: #ff3742;
+          }
+          
+          // Touch feedback
+          &:active {
+            @media (max-width: 768px) {
+              background: #ff2d3a;
+              transform: scale(0.95);
+            }
           }
         }
       }
