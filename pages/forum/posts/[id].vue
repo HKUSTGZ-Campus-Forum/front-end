@@ -164,7 +164,7 @@ import UserAvatar from "~/components/user/UserAvatar.vue";
 const route = useRoute();
 const router = useRouter();
 const { getUsernameById } = useUser();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, fetchPublic } = useApi();
 const { isLoggedIn, user } = useAuth();
 
 // 弹窗状态
@@ -282,7 +282,7 @@ const fetchPostData = async () => {
     isLoading.value = true;
     errorMessage.value = "";
 
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/posts/${postId}`
     );
 

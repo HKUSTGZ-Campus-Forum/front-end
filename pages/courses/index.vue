@@ -89,7 +89,7 @@ interface Course {
   };
 }
 
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, fetchPublic } = useApi();
 const { isLoggedIn } = useAuth();
 
 const courses = ref<Course[]>([]);
@@ -110,7 +110,7 @@ const debounce = (fn: Function, delay: number) => {
 // 获取讲师信息
 const fetchInstructorInfo = async (instructorId: number) => {
   try {
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/users/public/${instructorId}`
     );
     if (!response.ok) {
@@ -137,7 +137,7 @@ const fetchCourses = async () => {
       sort_order: sortOrder.value,
     });
 
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/courses?${queryParams.toString()}`
     );
     if (!response.ok) {

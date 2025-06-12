@@ -448,7 +448,7 @@ interface ReviewForm {
 
 // Composables
 const { user, isLoggedIn } = useAuth();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, fetchPublic } = useApi();
 const { deleteFile } = useFileUpload();
 const route = useRoute();
 const router = useRouter();
@@ -515,7 +515,7 @@ const fetchCourseDetail = async () => {
 
     console.log("📤 获取课程详情，课程ID:", courseId.value);
 
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/courses/${courseId.value}`
     );
 
@@ -546,7 +546,7 @@ const fetchCourseReviews = async () => {
   try {
     isLoadingReviews.value = true;
 
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/posts?limit=50`
     );
 
@@ -577,7 +577,7 @@ const fetchCourseReviews = async () => {
 
 const fetchAvailableSemesters = async () => {
   try {
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       `https://dev.unikorn.axfff.com/api/courses/${courseId.value}/semesters?lang=zh`
     );
 
