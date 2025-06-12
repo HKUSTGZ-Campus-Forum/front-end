@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { useAuth } from "~/composables/useAuth";
+import { useHead } from "#imports";
 
 // 获取认证功能
 const { init } = useAuth();
@@ -16,6 +17,16 @@ onMounted(() => {
     init();
   }
 });
+
+useHead({
+  title: 'UniKorn 科广汇',
+  meta: [
+    { name: 'description', content: 'uniKonwn - Campus Forum' }
+  ],
+  link: [
+    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+  ]
+})
 </script>
 
 <!-- this is an example module -->

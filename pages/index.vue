@@ -8,20 +8,20 @@ import UserAvatar from "~/components/user/UserAvatar.vue";
 
 // 设置页面的元信息
 useHead({
-  title: "主页",
+  title: "主页 - UniKorn 科广汇",
   meta: [
     {
       name: "description",
       content: hkustgz.description,
     },
   ],
-  link: [
-    {
-      rel: "icon",
-      type: "image/x-icon",
-      href: "/testico1.ico",
-    },
-  ],
+  // link: [
+  //   {
+  //     rel: "icon",
+  //     type: "image/x-icon",
+  //     href: "/testico1.ico",
+  //   },
+  // ],
 });
 
 // Composables

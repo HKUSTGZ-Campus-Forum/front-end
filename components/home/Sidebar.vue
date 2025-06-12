@@ -103,7 +103,7 @@ watch(isHovered, (newValue: boolean) => {
     <div class="sidebar-content">
       <div class="sidebar-header">
         <div class="uniKonwn-logo">
-          <img src="/public/image/uniKorn.jpg" alt="uniKonwn" />
+          <img src="/public/image/uniKorn.png" alt="uniKonwn" />
         </div>
       </div>
       <ul class="nav-items">
