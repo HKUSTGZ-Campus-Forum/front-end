@@ -22,13 +22,12 @@
         
         <!-- 邮箱字段 -->
         <div class="form-group">
-          <label for="settingEmail">邮箱</label>
+          <label for="settingEmail">邮箱 (可选)</label>
           <input
             id="settingEmail"
             v-model="email"
             type="email"
-            placeholder="请输入邮箱"
-            required
+            placeholder="请输入邮箱（可选）"
             @blur="validateEmail"
           />
           <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
@@ -134,9 +133,7 @@
   
   const validateEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.value) {
-      errors.value.email = '请输入邮箱地址';
-    } else if (!emailRegex.test(email.value)) {
+    if (email.value && !emailRegex.test(email.value)) {
       errors.value.email = '请输入有效的邮箱地址';
     } else {
       errors.value.email = '';
@@ -167,7 +164,6 @@
   const formValid = computed(() => {
     return (
       username.value &&
-      email.value &&
       password.value &&
       confirmPassword.value &&
       !errors.value.username &&
@@ -199,7 +195,14 @@
       isLoading.value = true;
       registerError.value = '';
       
-      await register(username.value, email.value, password.value);
+      // Only include email if it's provided
+      const registerData = {
+        username: username.value,
+        password: password.value,
+        ...(email.value && { email: email.value })
+      };
+      
+      await register(registerData.username, registerData.email || '', registerData.password);
       
       // 注册成功
       successMessage.value = '注册成功！账户已创建。';
@@ -213,7 +216,14 @@
       // 触发事件
       emit('register-success');
     } catch (err) {
-      registerError.value = err instanceof Error ? err.message : '注册失败，请稍后再试';
+      const errorMessage = err instanceof Error ? err.message : '注册失败，请稍后再试';
+      registerError.value = errorMessage;
+      
+      // 如果是用户名已存在的错误，将错误信息显示在用户名输入框下方
+      if (errorMessage === '该用户名已被使用，请选择其他用户名') {
+        errors.value.username = errorMessage;
+        registerError.value = ''; // 清除全局错误信息
+      }
     } finally {
       isLoading.value = false;
     }

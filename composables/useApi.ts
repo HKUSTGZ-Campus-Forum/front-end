@@ -2,6 +2,7 @@ import { useAuth } from './useAuth';
 
 export function useApi() {
   const { accessToken, refreshToken, refreshAccessToken, logout } = useAuth();
+  const config = useRuntimeConfig();
 
   // Check if token is expired (decode JWT and check exp)
   function isTokenExpired(token: string): boolean {
@@ -13,6 +14,20 @@ export function useApi() {
       console.error('❌ Failed to parse token:', error);
       return true; // If can't parse, consider expired
     }
+  }
+
+  // Helper function to get full API URL
+  function getApiUrl(url: string): string {
+    // If URL is already absolute, return as-is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // For relative URLs, prepend the API base URL
+    const baseUrl = config.public.apiBaseUrl;
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    
+    return `${baseUrl}${cleanUrl}`;
   }
 
   // Smart fetch that handles authentication properly
@@ -31,7 +46,7 @@ export function useApi() {
         Authorization: `Bearer ${token}`,
       };
 
-      return fetch(url, { ...options, headers });
+      return fetch(getApiUrl(url), { ...options, headers });
     };
 
     try {
@@ -76,7 +91,7 @@ export function useApi() {
     // Explicitly don't send auth headers
     const { Authorization, ...headersWithoutAuth } = (options.headers as any) || {};
     
-    return fetch(url, {
+    return fetch(getApiUrl(url), {
       ...options,
       headers: headersWithoutAuth,
     });
@@ -109,5 +124,6 @@ export function useApi() {
     fetchPublic,
     smartFetch,
     isTokenExpired,
+    getApiUrl,
   };
 } 
