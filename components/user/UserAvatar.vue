@@ -94,7 +94,7 @@ const isOSSSignedUrl = (url: string): boolean => {
   if (!url) return false;
   // Check for OSS URL patterns with signature parameters
   return url.includes('aliyuncs.com') && 
-         (url.includes('Expires=') || url.includes('x-oss-expires'));
+         (url.includes('Expires=') || url.includes('x-oss-expires') || url.includes('security-token'));
 };
 
 // Extract expiration time from OSS signed URL
@@ -115,20 +115,27 @@ const getUrlExpiration = (url: string): Date | null => {
   return null;
 };
 
-// Check if URL is likely expired
+// Check if URL is likely expired or has mixed content issues
 const isUrlLikelyExpired = (url: string): boolean => {
+  if (!url) return false;
+  
+  // Check for mixed content (http in https context)
+  if (url.startsWith('http://')) {
+    return true;
+  }
+  
   if (!isOSSSignedUrl(url)) return false;
   
   const expiration = getUrlExpiration(url);
   if (expiration) {
-    // Consider expired if within 5 minutes of expiration or already expired
+    // Consider expired if within 10 minutes of expiration or already expired
     const now = new Date();
     const timeUntilExpiry = expiration.getTime() - now.getTime();
-    return timeUntilExpiry <= 5 * 60 * 1000; // 5 minutes buffer
+    return timeUntilExpiry <= 10 * 60 * 1000; // 10 minutes buffer
   }
   
   // If we can't determine expiration, assume it might be expired if it's an OSS URL
-  return false;
+  return true;
 };
 
 // Refresh avatar URL from backend
@@ -148,9 +155,13 @@ const refreshAvatarUrl = async (): Promise<string | null> => {
     const userData = await response.json();
     const newAvatarUrl = userData.profile_picture_url;
     
-    if (newAvatarUrl && newAvatarUrl !== currentAvatarUrl.value) {
-      emit('avatarRefreshed', newAvatarUrl);
-      return newAvatarUrl;
+    if (newAvatarUrl) {
+      // Force HTTPS for the new URL
+      const httpsUrl = newAvatarUrl.replace(/^http:\/\//, 'https://');
+      if (httpsUrl !== currentAvatarUrl.value) {
+        emit('avatarRefreshed', httpsUrl);
+        return httpsUrl;
+      }
     }
     
     return newAvatarUrl;
@@ -164,30 +175,25 @@ const refreshAvatarUrl = async (): Promise<string | null> => {
 const handleImageError = async () => {
   console.log('Avatar image load failed:', currentAvatarUrl.value);
   
-  // If we haven't tried too many times and auto refresh is enabled
-  if (retryCount.value < MAX_RETRY_ATTEMPTS && props.enableAutoRefresh) {
+  // Always try to refresh if we have a userId and haven't exceeded attempts
+  if (props.userId && refreshAttempts.value < MAX_REFRESH_ATTEMPTS) {
     retryCount.value++;
     isRetrying.value = true;
     
-    // Check if this looks like an expired signed URL
-    if (currentAvatarUrl.value && isUrlLikelyExpired(currentAvatarUrl.value)) {
-      console.log('URL appears expired, attempting to refresh...');
-      
-      try {
-        const newUrl = await refreshAvatarUrl();
-        if (newUrl) {
-          console.log('Successfully refreshed avatar URL');
-          currentAvatarUrl.value = newUrl;
-          imageError.value = false;
-          isRetrying.value = false;
-          return;
-        }
-      } catch (error) {
-        console.warn('Avatar URL refresh failed:', error);
+    try {
+      const newUrl = await refreshAvatarUrl();
+      if (newUrl) {
+        console.log('Successfully refreshed avatar URL');
+        currentAvatarUrl.value = newUrl;
+        imageError.value = false;
+        isRetrying.value = false;
+        return;
       }
+    } catch (error) {
+      console.warn('Avatar URL refresh failed:', error);
     }
     
-    // Simple retry with exponential backoff
+    // If refresh failed, try simple retry with exponential backoff
     setTimeout(() => {
       if (currentAvatarUrl.value) {
         // Force refresh by adding cache-busting parameter
@@ -285,9 +291,14 @@ const handleClick = () => {
 onMounted(() => {
   initializeAvatarUrl();
   
-  // Set up proactive refresh interval (every 45 minutes)
+  // Set up proactive refresh interval (every 30 minutes)
   if (props.enableAutoRefresh) {
-    const interval = setInterval(proactiveRefresh, 45 * 60 * 1000);
+    const interval = setInterval(proactiveRefresh, 30 * 60 * 1000);
+    
+    // Also check immediately if URL might be expired
+    if (currentAvatarUrl.value && isUrlLikelyExpired(currentAvatarUrl.value)) {
+      proactiveRefresh();
+    }
     
     // Cleanup interval on unmount
     onUnmounted(() => {

@@ -209,12 +209,13 @@ const uploadAvatar = async (file: File) => {
       }
     });
 
-    if (uploadResult?.url) {
-      // Update user profile with new avatar URL
+    if (uploadResult?.id) {
+      // Update user profile with new avatar file ID
       await updateUserProfile({
-        profile_picture_url: uploadResult.url
+        profile_picture_file_id: uploadResult.id
       });
 
+      // Update local display with the URL
       currentAvatarUrl.value = uploadResult.url;
       showSuccess.value = true;
       
@@ -226,7 +227,7 @@ const uploadAvatar = async (file: File) => {
         showSuccess.value = false;
       }, 3000);
     } else {
-      throw new Error('上传失败：未收到文件URL');
+      throw new Error('上传失败：未收到文件ID');
     }
   } catch (error) {
     console.error('Avatar upload error:', error);
@@ -247,7 +248,7 @@ const removeAvatar = async () => {
     
     // Update user profile to remove avatar
     await updateUserProfile({
-      profile_picture_url: null
+      profile_picture_file_id: null
     });
 
     currentAvatarUrl.value = '';
@@ -267,7 +268,7 @@ const removeAvatar = async () => {
 
 // Initialize avatar URL
 onMounted(() => {
-  if (user.value?.profile_picture_url) {
+  if (user.value?.profile_picture_file_id) {
     currentAvatarUrl.value = user.value.profile_picture_url;
   }
 });
