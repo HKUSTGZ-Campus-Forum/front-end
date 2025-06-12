@@ -39,26 +39,32 @@ jobs:
           NODE_ENV: production
           NUXT_PUBLIC_API_BASE: https://unikorn.axfff.com/api
 
+      - name: Backup previous version
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            if [ -d "/data/prod_unikorn/front-end/.output" ]; then
+              mv /data/prod_unikorn/front-end/.output /data/prod_unikorn/front-end/.output.backup.$(date +%Y%m%d_%H%M%S)
+            fi
+
       - name: Upload .output via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
-          key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY }}
           source: ".output/"
           target: "/data/prod_unikorn/front-end/"
-          # Add backup of previous version
-          script_before: |
-            if [ -d "/data/prod_unikorn/front-end/.output" ]; then
-              mv /data/prod_unikorn/front-end/.output /data/prod_unikorn/front-end/.output.backup.$(date +%Y%m%d_%H%M%S)
-            fi
 
       - name: Deploy and restart production server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
-          key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             # Ensure NVM is loaded
             export NVM_DIR="$HOME/.nvm"
