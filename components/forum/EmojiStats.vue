@@ -34,7 +34,7 @@ const props = defineProps({
   },
 });
 
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 const reactions = ref({});
 
 // 计算属性
@@ -65,7 +65,7 @@ const displayedCount = computed(() => {
 const fetchReactions = async () => {
   try {
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`
+      getApiUrl(`/api/reactions/posts/${props.postId}/reactions`)
     );
 
     if (!response.ok) return;

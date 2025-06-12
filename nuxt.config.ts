@@ -54,7 +54,7 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       "/api": {
-        target: "https://dev.unikorn.axfff.com",
+        target: process.env.NUXT_PUBLIC_API_BASE_URL || "https://dev.unikorn.axfff.com",
         changeOrigin: true,
       },
     },
@@ -77,6 +77,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       appVersion: pkg.version,
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || "https://dev.unikorn.axfff.com",
     },
   },
   ssr: true,

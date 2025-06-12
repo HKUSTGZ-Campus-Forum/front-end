@@ -392,12 +392,16 @@ export function useAuth() {
     error.value = null;
 
     try {
-      console.log("开始注册请求，发送数据:", { username, email });
+      console.log("开始注册请求，发送数据:", { username, email: email || undefined });
 
       const response = await fetch("https://dev.unikorn.axfff.com/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ 
+          username, 
+          password,
+          ...(email && { email }) // Only include email if it's provided
+        }),
       });
 
       console.log("收到响应状态:", response.status);
@@ -407,10 +411,19 @@ export function useAuth() {
         try {
           const errorData = await response.json();
           console.error("服务器错误详情:", errorData);
-          errorMessage =
-            errorData.message ||
-            errorData.error ||
-            `服务器错误(${response.status})`;
+          
+          // Handle specific error messages
+          if (errorData.msg === "Username already exists") {
+            errorMessage = "该用户名已被使用，请选择其他用户名";
+          } else if (errorData.msg === "Username is required") {
+            errorMessage = "请输入用户名";
+          } else if (errorData.msg === "Password is required") {
+            errorMessage = "请输入密码";
+          } else if (errorData.msg === "Invalid email format") {
+            errorMessage = "邮箱格式不正确";
+          } else {
+            errorMessage = errorData.msg || errorData.error || `服务器错误(${response.status})`;
+          }
         } catch (parseError) {
           const errorText = await response.text();
           console.error("服务器返回非JSON错误:", errorText);

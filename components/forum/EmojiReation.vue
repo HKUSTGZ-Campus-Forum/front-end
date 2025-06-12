@@ -1,6 +1,7 @@
 <!-- components/forum/EmojiReactions.vue -->
 <template>
   <div class="emoji-reactions">
+    
     <!-- 已选择的表情显示区 -->
     <div class="reactions-display" v-if="Object.keys(reactions).length > 0">
       <button
@@ -42,6 +43,7 @@
         <i class="fas fa-smile"></i>
         <span>添加表情</span>
       </button>
+      
 
       <!-- 表情选择器 -->
       <div v-if="showEmojiPicker" class="emoji-picker" @click.stop>
@@ -106,7 +108,7 @@ const props = defineProps({
 });
 
 const { isLoggedIn, user } = useAuth();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 
 // 响应式数据
 const reactions = ref({});
@@ -158,9 +160,9 @@ const removeUserOtherReactions = async (newEmojiId) => {
 
       let url;
       if (props.type === "post") {
-        url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`;
+        url = getApiUrl(`/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`);
       } else {
-        url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`;
+        url = getApiUrl(`/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`);
       }
 
       console.log(`🔄 删除表情反应 ${emoji.id}，当前计数: ${currentCount}`);
@@ -218,6 +220,7 @@ const removeUserOtherReactions = async (newEmojiId) => {
     }
   }
 };
+
 
 const getEmojiFromCode = (emojiCode) => {
   const emojiMap = {
@@ -306,9 +309,9 @@ const selectEmoji = async (emoji) => {
 
           let deleteUrl;
           if (props.type === "post") {
-            deleteUrl = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${existingEmoji.id}`;
+            deleteUrl = getApiUrl(`/api/reactions/posts/${props.postId}/reactions?emoji_id=${existingEmoji.id}`);
           } else {
-            deleteUrl = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${existingEmoji.id}`;
+            deleteUrl = getApiUrl(`/api/reactions/comments/${props.postId}/reactions?emoji_id=${existingEmoji.id}`);
           }
 
           await fetchWithAuth(deleteUrl, {
@@ -338,9 +341,9 @@ const selectEmoji = async (emoji) => {
       // 添加新表情
       let addUrl, body;
       if (props.type === "post") {
-        addUrl = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
+        addUrl = getApiUrl(`/api/reactions/posts/${props.postId}/reactions`);
       } else {
-        addUrl = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
+        addUrl = getApiUrl(`/api/reactions/comments/${props.postId}/reactions`);
       }
 
       body = JSON.stringify({ emoji_id: emoji.id });
@@ -380,16 +383,16 @@ const toggleReaction = async (emoji) => {
 
     if (props.type === "post") {
       if (method === "DELETE") {
-        url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`;
+        url = getApiUrl(`/api/reactions/posts/${props.postId}/reactions?emoji_id=${emoji.id}`);
       } else {
-        url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
+        url = getApiUrl(`/api/reactions/posts/${props.postId}/reactions`);
         body = JSON.stringify({ emoji_id: emoji.id });
       }
     } else {
       if (method === "DELETE") {
-        url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`;
+        url = getApiUrl(`/api/reactions/comments/${props.postId}/reactions?emoji_id=${emoji.id}`);
       } else {
-        url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
+        url = getApiUrl(`/api/reactions/comments/${props.postId}/reactions`);
         body = JSON.stringify({ emoji_id: emoji.id });
       }
     }
@@ -428,7 +431,7 @@ const fetchAvailableEmojis = async () => {
     console.log("🎭 开始获取可用表情列表...");
 
     const response = await fetchWithAuth(
-      "https://dev.unikorn.axfff.com/api/reactions/emojis"
+      getApiUrl("/api/reactions/emojis")
     );
 
     if (!response.ok) {
@@ -463,9 +466,9 @@ const fetchReactions = async () => {
   try {
     let url;
     if (props.type === "post") {
-      url = `https://dev.unikorn.axfff.com/api/reactions/posts/${props.postId}/reactions`;
+      url = getApiUrl(`/api/reactions/posts/${props.postId}/reactions`);
     } else {
-      url = `https://dev.unikorn.axfff.com/api/reactions/comments/${props.postId}/reactions`;
+      url = getApiUrl(`/api/reactions/comments/${props.postId}/reactions`);
     }
 
     // 如果用户已登录，传递 user_id 参数
