@@ -516,7 +516,7 @@ const fetchCourseDetail = async () => {
     console.log("📤 获取课程详情，课程ID:", courseId.value);
 
     const response = await fetchPublic(
-      getApiUrl(`/api/courses/${courseId.value}`)
+      getApiUrl(`/courses/${courseId.value}`)
     );
 
     if (!response.ok) {
@@ -547,7 +547,7 @@ const fetchCourseReviews = async () => {
     isLoadingReviews.value = true;
 
     const response = await fetchPublic(
-      getApiUrl(`/api/courses/${courseId.value}/posts?limit=50`)
+      getApiUrl(`/courses/${courseId.value}/posts?limit=50`)
     );
 
     if (response.ok) {
@@ -578,7 +578,7 @@ const fetchCourseReviews = async () => {
 const fetchAvailableSemesters = async () => {
   try {
     const response = await fetchPublic(
-      getApiUrl(`/api/courses/${courseId.value}/semesters?lang=zh`)
+      getApiUrl(`/courses/${courseId.value}/semesters?lang=zh`)
     );
 
     if (response.ok) {
@@ -645,7 +645,7 @@ const submitReview = async () => {
     console.log("📤 发布课程评价:", postData);
 
     const response = await fetchWithAuth(
-      getApiUrl("/api/posts"),
+      getApiUrl("/posts"),
       {
         method: "POST",
         headers: {

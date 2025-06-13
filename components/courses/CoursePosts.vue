@@ -209,7 +209,7 @@ const fetchCoursePosts = async () => {
 
     // 🔥 使用后端提供的API端点
     const response = await fetchWithAuth(
-      getApiUrl(`/api/courses/${props.courseId}/posts?${params}`)
+      getApiUrl(`/courses/${props.courseId}/posts?${params}`)
     );
 
     if (response.ok) {

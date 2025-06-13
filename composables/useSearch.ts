@@ -152,7 +152,7 @@ export function useSearch() {
     
     try {
       const response = await fetchPublic(
-        getApiUrl(`/api/search/global?q=${encodeURIComponent(query)}`)
+        getApiUrl(`/search/global?q=${encodeURIComponent(query)}`)
       )
       
       if (response.ok) {
@@ -194,7 +194,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        getApiUrl(`/api/search/posts?${params}`)
+        getApiUrl(`/search/posts?${params}`)
       )
       
       if (response.ok) {
@@ -231,7 +231,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        getApiUrl(`/api/search/users?${params}`)
+        getApiUrl(`/search/users?${params}`)
       )
       
       if (response.ok) {
@@ -263,7 +263,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        getApiUrl(`/api/search/tags?${params}`)
+        getApiUrl(`/search/tags?${params}`)
       )
       
       if (response.ok) {
@@ -292,7 +292,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        getApiUrl(`/api/search/courses?${params}`)
+        getApiUrl(`/search/courses?${params}`)
       )
       
       if (response.ok) {

@@ -206,7 +206,7 @@ const handleDeleteConfirm = async () => {
     const { getApiUrl } = useApi();
 
     const response = await fetchWithAuth(
-      getApiUrl(`/api/posts/${postId}`),
+      getApiUrl(`/posts/${postId}`),
       {
         method: "DELETE",
       }
@@ -285,7 +285,7 @@ const fetchPostData = async () => {
     const { getApiUrl } = useApi();
 
     const response = await fetchPublic(
-      getApiUrl(`/api/posts/${postId}`)
+      getApiUrl(`/posts/${postId}`)
     );
 
     if (!response.ok) {

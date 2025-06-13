@@ -157,7 +157,7 @@ async function fetchPosts(reset = false) {
     const { getApiUrl } = useApi();
     
     const response = await fetch(
-      getApiUrl("/api/posts?") +
+      getApiUrl("/posts?") +
         new URLSearchParams({
           page: currentPage.value.toString(),
           limit: "20",

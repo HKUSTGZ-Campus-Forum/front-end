@@ -60,7 +60,7 @@ export function useUser() {
 
     try {
       // Use the public endpoint
-      const response = await fetch(getApiUrl(`/api/users/public/${userId}`));
+      const response = await fetch(getApiUrl(`/users/public/${userId}`));
       const data = await response.json();
 
       if (!response.ok) {
