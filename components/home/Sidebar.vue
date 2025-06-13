@@ -160,8 +160,12 @@ watch(isHovered, (newValue: boolean) => {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="https://wiki.hkust-gz.top/en/home">
-            <img src="/image/WebsiteAddress/wiki.png" alt="Wiki" class="nav-icon" />
+          <NuxtLink to="https://wiki.hkust-gz.top">
+            <img
+              src="/image/WebsiteAddress/wiki.png"
+              alt="Wiki"
+              class="nav-icon"
+            />
             <span class="nav-text">HKUST-GZ Wiki</span>
           </NuxtLink>
         </li>
