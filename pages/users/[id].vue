@@ -229,9 +229,13 @@ const validateUsername = (username: string): string | null => {
   if (username.length > 50) {
     return "用户名不能超过50个字符";
   }
-  if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username)) {
-    return "用户名只能包含字母、数字、下划线和中文字符";
+  
+  // Check for forbidden characters
+  const forbiddenChars = /[<>"'&/\\|?*:;]/;
+  if (forbiddenChars.test(username)) {
+    return "用户名不能包含特殊符号如 < > \" ' & / \\ | ? * : ;";
   }
+  
   return null;
 };
 

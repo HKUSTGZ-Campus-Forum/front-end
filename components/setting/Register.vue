@@ -122,12 +122,18 @@
   const validateUsername = () => {
     if (!username.value) {
       errors.value.username = '请输入用户名';
-    } else if (username.value.length < 3) {
-      errors.value.username = '用户名至少需要3个字符';
-    } else if (username.value.length > 20) {
-      errors.value.username = '用户名不能超过20个字符';
+    } else if (username.value.length < 2) {
+      errors.value.username = '用户名至少需要2个字符';
+    } else if (username.value.length > 50) {
+      errors.value.username = '用户名不能超过50个字符';
     } else {
-      errors.value.username = '';
+      // Check for forbidden characters
+      const forbiddenChars = /[<>"'&/\\|?*:;]/;
+      if (forbiddenChars.test(username.value)) {
+        errors.value.username = '用户名不能包含特殊符号如 < > " \' & / \\ | ? * : ;';
+      } else {
+        errors.value.username = '';
+      }
     }
   };
   
