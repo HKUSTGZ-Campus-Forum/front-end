@@ -294,10 +294,12 @@ onUnmounted(() => {
             <i class="fas fa-edit"></i>
             <span>发布帖子</span>
           </NuxtLink>
+          <!-- Temporarily disabled - 404 page not implemented yet
           <NuxtLink to="/users" class="quick-link">
             <i class="fas fa-users"></i>
             <span>用户中心</span>
           </NuxtLink>
+          -->
         </div>
       </div>
 
