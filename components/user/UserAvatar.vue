@@ -61,7 +61,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 
 const imageLoaded = ref(false);
 const imageError = ref(false);
@@ -146,7 +146,7 @@ const refreshAvatarUrl = async (): Promise<string | null> => {
   
   try {
     refreshAttempts.value++;
-    const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/public/${props.userId}`);
+    const response = await fetchWithAuth(getApiUrl(`/api/users/public/${props.userId}`));
     
     if (!response.ok) {
       throw new Error(`Failed to refresh avatar: ${response.status}`);

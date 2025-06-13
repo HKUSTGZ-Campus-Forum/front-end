@@ -6,7 +6,7 @@ import { useApi } from "./useApi";
 const usersCache = ref<Record<string | number, any>>({});
 
 export function useUsers() {
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, getApiUrl } = useApi();
 
   // 获取用户信息
   async function getUserById(userId: string | number) {
@@ -17,7 +17,7 @@ export function useUsers() {
 
     try {
       const response = await fetchWithAuth(
-        `https://dev.unikorn.axfff.com/api/users/${userId}`
+        getApiUrl(`/api/users/${userId}`)
       );
 
       if (!response.ok) throw new Error(`获取用户信息失败: ${response.status}`);

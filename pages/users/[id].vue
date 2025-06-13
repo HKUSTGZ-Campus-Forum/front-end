@@ -9,7 +9,7 @@ import UserAvatar from "~/components/user/UserAvatar.vue";
 import AvatarUpload from "~/components/user/AvatarUpload.vue";
 
 const { isLoggedIn, user, updateLocalUserData } = useAuth();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 const route = useRoute();
 
 // 用户信息类型定义
@@ -80,15 +80,15 @@ const fetchUserInfo = async () => {
       // 🔥 已登录：使用认证API获取完整信息
       //   console.log("🔐 使用认证API");
       [response, statsResponse] = await Promise.all([
-        fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/${userId}`),
-        fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/${userId}/stats`)
+        fetchWithAuth(getApiUrl(`/api/users/${userId}`)),
+        fetchWithAuth(getApiUrl(`/api/users/${userId}/stats`))
       ]);
     } else {
       // 🔥 未登录：使用公开API获取基本信息
       console.log("🌐 使用公开API");
       [response, statsResponse] = await Promise.all([
-        fetch(`https://dev.unikorn.axfff.com/api/users/public/${userId}`),
-        fetch(`https://dev.unikorn.axfff.com/api/users/${userId}/stats`)
+        fetch(getApiUrl(`/api/users/public/${userId}`)),
+        fetch(getApiUrl(`/api/users/${userId}/stats`))
       ]);
     }
 
@@ -102,7 +102,7 @@ const fetchUserInfo = async () => {
         if (isLoggedIn.value) {
           console.log("🔄 认证失败，尝试公开API");
           const publicResponse = await fetch(
-            `https://dev.unikorn.axfff.com/api/users/public/${userId}`
+            getApiUrl(`/api/users/public/${userId}`)
           );
 
           if (publicResponse.ok) {
@@ -255,7 +255,7 @@ const saveUsername = async () => {
     isSavingUsername.value = true;
     usernameError.value = "";
     
-    const response = await fetchWithAuth(`https://dev.unikorn.axfff.com/api/users/${userInfo.value.id}`, {
+    const response = await fetchWithAuth(getApiUrl(`/api/users/${userInfo.value.id}`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

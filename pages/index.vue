@@ -56,8 +56,9 @@ interface HotPost {
 // 获取热门帖子
 const fetchHotPosts = async () => {
   try {
+    const { getApiUrl } = useApi();
     const response = await fetchPublic(
-      "https://dev.unikorn.axfff.com/api/analytics/hot-posts?limit=8&hours=72"
+      getApiUrl("/api/analytics/hot-posts?limit=8&hours=72")
     );
 
     if (response.ok) {

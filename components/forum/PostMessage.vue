@@ -103,7 +103,7 @@ const { deleteFile } = useFileUpload();
 const uploadProgress = ref(0);
 
 const { token } = useAuth();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 const router = useRouter();
 
 // 表单数据
@@ -255,7 +255,7 @@ const handleSubmit = async () => {
     };
 
     const response = await fetchWithAuth(
-      "https://dev.unikorn.axfff.com/api/posts",
+      getApiUrl("/api/posts"),
       {
         method: "POST",
         headers: {
