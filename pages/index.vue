@@ -133,12 +133,12 @@ onUnmounted(() => {
 <template>
   <HomeContainer>
     <div class="home-page">
-      <!-- 欢迎区域 -->
+      <!-- 欢迎区域和外部链接 -->
       <div class="welcome-section">
         <div class="welcome-content">
           <h1 class="welcome-title">
             <i class="fas fa-graduation-cap"></i>
-            欢迎来到校园论坛
+            欢迎来到UniKorn科广汇 - <br>科广学生自己的评课+生活社区
           </h1>
           <p class="welcome-subtitle">连接校园，分享知识，共同成长</p>
           <div class="welcome-actions">
@@ -150,6 +150,28 @@ onUnmounted(() => {
               <i class="fas fa-edit"></i>
               发布帖子
             </button>
+          </div>
+        </div>
+        
+        <!-- 外部链接 -->
+        <div class="external-links-sidebar">
+          <h3 class="sidebar-title">相关链接</h3>
+          <div class="external-links-list">
+            <a href="https://wiki.hkust-gz.top/en/home" target="_blank" class="external-link-sidebar">
+              <i class="fas fa-book-open"></i>
+              <span>学生自己编写的科广Wiki</span>
+              <i class="fas fa-external-link-alt external-icon"></i>
+            </a>
+            <a href="https://myportal.hkust-gz.edu.cn" target="_blank" class="external-link-sidebar">
+              <i class="fas fa-graduation-cap"></i>
+              <span>myPortal</span>
+              <i class="fas fa-external-link-alt external-icon"></i>
+            </a>
+            <a href="https://hkust-gz.instructure.com" target="_blank" class="external-link-sidebar">
+              <i class="fas fa-chalkboard-teacher"></i>
+              <span>Canvas</span>
+              <i class="fas fa-external-link-alt external-icon"></i>
+            </a>
           </div>
         </div>
       </div>
@@ -272,12 +294,15 @@ onUnmounted(() => {
             <i class="fas fa-edit"></i>
             <span>发布帖子</span>
           </NuxtLink>
+          <!-- Temporarily disabled - 404 page not implemented yet
           <NuxtLink to="/users" class="quick-link">
             <i class="fas fa-users"></i>
             <span>用户中心</span>
           </NuxtLink>
+          -->
         </div>
       </div>
+
     </div>
   </HomeContainer>
 </template>
@@ -295,29 +320,64 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 20px;
   padding: 3rem 2rem;
-  text-align: center;
   color: white;
   margin-bottom: 3rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: grid;
+  gap: 2rem;
+  
+  // Desktop layout - side by side
+  grid-template-columns: 2fr 1fr;
+  align-items: start;
+  
+  // Tablet and mobile - stack vertically
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .welcome-content {
+    text-align: center;
+    
+    // Left align on desktop when side-by-side
+    @media (min-width: 1025px) {
+      text-align: left;
+    }
+  }
 
   .welcome-title {
     font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 1rem;
+    line-height: 1.2;
+    
+    // Center on mobile/tablet, left on desktop
+    justify-content: center;
+    
+    @media (min-width: 1025px) {
+      justify-content: flex-start;
+      margin-bottom: 2.5rem;
+    }
 
     i {
       color: #ffd700;
+      flex-shrink: 0;
     }
   }
 
   .welcome-subtitle {
     font-size: 1.2rem;
     opacity: 0.9;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    
+    @media (min-width: 1025px) {
+      text-align: left;
+      margin-bottom: 3rem;
+    }
   }
 
   .welcome-actions {
@@ -325,6 +385,90 @@ onUnmounted(() => {
     gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
+    
+    @media (min-width: 1025px) {
+      justify-content: flex-start;
+    }
+  }
+
+  // External links sidebar
+  .external-links-sidebar {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    .sidebar-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: white;
+      
+      @media (min-width: 1025px) {
+        text-align: left;
+      }
+    }
+
+    .external-links-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .external-link-sidebar {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.75rem;
+      border-radius: 10px;
+      text-decoration: none;
+      color: white;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      i:first-child {
+        font-size: 1rem;
+        color: #ffd700;
+        flex-shrink: 0;
+        width: 16px;
+        text-align: center;
+      }
+
+      span {
+        font-weight: 500;
+        flex-grow: 1;
+        font-size: 0.85rem;
+      }
+
+      .external-icon {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        flex-shrink: 0;
+      }
+
+      // Different hover colors for each link
+      &:nth-child(1):hover {
+        background: rgba(40, 167, 69, 0.2);
+      }
+
+      &:nth-child(2):hover {
+        background: rgba(255, 193, 7, 0.2);
+      }
+
+      &:nth-child(3):hover {
+        background: rgba(220, 53, 69, 0.2);
+      }
+    }
   }
 }
 
@@ -709,6 +853,7 @@ onUnmounted(() => {
   }
 }
 
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -749,6 +894,7 @@ onUnmounted(() => {
     padding: 2rem 1rem;
     margin-bottom: 2rem;
     border-radius: 15px;
+    gap: 1.5rem;
 
     .welcome-title {
       font-size: 2rem;
@@ -771,6 +917,33 @@ onUnmounted(() => {
         width: 100%;
         max-width: 280px;
         justify-content: center;
+      }
+    }
+
+    .external-links-sidebar {
+      padding: 1.25rem;
+      
+      .sidebar-title {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .external-link-sidebar {
+        padding: 0.6rem;
+        gap: 0.6rem;
+        
+        i:first-child {
+          font-size: 0.9rem;
+          width: 14px;
+        }
+        
+        span {
+          font-size: 0.8rem;
+        }
+        
+        .external-icon {
+          font-size: 0.65rem;
+        }
       }
     }
   }
