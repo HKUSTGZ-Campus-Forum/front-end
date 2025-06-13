@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 导入国际化相关功能（如果需要）
 import { useI18n } from "vue-i18n";
-import { useRoute } from '#app';  // Use Nuxt's built-in composables
+import { useRoute } from "#app"; // Use Nuxt's built-in composables
 const { t } = useI18n();
 
 const props = defineProps({
@@ -92,10 +92,10 @@ watch(isHovered, (newValue: boolean) => {
 <template>
   <div
     class="sidebar"
-    :class="{ 
+    :class="{
       collapsed: folded && !props.isMobile,
       'mobile-sidebar': props.isMobile,
-      'mobile-visible': props.isMobile && props.showOnMobile
+      'mobile-visible': props.isMobile && props.showOnMobile,
     }"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -108,8 +108,8 @@ watch(isHovered, (newValue: boolean) => {
       </div>
       <ul class="nav-items">
         <li>
-          <NuxtLink 
-            to="/" 
+          <NuxtLink
+            to="/"
             :class="{ active: route.path === '/' }"
             @click="handleNavClick"
           >
@@ -118,8 +118,8 @@ watch(isHovered, (newValue: boolean) => {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink 
-            to="/forum" 
+          <NuxtLink
+            to="/forum"
             :class="{ active: route.path.startsWith('/forum') }"
             @click="handleNavClick"
           >
@@ -128,8 +128,8 @@ watch(isHovered, (newValue: boolean) => {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink 
-            to="/courses" 
+          <NuxtLink
+            to="/courses"
             :class="{ active: route.path.startsWith('/courses') }"
             @click="handleNavClick"
           >
@@ -139,7 +139,7 @@ watch(isHovered, (newValue: boolean) => {
         </li>
         <li>
           <!-- Show user profile link only when logged in -->
-          <NuxtLink 
+          <NuxtLink
             v-if="isLoggedIn && user?.id"
             :to="`/users/${user.id}`"
             :class="{ active: route.path.startsWith('/users/') }"
@@ -149,7 +149,7 @@ watch(isHovered, (newValue: boolean) => {
             <span class="nav-text">用户</span>
           </NuxtLink>
           <!-- Show login link when not logged in -->
-          <NuxtLink 
+          <NuxtLink
             v-else
             to="/login"
             :class="{ active: route.path === '/login' }"
@@ -157,6 +157,12 @@ watch(isHovered, (newValue: boolean) => {
           >
             <span class="nav-icon">🔑</span>
             <span class="nav-text">登录</span>
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink to="https://wiki.hkust-gz.top/en/home">
+            <img src="/image/WebsiteAddress/wiki.png" alt="Wiki" class="nav-icon" />
+            <span class="nav-text">HKUST-GZ Wiki</span>
           </NuxtLink>
         </li>
       </ul>
@@ -207,7 +213,7 @@ watch(isHovered, (newValue: boolean) => {
   width: 50px;
   height: 50px;
   transform: translate(-50%, -50%);
-  
+
   img {
     transform: none;
   }
@@ -232,11 +238,11 @@ watch(isHovered, (newValue: boolean) => {
     .nav-items .nav-text {
       display: none;
     }
-    
+
     .nav-items a {
       text-align: center;
       justify-content: center;
-      
+
       .nav-icon {
         margin-right: 0;
       }
@@ -248,7 +254,7 @@ watch(isHovered, (newValue: boolean) => {
     transform: translateX(-100%);
     width: 250px;
     z-index: 1015; // Above mobile overlay
-    
+
     &.mobile-visible {
       transform: translateX(0);
     }
@@ -308,9 +314,9 @@ watch(isHovered, (newValue: boolean) => {
         background-color: rgba(255, 255, 255, 0.15) !important;
         color: white !important;
         font-weight: 600;
-        
+
         &::before {
-          content: '';
+          content: "";
           position: absolute;
           left: -10px;
           top: 0;
@@ -330,20 +336,20 @@ watch(isHovered, (newValue: boolean) => {
     transform: translateX(-100%);
     width: 280px;
     z-index: 1015;
-    
+
     &.mobile-visible {
       transform: translateX(0);
     }
-    
+
     .sidebar-content {
       padding: 1.5rem 1rem;
     }
-    
+
     .nav-items a {
       padding: 1rem 0.75rem;
       font-size: 17px;
       min-height: 48px; // Larger touch targets on mobile
-      
+
       .nav-icon {
         font-size: 20px;
         margin-right: 1rem;
@@ -356,7 +362,7 @@ watch(isHovered, (newValue: boolean) => {
 @media (max-width: 480px) {
   .sidebar {
     width: 260px;
-    
+
     .nav-items a {
       padding: 0.875rem 0.5rem;
       font-size: 16px;
