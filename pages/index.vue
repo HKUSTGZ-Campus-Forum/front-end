@@ -117,10 +117,10 @@ const goToUserProfile = (userId: number) => {
 onMounted(() => {
   fetchHotPosts();
   
-  // 设置定时刷新（每5分钟）
+  // 设置定时刷新（每30秒）
   refreshInterval.value = setInterval(() => {
     fetchHotPosts();
-  }, 5 * 60 * 1000);
+  }, 30 * 1000);
 });
 
 onUnmounted(() => {
@@ -162,7 +162,7 @@ onUnmounted(() => {
             热门帖子
             <span class="refresh-indicator" v-if="!isLoading">
               <i class="fas fa-sync-alt"></i>
-              每5分钟更新
+              每30秒更新
             </span>
           </h2>
         </div>
