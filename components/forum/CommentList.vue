@@ -44,7 +44,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { user } = useAuth();
-const { fetchWithAuth, fetchPublic } = useApi();
+const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 
 const comments = ref<CommentType[]>([]);
 const isLoading = ref(false);
@@ -66,7 +66,7 @@ const fetchComments = async () => {
     });
 
     const response = await fetchPublic(
-      `https://dev.unikorn.axfff.com/api/comments/post/${props.postId}?${params}`
+      getApiUrl(`/api/comments/post/${props.postId}?${params}`)
     );
 
     if (!response.ok) throw new Error("获取评论失败");

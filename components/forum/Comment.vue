@@ -137,7 +137,7 @@ const canReply = computed(() => {
   return isAuthenticated.value && currentDepth.value < MAX_COMMENT_DEPTH;
 });
 
-const { fetchWithAuth, fetchPublic } = useApi();
+const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 const { getUserById } = useUser(); // 获取 getUserById 方法
 
 const showReplyForm = ref(false);
@@ -213,7 +213,7 @@ const deleteComment = () => {
 const handleDeleteConfirm = async () => {
   try {
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/comments/${props.comment.id}`,
+      getApiUrl(`/api/comments/${props.comment.id}`),
       {
         method: "DELETE",
       }

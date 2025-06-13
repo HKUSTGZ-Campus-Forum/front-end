@@ -16,7 +16,7 @@ const CACHE_EXPIRY_TIME = 60 * 60 * 1000; // 1 hour in milliseconds
 const usersCache = ref<Record<string | number, PublicUserData>>({});
 
 export function useUser() {
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, getApiUrl } = useApi();
 
   // Check if cached data is expired
   const isCacheExpired = (userData: PublicUserData): boolean => {
@@ -60,7 +60,7 @@ export function useUser() {
 
     try {
       // Use the public endpoint
-      const response = await fetch(`https://dev.unikorn.axfff.com/api/users/public/${userId}`);
+      const response = await fetch(getApiUrl(`/api/users/public/${userId}`));
       const data = await response.json();
 
       if (!response.ok) {

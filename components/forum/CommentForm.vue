@@ -49,7 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits(["comment-added", "cancel"]);
 
 const { user } = useAuth();
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 
 const content = ref("");
 const isLoading = ref(false);
@@ -80,7 +80,7 @@ const submitComment = async () => {
     }
 
     const response = await fetchWithAuth(
-      "https://dev.unikorn.axfff.com/api/comments",
+      getApiUrl("/api/comments"),
       {
         method: "POST",
         headers: {

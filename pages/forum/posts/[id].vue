@@ -203,9 +203,10 @@ const showDeleteConfirm = () => {
 // 处理删除确认
 const handleDeleteConfirm = async () => {
   try {
+    const { getApiUrl } = useApi();
 
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/posts/${postId}`,
+      getApiUrl(`/api/posts/${postId}`),
       {
         method: "DELETE",
       }
@@ -281,9 +282,10 @@ const fetchPostData = async () => {
   try {
     isLoading.value = true;
     errorMessage.value = "";
+    const { getApiUrl } = useApi();
 
     const response = await fetchPublic(
-      `https://dev.unikorn.axfff.com/api/posts/${postId}`
+      getApiUrl(`/api/posts/${postId}`)
     );
 
     if (!response.ok) {

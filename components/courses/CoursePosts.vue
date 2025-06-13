@@ -173,7 +173,7 @@ interface PostsData {
 }
 
 // 🔥 Composables
-const { fetchWithAuth } = useApi();
+const { fetchWithAuth, getApiUrl } = useApi();
 
 // 🔥 响应式数据
 const postsData = ref<PostsData>({
@@ -209,7 +209,7 @@ const fetchCoursePosts = async () => {
 
     // 🔥 使用后端提供的API端点
     const response = await fetchWithAuth(
-      `https://dev.unikorn.axfff.com/api/courses/${props.courseId}/posts?${params}`
+      getApiUrl(`/api/courses/${props.courseId}/posts?${params}`)
     );
 
     if (response.ok) {

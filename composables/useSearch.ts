@@ -66,7 +66,7 @@ export interface SearchPagination {
 }
 
 export function useSearch() {
-  const { fetchPublic } = useApi()
+  const { fetchPublic, getApiUrl } = useApi()
   const router = useRouter()
   
   // Search state
@@ -152,7 +152,7 @@ export function useSearch() {
     
     try {
       const response = await fetchPublic(
-        `https://dev.unikorn.axfff.com/api/search/global?q=${encodeURIComponent(query)}`
+        getApiUrl(`/api/search/global?q=${encodeURIComponent(query)}`)
       )
       
       if (response.ok) {
@@ -194,7 +194,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        `https://dev.unikorn.axfff.com/api/search/posts?${params}`
+        getApiUrl(`/api/search/posts?${params}`)
       )
       
       if (response.ok) {
@@ -231,7 +231,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        `https://dev.unikorn.axfff.com/api/search/users?${params}`
+        getApiUrl(`/api/search/users?${params}`)
       )
       
       if (response.ok) {
@@ -263,7 +263,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        `https://dev.unikorn.axfff.com/api/search/tags?${params}`
+        getApiUrl(`/api/search/tags?${params}`)
       )
       
       if (response.ok) {
@@ -292,7 +292,7 @@ export function useSearch() {
       })
       
       const response = await fetchPublic(
-        `https://dev.unikorn.axfff.com/api/search/courses?${params}`
+        getApiUrl(`/api/search/courses?${params}`)
       )
       
       if (response.ok) {

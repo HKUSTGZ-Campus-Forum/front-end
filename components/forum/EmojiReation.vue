@@ -60,16 +60,10 @@
                 :key="emoji.id || index"
                 @click="selectEmoji(emoji)"
                 class="emoji-option"
-                :title="`${emoji.description || '表情'} (ID: ${emoji.id})`"
+                :title="`${emoji.description || '表情'} (ID: ${emoji.id}) - URL: ${emoji.image_url}`"
               >
-                <!-- Modified: Use image URL if available, fallback to emoji code -->
-                <img 
-                  v-if="emoji.image_url" 
-                  :src="emoji.image_url" 
-                  :alt="emoji.description || 'emoji'"
-                  class="emoji-image"
-                />
-                <span v-else>{{ emoji.emoji_code || "❓" }}</span>
+                <!-- Always use fallback emoji since OSS images have display issues -->
+                <span class="emoji-fallback">{{ getEmojiFromCode(emoji.emoji_code) || "❓" }}</span>
               </button>
             </div>
 
@@ -108,7 +102,7 @@ const props = defineProps({
 });
 
 const { isLoggedIn, user } = useAuth();
-const { fetchWithAuth, getApiUrl } = useApi();
+const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 
 // 响应式数据
 const reactions = ref({});
@@ -221,6 +215,20 @@ const removeUserOtherReactions = async (newEmojiId) => {
   }
 };
 
+
+// Handle emoji image loading errors
+const handleEmojiImageError = (event, emoji) => {
+  console.error(`❌ Failed to load emoji image: ${emoji.image_url}`);
+  // Hide the broken image and show fallback
+  event.target.style.display = 'none';
+  // Find the parent button and add fallback text
+  const button = event.target.closest('.emoji-option');
+  if (button) {
+    const fallbackSpan = document.createElement('span');
+    fallbackSpan.textContent = getEmojiFromCode(emoji.emoji_code) || "❓";
+    button.appendChild(fallbackSpan);
+  }
+};
 
 const getEmojiFromCode = (emojiCode) => {
   const emojiMap = {
@@ -430,7 +438,7 @@ const fetchAvailableEmojis = async () => {
   try {
     console.log("🎭 开始获取可用表情列表...");
 
-    const response = await fetchWithAuth(
+    const response = await fetchPublic(
       getApiUrl("/api/reactions/emojis")
     );
 
@@ -443,17 +451,8 @@ const fetchAvailableEmojis = async () => {
     const data = await response.json();
     console.log("✅ 获取到的原始表情数据:", data);
 
-    // 🔥 数据映射：将 emoji_code 转换为真正的表情符号
-    const mappedData = data.map((emoji) => ({
-      ...emoji,
-      emoji: getEmojiFromCode(emoji.emoji_code), // 转换为真正的表情符号
-      emoji_code: getEmojiFromCode(emoji.emoji_code), // 同时更新 emoji_code
-      name: emoji.description,
-    }));
-
-    console.log("🔧 映射后的表情数据:", mappedData);
-
-    availableEmojis.value = mappedData;
+    // Use the data as-is since all emojis have image_url
+    availableEmojis.value = data;
     console.log("✅ 设置完成的 availableEmojis:", availableEmojis.value);
   } catch (error) {
     console.error("❌ 获取表情失败:", error);
@@ -688,10 +687,17 @@ onUnmounted(() => {
     transform: scale(1.1);
   }
 
-  img {
-    width: 1.2em;
-    height: 1.2em;
+  .emoji-fallback {
+    font-size: 1.2rem;
+    line-height: 1;
+    display: block;
+  }
+
+  img.emoji-image {
+    width: 1.5rem;
+    height: 1.5rem;
     object-fit: contain;
+    display: block;
   }
 }
 
@@ -726,9 +732,10 @@ onUnmounted(() => {
 }
 
 .emoji-image {
-  width: 1.2em;
-  height: 1.2em;
+  width: 1.5rem;
+  height: 1.5rem;
   object-fit: contain;
   vertical-align: middle;
+  display: block;
 }
 </style>
