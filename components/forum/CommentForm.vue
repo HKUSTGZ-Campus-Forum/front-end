@@ -80,7 +80,7 @@ const submitComment = async () => {
     }
 
     const response = await fetchWithAuth(
-      getApiUrl("/comments"),
+      getApiUrl("/api/comments"),
       {
         method: "POST",
         headers: {

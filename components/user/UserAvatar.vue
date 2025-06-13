@@ -146,7 +146,7 @@ const refreshAvatarUrl = async (): Promise<string | null> => {
   
   try {
     refreshAttempts.value++;
-    const response = await fetchWithAuth(getApiUrl(`/users/public/${props.userId}`));
+    const response = await fetchWithAuth(getApiUrl(`/api/users/public/${props.userId}`));
     
     if (!response.ok) {
       throw new Error(`Failed to refresh avatar: ${response.status}`);

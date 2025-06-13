@@ -213,7 +213,7 @@ const deleteComment = () => {
 const handleDeleteConfirm = async () => {
   try {
     const response = await fetchWithAuth(
-      getApiUrl(`/comments/${props.comment.id}`),
+      getApiUrl(`/api/comments/${props.comment.id}`),
       {
         method: "DELETE",
       }

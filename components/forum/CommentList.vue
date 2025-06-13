@@ -66,7 +66,7 @@ const fetchComments = async () => {
     });
 
     const response = await fetchPublic(
-      getApiUrl(`/comments/post/${props.postId}?${params}`)
+      getApiUrl(`/api/comments/post/${props.postId}?${params}`)
     );
 
     if (!response.ok) throw new Error("获取评论失败");

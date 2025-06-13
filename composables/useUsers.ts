@@ -17,7 +17,7 @@ export function useUsers() {
 
     try {
       const response = await fetchWithAuth(
-        getApiUrl(`/users/${userId}`)
+        getApiUrl(`/api/users/${userId}`)
       );
 
       if (!response.ok) throw new Error(`获取用户信息失败: ${response.status}`);

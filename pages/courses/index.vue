@@ -111,7 +111,7 @@ const debounce = (fn: Function, delay: number) => {
 const fetchInstructorInfo = async (instructorId: number) => {
   try {
     const response = await fetchPublic(
-      getApiUrl(`/users/public/${instructorId}`)
+      getApiUrl(`/api/users/public/${instructorId}`)
     );
     if (!response.ok) {
       throw new Error("Failed to fetch instructor info");
@@ -138,7 +138,7 @@ const fetchCourses = async () => {
     });
 
     const response = await fetchPublic(
-      getApiUrl(`/courses?${queryParams.toString()}`)
+      getApiUrl(`/api/courses?${queryParams.toString()}`)
     );
     if (!response.ok) {
       throw new Error("Failed to fetch courses");

@@ -255,7 +255,7 @@ const handleSubmit = async () => {
     };
 
     const response = await fetchWithAuth(
-      getApiUrl("/posts"),
+      getApiUrl("/api/posts"),
       {
         method: "POST",
         headers: {
