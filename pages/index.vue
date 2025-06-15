@@ -317,14 +317,34 @@ onUnmounted(() => {
 
 // 欢迎区域
 .welcome-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--interactive-primary) 0%, var(--interactive-hover) 100%);
   border-radius: 20px;
   padding: 3rem 2rem;
   color: white;
   margin-bottom: 3rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-large);
   display: grid;
   gap: 2rem;
+  position: relative;
+  overflow: hidden;
+  
+  // Add a subtle overlay to ensure text readability
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: 1;
+  }
+  
+  // Ensure content is above the overlay
+  > * {
+    position: relative;
+    z-index: 2;
+  }
   
   // Desktop layout - side by side
   grid-template-columns: 2fr 1fr;
@@ -393,18 +413,18 @@ onUnmounted(() => {
 
   // External links sidebar
   .external-links-sidebar {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--surface-overlay);
     border-radius: 15px;
     padding: 1.5rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: var(--effect-blur);
+    border: 1px solid var(--border-secondary);
     
     .sidebar-title {
       font-size: 1.2rem;
       font-weight: 600;
       margin-bottom: 1rem;
       text-align: center;
-      color: white;
+      color: var(--text-primary);
       
       @media (min-width: 1025px) {
         text-align: left;
@@ -418,27 +438,30 @@ onUnmounted(() => {
     }
 
     .external-link-sidebar {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--surface-secondary);
       padding: 0.75rem;
       border-radius: 10px;
       text-decoration: none;
-      color: white;
+      color: var(--text-primary);
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
       gap: 0.75rem;
       font-size: 0.9rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-primary);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-small);
 
       &:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--interactive-secondary);
         transform: translateY(-1px);
-        border-color: rgba(255, 255, 255, 0.3);
+        border-color: var(--border-focus);
+        box-shadow: var(--shadow-medium);
       }
 
       i:first-child {
         font-size: 1rem;
-        color: #ffd700;
+        color: var(--semantic-warning);
         flex-shrink: 0;
         width: 16px;
         text-align: center;
@@ -448,25 +471,27 @@ onUnmounted(() => {
         font-weight: 500;
         flex-grow: 1;
         font-size: 0.85rem;
+        color: var(--text-primary);
       }
 
       .external-icon {
         font-size: 0.7rem;
-        opacity: 0.7;
+        opacity: 0.8;
         flex-shrink: 0;
+        color: var(--text-secondary);
       }
 
       // Different hover colors for each link
       &:nth-child(1):hover {
-        background: rgba(40, 167, 69, 0.2);
+        background: var(--semantic-success);
       }
 
       &:nth-child(2):hover {
-        background: rgba(255, 193, 7, 0.2);
+        background: var(--semantic-warning);
       }
 
       &:nth-child(3):hover {
-        background: rgba(220, 53, 69, 0.2);
+        background: var(--semantic-error);
       }
     }
   }
@@ -490,35 +515,37 @@ onUnmounted(() => {
   min-width: 44px;
 
   &.btn-primary {
-    background: #ff6b6b;
-    color: white;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
     
     &:hover {
-      background: #ff5252;
+      background: var(--interactive-hover);
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+      box-shadow: var(--shadow-medium);
     }
   }
 
   &.btn-secondary {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
     
     &:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
       transform: translateY(-2px);
     }
   }
 
   &.btn-outline {
     background: transparent;
-    color: #667eea;
-    border: 2px solid #667eea;
+    color: var(--interactive-primary);
+    border: 2px solid var(--interactive-primary);
     
     &:hover {
-      background: #667eea;
-      color: white;
+      background: var(--interactive-primary);
+      color: var(--text-inverse);
     }
   }
 }
@@ -527,27 +554,27 @@ onUnmounted(() => {
 .section-title {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 
   i {
-    color: #ff6b6b;
+    color: var(--interactive-primary);
   }
 
   .refresh-indicator {
     margin-left: auto;
     font-size: 0.875rem;
     font-weight: 400;
-    color: #666;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 0.25rem;
 
     i {
-      color: #666;
+      color: var(--text-muted);
       font-size: 0.75rem;
     }
   }
@@ -560,9 +587,9 @@ onUnmounted(() => {
   .loading-state, .error-state, .empty-state {
     text-align: center;
     padding: 3rem 2rem;
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--card-bg);
     border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-medium);
 
     i {
       font-size: 3rem;
@@ -573,8 +600,8 @@ onUnmounted(() => {
     .loading-spinner {
       width: 40px;
       height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
+      border: 4px solid var(--border-secondary);
+      border-top: 4px solid var(--interactive-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 0 auto 1rem;
@@ -607,19 +634,19 @@ onUnmounted(() => {
   }
 
   .post-card {
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--card-bg);
     border-radius: 15px;
     padding: 1.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--card-shadow, var(--shadow-small));
+    border: var(--card-border, 1px solid var(--border-primary));
     // Ensure proper touch targets
     min-height: 44px;
 
     &:hover {
       transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-large);
     }
 
     // Reduce hover effects on mobile for better performance
@@ -631,7 +658,7 @@ onUnmounted(() => {
       // Add active state for better mobile feedback
       &:active {
         transform: translateY(0);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-small);
       }
     }
 
@@ -645,7 +672,7 @@ onUnmounted(() => {
       .post-title {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--text-primary);
         margin: 0;
         flex: 1;
         line-height: 1.4;
@@ -655,8 +682,8 @@ onUnmounted(() => {
       }
 
       .post-score {
-        background: linear-gradient(45deg, #ff6b6b, #ffa726);
-        color: white;
+        background: linear-gradient(45deg, var(--interactive-primary), var(--semantic-warning));
+        color: var(--text-inverse);
         padding: 0.25rem 0.5rem;
         border-radius: 12px;
         font-size: 0.75rem;
@@ -680,7 +707,7 @@ onUnmounted(() => {
       min-height: 32px;
       
       .author-name {
-        color: #555;
+        color: var(--text-secondary);
         font-weight: 500;
         // Prevent text overflow on mobile
         overflow: hidden;
@@ -690,7 +717,7 @@ onUnmounted(() => {
     }
 
     .post-content {
-      color: #555;
+      color: var(--text-secondary);
       line-height: 1.5;
       margin-bottom: 1rem;
       font-size: 0.9rem;
@@ -721,18 +748,18 @@ onUnmounted(() => {
         align-items: center;
 
         &.course {
-          background: #e3f2fd;
-          color: #1565c0;
+          background: var(--surface-secondary);
+          color: var(--semantic-info);
         }
 
         &.user {
-          background: #f3e5f5;
-          color: #7b1fa2;
+          background: var(--surface-elevated);
+          color: var(--interactive-primary);
         }
 
         &.system {
-          background: #e8f5e8;
-          color: #2e7d32;
+          background: var(--surface-overlay);
+          color: var(--semantic-success);
         }
       }
     }
@@ -742,7 +769,7 @@ onUnmounted(() => {
       align-items: center;
       gap: 1rem;
       font-size: 0.875rem;
-      color: #666;
+      color: var(--text-muted);
       flex-wrap: wrap;
 
       .stat {
@@ -753,14 +780,14 @@ onUnmounted(() => {
         min-height: 24px;
 
         i {
-          color: #999;
+          color: var(--text-muted);
         }
       }
 
       .post-time {
         margin-left: auto;
         font-size: 0.8rem;
-        color: #999;
+        color: var(--text-muted);
       }
     }
   }
@@ -793,14 +820,14 @@ onUnmounted(() => {
     }
 
     .quick-link {
-      background: rgba(255, 255, 255, 0.8);
+      background: var(--card-bg);
       padding: 2rem 1rem;
       border-radius: 15px;
       text-decoration: none;
-      color: #2c3e50;
+      color: var(--text-primary);
       text-align: center;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-small);
       // Ensure proper touch targets
       min-height: 120px;
       display: flex;
@@ -810,8 +837,8 @@ onUnmounted(() => {
 
       &:hover {
         transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-        background: rgba(255, 255, 255, 0.95);
+        box-shadow: var(--shadow-medium);
+        background: var(--surface-elevated);
       }
 
       // Reduce hover effects on mobile
@@ -831,7 +858,7 @@ onUnmounted(() => {
       i {
         font-size: 2rem;
         margin-bottom: 0.5rem;
-        color: #667eea;
+        color: var(--interactive-primary);
         display: block;
         
         // Smaller icons on mobile

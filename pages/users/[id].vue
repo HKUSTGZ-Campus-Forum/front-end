@@ -524,7 +524,7 @@ useHead({
 <style lang="scss" scoped>
 .user-profile-page {
   min-height: calc(100vh - 140px);
-  background-color: #f8f9fa;
+  background-color: var(--surface-secondary);
   padding: 0.5rem;
 
   @media (min-width: 768px) {
@@ -537,9 +537,9 @@ useHead({
 }
 
 .user-profile-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   padding: 1rem;
   max-width: 1000px;
   margin: 0 auto;
@@ -547,7 +547,7 @@ useHead({
   @media (min-width: 480px) {
     padding: 1.5rem;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-large);
   }
 
   @media (min-width: 768px) {
@@ -561,7 +561,7 @@ useHead({
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
   flex-direction: column;
   text-align: center;
 
@@ -594,10 +594,10 @@ useHead({
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-primary);
   border-radius: 25px;
-  background: white;
-  color: #666;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -612,14 +612,14 @@ useHead({
   }
 
   &:hover {
-    border-color: #3498db;
-    color: #3498db;
+    border-color: var(--interactive-primary);
+    color: var(--interactive-primary);
   }
 
   &.active {
-    background: #3498db;
-    border-color: #3498db;
-    color: white;
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
   }
 
   .icon-fallback {
@@ -635,9 +635,9 @@ useHead({
 .avatar-upload-section {
   margin: 1rem 0;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   border-radius: 8px;
-  border: 2px dashed #e0e0e0;
+  border: 2px dashed var(--border-secondary);
 
   @media (min-width: 480px) {
     margin: 1.5rem 0;
@@ -681,7 +681,7 @@ useHead({
     .user-name {
       font-size: 1.5rem;
       font-weight: 700;
-      color: #2c3e50;
+      color: var(--text-primary);
       margin: 0;
       word-break: break-word;
 
@@ -697,7 +697,7 @@ useHead({
     .edit-username-btn {
       background: none;
       border: none;
-      color: #666;
+      color: var(--text-secondary);
       cursor: pointer;
       padding: 0.75rem;
       border-radius: 50%;
@@ -717,8 +717,8 @@ useHead({
       }
 
       &:hover {
-        background: #f0f0f0;
-        color: #3498db;
+        background: var(--surface-secondary);
+        color: var(--interactive-primary);
         transform: scale(1.1);
       }
 
@@ -750,11 +750,11 @@ useHead({
       .username-input {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #2c3e50;
-        border: 2px solid #e0e0e0;
+        color: var(--text-primary);
+        border: 2px solid var(--border-primary);
         border-radius: 8px;
         padding: 0.75rem;
-        background: white;
+        background: var(--surface-primary);
         transition: border-color 0.2s ease;
         min-width: 200px;
         flex: 1;
@@ -770,17 +770,17 @@ useHead({
 
         &:focus {
           outline: none;
-          border-color: #3498db;
-          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         &.error {
-          border-color: #e74c3c;
+          border-color: var(--semantic-error);
         }
 
         &:disabled {
-          background: #f8f9fa;
-          color: #999;
+          background: var(--surface-secondary);
+          color: var(--text-muted);
           cursor: not-allowed;
         }
       }
@@ -835,21 +835,21 @@ useHead({
         }
 
         .save-btn {
-          background: #27ae60;
-          color: white;
+          background: var(--semantic-success);
+          color: var(--text-inverse);
 
           &:hover:not(:disabled) {
-            background: #229954;
+            background: var(--semantic-success);
             transform: scale(1.05);
           }
         }
 
         .cancel-btn {
-          background: #e74c3c;
-          color: white;
+          background: var(--semantic-error);
+          color: var(--text-inverse);
 
           &:hover:not(:disabled) {
-            background: #c0392b;
+            background: var(--semantic-error);
             transform: scale(1.05);
           }
         }
@@ -857,14 +857,14 @@ useHead({
     }
 
     .username-error {
-      color: #e74c3c;
+      color: var(--semantic-error);
       font-size: 0.875rem;
       margin-bottom: 0.25rem;
       font-weight: 500;
     }
 
     .username-help {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 0.75rem;
       font-style: italic;
     }
@@ -888,13 +888,13 @@ useHead({
   font-weight: 500;
 
   &.badge-primary {
-    background-color: rgba(25, 118, 210, 0.2);
-    color: #1976d2;
+    background-color: rgba(59, 130, 246, 0.2);
+    color: var(--interactive-primary);
   }
 
   &.badge-success {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
+    background-color: rgba(16, 185, 129, 0.2);
+    color: var(--semantic-success);
   }
 }
 
@@ -909,12 +909,12 @@ useHead({
     .stat-value {
       font-size: 2rem;
       font-weight: 700;
-      color: #3498db;
+      color: var(--interactive-primary);
     }
 
     .stat-label {
       font-size: 0.875rem;
-      color: #666;
+      color: var(--text-secondary);
     }
   }
 }
@@ -937,7 +937,7 @@ useHead({
 }
 
 .stat-card {
-  background-color: #f8f9fa;
+  background-color: var(--surface-secondary);
   border-radius: 8px;
   padding: 1rem;
   text-align: center;
@@ -953,7 +953,7 @@ useHead({
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-medium);
   }
 
   &:active {
@@ -963,7 +963,7 @@ useHead({
   .stat-number {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
 
     @media (min-width: 480px) {
@@ -977,7 +977,7 @@ useHead({
 
   .stat-text {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-secondary);
 
     @media (min-width: 480px) {
       font-size: 0.875rem;
@@ -998,7 +998,7 @@ useHead({
   justify-content: space-between;
   align-items: flex-start;
   padding: 0.875rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-secondary);
   gap: 1rem;
 
   @media (min-width: 480px) {
@@ -1012,7 +1012,7 @@ useHead({
 
   .detail-label {
     font-weight: 500;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     flex-shrink: 0;
 
@@ -1023,7 +1023,7 @@ useHead({
 
   .detail-value {
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--text-primary);
     text-align: right;
     word-break: break-all;
     font-size: 0.9rem;
@@ -1039,15 +1039,15 @@ useHead({
   .bio-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 1rem;
   }
 
   .bio-content {
-    background-color: #f8f9fa;
+    background-color: var(--surface-secondary);
     border-radius: 8px;
     padding: 1rem;
-    color: #555;
+    color: var(--text-secondary);
     line-height: 1.6;
     font-style: italic;
   }
@@ -1065,15 +1065,15 @@ useHead({
   .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
+    border: 4px solid var(--border-secondary);
+    border-top: 4px solid var(--interactive-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
 
   p {
     font-size: 1.1rem;
-    color: #666;
+    color: var(--text-secondary);
   }
 }
 
@@ -1090,33 +1090,36 @@ useHead({
 .error {
   text-align: center;
   padding: 3rem 2rem;
-  background-color: #fdf2f2;
-  border: 1px solid #fecaca;
+  background-color: var(--surface-primary);
+  border: 1px solid var(--semantic-error);
   border-radius: 8px;
   margin: 2rem auto;
   max-width: 500px;
+  box-shadow: var(--shadow-medium);
 
   h2 {
-    color: #dc2626;
+    color: var(--semantic-error);
     margin-bottom: 1rem;
   }
 
   p {
-    color: #7f1d1d;
+    color: var(--text-secondary);
     margin-bottom: 1.5rem;
   }
 
   .retry-btn {
-    background-color: #dc2626;
-    color: white;
+    background-color: var(--semantic-error);
+    color: var(--text-inverse);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
     cursor: pointer;
     font-size: 1rem;
+    transition: all var(--transition-fast);
 
     &:hover {
-      background-color: #b91c1c;
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
   }
 }

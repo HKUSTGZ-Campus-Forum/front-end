@@ -201,7 +201,7 @@ onMounted(() => {
 
   h1 {
     font-size: 2rem;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 1.5rem;
     
     // Mobile optimization
@@ -252,17 +252,19 @@ onMounted(() => {
   input {
     width: 100%;
     padding: 0.75rem 1rem 0.75rem 2.5rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.3s ease;
+    background: var(--surface-primary);
+    color: var(--text-primary);
     // Ensure touch-friendly input height
     min-height: 44px;
     box-sizing: border-box;
 
     &:focus {
-      border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px var(--interactive-primary);
       outline: none;
     }
     
@@ -278,7 +280,7 @@ onMounted(() => {
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #95a5a6;
+    color: var(--text-muted);
     // Ensure touch target is large enough
     width: 20px;
     height: 20px;
@@ -299,10 +301,11 @@ onMounted(() => {
 
   select {
     padding: 0.75rem 1rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
     font-size: 1rem;
-    background-color: white;
+    background-color: var(--surface-primary);
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.3s ease;
     // Ensure touch-friendly select height
@@ -310,7 +313,7 @@ onMounted(() => {
     box-sizing: border-box;
 
     &:focus {
-      border-color: #3498db;
+      border-color: var(--border-focus);
       outline: none;
     }
     
@@ -359,22 +362,23 @@ onMounted(() => {
 }
 
 .course-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow, var(--shadow-small));
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-decoration: none;
   color: inherit;
   display: block;
   cursor: pointer;
+  border: var(--card-border, 1px solid var(--border-primary));
   // Ensure minimum touch target size
   min-height: 44px;
   position: relative;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-medium);
     text-decoration: none;
     color: inherit;
   }
@@ -387,7 +391,7 @@ onMounted(() => {
     // Adjust hover effect for mobile
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+      box-shadow: var(--shadow-small);
     }
   }
   
@@ -398,7 +402,7 @@ onMounted(() => {
     // Remove hover transform on small screens to prevent layout issues
     &:hover {
       transform: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      box-shadow: var(--shadow-small);
     }
     
     // Add active state for touch feedback
@@ -418,7 +422,7 @@ onMounted(() => {
 
   .course-code {
     font-size: 1.25rem;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin: 0;
     flex: 1;
     min-width: 0; // Allow text to truncate
@@ -434,8 +438,8 @@ onMounted(() => {
   }
 
   .course-credits {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: var(--surface-secondary);
+    color: var(--interactive-primary);
     padding: 0.25rem 0.75rem;
     border-radius: 16px;
     font-size: 0.875rem;
@@ -464,7 +468,7 @@ onMounted(() => {
 
 .course-name {
   font-size: 1.125rem;
-  color: #34495e;
+  color: var(--text-secondary);
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
   
@@ -482,7 +486,7 @@ onMounted(() => {
 }
 
 .course-description {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
   line-height: 1.5;
@@ -501,7 +505,7 @@ onMounted(() => {
   gap: 0.5rem;
 
   .instructor {
-    color: #666;
+    color: var(--text-muted);
     font-size: 0.875rem;
     flex: 1;
     min-width: 0; // Allow text to truncate
@@ -513,7 +517,7 @@ onMounted(() => {
   }
 
   .view-course-hint {
-    color: #3498db;
+    color: var(--interactive-primary);
     font-size: 0.875rem;
     font-weight: 500;
     opacity: 0.8;
@@ -545,23 +549,23 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: #666;
+  color: var(--text-muted);
 
   i {
     font-size: 2rem;
     margin-bottom: 1rem;
-    color: #3498db;
+    color: var(--interactive-primary);
   }
 }
 
 .no-courses {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: var(--text-muted);
 
   i {
     font-size: 3rem;
-    color: #95a5a6;
+    color: var(--text-muted);
     margin-bottom: 1rem;
   }
 

@@ -365,9 +365,9 @@ onMounted(() => {
 .post-reactions {
   margin: 2rem 0;
   padding: 1.5rem 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
-  background: rgba(248, 249, 250, 0.5);
+  border-top: 1px solid var(--border-secondary);
+  border-bottom: 1px solid var(--border-secondary);
+  background: var(--surface-secondary);
   border-radius: 8px;
   padding: 1.5rem;
 }
@@ -375,10 +375,10 @@ onMounted(() => {
 .post-container {
   max-width: 800px;
   margin: 0 auto;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   
   // Mobile responsiveness
   @media (max-width: 480px) {
@@ -386,7 +386,7 @@ onMounted(() => {
     border-radius: 0;
     padding: 1rem;
     box-shadow: none;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: var(--card-bg);
   }
   
   @media (min-width: 481px) and (max-width: 768px) {
@@ -403,28 +403,29 @@ onMounted(() => {
   text-align: center;
   padding: 2rem;
   font-size: 1.2rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .error {
   text-align: center;
   padding: 2rem;
-  color: #e74c3c;
-  background-color: #ffebee;
-  border-radius: 4px;
+  color: var(--semantic-error);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--semantic-error);
+  border-radius: 8px;
   margin-bottom: 1rem;
 }
 
 .post-header {
   margin-bottom: 2rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
   padding-bottom: 1rem;
 }
 
 .post-title {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   line-height: 1.3;
   word-wrap: break-word;
   
@@ -444,7 +445,7 @@ onMounted(() => {
 .post-meta {
   display: flex;
   gap: 1rem;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   flex-wrap: wrap;
   align-items: center;
@@ -474,7 +475,7 @@ onMounted(() => {
   
   .author {
     font-weight: 500;
-    color: #2c3e50;
+    color: var(--text-primary);
     
     @media (max-width: 480px) {
       font-size: 0.9rem;
@@ -502,8 +503,8 @@ onMounted(() => {
 
   .tag {
     font-size: 0.8rem;
-    background-color: #edf2f7;
-    color: #3182ce;
+    background-color: var(--surface-secondary);
+    color: var(--interactive-primary);
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
     
@@ -567,13 +568,13 @@ onMounted(() => {
     .image-item {
       border-radius: 8px;
       overflow: hidden;
-      background: #f5f5f5;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      background: var(--surface-secondary);
+      box-shadow: var(--shadow-small);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--shadow-medium);
       }
       
       .image-container {
@@ -589,7 +590,7 @@ onMounted(() => {
           cursor: pointer;
           transition: opacity 0.3s ease;
           display: block;
-          background: white;
+          background: var(--surface-primary);
           
           // Mobile-optimized image sizes
           @media (max-width: 480px) {
@@ -620,7 +621,7 @@ onMounted(() => {
           left: 0;
           right: 0;
           background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-          color: white;
+          color: var(--text-inverse);
           padding: 0.5rem;
           transform: translateY(100%);
           transition: transform 0.3s ease;
@@ -664,7 +665,7 @@ onMounted(() => {
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border: none;
-    background-color: #f0f0f0;
+    background-color: var(--surface-secondary);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -683,7 +684,7 @@ onMounted(() => {
     }
 
     &:hover {
-      background-color: #e0e0e0;
+      background-color: var(--surface-elevated);
       transform: translateY(-1px);
     }
     
@@ -694,17 +695,17 @@ onMounted(() => {
 
     // Delete button styling
     &.delete-button {
-      background-color: #ffebee;
-      color: #d32f2f;
-      border: 1px solid #ffcdd2;
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--semantic-error);
+      border: 1px solid var(--semantic-error);
 
       &:hover {
-        background-color: #ffcdd2;
-        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        background-color: rgba(239, 68, 68, 0.2);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
       }
       
       &:active {
-        background-color: #ffb3ba;
+        background-color: rgba(239, 68, 68, 0.3);
       }
     }
   }

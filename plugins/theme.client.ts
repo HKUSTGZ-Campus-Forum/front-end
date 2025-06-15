@@ -3,37 +3,19 @@ import { useThemeStore } from '~/store/themeStore';
 export default defineNuxtPlugin(() => {
   const themeStore = useThemeStore();
   
-  // 在DOM加载完成后应用主题
-  function applyTheme() {
-    // 应用背景颜色
-    if (themeStore.backgroundColor) {
-      document.documentElement.style.setProperty(
-        '--background-color',
-        themeStore.backgroundColor
-      );
-    }
+  // Initialize theme system
+  function initializeTheme() {
+    // Try to migrate from legacy settings if needed
+    themeStore.migrateFromLegacySettings();
     
-    // 应用背景图片
-    if (themeStore.backgroundImage) {
-      document.documentElement.style.setProperty(
-        '--background-image',
-        `url(${themeStore.backgroundImage})`
-      );
-    } else {
-      document.documentElement.style.setProperty('--background-image', 'none');
-    }
-    
-    // 应用透明度
-    document.documentElement.style.setProperty(
-      '--background-opacity',
-      themeStore.backgroundOpacity.toString()
-    );
+    // Apply the current theme
+    themeStore.initializeTheme();
   }
   
-  // 确保在DOM准备好后应用主题
+  // Ensure theme is applied after DOM is ready
   if (document.readyState !== 'loading') {
-    applyTheme();
+    initializeTheme();
   } else {
-    document.addEventListener('DOMContentLoaded', applyTheme);
+    document.addEventListener('DOMContentLoaded', initializeTheme);
   }
 });

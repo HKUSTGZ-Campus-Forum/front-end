@@ -129,12 +129,13 @@ const goToUserProfile = (userId?: number) => {
 
 <style lang="scss" scoped>
 .post-card {
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--card-shadow, var(--shadow-small));
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
+  border: var(--card-border, 1px solid var(--border-primary));
   
   // Mobile optimizations
   @media (max-width: 480px) {
@@ -149,12 +150,12 @@ const goToUserProfile = (userId?: number) => {
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-medium);
     
     // Reduce hover effect on mobile for better touch experience
     @media (max-width: 768px) {
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-small);
     }
   }
   
@@ -184,7 +185,7 @@ const goToUserProfile = (userId?: number) => {
   }
 
   a {
-    color: #2c3e50;
+    color: var(--text-primary);
     text-decoration: none;
     word-wrap: break-word;
     display: block;
@@ -196,13 +197,13 @@ const goToUserProfile = (userId?: number) => {
     }
 
     &:hover {
-      color: #3498db;
+      color: var(--interactive-primary);
     }
     
     // Touch feedback
     &:active {
       @media (max-width: 768px) {
-        color: #2980b9;
+        color: var(--interactive-active);
       }
     }
   }
@@ -211,7 +212,7 @@ const goToUserProfile = (userId?: number) => {
 .post-meta {
   display: flex;
   gap: 1rem;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
   align-items: center;
@@ -244,7 +245,7 @@ const goToUserProfile = (userId?: number) => {
 
     .author {
       font-weight: 500;
-      color: #333;
+      color: var(--text-secondary);
       
       @media (max-width: 480px) {
         font-size: 0.9rem;
@@ -277,8 +278,8 @@ const goToUserProfile = (userId?: number) => {
 
   .tag {
     font-size: 0.8rem;
-    background-color: #edf2f7;
-    color: #3182ce;
+    background-color: var(--surface-secondary);
+    color: var(--interactive-primary);
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
     
@@ -292,7 +293,7 @@ const goToUserProfile = (userId?: number) => {
 
 .post-excerpt {
   margin-bottom: 1rem;
-  color: #333;
+  color: var(--text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -320,7 +321,7 @@ const goToUserProfile = (userId?: number) => {
 .post-stats {
   display: flex;
   gap: 1rem;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
@@ -346,7 +347,7 @@ const goToUserProfile = (userId?: number) => {
 }
 
 .read-more {
-  color: #3498db;
+  color: var(--interactive-primary);
   text-decoration: none;
   font-weight: 500;
   display: inline-block;
@@ -372,8 +373,8 @@ const goToUserProfile = (userId?: number) => {
   // Touch feedback
   &:active {
     @media (max-width: 768px) {
-      color: #2980b9;
-      background-color: rgba(52, 152, 219, 0.1);
+      color: var(--interactive-active);
+      background-color: var(--surface-secondary);
     }
   }
 }

@@ -163,12 +163,13 @@ const handleSearchSelect = (type: string, item: any) => {
 
 <style lang="scss" scoped>
 .top-nav {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--topbar-shadow);
   display: flex;
   align-items: center;
-  background-color: var(--color-blue-7, #b9d2ea);
+  background: var(--topbar-bg);
+  backdrop-filter: var(--topbar-backdrop);
   padding: 0.5rem 1rem;
-  color: white;
+  color: var(--text-primary);
   height: 70px;
   width: 100%;
   position: fixed;
@@ -185,7 +186,7 @@ const handleSearchSelect = (type: string, item: any) => {
 .mobile-menu-btn {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--text-primary);
   cursor: pointer;
   padding: 0.5rem;
   font-size: 1.125rem;
@@ -204,18 +205,18 @@ const handleSearchSelect = (type: string, item: any) => {
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--interactive-secondary);
   }
 
   &:active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--interactive-hover);
   }
 }
 
 .brand {
   font-size: 1.25rem;
   text-decoration: none;
-  color: white;
+  color: var(--text-primary);
   padding: 0.5rem 1rem;
   margin-right: 1rem;
   white-space: nowrap;
@@ -238,14 +239,14 @@ const handleSearchSelect = (type: string, item: any) => {
   }
 
   &:hover {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--text-secondary);
   }
 }
 
 .sidebar-toggle {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0.5rem;
   font-size: 1.125rem;
@@ -263,8 +264,8 @@ const handleSearchSelect = (type: string, item: any) => {
   }
 
   &:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    background-color: var(--interactive-secondary);
   }
 }
 
@@ -308,24 +309,24 @@ const handleSearchSelect = (type: string, item: any) => {
   }
 
   .dropdown-toggle {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--text-secondary);
     text-decoration: none;
     padding: 0.5rem;
     display: flex;
     align-items: center;
 
     &:hover {
-      color: rgba(255, 255, 255, 0.75);
+      color: var(--text-primary);
     }
 
     .user-icon-fallback {
       font-size: 1.2rem;
-      color: rgba(255, 255, 255, 0.75);
+      color: var(--text-primary);
     }
 
     .login-button {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: var(--interactive-secondary);
+      border: 1px solid var(--border-primary);
       border-radius: 20px;
       padding: 0.375rem 0.75rem;
       transition: all 0.2s ease;
@@ -339,13 +340,13 @@ const handleSearchSelect = (type: string, item: any) => {
       }
 
       &:hover {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 0.5);
+        background: var(--interactive-hover);
+        border-color: var(--border-focus);
         transform: translateY(-1px);
       }
 
       .login-text {
-        color: white;
+        color: var(--text-primary);
         font-size: 0.875rem;
         font-weight: 500;
       }
@@ -358,7 +359,7 @@ const handleSearchSelect = (type: string, item: any) => {
     height: 32px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid var(--border-secondary);
 
     img {
       width: 100%;
@@ -372,13 +373,13 @@ const handleSearchSelect = (type: string, item: any) => {
     position: absolute;
     right: 0;
     top: calc(100% - 2px); /* Slight overlap to prevent gap */
-    background-color: white;
+    background-color: var(--surface-elevated);
     min-width: 10rem;
     padding: 0.5rem 0;
     margin: 0; /* Remove gap-causing margin */
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border: var(--card-border);
     border-radius: 0.25rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: var(--card-shadow);
     z-index: 1000;
 
     /* Add padding-top to create invisible hover zone */
@@ -400,7 +401,7 @@ const handleSearchSelect = (type: string, item: any) => {
       padding: 0.5rem 1rem;
       margin-bottom: 0;
       font-size: 0.875rem;
-      color: #6c757d;
+      color: var(--text-muted);
       white-space: nowrap;
       font-weight: bold;
     }
@@ -414,12 +415,12 @@ const handleSearchSelect = (type: string, item: any) => {
       white-space: nowrap;
       background-color: transparent;
       border: 0;
-      color: #212529;
+      color: var(--text-primary);
       text-decoration: none;
 
       &:hover {
-        background-color: #f8f9fa;
-        color: #16181b;
+        background-color: var(--interactive-secondary);
+        color: var(--text-primary);
       }
     }
 
@@ -427,7 +428,7 @@ const handleSearchSelect = (type: string, item: any) => {
       height: 0;
       margin: 0.5rem 0;
       overflow: hidden;
-      border-top: 1px solid #e9ecef;
+      border-top: 1px solid var(--border-primary);
     }
   }
 }

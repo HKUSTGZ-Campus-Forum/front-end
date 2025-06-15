@@ -3,6 +3,31 @@
 ## Project Overview
 **UniKorn Campus Forum** - A modern campus forum application built with Nuxt 3/Vue.js frontend and Flask backend.
 
+## 🎨 Theme System (Latest Update - January 2025)
+**CRITICAL**: This project now uses a comprehensive 6-theme system. **ALL new components must use CSS custom properties instead of hardcoded colors.**
+
+### Quick Theme Development Rules
+```scss
+/* ✅ ALWAYS DO - Use theme variables */
+.component {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-small);
+}
+
+/* ❌ NEVER DO - Hardcoded colors */
+.bad-component {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #cccccc;
+}
+```
+
+**📖 Complete Documentation**: See `THEME_SYSTEM.md` for full guidelines, theme variables, and development patterns.
+
+**🧪 Testing**: Test all new components in all 6 themes (Light, Dark, Cafe, Pro-Tech, Ocean, Sunset) before committing.
+
 ### Tech Stack
 - **Frontend**: Nuxt 3, Vue.js 3, TypeScript, SCSS
 - **Backend**: Flask, PostgreSQL, SQLAlchemy ORM
