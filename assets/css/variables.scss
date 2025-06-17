@@ -1,7 +1,70 @@
 :root {
+  // Legacy compatibility
   --background-color: #97d4f3;
   --background-image: none;
   --background-opacity: 1;
+  
+  // Theme system variables (will be overridden by theme)
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --bg-image: none;
+  
+  // Text colors
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  
+  // Surface colors
+  --surface-primary: #ffffff;
+  --surface-secondary: #f8fafc;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(255, 255, 255, 0.95);
+  
+  // Interactive colors
+  --interactive-primary: #3b82f6;
+  --interactive-secondary: #e2e8f0;
+  --interactive-hover: #2563eb;
+  --interactive-active: #1d4ed8;
+  --interactive-disabled: #cbd5e1;
+  
+  // Semantic colors
+  --semantic-success: #10b981;
+  --semantic-warning: #f59e0b;
+  --semantic-error: #ef4444;
+  --semantic-info: #3b82f6;
+  
+  // Border colors
+  --border-primary: #e2e8f0;
+  --border-secondary: #f1f5f9;
+  --border-focus: #3b82f6;
+  
+  // Component backgrounds
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --sidebar-backdrop: blur(12px);
+  --sidebar-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  
+  --topbar-bg: rgba(255, 255, 255, 0.95);
+  --topbar-backdrop: blur(12px);
+  --topbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --card-border: 1px solid #e2e8f0;
+  
+  --modal-bg: #ffffff;
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  
+  // Effects
+  --effect-blur: blur(12px);
+  --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --opacity-low: 0.6;
+  --opacity-medium: 0.8;
+  --opacity-high: 0.95;
   
   /* Mobile-first responsive breakpoints */
   --mobile-small: 480px;
@@ -37,11 +100,15 @@
 }
 
 body {
-  background-color: var(--background-color);
+  // Primary background (fallback)
+  background-color: var(--background-color, var(--bg-primary));
   margin: 0;
   min-height: 100vh;
   position: relative;
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
   
+  // Main background layer
   &::before {
     content: "";
     position: fixed;
@@ -49,12 +116,90 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: var(--background-image);
+    // Legacy support
+    background-image: var(--background-image, none);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: var(--background-opacity);
+    opacity: var(--background-opacity, 1);
+    z-index: -2;
+  }
+  
+  // New theme system background
+  &::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-gradient, var(--bg-primary));
     z-index: -1;
+  }
+  
+  // Theme-specific body classes
+  &.theme-light::after {
+    background: var(--bg-gradient);
+  }
+  
+  &.theme-dark::after {
+    background: var(--bg-gradient);
+  }
+  
+  &.theme-cafe::after {
+    background: var(--bg-gradient);
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-image, none);
+      opacity: 0.3;
+    }
+  }
+  
+  &.theme-pro-tech::after {
+    background: var(--bg-gradient);
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-image, none);
+      opacity: 0.4;
+    }
+  }
+  
+  &.theme-ocean::after {
+    background: var(--bg-gradient);
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-image, none);
+      opacity: 0.2;
+    }
+  }
+  
+  &.theme-sunset::after {
+    background: var(--bg-gradient);
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-image, none);
+      opacity: 0.25;
+    }
   }
 }
 

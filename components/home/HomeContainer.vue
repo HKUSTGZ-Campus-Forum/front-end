@@ -112,9 +112,9 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--modal-backdrop);
   z-index: 1005;
-  backdrop-filter: blur(2px);
+  backdrop-filter: var(--effect-blur);
 }
 
 .main-content {
@@ -123,6 +123,8 @@ onUnmounted(() => {
   padding: 1rem;
   min-height: calc(100vh - 70px);
   transition: margin-left 0.3s ease;
+  background: var(--bg-primary, transparent); /* Use theme background */
+  color: var(--text-primary);
   
   &.sidebar-collapsed {
     margin-left: 100px; /* 侧边栏折叠时的边距 */

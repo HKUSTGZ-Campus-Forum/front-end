@@ -384,19 +384,20 @@ const stripHtml = (html: string) => {
   flex: 1;
   padding: 0.5rem 3rem 0.5rem 1rem;
   font-size: 0.875rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  background: white;
+  background: var(--surface-primary);
+  color: var(--text-primary);
   transition: all 0.2s ease;
   
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--border-focus);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
   
   &::placeholder {
-    color: #9ca3af;
+    color: var(--text-muted);
   }
 }
 
@@ -407,17 +408,17 @@ const stripHtml = (html: string) => {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0.25rem;
   transition: color 0.2s ease;
   
   &:hover:not(:disabled) {
-    color: #3b82f6;
+    color: var(--interactive-primary);
   }
   
   &:disabled {
-    color: #d1d5db;
+    color: var(--text-muted);
     cursor: not-allowed;
   }
 }
@@ -429,13 +430,13 @@ const stripHtml = (html: string) => {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem;
   transition: color 0.2s ease;
   
   &:hover {
-    color: #ef4444;
+    color: var(--semantic-error);
   }
 }
 
@@ -444,17 +445,17 @@ const stripHtml = (html: string) => {
   top: calc(100% + 0.25rem);
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-large);
   max-height: 32rem;
   overflow-y: auto;
   z-index: 50;
 }
 
 .dropdown-section {
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-secondary);
   
   &:last-child {
     border-bottom: none;
@@ -468,7 +469,7 @@ const stripHtml = (html: string) => {
   padding: 0.75rem 1rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   
@@ -479,7 +480,7 @@ const stripHtml = (html: string) => {
   .clear-history-btn {
     background: none;
     border: none;
-    color: #ef4444;
+    color: var(--semantic-error);
     cursor: pointer;
     font-size: 0.75rem;
     padding: 0.25rem;
@@ -508,7 +509,7 @@ const stripHtml = (html: string) => {
   transition: background-color 0.2s ease;
   
   &:hover {
-    background-color: #f9fafb;
+    background-color: var(--interactive-secondary);
   }
 }
 
@@ -522,7 +523,7 @@ const stripHtml = (html: string) => {
     .post-title {
       font-size: 0.875rem;
       font-weight: 600;
-      color: #1f2937;
+      color: var(--text-primary);
       margin: 0 0 0.25rem;
       line-height: 1.4;
       
@@ -536,7 +537,7 @@ const stripHtml = (html: string) => {
     
     .post-excerpt {
       font-size: 0.75rem;
-      color: #6b7280;
+      color: var(--text-secondary);
       margin: 0 0 0.5rem;
       line-height: 1.4;
       display: -webkit-box;
@@ -550,11 +551,11 @@ const stripHtml = (html: string) => {
       align-items: center;
       gap: 0.5rem;
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: var(--text-muted);
       
       .author-name {
         font-weight: 500;
-        color: #6b7280;
+        color: var(--text-secondary);
       }
       
       .post-stats {
@@ -578,7 +579,7 @@ const stripHtml = (html: string) => {
     .user-name {
       font-size: 0.875rem;
       font-weight: 600;
-      color: #1f2937;
+      color: var(--text-primary);
       margin: 0 0 0.125rem;
       
       :deep(mark) {
@@ -591,14 +592,14 @@ const stripHtml = (html: string) => {
     
     .user-role {
       font-size: 0.75rem;
-      color: #6b7280;
+      color: var(--text-secondary);
     }
   }
 }
 
 .tag-item, .course-item {
   i {
-    color: #3b82f6;
+    color: var(--interactive-primary);
     margin-right: 0.75rem;
     font-size: 1rem;
   }
@@ -607,7 +608,7 @@ const stripHtml = (html: string) => {
     h4 {
       font-size: 0.875rem;
       font-weight: 600;
-      color: #1f2937;
+      color: var(--text-primary);
       margin: 0 0 0.125rem;
       
       :deep(mark) {
@@ -620,7 +621,7 @@ const stripHtml = (html: string) => {
     
     .tag-count, .course-name {
       font-size: 0.75rem;
-      color: #6b7280;
+      color: var(--text-secondary);
     }
   }
 }
@@ -630,7 +631,7 @@ const stripHtml = (html: string) => {
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   
   i {
@@ -639,7 +640,7 @@ const stripHtml = (html: string) => {
 }
 
 .error-item {
-  color: #ef4444;
+  color: var(--semantic-error);
 }
 
 .history-list {
@@ -659,40 +660,40 @@ const stripHtml = (html: string) => {
   transition: background-color 0.2s ease;
   
   &:hover {
-    background-color: #f9fafb;
+    background-color: var(--interactive-secondary);
   }
   
   i {
-    color: #9ca3af;
+    color: var(--text-muted);
     margin-right: 0.75rem;
   }
   
   span {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 0.875rem;
   }
 }
 
 .dropdown-footer {
   padding: 0.75rem 1rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-secondary);
 }
 
 .view-all-btn {
   width: 100%;
   padding: 0.5rem 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 0.375rem;
-  color: #374151;
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
+    background: var(--interactive-secondary);
+    border-color: var(--border-focus);
   }
   
   i {

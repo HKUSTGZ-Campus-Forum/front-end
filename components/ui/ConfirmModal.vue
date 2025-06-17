@@ -81,7 +81,7 @@ const handleOverlayClick = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--modal-backdrop);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -90,22 +90,23 @@ const handleOverlayClick = () => {
 }
 
 .modal-container {
-  background: white;
+  background: var(--modal-bg);
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--modal-shadow, var(--shadow-large));
   max-width: 400px;
   width: 90%;
   animation: slideIn 0.3s ease-out;
+  border: 1px solid var(--border-primary);
 }
 
 .modal-header {
   padding: 1.5rem 1.5rem 1rem;
   text-align: center;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-secondary);
 
   .warning-icon {
     font-size: 3rem;
-    color: #f39c12;
+    color: var(--semantic-warning);
     margin-bottom: 0.5rem;
     animation: pulse 2s infinite;
   }
@@ -113,14 +114,14 @@ const handleOverlayClick = () => {
   h3 {
     margin: 0;
     font-size: 1.25rem;
-    color: #2c3e50;
+    color: var(--text-primary);
   }
 }
 
 .modal-body {
   padding: 1rem 1.5rem;
   text-align: center;
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -141,24 +142,24 @@ const handleOverlayClick = () => {
   min-width: 80px;
 
   &.btn-cancel {
-    background-color: #f8f9fa;
-    color: #666;
-    border: 1px solid #dee2e6;
+    background-color: var(--surface-secondary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-secondary);
 
     &:hover {
-      background-color: #e9ecef;
+      background-color: var(--surface-elevated);
       transform: translateY(-1px);
     }
   }
 
   &.btn-confirm {
-    background-color: #dc3545;
-    color: white;
+    background-color: var(--semantic-error);
+    color: var(--text-inverse);
 
     &:hover {
-      background-color: #c82333;
+      background-color: var(--interactive-active);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      box-shadow: var(--shadow-medium);
     }
   }
 }

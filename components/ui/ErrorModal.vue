@@ -57,7 +57,7 @@ const handleClose = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--modal-backdrop);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -66,14 +66,15 @@ const handleClose = () => {
 }
 
 .error-container {
-  background: white;
+  background: var(--modal-bg);
   border-radius: 16px;
   padding: 2rem;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--modal-shadow, var(--shadow-large));
   max-width: 350px;
   width: 90%;
   animation: shakeIn 0.6s ease-out;
+  border: 1px solid var(--border-primary);
 }
 
 .error-icon-wrapper {
@@ -88,8 +89,8 @@ const handleClose = () => {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 4px solid rgba(220, 53, 69, 0.2);
-  border-left-color: #dc3545;
+  border: 4px solid var(--surface-secondary);
+  border-left-color: var(--semantic-error);
   animation: error_animation_collect 1s linear 1 both;
 }
 
@@ -97,19 +98,19 @@ const handleClose = () => {
 @keyframes error_animation_collect {
   0% {
     transform: rotate(270deg);
-    border-left-color: #dc3545;
+    border-left-color: var(--semantic-error);
   }
   25% {
-    border-left-color: #dc3545;
+    border-left-color: var(--semantic-error);
   }
   50% {
-    border-left-color: #dc3545;
+    border-left-color: var(--semantic-error);
   }
   75% {
-    border-left-color: #dc3545;
+    border-left-color: var(--semantic-error);
   }
   100% {
-    border-left-color: rgba(220, 53, 69, 0.2);
+    border-left-color: var(--surface-secondary);
     transform: rotate(0deg);
   }
 }
@@ -122,7 +123,7 @@ const handleClose = () => {
   left: 50%;
   width: 40px;
   height: 4px;
-  background: #dc3545;
+  background: var(--semantic-error);
   transform: translate(-50%, -50%) rotate(45deg);
   transform-origin: center;
   animation: error_line1 0.3s 1s linear 1 both;
@@ -137,7 +138,7 @@ const handleClose = () => {
   left: 50%;
   width: 40px;
   height: 4px;
-  background: #dc3545;
+  background: var(--semantic-error);
   transform: translate(-50%, -50%) rotate(-45deg);
   transform-origin: center;
   animation: error_line2 0.3s 1.3s linear 1 both;
@@ -170,13 +171,13 @@ const handleClose = () => {
 
 .error-title {
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   font-weight: 600;
 }
 
 .error-message {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem 0;
   line-height: 1.5;
 }
@@ -186,19 +187,19 @@ const handleClose = () => {
 }
 
 .btn-error {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
+  background: linear-gradient(135deg, var(--semantic-error), var(--interactive-active));
+  color: var(--text-inverse);
   border: none;
   padding: 0.75rem 2rem;
   border-radius: 25px;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  box-shadow: var(--shadow-medium);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    box-shadow: var(--shadow-large);
   }
 
   &:active {
