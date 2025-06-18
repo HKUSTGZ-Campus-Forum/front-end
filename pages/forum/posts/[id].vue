@@ -141,6 +141,20 @@
           @close="showErrorModal = false"
         />
 
+        <!-- Image Modal -->
+        <ImageModal
+          :show="showImageModal"
+          :image-url="currentImage?.url"
+          :image-alt="currentImage?.original_filename"
+          :filename="currentImage?.original_filename"
+          :show-navigation="postImages.length > 1"
+          :has-previous="currentImageIndex > 0"
+          :has-next="currentImageIndex < postImages.length - 1"
+          @close="closeImageModal"
+          @previous="showPreviousImage"
+          @next="showNextImage"
+        />
+
         <!-- 评论区域 -->
         <CommentList :post-id="parseInt(postId)" />
       </div>
@@ -156,7 +170,7 @@ import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
-import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
+import { SuccessModal, ErrorModal, ConfirmModal, ImageModal } from "~/components/ui";
 import EmojiReactions from "~/components/forum/EmojiReation.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 
@@ -173,6 +187,11 @@ const showSuccessModal = ref(false);
 const showErrorModal = ref(false);
 const errorMsg = ref("");
 
+// 图片模态框状态
+const showImageModal = ref(false);
+const currentImageIndex = ref(0);
+const currentImage = ref(null);
+
 // 响应式数据
 const postId = route.params.id;
 const post = ref({});
@@ -187,6 +206,12 @@ const canDeletePost = computed(() => {
     return false;
   }
   return Number(user.value.id) === Number(postData.value.user_id);
+});
+
+// 计算帖子中的所有图片
+const postImages = computed(() => {
+  if (!postData.value.files) return [];
+  return postData.value.files.filter(file => file && isImageFile(file));
 });
 
 // 显示删除确认弹窗
@@ -341,8 +366,36 @@ const isImageFile = (file) => {
 };
 
 const openImageModal = (file) => {
-  // TODO: Implement image modal for full-size viewing
-  window.open(file.url, '_blank');
+  const images = postImages.value;
+  const index = images.findIndex(img => img.id === file.id);
+  
+  if (index !== -1) {
+    currentImageIndex.value = index;
+    currentImage.value = images[index];
+    showImageModal.value = true;
+  }
+};
+
+const closeImageModal = () => {
+  showImageModal.value = false;
+  currentImage.value = null;
+  currentImageIndex.value = 0;
+};
+
+const showPreviousImage = () => {
+  const images = postImages.value;
+  if (currentImageIndex.value > 0) {
+    currentImageIndex.value--;
+    currentImage.value = images[currentImageIndex.value];
+  }
+};
+
+const showNextImage = () => {
+  const images = postImages.value;
+  if (currentImageIndex.value < images.length - 1) {
+    currentImageIndex.value++;
+    currentImage.value = images[currentImageIndex.value];
+  }
 };
 
 const handleImageError = (event) => {
