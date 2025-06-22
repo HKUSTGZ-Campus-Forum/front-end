@@ -285,13 +285,13 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .course-posts-section {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-secondary);
 }
 
 .semester-section,
 .posts-section {
   padding: 2rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-secondary);
 
   &:last-child {
     border-bottom: none;
@@ -301,18 +301,18 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 1.5rem;
     font-size: 1.25rem;
     flex-wrap: wrap;
 
     i {
-      color: #3498db;
+      color: var(--interactive-primary);
       min-width: 20px;
     }
 
     .posts-count {
-      color: #666;
+      color: var(--text-muted);
       font-size: 0.9rem;
       font-weight: normal;
     }
@@ -360,8 +360,8 @@ onMounted(() => {
 
 .semester-tab {
   padding: 0.5rem 1rem;
-  border: 2px solid #ddd;
-  background: white;
+  border: 2px solid var(--border-primary);
+  background: var(--surface-primary);
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -375,13 +375,14 @@ onMounted(() => {
   white-space: nowrap;
 
   &:hover {
-    border-color: #3498db;
+    border-color: var(--interactive-primary);
+    background: var(--interactive-hover);
   }
 
   &.active {
-    background: #3498db;
-    color: white;
-    border-color: #3498db;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
+    border-color: var(--interactive-primary);
   }
   
   // Mobile optimization
@@ -420,8 +421,8 @@ onMounted(() => {
   }
 
   .create-post-btn {
-    background: #4caf50;
-    color: white;
+    background: var(--semantic-success);
+    color: var(--text-inverse);
     padding: 0.5rem 1rem;
     border-radius: 6px;
     text-decoration: none;
@@ -436,7 +437,7 @@ onMounted(() => {
     font-weight: 500;
 
     &:hover {
-      background: #45a049;
+      background: var(--interactive-hover);
     }
     
     // Mobile optimization
@@ -455,13 +456,13 @@ onMounted(() => {
 .posts-loading {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: var(--text-muted);
 
   .loading-spinner.small {
     width: 30px;
     height: 30px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
+    border: 4px solid var(--border-secondary);
+    border-top: 4px solid var(--interactive-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
@@ -494,7 +495,7 @@ onMounted(() => {
 .no-posts {
   text-align: center;
   padding: 3rem 2rem;
-  color: #666;
+  color: var(--text-muted);
 
   i {
     font-size: 3rem;
@@ -504,7 +505,7 @@ onMounted(() => {
   
   h4 {
     margin-bottom: 0.5rem;
-    color: #555;
+    color: var(--text-secondary);
   }
   
   p {
@@ -513,8 +514,8 @@ onMounted(() => {
   }
 
   .create-first-post-btn {
-    background: #3498db;
-    color: white;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
     text-decoration: none;
@@ -529,7 +530,7 @@ onMounted(() => {
     justify-content: center;
 
     &:hover {
-      background: #2980b9;
+      background: var(--interactive-hover);
     }
   }
   
@@ -580,17 +581,17 @@ onMounted(() => {
 }
 
 .post-card {
-  background: #f8f9fa;
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid #e9ecef;
+  border: var(--card-border, 1px solid var(--border-primary));
   cursor: pointer;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #ced4da;
+    box-shadow: var(--shadow-medium);
+    border-color: var(--border-focus);
   }
   
   // Mobile optimization
@@ -599,7 +600,7 @@ onMounted(() => {
     
     &:hover {
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-small);
     }
   }
   
@@ -610,7 +611,7 @@ onMounted(() => {
     // Remove hover transform on small screens, add touch feedback
     &:hover {
       transform: none;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-small);
     }
     
     // Add active state for touch feedback
@@ -626,7 +627,7 @@ onMounted(() => {
 
   .post-title {
     a {
-      color: #2c3e50;
+      color: var(--text-primary);
       text-decoration: none;
       font-size: 1.1rem;
       font-weight: 600;
@@ -636,7 +637,7 @@ onMounted(() => {
       min-height: 24px;
 
       &:hover {
-        color: #3498db;
+        color: var(--interactive-primary);
       }
     }
   }
@@ -646,7 +647,7 @@ onMounted(() => {
     gap: 1rem;
     margin-top: 0.5rem;
     font-size: 0.875rem;
-    color: #666;
+    color: var(--text-muted);
     flex-wrap: wrap;
   }
   
@@ -678,7 +679,7 @@ onMounted(() => {
 }
 
 .post-content {
-  color: #555;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 1rem;
 }
@@ -690,8 +691,8 @@ onMounted(() => {
   flex-wrap: wrap;
 
   .post-tag {
-    background: #e9ecef;
-    color: #495057;
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
     padding: 0.25rem 0.5rem;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -702,7 +703,7 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   font-size: 0.875rem;
-  color: #666;
+  color: var(--text-muted);
   flex-wrap: wrap;
 
   span {
@@ -748,11 +749,12 @@ onMounted(() => {
 
   .page-btn {
     padding: 0.5rem 1rem;
-    border: 1px solid #ddd;
-    background: white;
+    border: 1px solid var(--border-primary);
+    background: var(--surface-primary);
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.3s ease;
+    color: var(--text-primary);
     // Ensure touch-friendly sizing
     min-height: 44px;
     box-sizing: border-box;
@@ -762,8 +764,8 @@ onMounted(() => {
     font-size: 0.875rem;
 
     &:hover:not(:disabled) {
-      background: #f8f9fa;
-      border-color: #adb5bd;
+      background: var(--surface-elevated);
+      border-color: var(--border-focus);
     }
 
     &:disabled {
@@ -773,7 +775,7 @@ onMounted(() => {
   }
 
   .page-info {
-    color: #666;
+    color: var(--text-muted);
     font-size: 0.875rem;
     white-space: nowrap;
   }

@@ -160,8 +160,12 @@ watch(isHovered, (newValue: boolean) => {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="https://wiki.hkust-gz.top/en/home">
-            <img src="/image/WebsiteAddress/wiki.png" alt="Wiki" class="nav-icon" />
+          <NuxtLink to="https://wiki.hkust-gz.top">
+            <img
+              src="/image/WebsiteAddress/wiki.png"
+              alt="Wiki"
+              class="nav-icon"
+            />
             <span class="nav-text">HKUST-GZ Wiki</span>
           </NuxtLink>
         </li>
@@ -184,7 +188,7 @@ watch(isHovered, (newValue: boolean) => {
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  border: 3px solid var(--border-secondary);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -203,8 +207,8 @@ watch(isHovered, (newValue: boolean) => {
     img {
       transform: scale(1.12) rotate(360deg);
     }
-    border-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 20px var(--interactive-primary);
   }
 }
 
@@ -220,14 +224,15 @@ watch(isHovered, (newValue: boolean) => {
 }
 
 .sidebar {
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--sidebar-shadow);
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
   width: 200px;
-  background-color: #677d94;
-  color: white;
+  background: var(--sidebar-bg);
+  backdrop-filter: var(--sidebar-backdrop);
+  color: var(--text-primary);
   transition: all 0.3s ease;
   z-index: 1010;
   padding: 0;
@@ -277,7 +282,7 @@ watch(isHovered, (newValue: boolean) => {
     }
 
     a {
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--text-secondary);
       text-decoration: none;
       display: flex;
       align-items: center;
@@ -306,13 +311,13 @@ watch(isHovered, (newValue: boolean) => {
       }
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: white;
+        background-color: var(--interactive-secondary);
+        color: var(--text-primary);
       }
 
       &.active {
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        color: white !important;
+        background-color: var(--interactive-hover) !important;
+        color: var(--text-inverse) !important;
         font-weight: 600;
 
         &::before {
@@ -322,7 +327,7 @@ watch(isHovered, (newValue: boolean) => {
           top: 0;
           height: 100%;
           width: 4px;
-          background-color: white;
+          background-color: var(--interactive-primary);
           border-radius: 0 2px 2px 0;
         }
       }

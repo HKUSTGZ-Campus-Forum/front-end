@@ -44,6 +44,14 @@
       {{ error.message }}
     </div>
 
+    <!-- Compression Info -->
+    <div v-if="compressionInfo && compressionInfo.wasCompressed" class="compression-info">
+      <span class="compression-text">
+        📷 Compressed: {{ formatFileSize(compressionInfo.originalSize) }} → {{ formatFileSize(compressionInfo.compressedSize) }}
+        ({{ Math.round((1 - compressionInfo.compressionRatio) * 100) }}% reduction)
+      </span>
+    </div>
+
     <!-- Preview (if enabled) -->
     <div v-if="showPreview && uploadedFile" class="preview-container">
       <img
@@ -81,6 +89,10 @@ const props = defineProps<{
   showPreview?: boolean
   allowDelete?: boolean
   dragText?: string
+  /** Enable automatic image compression (default: true for images) */
+  enableCompression?: boolean
+  /** Custom compression options */
+  compressionOptions?: import('~/utils/imageCompression').CompressionOptions
 }>()
 
 const emit = defineEmits<{
@@ -94,7 +106,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const uploadedFile = ref<FileRecord | null>(null)
 const isDragging = ref(false)
 
-const { uploadFile, deleteFile, isUploading, uploadProgress, error } = useFileUpload()
+const { uploadFile, deleteFile, isUploading, uploadProgress, error, compressionInfo } = useFileUpload()
 
 const isImage = computed(() => {
   if (!uploadedFile.value?.url) return false
@@ -144,6 +156,8 @@ const processFile = async (file: File) => {
       fileType: props.fileType,
       entityType: props.entityType,
       entityId: props.entityId,
+      enableCompression: props.enableCompression,
+      compressionOptions: props.compressionOptions,
       onSuccess: (record) => {
         uploadedFile.value = record
         emit('upload-success', record)
@@ -183,24 +197,24 @@ const formatFileSize = (bytes: number): string => {
 }
 
 .upload-button {
-  border: 2px dashed #ddd;
+  border: 2px dashed var(--border-primary);
   border-radius: 8px;
   padding: 2rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: #fafafa;
+  background: var(--surface-secondary);
 }
 
 .upload-button:hover {
-  border-color: #999;
-  background: #f5f5f5;
+  border-color: var(--border-secondary);
+  background: var(--interactive-secondary);
 }
 
 .upload-button.is-uploading {
   cursor: not-allowed;
   border-style: solid;
-  border-color: #4a90e2;
+  border-color: var(--interactive-primary);
 }
 
 .hidden {
@@ -216,16 +230,16 @@ const formatFileSize = (bytes: number): string => {
 
 .upload-icon {
   font-size: 2rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .upload-text {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 
 .upload-hint {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
@@ -239,26 +253,40 @@ const formatFileSize = (bytes: number): string => {
 .progress-bar {
   width: 100%;
   height: 4px;
-  background: #eee;
+  background: var(--surface-secondary);
   border-radius: 2px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: #4a90e2;
+  background: var(--interactive-primary);
   transition: width 0.3s ease;
 }
 
 .progress-text {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .error-message {
   margin-top: 0.5rem;
-  color: #dc3545;
+  color: var(--semantic-error);
   font-size: 0.875rem;
+}
+
+.compression-info {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #e8f5e8;
+  border: 1px solid #c3e6c3;
+  border-radius: 4px;
+}
+
+.compression-text {
+  color: #2d5016;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .preview-container {
@@ -278,18 +306,18 @@ const formatFileSize = (bytes: number): string => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: #f5f5f5;
+  background: var(--surface-secondary);
   border-radius: 4px;
 }
 
 .file-icon {
   font-size: 1.5rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .file-name {
   font-size: 0.875rem;
-  color: #333;
+  color: var(--text-primary);
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -78,7 +78,7 @@ watch(
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--modal-backdrop);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -87,14 +87,15 @@ watch(
 }
 
 .success-container {
-  background: white;
+  background: var(--modal-bg);
   border-radius: 16px;
   padding: 2rem;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--modal-shadow, var(--shadow-large));
   max-width: 350px;
   width: 90%;
   animation: bounceIn 0.6s ease-out;
+  border: 1px solid var(--border-primary);
 }
 
 .success-icon-wrapper {
@@ -106,13 +107,13 @@ watch(
 
 .success-title {
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   font-weight: 600;
 }
 
 .success-message {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem 0;
   line-height: 1.5;
 }
@@ -122,19 +123,19 @@ watch(
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #28a745, #20c997);
-  color: white;
+  background: linear-gradient(135deg, var(--semantic-success), var(--interactive-primary));
+  color: var(--text-inverse);
   border: none;
   padding: 0.75rem 2rem;
   border-radius: 25px;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  box-shadow: var(--shadow-medium);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    box-shadow: var(--shadow-large);
   }
 
   &:active {
@@ -188,8 +189,8 @@ watch(
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 4px solid rgba(40, 167, 69, 0.2); // 调整为绿色主题
-  border-left-color: #28a745;
+  border: 4px solid var(--surface-secondary);
+  border-left-color: var(--semantic-success);
   animation: animation_collect 1s linear 1 both;
 }
 
@@ -197,19 +198,19 @@ watch(
 @keyframes animation_collect {
   0% {
     transform: rotate(270deg);
-    border-left-color: #28a745;
+    border-left-color: var(--semantic-success);
   }
   25% {
-    border-left-color: #28a745;
+    border-left-color: var(--semantic-success);
   }
   50% {
-    border-left-color: #28a745;
+    border-left-color: var(--semantic-success);
   }
   75% {
-    border-left-color: #28a745;
+    border-left-color: var(--semantic-success);
   }
   100% {
-    border-left-color: rgba(40, 167, 69, 0.2);
+    border-left-color: var(--surface-secondary);
     transform: rotate(0deg);
   }
 }
@@ -220,7 +221,7 @@ watch(
   content: "";
   top: 50%;
   left: 15px;
-  border: 4px solid #28a745;
+  border: 4px solid var(--semantic-success);
   border-left-width: 0;
   border-bottom-width: 0;
   transform: scaleX(-1) rotate(135deg);
@@ -252,13 +253,13 @@ watch(
 
 .success-title {
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   font-weight: 600;
 }
 
 .success-message {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem 0;
   line-height: 1.5;
 }
@@ -268,19 +269,19 @@ watch(
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #28a745, #20c997);
-  color: white;
+  background: linear-gradient(135deg, var(--semantic-success), var(--interactive-primary));
+  color: var(--text-inverse);
   border: none;
   padding: 0.75rem 2rem;
   border-radius: 25px;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  box-shadow: var(--shadow-medium);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    box-shadow: var(--shadow-large);
   }
 
   &:active {

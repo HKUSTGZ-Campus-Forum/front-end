@@ -288,7 +288,7 @@ onMounted(() => {
 }
 
 .comment-content {
-  background-color: #f9f9f9;
+  background: var(--surface-primary);
   border-radius: 8px;
   padding: 1rem;
   
@@ -338,7 +338,7 @@ onMounted(() => {
 
 .comment-author {
   font-weight: bold;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .comment-text {

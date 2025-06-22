@@ -890,8 +890,8 @@ useHead({
   .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
+    border: 4px solid var(--border-secondary);
+    border-top: 4px solid var(--interactive-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -909,25 +909,26 @@ useHead({
 .error-state {
   text-align: center;
   padding: 3rem 2rem;
-  background-color: #fdf2f2;
-  border: 1px solid #fecaca;
+  background-color: var(--surface-primary);
+  border: 1px solid var(--semantic-error);
   border-radius: 8px;
   margin: 2rem auto;
   max-width: 600px;
+  box-shadow: var(--shadow-medium);
 
   i {
     font-size: 3rem;
-    color: #dc2626;
+    color: var(--semantic-error);
     margin-bottom: 1rem;
   }
 
   h2 {
-    color: #dc2626;
+    color: var(--semantic-error);
     margin-bottom: 1rem;
   }
 
   p {
-    color: #7f1d1d;
+    color: var(--text-secondary);
     margin-bottom: 1.5rem;
   }
 
@@ -949,33 +950,33 @@ useHead({
   }
 
   .retry-btn {
-    background-color: #dc2626;
-    color: white;
+    background-color: var(--semantic-error);
+    color: var(--text-inverse);
     &:hover {
-      background-color: #b91c1c;
+      opacity: 0.9;
     }
   }
 
   .back-btn {
-    background-color: #6b7280;
-    color: white;
+    background-color: var(--interactive-secondary);
+    color: var(--text-inverse);
     &:hover {
-      background-color: #4b5563;
+      background-color: var(--interactive-hover);
     }
   }
 }
 
 .course-detail-content {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-large);
   overflow: hidden;
 }
 
 .course-header {
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--interactive-primary) 0%, var(--interactive-hover) 100%);
+  color: var(--text-inverse);
 }
 
 .course-title-section {
@@ -1014,27 +1015,27 @@ useHead({
 
 .course-description-section {
   padding: 2rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-secondary);
 
   h3 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 1.5rem;
     font-size: 1.25rem;
 
     i {
-      color: #3498db;
+      color: var(--interactive-primary);
     }
   }
 }
 
 .course-description {
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   padding: 1.5rem;
   border-radius: 8px;
-  color: #555;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -1054,12 +1055,12 @@ useHead({
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: #2c3e50;
+      color: var(--text-primary);
       font-size: 1.25rem;
       margin: 0;
 
       i {
-        color: #3498db;
+        color: var(--interactive-primary);
       }
 
       .reviews-count {
@@ -1113,7 +1114,7 @@ useHead({
 
 // 评价表单样式
 .review-form-section {
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -1141,11 +1142,11 @@ useHead({
         align-items: center;
         gap: 0.5rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--text-primary);
         margin-bottom: 0.5rem;
 
         i {
-          color: #3498db;
+          color: var(--interactive-primary);
           width: 16px;
         }
       }
@@ -1155,15 +1156,17 @@ useHead({
       .form-textarea {
         width: 100%;
         padding: 0.75rem;
-        border: 2px solid #e1e8ed;
+        border: 2px solid var(--border-primary);
         border-radius: 8px;
         font-size: 1rem;
         font-family: inherit;
         transition: border-color 0.3s ease;
+        background: var(--surface-primary);
+        color: var(--text-primary);
 
         &:focus {
           outline: none;
-          border-color: #3498db;
+          border-color: var(--border-focus);
         }
       }
 
@@ -1175,13 +1178,13 @@ useHead({
       .char-count {
         text-align: right;
         font-size: 0.875rem;
-        color: #666;
+        color: var(--text-secondary);
         margin-top: 0.25rem;
       }
 
       .form-hint {
         font-size: 0.75rem;
-        color: #999;
+        color: var(--text-muted);
         margin-top: 0.25rem;
         font-style: italic;
       }
@@ -1190,7 +1193,7 @@ useHead({
         margin-top: 1rem;
         
         h4 {
-          color: #2c3e50;
+          color: var(--text-primary);
           margin-bottom: 1rem;
           font-size: 1rem;
           font-weight: 600;
@@ -1207,12 +1210,12 @@ useHead({
         position: relative;
         border-radius: 8px;
         overflow: hidden;
-        background: #f8f9fa;
-        border: 1px solid #e1e8ed;
+        background: var(--surface-primary);
+        border: 1px solid var(--border-primary);
         transition: all 0.3s ease;
 
         &:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          box-shadow: var(--shadow-medium);
         }
 
         .preview-img {
@@ -1231,7 +1234,7 @@ useHead({
 
           .filename {
             font-size: 0.75rem;
-            color: #666;
+            color: var(--text-secondary);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1239,8 +1242,8 @@ useHead({
           }
 
           .remove-btn {
-            background: #dc3545;
-            color: white;
+            background: var(--semantic-error);
+            color: var(--text-inverse);
             border: none;
             border-radius: 50%;
             width: 24px;
@@ -1254,7 +1257,7 @@ useHead({
             transition: all 0.3s ease;
 
             &:hover {
-              background: #c82333;
+              opacity: 0.8;
               transform: scale(1.1);
             }
           }
@@ -1277,7 +1280,7 @@ useHead({
         background: none;
         border: none;
         font-size: 1.5rem;
-        color: #ddd;
+        color: var(--border-primary);
         cursor: pointer;
         transition: color 0.3s ease;
 
@@ -1288,20 +1291,20 @@ useHead({
       }
 
       .rating-text {
-        color: #666;
+        color: var(--text-secondary);
         font-size: 0.875rem;
       }
 
       .clear-rating {
         background: none;
         border: none;
-        color: #666;
+        color: var(--text-secondary);
         font-size: 0.875rem;
         cursor: pointer;
         text-decoration: underline;
 
         &:hover {
-          color: #dc2626;
+          color: var(--semantic-error);
         }
       }
     }
@@ -1338,20 +1341,20 @@ useHead({
   }
 
   &.btn-primary {
-    background: #3498db;
-    color: white;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
 
     &:hover:not(:disabled) {
-      background: #2980b9;
+      background: var(--interactive-hover);
     }
   }
 
   &.btn-secondary {
-    background: #6b7280;
-    color: white;
+    background: var(--interactive-secondary);
+    color: var(--text-inverse);
 
     &:hover {
-      background: #4b5563;
+      background: var(--interactive-hover);
     }
   }
 
@@ -1365,18 +1368,18 @@ useHead({
 .login-prompt {
   text-align: center;
   padding: 2rem;
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   border-radius: 8px;
   margin-bottom: 2rem;
 
   i {
     font-size: 2rem;
-    color: #3498db;
+    color: var(--interactive-primary);
     margin-bottom: 1rem;
   }
 
   p {
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: 1rem;
   }
 }
@@ -1390,8 +1393,8 @@ useHead({
     .loading-spinner.small {
       width: 30px;
       height: 30px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
+      border: 4px solid var(--border-secondary);
+      border-top: 4px solid var(--interactive-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -1400,7 +1403,7 @@ useHead({
   .no-reviews {
     text-align: center;
     padding: 3rem 2rem;
-    color: #666;
+    color: var(--text-secondary);
 
     i {
       font-size: 3rem;
@@ -1416,17 +1419,17 @@ useHead({
   }
 
   .review-item {
-    background: white;
-    border: 1px solid #e1e8ed;
+    background: var(--card-bg);
+    border: 1px solid var(--border-primary);
     border-radius: 12px;
     padding: 1.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-medium);
       transform: translateY(-2px);
-      border-color: #3498db;
+      border-color: var(--interactive-primary);
     }
 
     .review-header {
@@ -1445,17 +1448,17 @@ useHead({
 
         .reviewer-name {
           font-weight: 600;
-          color: #2c3e50;
+          color: var(--text-primary);
         }
 
         .review-date {
-          color: #666;
+          color: var(--text-secondary);
           font-size: 0.875rem;
         }
 
         .review-semester {
-          background: #e3f2fd;
-          color: #1565c0;
+          background: rgba(59, 130, 246, 0.1);
+          color: var(--interactive-primary);
           padding: 0.125rem 0.5rem;
           border-radius: 12px;
           font-size: 0.75rem;
@@ -1473,7 +1476,7 @@ useHead({
 
           i {
             font-size: 0.875rem;
-            color: #ddd;
+            color: var(--border-primary);
 
             &.active {
               color: #ffd700;
@@ -1484,13 +1487,13 @@ useHead({
         .rating-number {
           font-size: 0.875rem;
           font-weight: 600;
-          color: #2c3e50;
+          color: var(--text-primary);
         }
       }
     }
 
     .review-content {
-      color: #2c3e50;
+      color: var(--text-primary);
       line-height: 1.6;
       margin-bottom: 1rem;
       white-space: pre-wrap;
@@ -1503,7 +1506,7 @@ useHead({
       .action-btn {
         background: none;
         border: none;
-        color: #666;
+        color: var(--text-secondary);
         font-size: 0.875rem;
         cursor: pointer;
         display: flex;
@@ -1514,21 +1517,21 @@ useHead({
         transition: all 0.3s ease;
 
         &:hover {
-          background: #f8f9fa;
-          color: #2c3e50;
+          background: var(--surface-secondary);
+          color: var(--text-primary);
         }
 
         &.liked {
-          color: #3498db;
+          color: var(--interactive-primary);
         }
 
         &.view-detail-btn {
-          color: #3498db;
+          color: var(--interactive-primary);
           font-weight: 500;
           
           &:hover {
-            background: #e3f2fd;
-            color: #1976d2;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--interactive-hover);
           }
         }
       }
@@ -1540,20 +1543,22 @@ useHead({
 .reply-form {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid var(--border-primary);
 
   .reply-textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 2px solid #e1e8ed;
+    border: 2px solid var(--border-primary);
     border-radius: 8px;
     resize: vertical;
     font-family: inherit;
     margin-bottom: 0.5rem;
+    background: var(--surface-primary);
+    color: var(--text-primary);
 
     &:focus {
       outline: none;
-      border-color: #3498db;
+      border-color: var(--border-focus);
     }
   }
 
@@ -1567,10 +1572,10 @@ useHead({
 .replies-list {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid var(--border-primary);
 
   .reply-item {
-    background: #f8f9fa;
+    background: var(--surface-secondary);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 0.75rem;
@@ -1586,18 +1591,18 @@ useHead({
 
       .reply-author {
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--text-primary);
         font-size: 0.875rem;
       }
 
       .reply-date {
-        color: #666;
+        color: var(--text-secondary);
         font-size: 0.75rem;
       }
     }
 
     .reply-content {
-      color: #555;
+      color: var(--text-secondary);
       line-height: 1.5;
       font-size: 0.875rem;
     }

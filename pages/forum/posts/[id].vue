@@ -53,22 +53,21 @@
         <div v-if="postData?.files?.length > 0" class="post-images">
           <div class="image-gallery">
             <div 
-              v-for="file in postData.files.filter(f => f && isImageFile(f))" 
+              v-for="(file, index) in postData.files.filter(f => f && isImageFile(f))" 
               :key="file.id"
               class="image-item"
             >
               <div class="image-container">
                 <img 
                   :src="file.url" 
-                  :alt="file.original_filename || 'Image'"
+                  :alt="getGenericImageName(file, index)"
                   class="post-image"
                   @click="openImageModal(file)"
                   @error="handleImageError"
                   @load="handleImageLoad"
-                  :data-filename="file.original_filename || 'unknown'"
                 />
                 <div class="image-overlay">
-                  <span class="image-filename">{{ file.original_filename || 'Unknown' }}</span>
+                  <span class="image-filename">{{ getGenericImageName(file, index) }}</span>
                 </div>
               </div>
             </div>
@@ -141,6 +140,20 @@
           @close="showErrorModal = false"
         />
 
+        <!-- Image Modal -->
+        <ImageModal
+          :show="showImageModal"
+          :image-url="currentImage?.url"
+          :image-alt="getGenericImageName(currentImage, currentImageIndex)"
+          :filename="getGenericImageName(currentImage, currentImageIndex)"
+          :show-navigation="postImages.length > 1"
+          :has-previous="currentImageIndex > 0"
+          :has-next="currentImageIndex < postImages.length - 1"
+          @close="closeImageModal"
+          @previous="showPreviousImage"
+          @next="showNextImage"
+        />
+
         <!-- 评论区域 -->
         <CommentList :post-id="parseInt(postId)" />
       </div>
@@ -156,7 +169,7 @@ import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
-import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
+import { SuccessModal, ErrorModal, ConfirmModal, ImageModal } from "~/components/ui";
 import EmojiReactions from "~/components/forum/EmojiReation.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 
@@ -173,6 +186,11 @@ const showSuccessModal = ref(false);
 const showErrorModal = ref(false);
 const errorMsg = ref("");
 
+// 图片模态框状态
+const showImageModal = ref(false);
+const currentImageIndex = ref(0);
+const currentImage = ref(null);
+
 // 响应式数据
 const postId = route.params.id;
 const post = ref({});
@@ -187,6 +205,12 @@ const canDeletePost = computed(() => {
     return false;
   }
   return Number(user.value.id) === Number(postData.value.user_id);
+});
+
+// 计算帖子中的所有图片
+const postImages = computed(() => {
+  if (!postData.value.files) return [];
+  return postData.value.files.filter(file => file && isImageFile(file));
 });
 
 // 显示删除确认弹窗
@@ -340,9 +364,76 @@ const isImageFile = (file) => {
   return false;
 };
 
+// Generate generic image description for privacy
+const getGenericImageName = (file, index) => {
+  if (!file) return '图片';
+  
+  // Determine image type from MIME type or extension
+  let imageType = '图片';
+  
+  if (file.mime_type) {
+    if (file.mime_type.includes('jpeg') || file.mime_type.includes('jpg')) {
+      imageType = '照片';
+    } else if (file.mime_type.includes('png')) {
+      imageType = 'PNG图片';
+    } else if (file.mime_type.includes('gif')) {
+      imageType = 'GIF动图';
+    } else if (file.mime_type.includes('webp')) {
+      imageType = 'WebP图片';
+    }
+  } else if (file.original_filename) {
+    const ext = file.original_filename.toLowerCase();
+    if (ext.includes('.jpg') || ext.includes('.jpeg')) {
+      imageType = '照片';
+    } else if (ext.includes('.png')) {
+      imageType = 'PNG图片';
+    } else if (ext.includes('.gif')) {
+      imageType = 'GIF动图';
+    } else if (ext.includes('.webp')) {
+      imageType = 'WebP图片';
+    }
+  }
+  
+  // Return generic name with index if multiple images
+  const totalImages = postImages.value.length;
+  if (totalImages > 1) {
+    return `${imageType} ${index + 1}/${totalImages}`;
+  } else {
+    return imageType;
+  }
+};
+
 const openImageModal = (file) => {
-  // TODO: Implement image modal for full-size viewing
-  window.open(file.url, '_blank');
+  const images = postImages.value;
+  const index = images.findIndex(img => img.id === file.id);
+  
+  if (index !== -1) {
+    currentImageIndex.value = index;
+    currentImage.value = images[index];
+    showImageModal.value = true;
+  }
+};
+
+const closeImageModal = () => {
+  showImageModal.value = false;
+  currentImage.value = null;
+  currentImageIndex.value = 0;
+};
+
+const showPreviousImage = () => {
+  const images = postImages.value;
+  if (currentImageIndex.value > 0) {
+    currentImageIndex.value--;
+    currentImage.value = images[currentImageIndex.value];
+  }
+};
+
+const showNextImage = () => {
+  const images = postImages.value;
+  if (currentImageIndex.value < images.length - 1) {
+    currentImageIndex.value++;
+    currentImage.value = images[currentImageIndex.value];
+  }
 };
 
 const handleImageError = (event) => {
@@ -365,9 +456,9 @@ onMounted(() => {
 .post-reactions {
   margin: 2rem 0;
   padding: 1.5rem 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
-  background: rgba(248, 249, 250, 0.5);
+  border-top: 1px solid var(--border-secondary);
+  border-bottom: 1px solid var(--border-secondary);
+  background: var(--surface-secondary);
   border-radius: 8px;
   padding: 1.5rem;
 }
@@ -375,10 +466,10 @@ onMounted(() => {
 .post-container {
   max-width: 800px;
   margin: 0 auto;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   
   // Mobile responsiveness
   @media (max-width: 480px) {
@@ -386,7 +477,7 @@ onMounted(() => {
     border-radius: 0;
     padding: 1rem;
     box-shadow: none;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: var(--card-bg);
   }
   
   @media (min-width: 481px) and (max-width: 768px) {
@@ -403,28 +494,29 @@ onMounted(() => {
   text-align: center;
   padding: 2rem;
   font-size: 1.2rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .error {
   text-align: center;
   padding: 2rem;
-  color: #e74c3c;
-  background-color: #ffebee;
-  border-radius: 4px;
+  color: var(--semantic-error);
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--semantic-error);
+  border-radius: 8px;
   margin-bottom: 1rem;
 }
 
 .post-header {
   margin-bottom: 2rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
   padding-bottom: 1rem;
 }
 
 .post-title {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   line-height: 1.3;
   word-wrap: break-word;
   
@@ -444,7 +536,7 @@ onMounted(() => {
 .post-meta {
   display: flex;
   gap: 1rem;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   flex-wrap: wrap;
   align-items: center;
@@ -474,7 +566,7 @@ onMounted(() => {
   
   .author {
     font-weight: 500;
-    color: #2c3e50;
+    color: var(--text-primary);
     
     @media (max-width: 480px) {
       font-size: 0.9rem;
@@ -502,8 +594,8 @@ onMounted(() => {
 
   .tag {
     font-size: 0.8rem;
-    background-color: #edf2f7;
-    color: #3182ce;
+    background-color: var(--surface-secondary);
+    color: var(--interactive-primary);
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
     
@@ -567,13 +659,13 @@ onMounted(() => {
     .image-item {
       border-radius: 8px;
       overflow: hidden;
-      background: #f5f5f5;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      background: var(--surface-secondary);
+      box-shadow: var(--shadow-small);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--shadow-medium);
       }
       
       .image-container {
@@ -589,7 +681,7 @@ onMounted(() => {
           cursor: pointer;
           transition: opacity 0.3s ease;
           display: block;
-          background: white;
+          background: var(--surface-primary);
           
           // Mobile-optimized image sizes
           @media (max-width: 480px) {
@@ -620,7 +712,7 @@ onMounted(() => {
           left: 0;
           right: 0;
           background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-          color: white;
+          color: var(--text-inverse);
           padding: 0.5rem;
           transform: translateY(100%);
           transition: transform 0.3s ease;
@@ -664,7 +756,7 @@ onMounted(() => {
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border: none;
-    background-color: #f0f0f0;
+    background-color: var(--surface-secondary);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -683,7 +775,7 @@ onMounted(() => {
     }
 
     &:hover {
-      background-color: #e0e0e0;
+      background-color: var(--surface-elevated);
       transform: translateY(-1px);
     }
     
@@ -694,17 +786,17 @@ onMounted(() => {
 
     // Delete button styling
     &.delete-button {
-      background-color: #ffebee;
-      color: #d32f2f;
-      border: 1px solid #ffcdd2;
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--semantic-error);
+      border: 1px solid var(--semantic-error);
 
       &:hover {
-        background-color: #ffcdd2;
-        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        background-color: rgba(239, 68, 68, 0.2);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
       }
       
       &:active {
-        background-color: #ffb3ba;
+        background-color: rgba(239, 68, 68, 0.3);
       }
     }
   }
