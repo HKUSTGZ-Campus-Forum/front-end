@@ -31,4 +31,8 @@ export interface UploadOptions {
   onProgress?: (progress: number) => void;
   onSuccess?: (file: FileRecord) => void;
   onError?: (error: Error) => void;
+  /** Enable automatic image compression (default: true for images) */
+  enableCompression?: boolean;
+  /** Custom compression options (uses preset based on fileType if not specified) */
+  compressionOptions?: import('~/utils/imageCompression').CompressionOptions;
 } 
