@@ -66,7 +66,7 @@
           <button class="zoom-btn" @click="zoomIn" :disabled="scale >= maxScale">
             <span class="zoom-icon">+</span>
           </button>
-          <button class="zoom-btn reset-btn" @click="resetZoom" title="重置缩放">
+          <button class="zoom-btn reset-btn" @click="resetZoom" title="适应屏幕">
             <span class="zoom-icon">⚏</span>
           </button>
         </div>
@@ -128,6 +128,7 @@ const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
 const imageContainer = ref(null);
 const naturalDimensions = ref({ width: 0, height: 0 });
+const fittedScale = ref(1);
 
 // Zoom constraints
 const minScale = 0.1;
@@ -137,7 +138,10 @@ const zoomStep = 0.2;
 // Reset state when modal opens/closes
 watch(() => props.show, (newShow) => {
   if (newShow) {
-    resetZoom();
+    // Reset state but don't auto-fit yet - wait for image load
+    scale.value = 1;
+    translateX.value = 0;
+    translateY.value = 0;
   }
 });
 
@@ -145,7 +149,10 @@ watch(() => props.show, (newShow) => {
 watch(() => props.imageUrl, () => {
   if (props.imageUrl) {
     nextTick(() => {
-      resetZoom();
+      // Reset but don't auto-fit yet - wait for image load
+      scale.value = 1;
+      translateX.value = 0;
+      translateY.value = 0;
     });
   }
 });
@@ -181,9 +188,9 @@ const handleImageLoad = (event) => {
     height: event.target.naturalHeight
   };
   
-  // Auto-fit image to viewport on load
+  // Auto-execute the == button logic when image loads
   nextTick(() => {
-    fitImageToViewport();
+    resetZoom(); // This is exactly what the == button does
   });
   
   emit('image-load', event);
@@ -196,9 +203,8 @@ const handleImageError = (event) => {
 
 // Zoom and pan functions
 const resetZoom = () => {
-  scale.value = 1;
-  translateX.value = 0;
-  translateY.value = 0;
+  // Reset to smart fit instead of 1:1 scale
+  fitImageToViewport();
   isDragging.value = false;
 };
 
@@ -210,21 +216,52 @@ const fitImageToViewport = () => {
   const containerWidth = containerRect.width;
   const containerHeight = containerRect.height;
   
+  console.log('fitImageToViewport called:', {
+    containerWidth,
+    containerHeight,
+    imageWidth: naturalDimensions.value.width,
+    imageHeight: naturalDimensions.value.height
+  });
+  
+  // If container has no size yet, retry after a short delay
+  if (containerWidth === 0 || containerHeight === 0) {
+    console.log('Container has no size, retrying...');
+    setTimeout(() => fitImageToViewport(), 100);
+    return;
+  }
+  
   const imageAspectRatio = naturalDimensions.value.width / naturalDimensions.value.height;
   const containerAspectRatio = containerWidth / containerHeight;
+  
+  console.log('Aspect ratios:', { imageAspectRatio, containerAspectRatio });
   
   // Smart fitting: ensure image fits within viewport while maintaining aspect ratio
   let newScale;
   if (imageAspectRatio > containerAspectRatio) {
     // Image is wider - fit to width
     newScale = containerWidth / naturalDimensions.value.width;
+    console.log('Fitting to width - scale:', newScale);
   } else {
     // Image is taller - fit to height
     newScale = containerHeight / naturalDimensions.value.height;
+    console.log('Fitting to height - scale:', newScale);
   }
   
+  // Apply reasonable padding to ensure image doesn't touch edges
+  newScale = newScale * 0.95; // 5% padding
+  console.log('Scale after padding:', newScale);
+  
+  // IMPORTANT FIX: Don't let images get too small - use minimum 1.0 scale for large images
+  // This prevents high-resolution images from becoming tiny
+  newScale = Math.max(newScale, 1.0);
+  console.log('Scale after minimum 1.0 constraint:', newScale);
+  
   // Ensure we don't exceed max scale or go below min scale
-  newScale = Math.min(Math.max(newScale, minScale), 1); // Don't zoom in by default
+  newScale = Math.min(Math.max(newScale, minScale), maxScale);
+  console.log('Final scale:', newScale);
+  
+  // Store the fitted scale for comparison in double-click
+  fittedScale.value = newScale;
   
   scale.value = newScale;
   translateX.value = 0;
@@ -327,9 +364,9 @@ const handleWheel = (event) => {
 
 // Double click to fit/zoom
 const handleDoubleClick = () => {
-  if (scale.value === 1) {
-    // Zoom to 2x
-    scale.value = 2;
+  // If we're at the fitted scale (within tolerance), zoom to 2x
+  if (Math.abs(scale.value - fittedScale.value) < 0.1) {
+    scale.value = Math.min(2, maxScale);
   } else {
     // Reset to fit
     fitImageToViewport();
