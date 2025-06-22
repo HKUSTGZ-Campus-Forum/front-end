@@ -57,9 +57,9 @@
           <h4>已上传图片 ({{ uploadedImages.length }}/5):</h4>
           <div class="image-grid">
             <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
-              <img :src="image.url" :alt="image.original_filename" class="preview-img">
+              <img :src="image.url" :alt="getGenericImageName(image, index)" class="preview-img">
               <div class="image-info">
-                <span class="filename">{{ image.original_filename }}</span>
+                <span class="filename">{{ getGenericImageName(image, index) }}</span>
                 <button type="button" @click="removeUploadedImage(index)" class="remove-btn">×</button>
               </div>
             </div>
@@ -321,6 +321,45 @@ const handleSubmit = async () => {
       err instanceof Error ? err.message : "发布失败，请稍后重试";
   } finally {
     isLoading.value = false;
+  }
+};
+
+// Generate generic image description for privacy
+const getGenericImageName = (file: FileRecord, index: number): string => {
+  if (!file) return '图片';
+  
+  // Determine image type from MIME type or extension
+  let imageType = '图片';
+  
+  if (file.mime_type) {
+    if (file.mime_type.includes('jpeg') || file.mime_type.includes('jpg')) {
+      imageType = '照片';
+    } else if (file.mime_type.includes('png')) {
+      imageType = 'PNG图片';
+    } else if (file.mime_type.includes('gif')) {
+      imageType = 'GIF动图';
+    } else if (file.mime_type.includes('webp')) {
+      imageType = 'WebP图片';
+    }
+  } else if (file.original_filename) {
+    const ext = file.original_filename.toLowerCase();
+    if (ext.includes('.jpg') || ext.includes('.jpeg')) {
+      imageType = '照片';
+    } else if (ext.includes('.png')) {
+      imageType = 'PNG图片';
+    } else if (ext.includes('.gif')) {
+      imageType = 'GIF动图';
+    } else if (ext.includes('.webp')) {
+      imageType = 'WebP图片';
+    }
+  }
+  
+  // Return generic name with index if multiple images
+  const totalImages = uploadedImages.value.length;
+  if (totalImages > 1) {
+    return `${imageType} ${index + 1}/${totalImages}`;
+  } else {
+    return imageType;
   }
 };
 

@@ -26,19 +26,49 @@
         </button>
         
         <!-- Image container -->
-        <div class="image-container">
-          <img 
+        <div class="image-container" ref="imageContainer">
+          <div 
             v-if="imageUrl"
-            :src="imageUrl" 
-            :alt="imageAlt || 'Image'"
-            class="modal-image"
-            @load="handleImageLoad"
-            @error="handleImageError"
-          />
+            class="image-wrapper"
+            :style="imageWrapperStyle"
+            @wheel="handleWheel"
+            @mousedown="handleMouseDown"
+            @mousemove="handleMouseMove"
+            @mouseup="handleMouseUp"
+            @mouseleave="handleMouseUp"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+            @dblclick="handleDoubleClick"
+          >
+            <img 
+              :src="imageUrl" 
+              :alt="imageAlt || 'Image'"
+              class="modal-image"
+              :style="imageStyle"
+              @load="handleImageLoad"
+              @error="handleImageError"
+              @dragstart.prevent
+            />
+          </div>
           <div v-else class="image-placeholder">
             <span class="placeholder-icon">🖼️</span>
             <p>无法加载图片</p>
           </div>
+        </div>
+        
+        <!-- Zoom controls -->
+        <div v-if="imageUrl" class="zoom-controls">
+          <button class="zoom-btn" @click="zoomOut" :disabled="scale <= minScale">
+            <span class="zoom-icon">-</span>
+          </button>
+          <span class="zoom-level">{{ Math.round(scale * 100) }}%</span>
+          <button class="zoom-btn" @click="zoomIn" :disabled="scale >= maxScale">
+            <span class="zoom-icon">+</span>
+          </button>
+          <button class="zoom-btn reset-btn" @click="resetZoom" title="重置缩放">
+            <span class="zoom-icon">⚏</span>
+          </button>
         </div>
         
         <!-- Image info -->
@@ -51,7 +81,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, ref, computed, watch, nextTick } from 'vue';
 
 const props = defineProps({
   show: {
@@ -90,7 +120,51 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'previous', 'next', 'image-load', 'image-error']);
 
+// Zoom and pan state
+const scale = ref(1);
+const translateX = ref(0);
+const translateY = ref(0);
+const isDragging = ref(false);
+const dragStart = ref({ x: 0, y: 0 });
+const imageContainer = ref(null);
+const naturalDimensions = ref({ width: 0, height: 0 });
+
+// Zoom constraints
+const minScale = 0.1;
+const maxScale = 5;
+const zoomStep = 0.2;
+
+// Reset state when modal opens/closes
+watch(() => props.show, (newShow) => {
+  if (newShow) {
+    resetZoom();
+  }
+});
+
+// Watch for image changes and reset zoom
+watch(() => props.imageUrl, () => {
+  if (props.imageUrl) {
+    nextTick(() => {
+      resetZoom();
+    });
+  }
+});
+
+// Computed styles
+const imageWrapperStyle = computed(() => ({
+  transform: `translate(${translateX.value}px, ${translateY.value}px)`,
+  cursor: scale.value > 1 ? (isDragging.value ? 'grabbing' : 'grab') : 'default',
+  transition: isDragging.value ? 'none' : 'transform 0.3s ease'
+}));
+
+const imageStyle = computed(() => ({
+  transform: `scale(${scale.value})`,
+  transition: isDragging.value ? 'none' : 'transform 0.3s ease',
+  transformOrigin: 'center center'
+}));
+
 const handleClose = () => {
+  resetZoom();
   emit('close');
 };
 
@@ -101,12 +175,166 @@ const handleOverlayClick = () => {
 };
 
 const handleImageLoad = (event) => {
+  // Store natural dimensions for smart fitting
+  naturalDimensions.value = {
+    width: event.target.naturalWidth,
+    height: event.target.naturalHeight
+  };
+  
+  // Auto-fit image to viewport on load
+  nextTick(() => {
+    fitImageToViewport();
+  });
+  
   emit('image-load', event);
 };
 
 const handleImageError = (event) => {
   console.error('Image failed to load in modal:', props.imageUrl);
   emit('image-error', event);
+};
+
+// Zoom and pan functions
+const resetZoom = () => {
+  scale.value = 1;
+  translateX.value = 0;
+  translateY.value = 0;
+  isDragging.value = false;
+};
+
+const fitImageToViewport = () => {
+  if (!imageContainer.value || !naturalDimensions.value.width) return;
+  
+  const container = imageContainer.value;
+  const containerRect = container.getBoundingClientRect();
+  const containerWidth = containerRect.width;
+  const containerHeight = containerRect.height;
+  
+  const imageAspectRatio = naturalDimensions.value.width / naturalDimensions.value.height;
+  const containerAspectRatio = containerWidth / containerHeight;
+  
+  // Smart fitting: ensure image fits within viewport while maintaining aspect ratio
+  let newScale;
+  if (imageAspectRatio > containerAspectRatio) {
+    // Image is wider - fit to width
+    newScale = containerWidth / naturalDimensions.value.width;
+  } else {
+    // Image is taller - fit to height
+    newScale = containerHeight / naturalDimensions.value.height;
+  }
+  
+  // Ensure we don't exceed max scale or go below min scale
+  newScale = Math.min(Math.max(newScale, minScale), 1); // Don't zoom in by default
+  
+  scale.value = newScale;
+  translateX.value = 0;
+  translateY.value = 0;
+};
+
+const zoomIn = () => {
+  if (scale.value < maxScale) {
+    scale.value = Math.min(scale.value + zoomStep, maxScale);
+    constrainPan();
+  }
+};
+
+const zoomOut = () => {
+  if (scale.value > minScale) {
+    scale.value = Math.max(scale.value - zoomStep, minScale);
+    constrainPan();
+  }
+};
+
+const constrainPan = () => {
+  if (!imageContainer.value) return;
+  
+  const container = imageContainer.value;
+  const containerRect = container.getBoundingClientRect();
+  const scaledWidth = naturalDimensions.value.width * scale.value;
+  const scaledHeight = naturalDimensions.value.height * scale.value;
+  
+  const maxTranslateX = Math.max(0, (scaledWidth - containerRect.width) / 2);
+  const maxTranslateY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+  
+  translateX.value = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX.value));
+  translateY.value = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY.value));
+};
+
+// Mouse events
+const handleMouseDown = (event) => {
+  if (scale.value <= 1) return;
+  
+  isDragging.value = true;
+  dragStart.value = {
+    x: event.clientX - translateX.value,
+    y: event.clientY - translateY.value
+  };
+  event.preventDefault();
+};
+
+const handleMouseMove = (event) => {
+  if (!isDragging.value || scale.value <= 1) return;
+  
+  translateX.value = event.clientX - dragStart.value.x;
+  translateY.value = event.clientY - dragStart.value.y;
+  constrainPan();
+  event.preventDefault();
+};
+
+const handleMouseUp = () => {
+  isDragging.value = false;
+};
+
+// Touch events for mobile
+const handleTouchStart = (event) => {
+  if (scale.value <= 1 || event.touches.length !== 1) return;
+  
+  isDragging.value = true;
+  const touch = event.touches[0];
+  dragStart.value = {
+    x: touch.clientX - translateX.value,
+    y: touch.clientY - translateY.value
+  };
+  event.preventDefault();
+};
+
+const handleTouchMove = (event) => {
+  if (!isDragging.value || scale.value <= 1 || event.touches.length !== 1) return;
+  
+  const touch = event.touches[0];
+  translateX.value = touch.clientX - dragStart.value.x;
+  translateY.value = touch.clientY - dragStart.value.y;
+  constrainPan();
+  event.preventDefault();
+};
+
+const handleTouchEnd = () => {
+  isDragging.value = false;
+};
+
+// Scroll wheel zoom
+const handleWheel = (event) => {
+  event.preventDefault();
+  
+  const zoomDelta = event.deltaY > 0 ? -zoomStep : zoomStep;
+  const newScale = Math.max(minScale, Math.min(maxScale, scale.value + zoomDelta));
+  
+  if (newScale !== scale.value) {
+    scale.value = newScale;
+    constrainPan();
+  }
+};
+
+// Double click to fit/zoom
+const handleDoubleClick = () => {
+  if (scale.value === 1) {
+    // Zoom to 2x
+    scale.value = 2;
+  } else {
+    // Reset to fit
+    fitImageToViewport();
+  }
+  constrainPan();
 };
 
 // Keyboard navigation
@@ -123,11 +351,24 @@ const handleKeydown = (event) => {
     case 'ArrowRight':
       if (props.hasNext) emit('next');
       break;
+    case '+':
+    case '=':
+      event.preventDefault();
+      zoomIn();
+      break;
+    case '-':
+      event.preventDefault();
+      zoomOut();
+      break;
+    case '0':
+      event.preventDefault();
+      fitImageToViewport();
+      break;
   }
 };
 
-// Add keyboard listener when modal is shown
-import { onMounted, onUnmounted, watch } from 'vue';
+// Add keyboard listener when modal is shown  
+import { onMounted, onUnmounted } from 'vue';
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown);
@@ -262,13 +503,26 @@ watch(() => props.show, (newShow) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: 100%;
-  max-height: 80vh;
+  width: 90vw;
+  height: 80vh;
+  overflow: hidden;
+  position: relative;
   
   // Mobile height adjustment
   @media (max-width: 768px) {
-    max-height: 70vh;
+    width: 95vw;
+    height: 70vh;
   }
+}
+
+.image-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  user-select: none;
 }
 
 .modal-image {
@@ -277,6 +531,7 @@ watch(() => props.show, (newShow) => {
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
   
   // Ensure image is crisp
   image-rendering: -webkit-optimize-contrast;
@@ -326,6 +581,86 @@ watch(() => props.show, (newShow) => {
     @media (max-width: 768px) {
       font-size: 0.8rem;
       max-width: 250px;
+    }
+  }
+}
+
+.zoom-controls {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  
+  // Mobile positioning
+  @media (max-width: 768px) {
+    bottom: -50px;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .zoom-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    @media (max-width: 768px) {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .zoom-icon {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: bold;
+      line-height: 1;
+      
+      @media (max-width: 768px) {
+        font-size: 1rem;
+      }
+    }
+    
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    &.reset-btn {
+      background: rgba(255, 255, 255, 0.1);
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+  
+  .zoom-level {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-width: 50px;
+    text-align: center;
+    
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
+      min-width: 45px;
     }
   }
 }
