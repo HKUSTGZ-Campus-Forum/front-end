@@ -53,22 +53,21 @@
         <div v-if="postData?.files?.length > 0" class="post-images">
           <div class="image-gallery">
             <div 
-              v-for="file in postData.files.filter(f => f && isImageFile(f))" 
+              v-for="(file, index) in postData.files.filter(f => f && isImageFile(f))" 
               :key="file.id"
               class="image-item"
             >
               <div class="image-container">
                 <img 
                   :src="file.url" 
-                  :alt="file.original_filename || 'Image'"
+                  :alt="getGenericImageName(file, index)"
                   class="post-image"
                   @click="openImageModal(file)"
                   @error="handleImageError"
                   @load="handleImageLoad"
-                  :data-filename="file.original_filename || 'unknown'"
                 />
                 <div class="image-overlay">
-                  <span class="image-filename">{{ file.original_filename || 'Unknown' }}</span>
+                  <span class="image-filename">{{ getGenericImageName(file, index) }}</span>
                 </div>
               </div>
             </div>
@@ -145,8 +144,8 @@
         <ImageModal
           :show="showImageModal"
           :image-url="currentImage?.url"
-          :image-alt="currentImage?.original_filename"
-          :filename="currentImage?.original_filename"
+          :image-alt="getGenericImageName(currentImage, currentImageIndex)"
+          :filename="getGenericImageName(currentImage, currentImageIndex)"
           :show-navigation="postImages.length > 1"
           :has-previous="currentImageIndex > 0"
           :has-next="currentImageIndex < postImages.length - 1"
@@ -363,6 +362,45 @@ const isImageFile = (file) => {
   }
   
   return false;
+};
+
+// Generate generic image description for privacy
+const getGenericImageName = (file, index) => {
+  if (!file) return '图片';
+  
+  // Determine image type from MIME type or extension
+  let imageType = '图片';
+  
+  if (file.mime_type) {
+    if (file.mime_type.includes('jpeg') || file.mime_type.includes('jpg')) {
+      imageType = '照片';
+    } else if (file.mime_type.includes('png')) {
+      imageType = 'PNG图片';
+    } else if (file.mime_type.includes('gif')) {
+      imageType = 'GIF动图';
+    } else if (file.mime_type.includes('webp')) {
+      imageType = 'WebP图片';
+    }
+  } else if (file.original_filename) {
+    const ext = file.original_filename.toLowerCase();
+    if (ext.includes('.jpg') || ext.includes('.jpeg')) {
+      imageType = '照片';
+    } else if (ext.includes('.png')) {
+      imageType = 'PNG图片';
+    } else if (ext.includes('.gif')) {
+      imageType = 'GIF动图';
+    } else if (ext.includes('.webp')) {
+      imageType = 'WebP图片';
+    }
+  }
+  
+  // Return generic name with index if multiple images
+  const totalImages = postImages.value.length;
+  if (totalImages > 1) {
+    return `${imageType} ${index + 1}/${totalImages}`;
+  } else {
+    return imageType;
+  }
 };
 
 const openImageModal = (file) => {
