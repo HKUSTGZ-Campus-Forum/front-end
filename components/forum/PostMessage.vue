@@ -393,7 +393,7 @@ const emit = defineEmits(["post-success"]);
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
     
     // Mobile label styling
     @media (max-width: 480px) {
@@ -407,7 +407,9 @@ const emit = defineEmits(["post-success"]);
   textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     font-size: 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -426,12 +428,13 @@ const emit = defineEmits(["post-success"]);
 
     &:focus {
       outline: none;
-      border-color: var(--color-blue-7, #9fc3e7);
+      border-color: var(--border-focus);
       box-shadow: 0 0 0 2px rgba(159, 195, 231, 0.2);
     }
     
     // Placeholder styling for mobile
     &::placeholder {
+      color: var(--text-muted);
       @media (max-width: 480px) {
         font-size: 0.9rem;
         opacity: 0.7;
@@ -639,11 +642,11 @@ const emit = defineEmits(["post-success"]);
 }
 
 .submit-btn {
-  background-color: var(--color-blue-7, #9fc3e7);
-  color: white;
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 
   &:hover:not(:disabled) {
-    background-color: #7ba8d6;
+    background: var(--interactive-hover);
   }
 
   &:disabled {
@@ -661,11 +664,11 @@ const emit = defineEmits(["post-success"]);
 }
 
 .cancel-btn {
-  background-color: #f1f1f1;
-  color: #333;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
 
   &:hover {
-    background-color: #e4e4e4;
+    background: var(--interactive-secondary);
   }
   
   // Touch feedback for mobile
@@ -679,7 +682,7 @@ const emit = defineEmits(["post-success"]);
 
 .error-text {
   display: block;
-  color: #dc3545;
+  color: var(--semantic-error);
   font-size: 0.85rem;
   margin-top: 0.25rem;
   padding: 0.375rem 0;
@@ -693,13 +696,13 @@ const emit = defineEmits(["post-success"]);
 }
 
 .global-error {
-  color: #dc3545;
+  color: var(--semantic-error);
   margin-bottom: 1rem;
   padding: 0.75rem;
   background-color: rgba(220, 53, 69, 0.1);
   border-radius: 4px;
   font-size: 0.9rem;
-  border-left: 3px solid #dc3545;
+  border-left: 3px solid var(--semantic-error);
   
   // Mobile error styling
   @media (max-width: 480px) {
@@ -719,7 +722,7 @@ const emit = defineEmits(["post-success"]);
   padding: 1rem;
   background-color: rgba(40, 167, 69, 0.1);
   border-radius: 4px;
-  color: #28a745;
+  color: var(--semantic-success);
   margin-bottom: 1rem;
   text-align: center;
   font-size: 1.1rem;
@@ -753,7 +756,7 @@ const emit = defineEmits(["post-success"]);
   display: block;
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  color: #666;
+  color: var(--text-secondary);
   
   // Mobile upload hint styling
   @media (max-width: 480px) {
@@ -772,7 +775,7 @@ const emit = defineEmits(["post-success"]);
   
   h4 {
     margin: 0 0 1rem 0;
-    color: #333;
+    color: var(--text-primary);
     font-size: 1rem;
     
     // Mobile title styling
@@ -799,10 +802,10 @@ const emit = defineEmits(["post-success"]);
     }
     
     .image-preview {
-      border: 1px solid #ddd;
+      border: 1px solid var(--border-primary);
       border-radius: 8px;
       overflow: hidden;
-      background: #f9f9f9;
+      background: var(--surface-secondary);
       
       // Mobile image preview styling
       @media (max-width: 480px) {
@@ -838,7 +841,7 @@ const emit = defineEmits(["post-success"]);
         
         .filename {
           font-size: 0.8rem;
-          color: #666;
+          color: var(--text-secondary);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;

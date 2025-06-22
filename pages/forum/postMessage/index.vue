@@ -27,9 +27,9 @@ const handlePostSuccess = (postId) => {
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: #fff;
+  background: var(--surface-primary);
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   
   // Mobile optimizations
   @media (max-width: 480px) {
@@ -37,7 +37,7 @@ const handlePostSuccess = (postId) => {
     padding: 1rem;
     border-radius: 0;
     box-shadow: none;
-    background-color: #fff;
+    background: var(--surface-primary);
     min-height: calc(100vh - 60px); // Account for navigation
   }
   
@@ -56,7 +56,7 @@ const handlePostSuccess = (postId) => {
 .page-title {
   text-align: center;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.8rem;
   font-weight: 600;
   

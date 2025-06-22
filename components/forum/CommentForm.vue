@@ -120,7 +120,9 @@ const submitComment = async () => {
   textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     resize: vertical;
     font-family: inherit;
@@ -141,12 +143,13 @@ const submitComment = async () => {
 
     &:focus {
       outline: none;
-      border-color: #3498db;
+      border-color: var(--border-focus);
       box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
     }
     
     // Placeholder styling for mobile
     &::placeholder {
+      color: var(--text-muted);
       @media (max-width: 480px) {
         font-size: 0.9rem;
         opacity: 0.7;
@@ -196,11 +199,11 @@ const submitComment = async () => {
     }
 
     &.cancel-btn {
-      background-color: #f5f5f5;
-      color: #666;
+      background: var(--surface-secondary);
+      color: var(--text-secondary);
 
       &:hover {
-        background-color: #e0e0e0;
+        background: var(--interactive-secondary);
       }
       
       // Touch feedback
@@ -213,11 +216,11 @@ const submitComment = async () => {
     }
 
     &.submit-btn {
-      background-color: #3498db;
-      color: white;
+      background: var(--interactive-primary);
+      color: var(--text-inverse);
 
       &:hover:not(:disabled) {
-        background-color: #2980b9;
+        background: var(--interactive-hover);
       }
 
       &:disabled {
