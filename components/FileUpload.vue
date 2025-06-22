@@ -44,6 +44,14 @@
       {{ error.message }}
     </div>
 
+    <!-- Compression Info -->
+    <div v-if="compressionInfo && compressionInfo.wasCompressed" class="compression-info">
+      <span class="compression-text">
+        📷 Compressed: {{ formatFileSize(compressionInfo.originalSize) }} → {{ formatFileSize(compressionInfo.compressedSize) }}
+        ({{ Math.round((1 - compressionInfo.compressionRatio) * 100) }}% reduction)
+      </span>
+    </div>
+
     <!-- Preview (if enabled) -->
     <div v-if="showPreview && uploadedFile" class="preview-container">
       <img
@@ -81,6 +89,10 @@ const props = defineProps<{
   showPreview?: boolean
   allowDelete?: boolean
   dragText?: string
+  /** Enable automatic image compression (default: true for images) */
+  enableCompression?: boolean
+  /** Custom compression options */
+  compressionOptions?: import('~/utils/imageCompression').CompressionOptions
 }>()
 
 const emit = defineEmits<{
@@ -94,7 +106,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const uploadedFile = ref<FileRecord | null>(null)
 const isDragging = ref(false)
 
-const { uploadFile, deleteFile, isUploading, uploadProgress, error } = useFileUpload()
+const { uploadFile, deleteFile, isUploading, uploadProgress, error, compressionInfo } = useFileUpload()
 
 const isImage = computed(() => {
   if (!uploadedFile.value?.url) return false
@@ -144,6 +156,8 @@ const processFile = async (file: File) => {
       fileType: props.fileType,
       entityType: props.entityType,
       entityId: props.entityId,
+      enableCompression: props.enableCompression,
+      compressionOptions: props.compressionOptions,
       onSuccess: (record) => {
         uploadedFile.value = record
         emit('upload-success', record)
@@ -259,6 +273,20 @@ const formatFileSize = (bytes: number): string => {
   margin-top: 0.5rem;
   color: #dc3545;
   font-size: 0.875rem;
+}
+
+.compression-info {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #e8f5e8;
+  border: 1px solid #c3e6c3;
+  border-radius: 4px;
+}
+
+.compression-text {
+  color: #2d5016;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .preview-container {
