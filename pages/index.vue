@@ -159,7 +159,7 @@ onUnmounted(() => {
           <div class="external-links-list">
             <a href="https://wiki.hkust-gz.top/en/home" target="_blank" class="external-link-sidebar">
               <i class="fas fa-book-open"></i>
-              <span>学生自己编写的科广Wiki</span>
+              <span>科广学生编写的科广Wiki</span>
               <i class="fas fa-external-link-alt external-icon"></i>
             </a>
             <a href="https://myportal.hkust-gz.edu.cn" target="_blank" class="external-link-sidebar">
@@ -341,14 +341,14 @@ onUnmounted(() => {
   }
   
   // Ensure content is above the overlay
+  // Desktop layout - side by side
+  grid-template-columns: 2fr 1fr;
+  align-items: start;
+  
   > * {
     position: relative;
     z-index: 2;
   }
-  
-  // Desktop layout - side by side
-  grid-template-columns: 2fr 1fr;
-  align-items: start;
   
   // Tablet and mobile - stack vertically
   @media (max-width: 1024px) {

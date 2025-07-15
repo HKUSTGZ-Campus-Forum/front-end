@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n"
 import { useAuth } from "~/composables/useAuth"
 import { useRouter } from "vue-router"
 import SearchDropdown from "~/components/ui/SearchDropdown.vue"
+import UserAvatar from "~/components/user/UserAvatar.vue"
 
 const router = useRouter();
 
@@ -88,7 +89,9 @@ const handleSearchSelect = (type: string, item: any) => {
       'sidebar-expanded': !sidebarFolded && !isMobile,
       'mobile-brand': isMobile 
     }" href="/">
-      {{ brandName }}
+      <div class="brand-logo">
+        <img src="/icons/topbar_logo.svg" alt="uniKorn" />
+      </div>
     </a>
 
     <!-- Desktop sidebar toggle -->
@@ -113,12 +116,15 @@ const handleSearchSelect = (type: string, item: any) => {
       <div class="user-menu">
         <div class="dropdown">
           <a class="dropdown-toggle" href="#" role="button">
-            <!-- Logged in with avatar -->
-            <div v-if="isLoggedIn && user?.profile_picture_url" class="user-avatar">
-              <img :src="user.profile_picture_url" :alt="user.username" />
-            </div>
-            <!-- Logged in without avatar -->
-            <span v-else-if="isLoggedIn" class="user-icon-fallback">👤</span>
+            <!-- Logged in - use UserAvatar component -->
+            <UserAvatar 
+              v-if="isLoggedIn && user" 
+              :avatar-url="user.profile_picture_url" 
+              :username="user.username" 
+              :user-id="user.id"
+              size="sm"
+              class="topbar-user-avatar"
+            />
             <!-- Not logged in - show login button -->
             <div v-else class="login-button" :class="{ 'mobile-login': isMobile }">
               <span class="login-text">登录</span>
@@ -214,14 +220,15 @@ const handleSearchSelect = (type: string, item: any) => {
 }
 
 .brand {
-  font-size: 1.25rem;
   text-decoration: none;
-  color: var(--text-primary);
   padding: 0.5rem 1rem;
   margin-right: 1rem;
   white-space: nowrap;
   margin-left: 170px;
   transition: margin-left 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &.sidebar-expanded {
     margin-left: 180px;
@@ -234,12 +241,34 @@ const handleSearchSelect = (type: string, item: any) => {
   &.mobile-brand {
     margin-left: 0;
     padding: 0.5rem;
-    font-size: 1.125rem;
-    flex: 1;
+    justify-content: flex-start;
   }
 
-  &:hover {
-    color: var(--text-secondary);
+  .brand-logo {
+    height: 50px;
+    width: auto;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: var(--logo-filter);
+      transition: filter 0.3s ease;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .brand-logo {
+      height: 54px;
+      padding: 2px 4px;
+    }
   }
 }
 
@@ -319,9 +348,14 @@ const handleSearchSelect = (type: string, item: any) => {
       color: var(--text-primary);
     }
 
-    .user-icon-fallback {
-      font-size: 1.2rem;
-      color: var(--text-primary);
+    .topbar-user-avatar {
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        transform: scale(1.05);
+      }
     }
 
     .login-button {
@@ -353,20 +387,7 @@ const handleSearchSelect = (type: string, item: any) => {
     }
   }
 
-  // 用户头像样式
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid var(--border-secondary);
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
+  // Remove old user-avatar styles as we now use UserAvatar component
 
   .dropdown-menu {
     display: none;
@@ -452,9 +473,8 @@ const handleSearchSelect = (type: string, item: any) => {
     }
   }
   
-  .user-avatar {
-    width: 36px;
-    height: 36px;
+  .topbar-user-avatar {
+    /* Size handled by UserAvatar component's "sm" size */
   }
 }
 

@@ -103,7 +103,7 @@ watch(isHovered, (newValue: boolean) => {
     <div class="sidebar-content">
       <div class="sidebar-header">
         <div class="uniKonwn-logo">
-          <img src="/public/image/uniKorn.png" alt="uniKonwn" />
+          <img src="/icons/sidebar_logo.svg" alt="uniKonwn" />
         </div>
       </div>
       <ul class="nav-items">
@@ -113,7 +113,7 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path === '/' }"
             @click="handleNavClick"
           >
-            <span class="nav-icon">🏠</span>
+            <img src="/icons/sidebar_homelogo.svg" alt="首页" class="nav-icon" />
             <span class="nav-text">首页</span>
           </NuxtLink>
         </li>
@@ -123,7 +123,7 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path.startsWith('/forum') }"
             @click="handleNavClick"
           >
-            <span class="nav-icon">💬</span>
+            <img src="/icons/sidebar_forumlogo.svg" alt="论坛" class="nav-icon" />
             <span class="nav-text">论坛</span>
           </NuxtLink>
         </li>
@@ -133,7 +133,7 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path.startsWith('/courses') }"
             @click="handleNavClick"
           >
-            <span class="nav-icon">📚</span>
+            <img src="/icons/sidebar_courselogo.svg" alt="课程" class="nav-icon" />
             <span class="nav-text">课程</span>
           </NuxtLink>
         </li>
@@ -145,7 +145,7 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path.startsWith('/users/') }"
             @click="handleNavClick"
           >
-            <span class="nav-icon">👤</span>
+            <img src="/icons/sidebar_userlogo.svg" alt="用户" class="nav-icon" />
             <span class="nav-text">用户</span>
           </NuxtLink>
           <!-- Show login link when not logged in -->
@@ -155,17 +155,14 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path === '/login' }"
             @click="handleNavClick"
           >
-            <span class="nav-icon">🔑</span>
+            <img src="/icons/sidebar_userlogo.svg" alt="登录" class="nav-icon" />
             <span class="nav-text">登录</span>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="https://wiki.hkust-gz.top">
-            <img
-              src="/image/WebsiteAddress/wiki.png"
-              alt="Wiki"
-              class="nav-icon"
-            />
+          <NuxtLink to="https://wiki.hkust-gz.top" target="_blank" rel="noopener noreferrer">
+<!--            <span class="nav-icon">📚</span>-->
+            <img src="/icons/wiki-pure.svg" alt="登录" class="nav-icon" />
             <span class="nav-text">HKUST-GZ Wiki</span>
           </NuxtLink>
         </li>
@@ -201,6 +198,7 @@ watch(isHovered, (newValue: boolean) => {
     height: 100%;
     object-fit: cover;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: var(--logo-filter);
   }
 
   &:hover {
@@ -303,6 +301,12 @@ watch(isHovered, (newValue: boolean) => {
         justify-content: center;
         width: 24px;
         height: 24px;
+        transition: all 0.3s ease;
+        
+        svg {
+          width: 100%;
+          height: 100%;
+        }
       }
 
       .nav-text {

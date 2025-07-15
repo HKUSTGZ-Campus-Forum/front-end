@@ -93,9 +93,12 @@ export function useSearch() {
   // Load search history from localStorage
   const loadSearchHistory = () => {
     try {
-      const stored = localStorage.getItem('search_history')
-      if (stored) {
-        searchHistory.value = JSON.parse(stored)
+      // Check if we're in the browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem('search_history')
+        if (stored) {
+          searchHistory.value = JSON.parse(stored)
+        }
       }
     } catch (error) {
       console.error('Failed to load search history:', error)
@@ -123,7 +126,9 @@ export function useSearch() {
     
     // Save to localStorage
     try {
-      localStorage.setItem('search_history', JSON.stringify(searchHistory.value))
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('search_history', JSON.stringify(searchHistory.value))
+      }
     } catch (error) {
       console.error('Failed to save search history:', error)
     }
@@ -133,7 +138,9 @@ export function useSearch() {
   const clearSearchHistory = () => {
     searchHistory.value = []
     try {
-      localStorage.removeItem('search_history')
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem('search_history')
+      }
     } catch (error) {
       console.error('Failed to clear search history:', error)
     }

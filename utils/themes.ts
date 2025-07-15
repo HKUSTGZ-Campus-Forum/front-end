@@ -562,6 +562,38 @@ export function getThemesByCategory(category: 'light' | 'dark' | 'colored'): The
   return themes.filter(theme => theme.category === category);
 }
 
+// Logo filter generation for theme adaptation
+export function getLogoFilter(themeId: string): string {
+  switch (themeId) {
+    case 'light':
+      // Light theme - keep original colors
+      return 'brightness(0.4) saturate(1.3)';
+    
+    case 'dark':
+      // Dark theme - invert colors and adjust brightness
+      return 'brightness(1.6)';
+    
+    case 'cafe':
+      // Cafe theme - warm brown tones
+      return 'sepia(1) saturate(1.2) hue-rotate(15deg) brightness(0.8)';
+    
+    case 'pro-tech':
+      // Pro-tech theme - cool blue tones
+      return 'brightness(1.6)';
+    
+    case 'ocean':
+      // Ocean theme - blue tones
+      return 'hue-rotate(200deg) saturate(1.3) brightness(0.9)';
+    
+    case 'sunset':
+      // Sunset theme - warm red/orange tones
+      return 'hue-rotate(350deg) saturate(1.4) brightness(0.9)';
+    
+    default:
+      return 'none';
+  }
+}
+
 // CSS Variable generation
 export function generateCSSVariables(theme: ThemeConfig): Record<string, string> {
   const variables: Record<string, string> = {};
@@ -650,6 +682,9 @@ export function generateCSSVariables(theme: ThemeConfig): Record<string, string>
   variables['--background-color'] = theme.background.primary;
   variables['--background-image'] = theme.background.image || 'none';
   variables['--background-opacity'] = theme.effects.opacity.medium.toString();
+  
+  // Logo filter for theme adaptation
+  variables['--logo-filter'] = getLogoFilter(theme.id);
   
   return variables;
 }
