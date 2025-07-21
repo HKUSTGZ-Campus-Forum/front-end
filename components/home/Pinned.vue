@@ -139,7 +139,7 @@ const handleSearchSelect = (type: string, item: any) => {
                 <NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink>
               </li>
               <li>
-                <NuxtLink class="dropdown-item" to="/setting/background">设置</NuxtLink>
+                <NuxtLink class="dropdown-item" to="/setting/theme">设置</NuxtLink>
               </li>
               <li><hr class="divider" /></li>
               <li>
