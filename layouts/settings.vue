@@ -3,7 +3,7 @@
     <div class="settings-sidebar">
       <h3>设置</h3>
       <nav>
-        <NuxtLink to="/setting/background">背景设置</NuxtLink>
+        <NuxtLink to="/setting/theme">主题设置</NuxtLink>
         <NuxtLink to="/setting/account">账号设置</NuxtLink>
         <NuxtLink to="/setting/notifications">通知设置</NuxtLink>
         <!-- 更多设置链接 -->
