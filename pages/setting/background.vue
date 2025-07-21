@@ -9,10 +9,8 @@ const themeStore = useThemeStore();
 
 // 自动重定向到新的主题设置页面
 onMounted(() => {
-  // 给用户一点时间看到重定向消息
-  setTimeout(() => {
-    navigateTo('/setting/theme');
-  }, 2000);
+  // 立即跳转，不显示通知
+  navigateTo('/setting/theme');
 });
 </script>
 
