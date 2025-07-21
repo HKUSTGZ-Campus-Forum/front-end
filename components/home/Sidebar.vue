@@ -159,6 +159,16 @@ watch(isHovered, (newValue: boolean) => {
             <span class="nav-text">登录</span>
           </NuxtLink>
         </li>
+        <!-- External Links Divider -->
+        <li class="nav-divider">
+          <hr class="nav-separator" />
+        </li>
+        <li>
+          <NuxtLink to="https://scheduler.unikorn.axfff.com/dashboard" target="_blank" rel="noopener noreferrer">
+            <img src="/icons/sidebar_schedulerlogo.svg" alt="课程表" class="nav-icon" />
+            <span class="nav-text">排课助手</span>
+          </NuxtLink>
+        </li>
         <li>
           <NuxtLink to="https://wiki.hkust-gz.top" target="_blank" rel="noopener noreferrer">
 <!--            <span class="nav-icon">📚</span>-->
@@ -334,6 +344,21 @@ watch(isHovered, (newValue: boolean) => {
           background-color: var(--interactive-primary);
           border-radius: 0 2px 2px 0;
         }
+      }
+    }
+
+    // Navigation divider styles
+    .nav-divider {
+      margin: 1rem 0;
+      padding: 0;
+
+      .nav-separator {
+        border: none;
+        height: 1px;
+        background: var(--border-primary);
+        opacity: 0.6;
+        margin: 0;
+        transition: background var(--transition-normal);
       }
     }
   }
