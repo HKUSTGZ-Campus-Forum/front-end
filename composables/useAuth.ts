@@ -340,11 +340,8 @@ export function useAuth() {
         userSet: !!user.value
       });
 
-      if (user.value?.isFirstLogin) {
-        navigateTo("/setting/background");
-      } else {
-        navigateTo("/");
-      }
+      // Don't auto-redirect here - let the calling page handle redirects
+      // This allows for proper "return to previous page" functionality
 
       return user.value;
     } catch (err) {

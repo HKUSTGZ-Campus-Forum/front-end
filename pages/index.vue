@@ -212,10 +212,6 @@ onUnmounted(() => {
           >
             <div class="post-header">
               <h3 class="post-title">{{ post.title }}</h3>
-              <div class="post-score">
-                <i class="fas fa-fire"></i>
-                {{ post.hot_score }}
-              </div>
             </div>
 
             <div class="post-author" v-if="post.author">
@@ -246,14 +242,17 @@ onUnmounted(() => {
             <div class="post-stats">
               <div class="stat">
                 <i class="fas fa-heart"></i>
+                <span class="stat-label">点赞</span>
                 {{ post.reaction_count }}
               </div>
               <div class="stat">
                 <i class="fas fa-comment"></i>
+                <span class="stat-label">评论</span>
                 {{ post.comment_count }}
               </div>
               <div class="stat">
                 <i class="fas fa-eye"></i>
+                <span class="stat-label">浏览</span>
                 {{ post.view_count }}
               </div>
               <div class="post-time">
@@ -481,17 +480,20 @@ onUnmounted(() => {
         color: var(--text-secondary);
       }
 
-      // Different hover colors for each link
+      // Subtle hover colors for visual consistency
       &:nth-child(1):hover {
-        background: var(--semantic-success);
+        background: var(--surface-elevated);
+        border-color: rgba(34, 197, 94, 0.3);
       }
 
       &:nth-child(2):hover {
-        background: var(--semantic-warning);
+        background: var(--surface-elevated);
+        border-color: rgba(245, 158, 11, 0.3);
       }
 
       &:nth-child(3):hover {
-        background: var(--semantic-error);
+        background: var(--surface-elevated);
+        border-color: rgba(239, 68, 68, 0.3);
       }
     }
   }
@@ -681,20 +683,6 @@ onUnmounted(() => {
         overflow-wrap: break-word;
       }
 
-      .post-score {
-        background: linear-gradient(45deg, var(--interactive-primary), var(--semantic-warning));
-        color: var(--text-inverse);
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        flex-shrink: 0;
-        // Ensure proper touch target size
-        min-height: 28px;
-      }
     }
 
     .post-author {
@@ -781,6 +769,12 @@ onUnmounted(() => {
 
         i {
           color: var(--text-muted);
+        }
+
+        .stat-label {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          font-weight: 500;
         }
       }
 
@@ -1016,10 +1010,6 @@ onUnmounted(() => {
           line-height: 1.3;
         }
         
-        .post-score {
-          font-size: 0.7rem;
-          padding: 0.2rem 0.4rem;
-        }
       }
       
       .post-author {

@@ -1,21 +1,50 @@
 <!-- components/forum/EmojiReactions.vue -->
 <template>
   <div class="emoji-reactions">
-    
-    <!-- 已选择的表情显示区 -->
-    <div class="reactions-display" v-if="Object.keys(reactions).length > 0">
+    <!-- 紧凑的反应显示区 - 单行布局 -->
+    <div class="reactions-row">
+      <!-- 默认反应按钮组 (ID1点赞 + 更多按钮) - 放在最前面 -->
+      <div class="default-reaction-group">
+        <!-- 快速点赞按钮 (默认ID1表情) -->
+        <button
+          @click="quickReaction"
+          class="default-reaction-btn"
+          :class="{ 'user-reacted': isQuickReacted }"
+          :title="isLoggedIn ? '点赞' : '请先登录后点赞'"
+        >
+          <span class="emoji">
+            <img 
+              v-if="defaultEmojiData?.image_url" 
+              :src="defaultEmojiData.image_url" 
+              :alt="defaultEmojiData.description || 'emoji'"
+              class="emoji-image"
+            />
+            <span v-else>{{ defaultEmojiData ? getEmojiFromCode(defaultEmojiData.emoji_code) || "❤️" : "❤️" }}</span>
+          </span>
+          <span v-if="quickReactionCount > 0" class="count">{{ quickReactionCount }}</span>
+        </button>
+
+        <!-- 更多表情按钮 -->
+        <button
+          @click="toggleEmojiPicker"
+          class="expand-btn"
+          :class="{ active: showEmojiPicker }"
+          title="更多表情"
+        >
+          <span class="chevron-icon" :class="{ 'rotated': showEmojiPicker }">▼</span>
+        </button>
+      </div>
+
+      <!-- 现有的表情反应 (过滤掉ID1，因为它有专门的默认按钮) -->
       <button
-        v-for="(reaction, emojiId) in reactions"
+        v-for="(reaction, emojiId) in filteredReactions"
         :key="emojiId"
         @click="toggleReaction(reaction.emoji)"
         class="reaction-item"
         :class="{
           'user-reacted': isUserReacted(reaction.emoji.id),
-          'single-selected':
-            userReactions.length === 1 && isUserReacted(reaction.emoji.id),
         }"
       >
-        <!-- Modified: Use image URL if available, fallback to emoji code -->
         <span class="emoji">
           <img 
             v-if="reaction.emoji.image_url" 
@@ -26,58 +55,41 @@
           <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "❓" }}</span>
         </span>
         <span class="count">{{ reaction.count }}</span>
-        <!-- 🔥 添加用户选择指示器 -->
-        <span v-if="isUserReacted(reaction.emoji.id)" class="user-indicator"
-          >👤</span
-        >
       </button>
     </div>
 
-    <!-- 添加表情按钮 -->
-    <div class="add-reaction">
-      <button
-        @click="toggleEmojiPicker"
-        class="add-emoji-btn"
-        :class="{ active: showEmojiPicker }"
-      >
-        <i class="fas fa-smile"></i>
-        <span>添加表情</span>
-      </button>
-      
+    <!-- 表情选择器 - 紧贴默认按钮组 -->
+    <div v-if="showEmojiPicker" class="emoji-picker" @click.stop>
+      <div class="emoji-categories">
+        <div class="emoji-category">
+          <div class="category-title">
+            可用表情 ({{ availableEmojis.length }} 个)
+          </div>
 
-      <!-- 表情选择器 -->
-      <div v-if="showEmojiPicker" class="emoji-picker" @click.stop>
-        <div class="emoji-categories">
-          <div class="emoji-category">
-            <div class="category-title">
-              可用表情 ({{ availableEmojis.length }} 个)
-            </div>
+          <!-- 表情网格 -->
+          <div v-if="availableEmojis.length > 0" class="emoji-grid">
+            <button
+              v-for="(emoji, index) in availableEmojis"
+              :key="emoji.id || index"
+              @click="selectEmoji(emoji)"
+              class="emoji-option"
+              :title="`${emoji.description || '表情'} (ID: ${emoji.id}) - URL: ${emoji.image_url}`"
+            >
+              <!-- Always use fallback emoji since OSS images have display issues -->
+              <span class="emoji-fallback">{{ getEmojiFromCode(emoji.emoji_code) || "❓" }}</span>
+            </button>
+          </div>
 
-            <!-- 表情网格 -->
-            <div v-if="availableEmojis.length > 0" class="emoji-grid">
-              <button
-                v-for="(emoji, index) in availableEmojis"
-                :key="emoji.id || index"
-                @click="selectEmoji(emoji)"
-                class="emoji-option"
-                :title="`${emoji.description || '表情'} (ID: ${emoji.id}) - URL: ${emoji.image_url}`"
-              >
-                <!-- Always use fallback emoji since OSS images have display issues -->
-                <span class="emoji-fallback">{{ getEmojiFromCode(emoji.emoji_code) || "❓" }}</span>
-              </button>
-            </div>
-
-            <!-- 无表情状态 -->
-            <div v-else class="no-emojis">
-              <p>😕 暂无可用表情</p>
-              <p style="font-size: 0.75rem; color: #999">
-                数组长度: {{ availableEmojis.length }}<br />
-                数据: {{ availableEmojis }}
-              </p>
-              <button @click="fetchAvailableEmojis" class="retry-btn">
-                🔄 重新获取
-              </button>
-            </div>
+          <!-- 无表情状态 -->
+          <div v-else class="no-emojis">
+            <p>😕 暂无可用表情</p>
+            <p style="font-size: 0.75rem; color: #999">
+              数组长度: {{ availableEmojis.length }}<br />
+              数据: {{ availableEmojis }}
+            </p>
+            <button @click="fetchAvailableEmojis" class="retry-btn">
+              🔄 重新获取
+            </button>
           </div>
         </div>
       </div>
@@ -116,6 +128,37 @@ const totalReactions = computed(() => {
     (sum, reaction) => sum + reaction.count,
     0
   );
+});
+
+// 快速反应相关计算属性 (假设ID1是点赞表情)
+const QUICK_REACTION_ID = 1;
+const isQuickReacted = computed(() => {
+  return userReactions.value.some(emoji => emoji.id === QUICK_REACTION_ID);
+});
+
+const quickReactionCount = computed(() => {
+  return reactions.value[QUICK_REACTION_ID]?.count || 0;
+});
+
+// 过滤掉ID1的反应，因为它有专门的默认按钮
+const filteredReactions = computed(() => {
+  const filtered = {};
+  Object.keys(reactions.value).forEach(emojiId => {
+    if (parseInt(emojiId) !== QUICK_REACTION_ID) {
+      filtered[emojiId] = reactions.value[emojiId];
+    }
+  });
+  return filtered;
+});
+
+// 获取默认表情数据（ID1）
+const defaultEmojiData = computed(() => {
+  // 先从现有反应中查找ID1
+  if (reactions.value[QUICK_REACTION_ID]) {
+    return reactions.value[QUICK_REACTION_ID].emoji;
+  }
+  // 如果没有反应数据，从可用表情中查找ID1
+  return availableEmojis.value.find(emoji => emoji.id === QUICK_REACTION_ID);
 });
 
 // 检查用户是否已经对某个表情做过反应
@@ -260,6 +303,23 @@ const getEmojiFromCode = (emojiCode) => {
 
   // 否则从映射表中查找
   return emojiMap[emojiCode] || emojiCode;
+};
+
+// 快速反应方法
+const quickReaction = async () => {
+  if (!isLoggedIn.value) {
+    alert("请先登录后再进行表情反应");
+    return;
+  }
+
+  try {
+    // 创建一个虚拟的emoji对象用于快速反应
+    const quickEmoji = { id: QUICK_REACTION_ID };
+    await toggleReaction(quickEmoji);
+  } catch (error) {
+    console.error("快速反应失败:", error);
+    alert("反应失败，请重试");
+  }
 };
 
 // 方法
@@ -475,7 +535,8 @@ const fetchReactions = async () => {
       url += `?user_id=${user.value.id}`;
     }
 
-    const response = await fetchWithAuth(url);
+    // 使用 fetchPublic 让未登录用户也能看到反应计数
+    const response = isLoggedIn.value ? await fetchWithAuth(url) : await fetchPublic(url);
 
     if (!response.ok) {
       throw new Error("获取反应失败");
@@ -518,35 +579,18 @@ onUnmounted(() => {
 });
 </script>
 
-<!-- 样式保持不变 -->
+<!-- 紧凑布局样式 -->
 <style lang="scss" scoped>
 .emoji-reactions {
   position: relative;
-  margin-top: 1rem;
+  margin: 1rem 0;
 }
 
-.reactions-display {
+.reactions-row {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.reaction-item {
-  // 原有样式保持不变...
-
-  &.single-selected {
-    background: #e8f5e8;
-    border-color: #4caf50;
-    color: #2e7d32;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
-  }
-
-  .user-indicator {
-    font-size: 0.7rem;
-    opacity: 0.7;
-    margin-left: 0.2rem;
-  }
+  flex-wrap: wrap;
 }
 
 .reaction-item {
@@ -554,22 +598,24 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-secondary);
   border-radius: 16px;
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.85rem;
+  color: var(--text-primary);
 
   &:hover {
-    background: #e9ecef;
+    background: var(--surface-elevated);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-small);
   }
 
   &.user-reacted {
-    background: #e3f2fd;
-    border-color: #2196f3;
-    color: #1976d2;
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--interactive-primary);
+    color: var(--interactive-primary);
   }
 
   .emoji {
@@ -588,57 +634,108 @@ onUnmounted(() => {
     font-weight: 500;
     min-width: 1rem;
     text-align: center;
+    color: var(--text-primary);
   }
 }
 
-.add-reaction {
-  position: relative;
+// 默认反应按钮组 - 融合设计
+.default-reaction-group {
+  display: flex;
+  border: 1px solid var(--border-secondary);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  overflow: hidden;
 }
 
-.add-emoji-btn {
+// 默认反应按钮 (ID1点赞)
+.default-reaction-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px dashed #ccc;
-  border-radius: 8px;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-right: 1px solid var(--border-secondary);
   background: transparent;
-  color: #666;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.85rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+
+  &:hover {
+    background: var(--surface-elevated);
+  }
+
+  &.user-reacted {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--semantic-success);
+  }
+
+  .count {
+    font-weight: 500;
+    font-size: 0.85rem;
+    min-width: 1rem;
+    text-align: center;
+    color: var(--text-primary);
+  }
+}
+
+// 展开按钮
+.expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.4rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  min-width: 1.5rem;
 
   &:hover,
   &.active {
-    border-color: #007bff;
-    color: #007bff;
-    background: #f8f9ff;
+    background: var(--surface-elevated);
+    color: var(--interactive-primary);
   }
 
-  i {
-    font-size: 1rem;
+  .chevron-icon {
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+    display: block;
+    line-height: 1;
+    
+    &.rotated {
+      transform: rotate(180deg);
+    }
   }
 }
 
+// 整个按钮组的hover效果
+.default-reaction-group:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+// 移除旧的 add-reaction 样式，现在使用内联布局
+
 .emoji-picker {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 0.25rem);
   left: 0;
   z-index: 1000;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  width: 320px;
-  max-height: 400px;
+  box-shadow: var(--shadow-large);
+  padding: 0.75rem;
+  width: 280px;
+  max-height: 300px;
   overflow-y: auto;
   animation: emojiPickerSlideIn 0.2s ease-out;
 
   @media (max-width: 768px) {
-    width: 280px;
-    right: 0;
-    left: auto;
+    width: 260px;
+    max-height: 250px;
   }
 }
 
@@ -662,29 +759,29 @@ onUnmounted(() => {
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .emoji-option {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.8rem;
+  height: 1.8rem;
   border: none;
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1rem;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f0f0f0;
-    transform: scale(1.2);
+    background: var(--surface-elevated);
+    transform: scale(1.1);
   }
 
   &:active {
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 
   .emoji-fallback {
