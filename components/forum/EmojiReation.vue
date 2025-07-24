@@ -31,7 +31,7 @@
           :class="{ active: showEmojiPicker }"
           title="更多表情"
         >
-          <i class="fas fa-chevron-down" :class="{ 'rotated': showEmojiPicker }"></i>
+          <span class="chevron-icon" :class="{ 'rotated': showEmojiPicker }">▼</span>
         </button>
       </div>
 
@@ -604,6 +604,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.85rem;
+  color: var(--text-primary);
 
   &:hover {
     background: var(--surface-elevated);
@@ -633,6 +634,7 @@ onUnmounted(() => {
     font-weight: 500;
     min-width: 1rem;
     text-align: center;
+    color: var(--text-primary);
   }
 }
 
@@ -657,6 +659,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 1rem;
+  color: var(--text-primary);
 
   &:hover {
     background: var(--surface-elevated);
@@ -672,6 +675,7 @@ onUnmounted(() => {
     font-size: 0.85rem;
     min-width: 1rem;
     text-align: center;
+    color: var(--text-primary);
   }
 }
 
@@ -685,7 +689,8 @@ onUnmounted(() => {
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  min-width: 1.5rem;
 
   &:hover,
   &.active {
@@ -693,9 +698,11 @@ onUnmounted(() => {
     color: var(--interactive-primary);
   }
 
-  i {
-    font-size: 0.8rem;
+  .chevron-icon {
+    font-size: 0.7rem;
     transition: transform 0.2s ease;
+    display: block;
+    line-height: 1;
     
     &.rotated {
       transform: rotate(180deg);
