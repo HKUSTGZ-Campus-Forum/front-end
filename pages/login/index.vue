@@ -94,11 +94,17 @@ async function handleLogin() {
     isLoading.value = true;
     errorMessage.value = "";
 
-    await login(username.value, password.value, rememberMe.value);
+    const user = await login(username.value, password.value, rememberMe.value);
 
     // 登录成功后重定向
-    const redirectPath = route.query.redirect || "/forum";
-    router.push(redirectPath);
+    if (user?.isFirstLogin) {
+      // 首次登录用户去设置页面
+      router.push("/setting/background");
+    } else {
+      // 返回用户之前访问的页面，或默认跳转到论坛
+      const redirectPath = route.query.redirect || "/";
+      router.push(redirectPath);
+    }
   } catch (error) {
     console.error("登录出错:", error);
     errorMessage.value = error.message || "用户名或密码错误，请重试";

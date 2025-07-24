@@ -15,16 +15,18 @@
   </template>
   
   <script setup>
-  import { useRouter } from 'vue-router';
+  import { useRouter, useRoute } from 'vue-router';
   import RegisterComponent from '~/components/setting/Register.vue';
   
   const router = useRouter();
+  const route = useRoute();
   
   // 处理注册成功
   const handleRegisterSuccess = () => {
-    // 注册成功后延迟跳转到登录页
+    // 注册成功后延迟跳转到登录页，保持redirect参数
     setTimeout(() => {
-      router.push('/login?registered=true');
+      const redirectParam = route.query.redirect ? `&redirect=${encodeURIComponent(route.query.redirect)}` : '';
+      router.push(`/login?registered=true${redirectParam}`);
     }, 1500);
   };
   </script>
