@@ -3,9 +3,41 @@
   <div class="emoji-reactions">
     <!-- 紧凑的反应显示区 - 单行布局 -->
     <div class="reactions-row">
-      <!-- 现有的表情反应 -->
+      <!-- 默认反应按钮组 (ID1点赞 + 更多按钮) - 放在最前面 -->
+      <div class="default-reaction-group">
+        <!-- 快速点赞按钮 (默认ID1表情) -->
+        <button
+          @click="quickReaction"
+          class="default-reaction-btn"
+          :class="{ 'user-reacted': isQuickReacted }"
+          :title="isLoggedIn ? '点赞' : '请先登录后点赞'"
+        >
+          <span class="emoji">
+            <img 
+              v-if="defaultEmojiData?.image_url" 
+              :src="defaultEmojiData.image_url" 
+              :alt="defaultEmojiData.description || 'emoji'"
+              class="emoji-image"
+            />
+            <span v-else>{{ defaultEmojiData ? getEmojiFromCode(defaultEmojiData.emoji_code) || "❤️" : "❤️" }}</span>
+          </span>
+          <span v-if="quickReactionCount > 0" class="count">{{ quickReactionCount }}</span>
+        </button>
+
+        <!-- 更多表情按钮 -->
+        <button
+          @click="toggleEmojiPicker"
+          class="expand-btn"
+          :class="{ active: showEmojiPicker }"
+          title="更多表情"
+        >
+          <i class="fas fa-chevron-down" :class="{ 'rotated': showEmojiPicker }"></i>
+        </button>
+      </div>
+
+      <!-- 现有的表情反应 (过滤掉ID1，因为它有专门的默认按钮) -->
       <button
-        v-for="(reaction, emojiId) in reactions"
+        v-for="(reaction, emojiId) in filteredReactions"
         :key="emojiId"
         @click="toggleReaction(reaction.emoji)"
         class="reaction-item"
@@ -24,30 +56,9 @@
         </span>
         <span class="count">{{ reaction.count }}</span>
       </button>
-
-      <!-- 快速点赞按钮 (默认ID1表情) -->
-      <button
-        @click="quickReaction"
-        class="quick-reaction-btn"
-        :class="{ 'user-reacted': isQuickReacted }"
-        :title="isLoggedIn ? '点赞' : '请先登录后点赞'"
-      >
-        👍
-        <span v-if="quickReactionCount > 0" class="count">{{ quickReactionCount }}</span>
-      </button>
-
-      <!-- 更多表情按钮 -->
-      <button
-        @click="toggleEmojiPicker"
-        class="more-reactions-btn"
-        :class="{ active: showEmojiPicker }"
-        title="更多表情"
-      >
-        <i class="fas fa-plus"></i>
-      </button>
     </div>
 
-    <!-- 表情选择器 -->
+    <!-- 表情选择器 - 紧贴默认按钮组 -->
     <div v-if="showEmojiPicker" class="emoji-picker" @click.stop>
       <div class="emoji-categories">
         <div class="emoji-category">
@@ -127,6 +138,27 @@ const isQuickReacted = computed(() => {
 
 const quickReactionCount = computed(() => {
   return reactions.value[QUICK_REACTION_ID]?.count || 0;
+});
+
+// 过滤掉ID1的反应，因为它有专门的默认按钮
+const filteredReactions = computed(() => {
+  const filtered = {};
+  Object.keys(reactions.value).forEach(emojiId => {
+    if (parseInt(emojiId) !== QUICK_REACTION_ID) {
+      filtered[emojiId] = reactions.value[emojiId];
+    }
+  });
+  return filtered;
+});
+
+// 获取默认表情数据（ID1）
+const defaultEmojiData = computed(() => {
+  // 先从现有反应中查找ID1
+  if (reactions.value[QUICK_REACTION_ID]) {
+    return reactions.value[QUICK_REACTION_ID].emoji;
+  }
+  // 如果没有反应数据，从可用表情中查找ID1
+  return availableEmojis.value.find(emoji => emoji.id === QUICK_REACTION_ID);
 });
 
 // 检查用户是否已经对某个表情做过反应
@@ -551,28 +583,27 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .emoji-reactions {
   position: relative;
-  margin: 0.75rem 0;
+  margin: 1rem 0;
 }
 
 .reactions-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .reaction-item {
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.2rem 0.4rem;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
   border: 1px solid var(--border-secondary);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--surface-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
-  min-height: 28px;
+  font-size: 0.85rem;
 
   &:hover {
     background: var(--surface-elevated);
@@ -590,89 +621,100 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 1rem;
     
     img {
-      width: 1em;
-      height: 1em;
+      width: 1.2em;
+      height: 1.2em;
     }
   }
 
   .count {
     font-weight: 500;
-    font-size: 0.75rem;
-    min-width: 0.8rem;
+    min-width: 1rem;
     text-align: center;
   }
 }
 
-// 快速点赞按钮样式
-.quick-reaction-btn {
+// 默认反应按钮组 - 融合设计
+.default-reaction-group {
+  display: flex;
+  border: 1px solid var(--border-secondary);
+  border-radius: 16px;
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+
+// 默认反应按钮 (ID1点赞)
+.default-reaction-btn {
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.2rem 0.4rem;
-  border: 1px solid var(--border-secondary);
-  border-radius: 12px;
-  background: var(--surface-secondary);
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-right: 1px solid var(--border-secondary);
+  background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.9rem;
-  min-height: 28px;
+  font-size: 1rem;
 
   &:hover {
     background: var(--surface-elevated);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-small);
   }
 
   &.user-reacted {
     background: rgba(34, 197, 94, 0.1);
-    border-color: var(--semantic-success);
     color: var(--semantic-success);
   }
 
   .count {
     font-weight: 500;
-    font-size: 0.75rem;
-    min-width: 0.8rem;
+    font-size: 0.85rem;
+    min-width: 1rem;
     text-align: center;
   }
 }
 
-// 更多表情按钮样式
-.more-reactions-btn {
+// 展开按钮
+.expand-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px dashed var(--border-secondary);
-  border-radius: 12px;
+  padding: 0.25rem 0.4rem;
+  border: none;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.8rem;
   color: var(--text-muted);
 
   &:hover,
   &.active {
-    border-color: var(--interactive-primary);
+    background: var(--surface-elevated);
     color: var(--interactive-primary);
-    background: rgba(59, 130, 246, 0.05);
   }
 
   i {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+    
+    &.rotated {
+      transform: rotate(180deg);
+    }
   }
+}
+
+// 整个按钮组的hover效果
+.default-reaction-group:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
 }
 
 // 移除旧的 add-reaction 样式，现在使用内联布局
 
 .emoji-picker {
   position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  top: calc(100% + 0.25rem);
+  left: 0;
   z-index: 1000;
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
