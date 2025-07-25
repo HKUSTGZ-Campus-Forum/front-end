@@ -74,12 +74,16 @@
           </div>
         </div>
 
-        <div class="post-reactions">
-          <EmojiReactions :post-id="parseInt(postId)" type="post" />
-        </div>
+        <EmojiReactions :post-id="parseInt(postId)" type="post" />
 
-        <div class="post-actions" v-if="canDeletePost">
-          <button class="delete-button" @click="showDeleteConfirm">
+        <div class="post-actions">
+          <button class="share-button" :class="{ 'success': shareSuccess }" @click="sharePost">
+            <i class="fas fa-share-alt" v-if="!shareSuccess"></i>
+            <i class="fas fa-check" v-else></i>
+            <span v-if="!shareSuccess">分享</span>
+            <span v-else>已复制</span>
+          </button>
+          <button v-if="canDeletePost" class="delete-button" @click="showDeleteConfirm">
             <i class="fas fa-trash"></i> 删除
           </button>
         </div>
@@ -186,6 +190,9 @@ const showSuccessModal = ref(false);
 const showErrorModal = ref(false);
 const errorMsg = ref("");
 
+// 分享功能状态
+const shareSuccess = ref(false);
+
 // 图片模态框状态
 const showImageModal = ref(false);
 const currentImageIndex = ref(0);
@@ -281,6 +288,45 @@ const handleSuccessClose = () => {
 const goToUserProfile = () => {
   if (postData.value.user_id) {
     router.push(`/users/${postData.value.user_id}`);
+  }
+};
+
+// 分享帖子功能
+const sharePost = async () => {
+  try {
+    const postUrl = `${window.location.origin}/forum/posts/${postId}`;
+    const shareMessage = `📖 ${postData.value.title}
+🔗 查看详情: ${postUrl}
+ - UniKorn 科广汇`;
+    
+    // 尝试使用现代的 Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(shareMessage);
+    } else {
+      // 降级方案：使用传统的 execCommand
+      const textArea = document.createElement('textarea');
+      textArea.value = shareMessage;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      textArea.remove();
+    }
+    
+    // 显示成功提示
+    shareSuccess.value = true;
+    setTimeout(() => {
+      shareSuccess.value = false;
+    }, 2000);
+    
+  } catch (error) {
+    console.error('复制失败:', error);
+    // 显示错误提示
+    errorMsg.value = '复制失败，请手动复制链接';
+    showErrorModal.value = true;
   }
 };
 
@@ -453,15 +499,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.post-reactions {
-  margin: 2rem 0;
-  padding: 1.5rem 0;
-  border-top: 1px solid var(--border-secondary);
-  border-bottom: 1px solid var(--border-secondary);
-  background: var(--surface-secondary);
-  border-radius: 8px;
-  padding: 1.5rem;
-}
 
 .post-container {
   max-width: 800px;
@@ -737,6 +774,7 @@ onMounted(() => {
 .post-actions {
   display: flex;
   gap: 1rem;
+  margin-top: 1rem;
   margin-bottom: 2rem;
   
   // Mobile layout adjustments
@@ -782,6 +820,51 @@ onMounted(() => {
     // Touch feedback for mobile
     &:active {
       transform: translateY(1px);
+    }
+
+    // Share button styling
+    &.share-button {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--interactive-primary);
+      border: 1px solid var(--interactive-primary);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+
+      i {
+        font-size: 0.9rem;
+        line-height: 1;
+      }
+
+      span {
+        line-height: 1;
+        font-weight: 500;
+      }
+
+      &:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        transform: translateY(-1px);
+      }
+      
+      &:active {
+        background-color: rgba(59, 130, 246, 0.3);
+        transform: translateY(0);
+      }
+
+      // Success state when copied
+      &.success {
+        background-color: rgba(34, 197, 94, 0.1);
+        color: var(--semantic-success);
+        border-color: var(--semantic-success);
+        
+        &:hover {
+          background-color: rgba(34, 197, 94, 0.2);
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+      }
     }
 
     // Delete button styling
