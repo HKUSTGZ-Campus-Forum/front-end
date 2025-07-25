@@ -187,7 +187,7 @@ onUnmounted(() => {
         
         <!-- 外部链接 -->
         <div class="external-links-sidebar">
-          <h3 class="sidebar-title">相关链接</h3>
+          <h3 class="sidebar-title">快捷链接</h3>
           <div class="external-links-list">
             <a href="https://wiki.hkust-gz.top/en/home" target="_blank" class="external-link-sidebar">
               <i class="fas fa-book-open"></i>
@@ -204,6 +204,55 @@ onUnmounted(() => {
               <span>Canvas</span>
               <i class="fas fa-external-link-alt external-icon"></i>
             </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 咕咕聊天室快速预览 -->
+      <div class="gugu-section">
+        <h2 class="section-title">
+          <span>💬</span>
+          咕咕聊天室
+          <span class="live-indicator">
+            <span class="live-dot"></span>
+            实时聊天
+          </span>
+        </h2>
+        <div class="gugu-preview">
+          <div class="gugu-content">
+            <p class="gugu-description">与同学们实时交流，分享生活点滴，畅聊学习心得</p>
+            <div class="gugu-actions">
+              <button @click="goToGugu" class="btn btn-primary">
+                <span>💬</span>
+                进入咕咕聊天室
+              </button>
+            </div>
+          </div>
+          <div class="gugu-preview-messages">
+            <!-- 加载状态 -->
+            <div v-if="isLoadingGugu" class="gugu-loading">
+              <div class="loading-spinner"></div>
+              <p>正在加载最新消息...</p>
+            </div>
+
+            <!-- 有消息时显示 -->
+            <div v-else-if="recentGuguMessages.length > 0" class="preview-messages">
+              <div
+                  v-for="message in recentGuguMessages"
+                  :key="message.id"
+                  class="preview-message"
+              >
+                <span class="message-author">{{ message.author || '匿名用户' }}</span>
+                <span class="message-text">{{ message.content }}</span>
+                <span class="message-time">{{ formatTimeAgo(message.created_at) }}</span>
+              </div>
+            </div>
+
+            <!-- 无消息时显示 -->
+            <div v-else class="no-messages">
+              <span>💬</span>
+              <p>还没有消息，快来开启第一条对话吧！</p>
+            </div>
           </div>
         </div>
       </div>
@@ -303,55 +352,6 @@ onUnmounted(() => {
             <i class="fas fa-plus"></i>
             发布帖子
           </button>
-        </div>
-      </div>
-
-      <!-- 咕咕聊天室快速预览 -->
-      <div class="gugu-section">
-        <h2 class="section-title">
-          <span>💬</span>
-          咕咕聊天室
-          <span class="live-indicator">
-            <span class="live-dot"></span>
-            实时聊天
-          </span>
-        </h2>
-        <div class="gugu-preview">
-          <div class="gugu-content">
-            <p class="gugu-description">与同学们实时交流，分享生活点滴，畅聊学习心得</p>
-            <div class="gugu-actions">
-              <button @click="goToGugu" class="btn btn-primary">
-                <span>💬</span>
-                进入咕咕聊天室
-              </button>
-            </div>
-          </div>
-          <div class="gugu-preview-messages">
-            <!-- 加载状态 -->
-            <div v-if="isLoadingGugu" class="gugu-loading">
-              <div class="loading-spinner"></div>
-              <p>正在加载最新消息...</p>
-            </div>
-            
-            <!-- 有消息时显示 -->
-            <div v-else-if="recentGuguMessages.length > 0" class="preview-messages">
-              <div 
-                v-for="message in recentGuguMessages" 
-                :key="message.id"
-                class="preview-message"
-              >
-                <span class="message-author">{{ message.author || '匿名用户' }}</span>
-                <span class="message-text">{{ message.content }}</span>
-                <span class="message-time">{{ formatTimeAgo(message.created_at) }}</span>
-              </div>
-            </div>
-            
-            <!-- 无消息时显示 -->
-            <div v-else class="no-messages">
-              <span>💬</span>
-              <p>还没有消息，快来开启第一条对话吧！</p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -934,13 +934,15 @@ onUnmounted(() => {
 
     .gugu-preview-messages {
       background: var(--surface-secondary);
-      padding: 1.5rem;
+      padding: 0.75rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      min-height: 200px;
 
       @media (max-width: 768px) {
-        padding: 1rem;
+        padding: 0.5rem;
+        min-height: 180px;
       }
 
       .gugu-loading {
@@ -966,52 +968,54 @@ onUnmounted(() => {
       .preview-messages {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.25rem;
       }
 
       .preview-message {
         background: var(--surface-primary);
-        padding: 0.75rem;
-        border-radius: 8px;
-        border-left: 3px solid var(--interactive-primary);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border-left: 2px solid var(--interactive-primary);
 
         .message-author {
           font-weight: 600;
           color: var(--interactive-primary);
-          font-size: 0.85rem;
-          display: block;
-          margin-bottom: 0.25rem;
+          font-size: 0.8rem;
+          display: inline;
+          margin-right: 0.5rem;
         }
 
         .message-text {
           color: var(--text-primary);
-          font-size: 0.9rem;
-          display: block;
-          margin-bottom: 0.25rem;
-          line-height: 1.4;
+          font-size: 0.85rem;
+          display: inline;
+          line-height: 1.3;
         }
 
         .message-time {
           color: var(--text-muted);
-          font-size: 0.75rem;
+          font-size: 0.7rem;
+          float: right;
+          margin-top: 0.1rem;
         }
       }
 
       .no-messages {
         text-align: center;
         color: var(--text-muted);
-        padding: 1rem;
+        padding: 0.5rem;
 
         span {
-          font-size: 2rem;
+          font-size: 1.5rem;
           display: block;
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.25rem;
           opacity: 0.6;
         }
 
         p {
-          font-size: 0.9rem;
+          font-size: 0.8rem;
           margin: 0;
+          line-height: 1.3;
         }
       }
     }

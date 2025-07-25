@@ -232,14 +232,14 @@ onUnmounted(() => {
               <div class="message-content">
                 <div class="message-header" v-if="message.author_id !== user?.id">
                   <span class="message-author">{{ message.author || '匿名用户' }}</span>
-                  <span class="message-time">{{ formatTime(message.created_at) }}</span>
                 </div>
                 
                 <div class="message-bubble">
                   <p class="message-text">{{ message.content }}</p>
-                  <span v-if="message.author_id === user?.id" class="message-time-own">
-                    {{ formatTime(message.created_at) }}
-                  </span>
+                </div>
+                
+                <div class="message-time-container">
+                  <span class="message-time">{{ formatTime(message.created_at) }}</span>
                 </div>
               </div>
             </div>
@@ -422,7 +422,11 @@ onUnmounted(() => {
         .message-bubble {
           background: var(--interactive-primary);
           color: var(--text-inverse);
-          border-radius: 16px 16px 4px 16px;
+          border-radius: 16px 4px 16px 16px;
+        }
+
+        .message-time-container {
+          text-align: right;
         }
       }
     }
@@ -430,6 +434,16 @@ onUnmounted(() => {
     &:not(.own-message) {
       .message-content {
         max-width: 75%;
+      }
+      
+      .message-bubble {
+        background: var(--surface-secondary);
+        color: var(--text-primary);
+        border-radius: 4px 16px 16px 16px;
+      }
+
+      .message-time-container {
+        text-align: left;
       }
     }
 
@@ -457,6 +471,10 @@ onUnmounted(() => {
         color: var(--interactive-primary);
         font-size: 0.875rem;
       }
+    }
+
+    .message-time-container {
+      margin-top: 0.25rem;
 
       .message-time {
         font-size: 0.75rem;
@@ -465,14 +483,13 @@ onUnmounted(() => {
     }
 
     .message-bubble {
-      background: var(--surface-secondary);
       padding: 0.5rem 0.75rem;
-      border-radius: 4px 16px 16px 16px;
       position: relative;
       box-shadow: var(--shadow-small);
       display: inline-block;
       max-width: 100%;
       word-wrap: break-word;
+      border-radius: 16px;
 
       .message-text {
         margin: 0;
@@ -481,13 +498,6 @@ onUnmounted(() => {
         white-space: pre-wrap;
       }
 
-      .message-time-own {
-        font-size: 0.75rem;
-        color: rgba(255, 255, 255, 0.7);
-        margin-top: 0.25rem;
-        display: block;
-        text-align: right;
-      }
     }
   }
 }
