@@ -74,9 +74,7 @@
           </div>
         </div>
 
-        <div class="post-reactions">
-          <EmojiReactions :post-id="parseInt(postId)" type="post" />
-        </div>
+        <EmojiReactions :post-id="parseInt(postId)" type="post" />
 
         <div class="post-actions">
           <button class="share-button" :class="{ 'success': shareSuccess }" @click="sharePost">
@@ -298,12 +296,8 @@ const sharePost = async () => {
   try {
     const postUrl = `${window.location.origin}/forum/posts/${postId}`;
     const shareMessage = `📖 ${postData.value.title}
-
-来自 UniKorn 科广汇 - 科广学生自己的评课+生活社区
-
-🔗 查看详情：${postUrl}
-
-#校园论坛 #科广汇 #学生社区`;
+🔗 查看详情: ${postUrl}
+ - UniKorn 科广汇`;
     
     // 尝试使用现代的 Clipboard API
     if (navigator.clipboard && window.isSecureContext) {
@@ -505,15 +499,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.post-reactions {
-  margin: 2rem 0;
-  padding: 1.5rem 0;
-  border-top: 1px solid var(--border-secondary);
-  border-bottom: 1px solid var(--border-secondary);
-  background: var(--surface-secondary);
-  border-radius: 8px;
-  padding: 1.5rem;
-}
 
 .post-container {
   max-width: 800px;
@@ -789,6 +774,7 @@ onMounted(() => {
 .post-actions {
   display: flex;
   gap: 1rem;
+  margin-top: 1rem;
   margin-bottom: 2rem;
   
   // Mobile layout adjustments

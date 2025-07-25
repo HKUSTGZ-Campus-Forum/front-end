@@ -583,7 +583,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .emoji-reactions {
   position: relative;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
 }
 
 .reactions-row {
@@ -597,7 +597,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.05rem 0.3rem;
   border: 1px solid var(--border-secondary);
   border-radius: 16px;
   background: var(--surface-secondary);
@@ -622,11 +622,11 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.1rem;
     
     img {
-      width: 1.2em;
-      height: 1.2em;
+      width: 1.4em;
+      height: 1.4em;
     }
   }
 
@@ -652,13 +652,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.05rem 0.3rem;
   border: none;
   border-right: 1px solid var(--border-secondary);
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
 
   &:hover {
@@ -684,13 +684,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 0.4rem;
+  padding: 0.05rem 0.25rem;
   border: none;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-secondary);
-  min-width: 1.5rem;
+  min-width: 1.2rem;
 
   &:hover,
   &.active {
