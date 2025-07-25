@@ -103,7 +103,7 @@ watch(isHovered, (newValue: boolean) => {
     <div class="sidebar-content">
       <div class="sidebar-header">
         <div class="uniKonwn-logo">
-          <img src="/icons/sidebar_logo.svg" alt="uniKonwn" />
+          <img src="/image/uniKorn.png" alt="uniKonwn" />
         </div>
       </div>
       <ul class="nav-items">
@@ -208,7 +208,7 @@ watch(isHovered, (newValue: boolean) => {
     height: 100%;
     object-fit: cover;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    filter: var(--logo-filter);
+    //filter: var(--logo-filter);
   }
 
   &:hover {

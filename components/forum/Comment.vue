@@ -290,7 +290,7 @@ onMounted(() => {
 .comment-content {
   background: var(--surface-primary);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0rem 1rem;
   
   // Mobile padding adjustments
   @media (max-width: 480px) {
@@ -450,7 +450,7 @@ onMounted(() => {
 }
 
 .comment-reactions {
-  margin-top: 0.75rem;
+  margin-top: 0.02rem;
   margin-left: 1rem;
   
   // Mobile spacing adjustments
