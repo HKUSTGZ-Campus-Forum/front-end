@@ -622,11 +622,11 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.1rem;
     
     img {
-      width: 1.2em;
-      height: 1.2em;
+      width: 1.4em;
+      height: 1.4em;
     }
   }
 

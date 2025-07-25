@@ -102,9 +102,6 @@ const goToUserProfile = (userId?: number) => {
         <span class="author">{{ displayAuthor }}</span>
       </div>
       <span class="date">{{ formatDate(publishDate) }}</span>
-      <span class="views" v-if="view_count !== undefined">
-        <i class="fas fa-eye"></i> {{ `浏览量：${view_count}` }}
-      </span>
     </div>
 
     <div class="post-tags" v-if="tags && tags.length > 0">
@@ -116,10 +113,20 @@ const goToUserProfile = (userId?: number) => {
     <p class="post-excerpt">{{ displayExcerpt }}</p>
 
     <div class="post-stats">
-      <!-- <span class="emojireactions">
-      </span> -->
+      <span class="reactions" v-if="reaction_count !== undefined">
+        <i class="fas fa-heart"></i>
+        <span class="stat-label">点赞</span>
+        {{ reaction_count }}
+      </span>
       <span class="comments">
-        <i class="fas fa-comment"></i> {{ `评论数量：${comment_count}` }}
+        <i class="fas fa-comment"></i>
+        <span class="stat-label">评论</span>
+        {{ comment_count }}
+      </span>
+      <span class="views" v-if="view_count !== undefined">
+        <i class="fas fa-eye"></i>
+        <span class="stat-label">浏览</span>
+        {{ view_count }}
       </span>
     </div>
 
@@ -334,7 +341,8 @@ const goToUserProfile = (userId?: number) => {
   }
 
   .reactions,
-  .comments {
+  .comments,
+  .views {
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -342,6 +350,16 @@ const goToUserProfile = (userId?: number) => {
     // Touch-friendly spacing on mobile
     @media (max-width: 480px) {
       gap: 0.375rem;
+    }
+    
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-right: 0.25rem;
+      
+      @media (max-width: 480px) {
+        font-size: 0.8rem;
+      }
     }
   }
 }
