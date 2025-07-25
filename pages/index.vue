@@ -30,7 +30,9 @@ const router = useRouter();
 
 // 响应式数据
 const hotPosts = ref([]);
+const recentGuguMessages = ref([]);
 const isLoading = ref(true);
+const isLoadingGugu = ref(true);
 const error = ref("");
 const refreshInterval = ref(null);
 
@@ -113,13 +115,43 @@ const goToUserProfile = (userId: number) => {
   router.push(`/users/${userId}`);
 };
 
+// 跳转到咕咕聊天室
+const goToGugu = () => {
+  router.push("/gugu");
+};
+
+// 获取最近的咕咕消息
+const fetchRecentGuguMessages = async () => {
+  try {
+    const { getApiUrl } = useApi();
+    const response = await fetchPublic(
+      getApiUrl("/api/gugu/recent?limit=3")
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      recentGuguMessages.value = data.messages || [];
+    } else {
+      console.log("咕咕消息获取失败，可能服务还未实现");
+      recentGuguMessages.value = [];
+    }
+  } catch (err) {
+    console.log("咕咕消息网络请求失败，可能服务还未实现");
+    recentGuguMessages.value = [];
+  } finally {
+    isLoadingGugu.value = false;
+  }
+};
+
 // 生命周期钩子
 onMounted(() => {
   fetchHotPosts();
+  fetchRecentGuguMessages();
   
   // 设置定时刷新（每30秒）
   refreshInterval.value = setInterval(() => {
     fetchHotPosts();
+    fetchRecentGuguMessages();
   }, 30 * 1000);
 });
 
@@ -274,6 +306,55 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- 咕咕聊天室快速预览 -->
+      <div class="gugu-section">
+        <h2 class="section-title">
+          <span>💬</span>
+          咕咕聊天室
+          <span class="live-indicator">
+            <span class="live-dot"></span>
+            实时聊天
+          </span>
+        </h2>
+        <div class="gugu-preview">
+          <div class="gugu-content">
+            <p class="gugu-description">与同学们实时交流，分享生活点滴，畅聊学习心得</p>
+            <div class="gugu-actions">
+              <button @click="goToGugu" class="btn btn-primary">
+                <span>💬</span>
+                进入咕咕聊天室
+              </button>
+            </div>
+          </div>
+          <div class="gugu-preview-messages">
+            <!-- 加载状态 -->
+            <div v-if="isLoadingGugu" class="gugu-loading">
+              <div class="loading-spinner"></div>
+              <p>正在加载最新消息...</p>
+            </div>
+            
+            <!-- 有消息时显示 -->
+            <div v-else-if="recentGuguMessages.length > 0" class="preview-messages">
+              <div 
+                v-for="message in recentGuguMessages" 
+                :key="message.id"
+                class="preview-message"
+              >
+                <span class="message-author">{{ message.author || '匿名用户' }}</span>
+                <span class="message-text">{{ message.content }}</span>
+                <span class="message-time">{{ formatTimeAgo(message.created_at) }}</span>
+              </div>
+            </div>
+            
+            <!-- 无消息时显示 -->
+            <div v-else class="no-messages">
+              <span>💬</span>
+              <p>还没有消息，快来开启第一条对话吧！</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 快捷入口 -->
       <div class="quick-links-section">
         <h2 class="section-title">
@@ -288,6 +369,10 @@ onUnmounted(() => {
           <NuxtLink to="/courses" class="quick-link">
             <i class="fas fa-book"></i>
             <span>课程评价</span>
+          </NuxtLink>
+          <NuxtLink to="/gugu" class="quick-link">
+            <span>💬</span>
+            <span>咕咕聊天</span>
           </NuxtLink>
           <NuxtLink to="/forum/postMessage" class="quick-link">
             <i class="fas fa-edit"></i>
@@ -784,6 +869,167 @@ onUnmounted(() => {
         color: var(--text-muted);
       }
     }
+  }
+}
+
+// 咕咕聊天室区域
+.gugu-section {
+  margin-bottom: 3rem;
+
+  .live-indicator {
+    margin-left: auto;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--semantic-success);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--semantic-success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  .gugu-preview {
+    background: var(--card-bg);
+    border-radius: 15px;
+    padding: 0;
+    box-shadow: var(--shadow-medium);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 200px;
+
+    // Mobile layout - stack vertically
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .gugu-content {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      @media (max-width: 768px) {
+        padding: 1.5rem;
+      }
+
+      .gugu-description {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .gugu-actions {
+        display: flex;
+        gap: 1rem;
+      }
+    }
+
+    .gugu-preview-messages {
+      background: var(--surface-secondary);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      @media (max-width: 768px) {
+        padding: 1rem;
+      }
+
+      .gugu-loading {
+        text-align: center;
+        color: var(--text-muted);
+
+        .loading-spinner {
+          width: 20px;
+          height: 20px;
+          border: 2px solid var(--border-secondary);
+          border-top: 2px solid var(--interactive-primary);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 0.5rem;
+        }
+
+        p {
+          font-size: 0.875rem;
+          margin: 0;
+        }
+      }
+
+      .preview-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .preview-message {
+        background: var(--surface-primary);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 3px solid var(--interactive-primary);
+
+        .message-author {
+          font-weight: 600;
+          color: var(--interactive-primary);
+          font-size: 0.85rem;
+          display: block;
+          margin-bottom: 0.25rem;
+        }
+
+        .message-text {
+          color: var(--text-primary);
+          font-size: 0.9rem;
+          display: block;
+          margin-bottom: 0.25rem;
+          line-height: 1.4;
+        }
+
+        .message-time {
+          color: var(--text-muted);
+          font-size: 0.75rem;
+        }
+      }
+
+      .no-messages {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 1rem;
+
+        span {
+          font-size: 2rem;
+          display: block;
+          margin-bottom: 0.5rem;
+          opacity: 0.6;
+        }
+
+        p {
+          font-size: 0.9rem;
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

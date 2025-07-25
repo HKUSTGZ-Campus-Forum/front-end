@@ -138,6 +138,16 @@ watch(isHovered, (newValue: boolean) => {
           </NuxtLink>
         </li>
         <li>
+          <NuxtLink
+            to="/gugu"
+            :class="{ active: route.path.startsWith('/gugu') }"
+            @click="handleNavClick"
+          >
+            <span class="nav-icon">💬</span>
+            <span class="nav-text">咕咕</span>
+          </NuxtLink>
+        </li>
+        <li>
           <!-- Show user profile link only when logged in -->
           <NuxtLink
             v-if="isLoggedIn && user?.id"
