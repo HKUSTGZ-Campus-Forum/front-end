@@ -143,7 +143,7 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path.startsWith('/gugu') }"
             @click="handleNavClick"
           >
-            <span class="nav-icon">💬</span>
+            <img src="/icons/sidebar_gugulogo.svg" alt="咕咕" class="nav-icon" />
             <span class="nav-text">咕咕</span>
           </NuxtLink>
         </li>

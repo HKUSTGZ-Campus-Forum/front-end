@@ -33,8 +33,12 @@ const hotPosts = ref([]);
 const recentGuguMessages = ref([]);
 const isLoading = ref(true);
 const isLoadingGugu = ref(true);
+const isLoadingMoreGugu = ref(false);
 const error = ref("");
 const refreshInterval = ref(null);
+const guguMessagesLimit = ref(10);
+const guguMessagesOffset = ref(0);
+const hasMoreMessages = ref(true);
 
 // 接口类型定义
 interface HotPost {
@@ -121,25 +125,63 @@ const goToGugu = () => {
 };
 
 // 获取最近的咕咕消息
-const fetchRecentGuguMessages = async () => {
+const fetchRecentGuguMessages = async (loadMore = false) => {
+  if (loadMore) {
+    if (!hasMoreMessages.value) return;
+    isLoadingMoreGugu.value = true;
+  } else {
+    isLoadingGugu.value = true;
+    guguMessagesOffset.value = 0;
+    hasMoreMessages.value = true;
+  }
+
   try {
     const { getApiUrl } = useApi();
     const response = await fetchPublic(
-      getApiUrl("/api/gugu/recent?limit=3")
+      getApiUrl(`/api/gugu/messages?limit=${guguMessagesLimit.value}&offset=${loadMore ? guguMessagesOffset.value : 0}`)
     );
 
     if (response.ok) {
       const data = await response.json();
-      recentGuguMessages.value = data.messages || [];
+      const newMessages = data.messages || [];
+      
+      if (loadMore) {
+        // 追加新消息，避免重复
+        const existingIds = new Set(recentGuguMessages.value.map(m => m.id));
+        const uniqueNewMessages = newMessages.filter(m => !existingIds.has(m.id));
+        recentGuguMessages.value = [...recentGuguMessages.value, ...uniqueNewMessages];
+        guguMessagesOffset.value += uniqueNewMessages.length;
+        
+        // 如果返回的消息数量少于请求的数量，说明没有更多消息了
+        hasMoreMessages.value = newMessages.length === guguMessagesLimit.value;
+      } else {
+        recentGuguMessages.value = newMessages;
+        guguMessagesOffset.value = newMessages.length;
+        hasMoreMessages.value = newMessages.length === guguMessagesLimit.value;
+      }
     } else {
       console.log("咕咕消息获取失败，可能服务还未实现");
-      recentGuguMessages.value = [];
+      if (!loadMore) recentGuguMessages.value = [];
     }
   } catch (err) {
     console.log("咕咕消息网络请求失败，可能服务还未实现");
-    recentGuguMessages.value = [];
+    if (!loadMore) recentGuguMessages.value = [];
   } finally {
     isLoadingGugu.value = false;
+    isLoadingMoreGugu.value = false;
+  }
+};
+
+// 处理滚动到底部
+const handleScroll = (event) => {
+  const container = event.target;
+  const scrollTop = container.scrollTop;
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  
+  // 当滚动到距离底部20px时开始加载更多
+  if (scrollHeight - scrollTop - clientHeight < 20 && hasMoreMessages.value && !isLoadingMoreGugu.value) {
+    fetchRecentGuguMessages(true);
   }
 };
 
@@ -212,7 +254,7 @@ onUnmounted(() => {
       <div class="gugu-section">
         <h2 class="section-title">
           <span>💬</span>
-          咕咕聊天室
+          咕咕 - 聊点新鲜事儿～
           <span class="live-indicator">
             <span class="live-dot"></span>
             实时聊天
@@ -236,15 +278,41 @@ onUnmounted(() => {
             </div>
 
             <!-- 有消息时显示 -->
-            <div v-else-if="recentGuguMessages.length > 0" class="preview-messages">
-              <div
-                  v-for="message in recentGuguMessages"
-                  :key="message.id"
-                  class="preview-message"
-              >
-                <span class="message-author">{{ message.author || '匿名用户' }}</span>
-                <span class="message-text">{{ message.content }}</span>
-                <span class="message-time">{{ formatTimeAgo(message.created_at) }}</span>
+            <div v-else-if="recentGuguMessages.length > 0" class="preview-messages-container">
+              <div class="scrollable-wrapper">
+                <div 
+                  class="preview-messages scrollable" 
+                  @scroll="handleScroll"
+                >
+                  <div
+                      v-for="message in recentGuguMessages"
+                      :key="message.id"
+                      class="preview-message"
+                  >
+                    <div class="message-header">
+                      <span class="message-author">{{ message.author || '匿名用户' }}</span>
+                      <span class="message-time">{{ formatTimeAgo(message.created_at) }}</span>
+                    </div>
+                    <div class="message-text">{{ message.content }}</div>
+                  </div>
+                  
+                  <!-- 加载更多指示器 -->
+                  <div v-if="isLoadingMoreGugu" class="loading-more-indicator">
+                    <div class="loading-spinner-small"></div>
+                    <span>加载更多消息...</span>
+                  </div>
+                  
+                  <!-- 没有更多消息指示器 -->
+                  <div v-else-if="!hasMoreMessages && recentGuguMessages.length > 0" class="no-more-indicator">
+                    已显示全部消息
+                  </div>
+                </div>
+                
+                <!-- 渐变遮罩 - 只在有更多内容或正在加载时显示 -->
+                <div 
+                  v-if="hasMoreMessages || isLoadingMoreGugu" 
+                  class="scroll-fade-indicator"
+                ></div>
               </div>
             </div>
 
@@ -370,10 +438,10 @@ onUnmounted(() => {
             <i class="fas fa-book"></i>
             <span>课程评价</span>
           </NuxtLink>
-          <NuxtLink to="/gugu" class="quick-link">
-            <span>💬</span>
-            <span>咕咕聊天</span>
-          </NuxtLink>
+<!--          <NuxtLink to="/gugu" class="quick-link">-->
+<!--            <span>💬</span>-->
+<!--            <span>咕咕聊天</span>-->
+<!--          </NuxtLink>-->
           <NuxtLink to="/forum/postMessage" class="quick-link">
             <i class="fas fa-edit"></i>
             <span>发布帖子</span>
@@ -965,10 +1033,91 @@ onUnmounted(() => {
         }
       }
 
+      .preview-messages-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .scrollable-wrapper {
+        position: relative;
+        height: 100%;
+      }
+
       .preview-messages {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        
+        &.scrollable {
+          max-height: 150px;
+          overflow-y: auto;
+          padding-right: 0.25rem;
+          
+          // 自定义滚动条样式
+          &::-webkit-scrollbar {
+            width: 4px;
+          }
+          
+          &::-webkit-scrollbar-track {
+            background: var(--surface-tertiary);
+            border-radius: 2px;
+          }
+          
+          &::-webkit-scrollbar-thumb {
+            background: var(--border-primary);
+            border-radius: 2px;
+            
+            &:hover {
+              background: var(--text-muted);
+            }
+          }
+        }
+      }
+
+      .loading-more-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        
+        .loading-spinner-small {
+          width: 12px;
+          height: 12px;
+          border: 1px solid var(--border-secondary);
+          border-top: 1px solid var(--interactive-primary);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      .no-more-indicator {
+        text-align: center;
+        padding: 0.5rem;
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        opacity: 0.8;
+        border-top: 1px solid var(--border-secondary);
+        margin-top: 0.25rem;
+      }
+
+      .scroll-fade-indicator {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 20px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          var(--surface-secondary)
+        );
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.8;
       }
 
       .preview-message {
@@ -977,26 +1126,30 @@ onUnmounted(() => {
         border-radius: 6px;
         border-left: 2px solid var(--interactive-primary);
 
-        .message-author {
-          font-weight: 600;
-          color: var(--interactive-primary);
-          font-size: 0.8rem;
-          display: inline;
-          margin-right: 0.5rem;
+        .message-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          margin-bottom: 0.25rem;
+
+          .message-author {
+            font-weight: 600;
+            color: var(--interactive-primary);
+            font-size: 0.8rem;
+          }
+
+          .message-time {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            flex-shrink: 0;
+          }
         }
 
         .message-text {
           color: var(--text-primary);
           font-size: 0.85rem;
-          display: inline;
           line-height: 1.3;
-        }
-
-        .message-time {
-          color: var(--text-muted);
-          font-size: 0.7rem;
-          float: right;
-          margin-top: 0.1rem;
+          margin: 0;
         }
       }
 

@@ -230,16 +230,20 @@ onUnmounted(() => {
               
               <!-- Message content -->
               <div class="message-content">
+                <!-- Header for other users' messages -->
                 <div class="message-header" v-if="message.author_id !== user?.id">
                   <span class="message-author">{{ message.author || '匿名用户' }}</span>
+                  <span class="message-time">{{ formatTime(message.created_at) }}</span>
+                </div>
+                
+                <!-- Header for own messages -->
+                <div class="message-header own-header" v-else>
+                  <span class="message-time">{{ formatTime(message.created_at) }}</span>
+                  <span class="message-author-own">我</span>
                 </div>
                 
                 <div class="message-bubble">
                   <p class="message-text">{{ message.content }}</p>
-                </div>
-                
-                <div class="message-time-container">
-                  <span class="message-time">{{ formatTime(message.created_at) }}</span>
                 </div>
               </div>
             </div>
@@ -268,8 +272,8 @@ onUnmounted(() => {
                 :disabled="!newMessage.trim() || isSending"
                 class="send-button"
               >
-                <span v-if="isSending">发送中...</span>
-                <span v-else>发送</span>
+                <span v-if="isSending">咕咕咕ing...</span>
+                <span v-else>咕了个咕～</span>
               </button>
             </div>
             <p class="input-hint">按 Enter 发送消息，Shift + Enter 换行</p>
@@ -462,23 +466,48 @@ onUnmounted(() => {
 
     .message-header {
       display: flex;
+      justify-content: space-between;
       align-items: baseline;
-      gap: 0.5rem;
       margin-bottom: 0.25rem;
+      width: fit-content;
+      min-width: 120px;
 
       .message-author {
         font-weight: 600;
         color: var(--interactive-primary);
         font-size: 0.875rem;
       }
-    }
-
-    .message-time-container {
-      margin-top: 0.25rem;
 
       .message-time {
         font-size: 0.75rem;
         color: var(--text-muted);
+        flex-shrink: 0;
+        margin-left: 1rem;
+      }
+
+      &.own-header {
+        justify-content: flex-end;
+        
+        .message-author-own {
+          font-weight: 600;
+          color: var(--interactive-primary);
+          font-size: 0.875rem;
+          margin-left: 1rem;
+        }
+      }
+    }
+
+    // Ensure bubble width is independent of header
+    &:not(.own-message) .message-content {
+      .message-header {
+        position: relative;
+        width: auto;
+        min-width: 0;
+      }
+      
+      .message-bubble {
+        width: fit-content;
+        min-width: 0;
       }
     }
 
@@ -488,6 +517,7 @@ onUnmounted(() => {
       box-shadow: var(--shadow-small);
       display: inline-block;
       max-width: 100%;
+      min-width: fit-content;
       word-wrap: break-word;
       border-radius: 16px;
 
@@ -498,6 +528,13 @@ onUnmounted(() => {
         white-space: pre-wrap;
       }
 
+      .message-time-own {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 0.25rem;
+        display: block;
+        text-align: right;
+      }
     }
   }
 }
