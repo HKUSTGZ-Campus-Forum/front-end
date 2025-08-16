@@ -199,9 +199,9 @@
     </div>
 
     <!-- Email Verification Modal for existing users -->
-    <AuthEmailVerification
-      v-if="showEmailVerification"
-      :user-id="user?.id"
+    <EmailVerification
+      v-if="showEmailVerification && user?.id"
+      :user-id="user.id"
       :user-email="user?.email || newEmail"
       :username="user?.username"
       @verification-success="handleEmailVerificationSuccess"
@@ -400,6 +400,9 @@ const resendVerificationEmail = async () => {
     }
 
     startCooldown()
+    
+    // Show verification modal after successful email send
+    showEmailVerification.value = true
     
   } catch (err) {
     console.error('Resend verification error:', err)
