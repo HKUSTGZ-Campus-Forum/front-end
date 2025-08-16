@@ -199,14 +199,17 @@
     </div>
 
     <!-- Email Verification Modal for existing users -->
-    <AuthEmailVerification
-      v-if="showEmailVerification"
-      :user-id="user?.id"
-      :user-email="user?.email || newEmail"
-      :username="user?.username"
-      @verification-success="handleEmailVerificationSuccess"
-      @back-to-register="closeEmailVerification"
-    />
+    <div v-if="showEmailVerification && user?.id" class="modal-overlay" @click="closeEmailVerification">
+      <div class="modal-content" @click.stop>
+        <EmailVerification
+          :user-id="user.id"
+          :user-email="user?.email || newEmail"
+          :username="user?.username"
+          @verification-success="handleEmailVerificationSuccess"
+          @back-to-register="closeEmailVerification"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -400,6 +403,9 @@ const resendVerificationEmail = async () => {
     }
 
     startCooldown()
+    
+    // Show verification modal after successful email send
+    showEmailVerification.value = true
     
   } catch (err) {
     console.error('Resend verification error:', err)
@@ -851,6 +857,41 @@ onUnmounted(() => {
   @media (min-width: 480px) {
     padding: 0.75rem;
     border-radius: 4px;
+  }
+}
+
+// Modal Overlay Styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 </style>
