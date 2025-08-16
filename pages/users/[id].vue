@@ -360,6 +360,16 @@ useHead({
                 <span class="icon-fallback">📷</span>
                 {{ showAvatarUpload ? '取消' : '更换头像' }}
               </button>
+              
+              <!-- Account Settings Button for Own Profile -->
+              <NuxtLink 
+                v-if="isOwnProfile" 
+                to="/setting/account"
+                class="account-settings-btn"
+              >
+                <span class="icon-fallback">⚙️</span>
+                账号设置
+              </NuxtLink>
             </div>
 
             <div class="user-basic-info">
@@ -604,6 +614,7 @@ useHead({
   min-height: 44px; // Touch-friendly minimum size
   min-width: 120px;
   justify-content: center;
+  text-decoration: none;
 
   @media (min-width: 480px) {
     padding: 0.5rem 1rem;
@@ -620,6 +631,49 @@ useHead({
     background: var(--interactive-primary);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
+  }
+
+  .icon-fallback {
+    font-size: 1rem;
+    margin-right: 0.25rem;
+
+    @media (min-width: 480px) {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.account-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--primary-color, #4361ee);
+  border-radius: 25px;
+  background: var(--primary-color, #4361ee);
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px; // Touch-friendly minimum size
+  min-width: 120px;
+  justify-content: center;
+  text-decoration: none;
+
+  @media (min-width: 480px) {
+    padding: 0.5rem 1rem;
+    min-height: auto;
+    min-width: auto;
+  }
+
+  &:hover {
+    background: var(--primary-color-hover, #3a56d4);
+    border-color: var(--primary-color-hover, #3a56d4);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   .icon-fallback {
