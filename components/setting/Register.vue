@@ -180,7 +180,11 @@
       errors.value.email = '请输入有效的邮箱地址';
     } else {
       const emailLower = email.value.toLowerCase().trim();
-      const isHkustEmail = hkustDomains.some(domain => emailLower.endsWith('@' + domain));
+      
+      // Check if it's exactly one of the allowed domains
+      const emailParts = emailLower.split('@');
+      const isHkustEmail = emailParts.length === 2 && 
+                          hkustDomains.includes(emailParts[1]);
       
       if (!isHkustEmail) {
         errors.value.email = '只允许使用 HKUST-GZ 邮箱注册 (@connect.hkust-gz.edu.cn 或 @hkust-gz.edu.cn)';

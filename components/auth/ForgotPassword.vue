@@ -97,7 +97,8 @@ const isValidEmail = computed(() => {
   }
   
   const emailLower = email.value.toLowerCase().trim()
-  return hkustDomains.some(domain => emailLower.endsWith('@' + domain))
+  const emailParts = emailLower.split('@')
+  return emailParts.length === 2 && hkustDomains.includes(emailParts[1])
 })
 
 // Handle forgot password request
