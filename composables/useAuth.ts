@@ -387,7 +387,7 @@ export function useAuth() {
     }
   }
 
-  // Register function
+  // Register function with email verification
   async function register(username: string, email: string, password: string) {
     loading.value = true;
     error.value = null;
@@ -395,13 +395,13 @@ export function useAuth() {
     try {
       console.log("开始注册请求，发送数据:", { username, email: email || undefined });
 
-      const response = await fetch(`${apiBaseUrl}/api/users`, {
+      const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           username, 
           password,
-          ...(email && { email }) // Only include email if it's provided
+          email // Email is required for verification
         }),
       });
 
@@ -416,12 +416,16 @@ export function useAuth() {
           // Handle specific error messages
           if (errorData.msg === "Username already exists") {
             errorMessage = "该用户名已被使用，请选择其他用户名";
+          } else if (errorData.msg === "Email already registered") {
+            errorMessage = "该邮箱已被注册，请使用其他邮箱";
           } else if (errorData.msg === "Username is required") {
             errorMessage = "请输入用户名";
           } else if (errorData.msg === "Password is required") {
             errorMessage = "请输入密码";
           } else if (errorData.msg === "Invalid email format") {
             errorMessage = "邮箱格式不正确";
+          } else if (errorData.msg && errorData.msg.includes("email")) {
+            errorMessage = errorData.msg;
           } else {
             errorMessage = errorData.msg || errorData.error || `服务器错误(${response.status})`;
           }
@@ -437,10 +441,137 @@ export function useAuth() {
       const data = await response.json();
       console.log("注册成功，服务器响应:", data);
 
-      return { success: true, data };
+      // Return registration data including user_id for email verification
+      return { 
+        success: true, 
+        data,
+        userId: data.user_id,
+        emailSent: data.email_sent,
+        emailError: data.email_error
+      };
     } catch (err) {
       console.error("注册过程中发生错误:", err);
       error.value = err instanceof Error ? err.message : "注册失败，请稍后再试";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Email verification function
+  async function verifyEmail(userId: number, verificationCode: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          verification_code: verificationCode
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || "邮箱验证失败");
+      }
+
+      return { success: true, message: data.msg };
+    } catch (err) {
+      console.error("邮箱验证错误:", err);
+      error.value = err instanceof Error ? err.message : "邮箱验证失败";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Resend verification email
+  async function resendVerification(userId: number) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || "重发验证邮件失败");
+      }
+
+      return { success: true, message: data.msg };
+    } catch (err) {
+      console.error("重发验证邮件错误:", err);
+      error.value = err instanceof Error ? err.message : "重发验证邮件失败";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Forgot password function
+  async function forgotPassword(email: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || "发送重置邮件失败");
+      }
+
+      return { success: true, message: data.msg };
+    } catch (err) {
+      console.error("忘记密码错误:", err);
+      error.value = err instanceof Error ? err.message : "发送重置邮件失败";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Reset password function
+  async function resetPassword(token: string, newPassword: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          password: newPassword
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || "密码重置失败");
+      }
+
+      return { success: true, message: data.msg };
+    } catch (err) {
+      console.error("密码重置错误:", err);
+      error.value = err instanceof Error ? err.message : "密码重置失败";
       throw err;
     } finally {
       loading.value = false;
@@ -484,6 +615,10 @@ export function useAuth() {
     login,
     logout,
     register,
+    verifyEmail,
+    resendVerification,
+    forgotPassword,
+    resetPassword,
     init,
     updateUserProfile,
     refreshAccessToken,

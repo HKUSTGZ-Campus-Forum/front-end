@@ -57,8 +57,14 @@
           />
           <label for="rememberMe">记住我</label>
         </div>
-        <a href="/forgot-password" class="forgot-password">忘记密码?</a>
+        <button type="button" @click="showForgotPassword" class="forgot-password">忘记密码?</button>
       </div>
+
+      <!-- Show forgot password component -->
+      <AuthForgotPassword 
+        v-if="showForgotPasswordModal" 
+        @back-to-login="closeForgotPassword"
+      />
 
       <!-- 登录按钮 -->
       <button type="submit" class="login-button" :disabled="loading">
@@ -83,6 +89,7 @@ const username = ref("");
 const password = ref("");
 const showPassword = ref(false);
 const rememberMe = ref(false);
+const showForgotPasswordModal = ref(false);
 
 // 使用 useAuth composable
 const { login, loading, error } = useAuth();
@@ -105,6 +112,16 @@ async function handleLogin() {
     // 错误已在 useAuth 中处理
     console.error("登录处理错误:", err);
   }
+}
+
+// Show forgot password modal
+function showForgotPassword() {
+  showForgotPasswordModal.value = true;
+}
+
+// Close forgot password modal
+function closeForgotPassword() {
+  showForgotPasswordModal.value = false;
 }
 </script>
 
@@ -293,6 +310,9 @@ async function handleLogin() {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
 
     @media (min-width: 480px) {
       padding: 0.25rem;
