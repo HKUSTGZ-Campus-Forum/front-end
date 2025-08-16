@@ -3,7 +3,7 @@
     <div class="forgot-header">
       <h2 class="forgot-title">忘记密码</h2>
       <p class="forgot-subtitle">
-        输入您的邮箱地址，我们将发送重置密码链接
+        输入您的 HKUST-GZ 邮箱地址，我们将发送重置密码链接
       </p>
     </div>
 
@@ -24,7 +24,7 @@
             id="email"
             v-model="email"
             type="email"
-            placeholder="请输入注册时使用的邮箱"
+            placeholder="请输入您的HKUST-GZ邮箱"
             required
             :disabled="loading"
             class="email-input"
@@ -90,13 +90,20 @@ const apiBaseUrl = config.public.apiBaseUrl
 // Computed properties
 const isValidEmail = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email.value)
+  const hkustDomains = ['connect.hkust-gz.edu.cn', 'hkust-gz.edu.cn']
+  
+  if (!emailRegex.test(email.value)) {
+    return false
+  }
+  
+  const emailLower = email.value.toLowerCase().trim()
+  return hkustDomains.some(domain => emailLower.endsWith('@' + domain))
 })
 
 // Handle forgot password request
 async function handleForgotPassword() {
   if (!isValidEmail.value) {
-    error.value = '请输入有效的邮箱地址'
+    error.value = '请输入有效的 HKUST-GZ 邮箱地址'
     return
   }
 

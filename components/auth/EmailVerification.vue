@@ -8,6 +8,10 @@
       <p class="verification-description">
         请查收邮件并输入6位验证码完成注册
       </p>
+      <div class="trash-mail-notice">
+        <span class="notice-icon">📬</span>
+        <p>如果没有收到邮件，请检查您的 <strong>垃圾邮件箱</strong></p>
+      </div>
     </div>
 
     <div v-if="error" class="error-message">
@@ -269,6 +273,37 @@ onMounted(() => {
   .verification-description {
     color: var(--text-tertiary, #888);
     font-size: 0.9rem;
+  }
+
+  .trash-mail-notice {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--warning-background, rgba(255, 193, 7, 0.1));
+    border-radius: 6px;
+    border-left: 3px solid var(--warning-color, #ffc107);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .notice-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--warning-text, #f57c00);
+      line-height: 1.3;
+
+      strong {
+        font-weight: 600;
+      }
+
+      @media (max-width: 479px) {
+        font-size: 0.9rem;
+      }
+    }
   }
 }
 

@@ -37,12 +37,18 @@
             id="settingEmail"
             v-model="email"
             type="email"
-            placeholder="请输入邮箱用于验证"
+            placeholder="请输入HKUST-GZ邮箱"
             required
             @blur="validateEmail"
           />
           <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
-          <div class="email-hint">注册后需要验证邮箱才能使用</div>
+          <div class="email-hint">
+            <p>只允许使用 HKUST-GZ 邮箱注册：</p>
+            <ul>
+              <li>@connect.hkust-gz.edu.cn</li>
+              <li>@hkust-gz.edu.cn</li>
+            </ul>
+          </div>
         </div>
         
         <!-- 密码字段 -->
@@ -104,6 +110,10 @@
         <!-- 邮箱验证说明 -->
         <div class="verification-notice">
           <p>注册后我们将向您的邮箱发送验证码，请确保邮箱地址正确</p>
+          <div class="trash-mail-reminder">
+            <strong>⚠️ 重要提醒：</strong>
+            <p>如果没有收到验证邮件，请检查您的垃圾邮件箱（垃圾邮件/废纸篓/杂件箱）</p>
+          </div>
         </div>
       </form>
     </div>
@@ -162,12 +172,21 @@
   
   const validateEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hkustDomains = ['connect.hkust-gz.edu.cn', 'hkust-gz.edu.cn'];
+    
     if (!email.value) {
       errors.value.email = '请输入邮箱地址';
     } else if (!emailRegex.test(email.value)) {
       errors.value.email = '请输入有效的邮箱地址';
     } else {
-      errors.value.email = '';
+      const emailLower = email.value.toLowerCase().trim();
+      const isHkustEmail = hkustDomains.some(domain => emailLower.endsWith('@' + domain));
+      
+      if (!isHkustEmail) {
+        errors.value.email = '只允许使用 HKUST-GZ 邮箱注册 (@connect.hkust-gz.edu.cn 或 @hkust-gz.edu.cn)';
+      } else {
+        errors.value.email = '';
+      }
     }
   };
   
@@ -500,9 +519,25 @@
   }
 
   .email-hint {
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
     font-size: 0.8rem;
     color: var(--text-tertiary, #888);
+
+    p {
+      margin: 0 0 0.25rem 0;
+      font-weight: 500;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1rem;
+      
+      li {
+        margin-bottom: 0.125rem;
+        font-family: monospace;
+        color: var(--primary-color, #4361ee);
+      }
+    }
   }
 
   .verification-notice {
@@ -518,13 +553,37 @@
     }
 
     p {
-      margin: 0;
+      margin: 0 0 1rem 0;
       font-size: 0.9rem;
       color: var(--info-text, #1976d2);
       line-height: 1.4;
 
       @media (max-width: 479px) {
         font-size: 1rem;
+      }
+    }
+
+    .trash-mail-reminder {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--warning-background, rgba(255, 193, 7, 0.1));
+      border-radius: 4px;
+      border-left: 3px solid var(--warning-color, #ffc107);
+
+      strong {
+        color: var(--warning-text, #f57c00);
+        font-size: 0.85rem;
+      }
+
+      p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.8rem;
+        color: var(--warning-text, #f57c00);
+        line-height: 1.3;
+
+        @media (max-width: 479px) {
+          font-size: 0.9rem;
+        }
       }
     }
   }
