@@ -578,6 +578,49 @@ export function useAuth() {
     }
   }
 
+  // Change password function (for authenticated users)
+  async function changePassword(currentPassword: string, newPassword: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const response = await authFetch(`${apiBaseUrl}/api/auth/change-password`, {
+        method: "POST",
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || "密码修改失败");
+      }
+
+      return { success: true, message: data.msg };
+    } catch (err) {
+      console.error("密码修改错误:", err);
+      error.value = err instanceof Error ? err.message : "密码修改失败";
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Refresh user data from server
+  async function refreshUser() {
+    if (!process.client || !accessToken.value || !user.value) return;
+    
+    console.log('🔄 Refreshing user data...');
+    await fetchUserProfile(accessToken.value);
+    
+    // Update localStorage with fresh data
+    if (user.value) {
+      safeLocalStorage("set", "user_info", JSON.stringify(user.value));
+    }
+  }
+
   // 强制刷新用户资料数据
   async function forceRefreshUserProfile() {
     if (!process.client || !accessToken.value) return;
@@ -619,6 +662,8 @@ export function useAuth() {
     resendVerification,
     forgotPassword,
     resetPassword,
+    changePassword,
+    refreshUser,
     init,
     updateUserProfile,
     refreshAccessToken,
