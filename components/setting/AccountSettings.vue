@@ -19,7 +19,7 @@
           
           <div v-if="!user.email_verified" class="verification-actions">
             <p class="verification-note">
-              邮箱未验证将限制某些功能（如修改用户名）
+              邮箱未验证将会在未来被限制某些功能
             </p>
             <button 
               @click="resendVerificationEmail" 
@@ -30,6 +30,67 @@
               <span v-else-if="resendCooldown > 0">{{ resendCooldown }}秒后重试</span>
               <span v-else>重新发送验证邮件</span>
             </button>
+          </div>
+          
+          <!-- Change Email Section -->
+          <div class="email-change-section">
+            <button 
+              @click="showChangeEmailForm = !showChangeEmailForm" 
+              class="change-email-btn"
+            >
+              {{ showChangeEmailForm ? '取消更换邮箱' : '更换邮箱地址' }}
+            </button>
+            
+            <div v-if="showChangeEmailForm" class="change-email-form">
+              <h4>更换邮箱地址</h4>
+              <p class="change-email-note">
+                更换邮箱后需要重新验证，原邮箱的验证状态将失效
+              </p>
+              
+              <!-- Error/Success Messages -->
+              <div v-if="emailError" class="error-message">
+                {{ emailError }}
+              </div>
+              <div v-if="emailSuccess" class="success-message">
+                {{ emailSuccess }}
+              </div>
+              
+              <div class="form-group">
+                <label for="changeEmail">新邮箱地址</label>
+                <input
+                  id="changeEmail"
+                  v-model="newEmail"
+                  type="email"
+                  placeholder="请输入新的HKUST-GZ邮箱"
+                  :disabled="isAddingEmail"
+                  class="email-input"
+                />
+                <div class="email-hint">
+                  <p>只允许使用 HKUST-GZ 邮箱：</p>
+                  <ul>
+                    <li>@connect.hkust-gz.edu.cn</li>
+                    <li>@hkust-gz.edu.cn</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button 
+                  @click="changeEmail" 
+                  class="add-email-btn"
+                  :disabled="isAddingEmail || !isValidNewEmail"
+                >
+                  {{ isAddingEmail ? '更换中...' : '更换邮箱' }}
+                </button>
+                <button 
+                  @click="cancelChangeEmail" 
+                  class="cancel-btn"
+                  :disabled="isAddingEmail"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -45,6 +106,15 @@
           
           <div class="add-email-form" v-if="showAddEmailForm">
             <h3>添加邮箱</h3>
+            
+            <!-- Error/Success Messages -->
+            <div v-if="emailError" class="error-message">
+              {{ emailError }}
+            </div>
+            <div v-if="emailSuccess" class="success-message">
+              {{ emailSuccess }}
+            </div>
+            
             <div class="form-group">
               <label for="newEmail">邮箱地址</label>
               <input
@@ -201,7 +271,7 @@
     <!-- Email Verification Modal for existing users -->
     <div v-if="showEmailVerification && user?.id" class="modal-overlay" @click="closeEmailVerification">
       <div class="modal-content" @click.stop>
-        <EmailVerification
+        <AuthEmailVerification
           :user-id="user.id"
           :user-email="user?.email || newEmail"
           :username="user?.username"
@@ -228,6 +298,9 @@ const isAddingEmail = ref(false)
 const isResending = ref(false)
 const resendCooldown = ref(0)
 const showEmailVerification = ref(false)
+const emailError = ref('')
+const emailSuccess = ref('')
+const showChangeEmailForm = ref(false)
 
 // Password change state
 const currentPassword = ref('')
@@ -340,6 +413,8 @@ const addEmail = async () => {
   if (!isValidNewEmail.value) return
   
   isAddingEmail.value = true
+  emailError.value = ''
+  emailSuccess.value = ''
   
   try {
     const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value?.id}/add-email`, {
@@ -361,6 +436,8 @@ const addEmail = async () => {
     // Refresh user data to get updated email
     await refreshUser()
     
+    emailSuccess.value = '邮箱添加成功，正在发送验证邮件...'
+    
     // Show verification modal
     showEmailVerification.value = true
     showAddEmailForm.value = false
@@ -368,7 +445,7 @@ const addEmail = async () => {
     
   } catch (err) {
     console.error('Add email error:', err)
-    // Handle error display
+    emailError.value = err instanceof Error ? err.message : '添加邮箱失败，请重试'
   } finally {
     isAddingEmail.value = false
   }
@@ -377,6 +454,58 @@ const addEmail = async () => {
 const cancelAddEmail = () => {
   showAddEmailForm.value = false
   newEmail.value = ''
+  emailError.value = ''
+  emailSuccess.value = ''
+}
+
+// Change email functionality
+const changeEmail = async () => {
+  if (!isValidNewEmail.value) return
+  
+  isAddingEmail.value = true
+  emailError.value = ''
+  emailSuccess.value = ''
+  
+  try {
+    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value?.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: newEmail.value.trim().toLowerCase()
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.msg || '更换邮箱失败')
+    }
+
+    // Refresh user data to get updated email
+    await refreshUser()
+    
+    emailSuccess.value = '邮箱更换成功，正在发送验证邮件...'
+    
+    // Show verification modal
+    showEmailVerification.value = true
+    showChangeEmailForm.value = false
+    newEmail.value = ''
+    
+  } catch (err) {
+    console.error('Change email error:', err)
+    emailError.value = err instanceof Error ? err.message : '更换邮箱失败，请重试'
+  } finally {
+    isAddingEmail.value = false
+  }
+}
+
+const cancelChangeEmail = () => {
+  showChangeEmailForm.value = false
+  newEmail.value = ''
+  emailError.value = ''
+  emailSuccess.value = ''
 }
 
 // Resend verification email
@@ -892,6 +1021,51 @@ onUnmounted(() => {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+// Email Change Section Styles
+.email-change-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-secondary, #e0e0e0);
+  
+  .change-email-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: var(--primary-color, #4361ee);
+    border: 1px solid var(--primary-color, #4361ee);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: var(--primary-color, #4361ee);
+      color: white;
+    }
+  }
+  
+  .change-email-form {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--surface-secondary, #f8f9fa);
+    border-radius: 6px;
+    border: 1px solid var(--border-primary, #e0e0e0);
+    
+    h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary, #333);
+      font-size: 1.1rem;
+    }
+    
+    .change-email-note {
+      color: var(--text-secondary, #666);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      line-height: 1.4;
+      font-style: italic;
+    }
   }
 }
 </style>
