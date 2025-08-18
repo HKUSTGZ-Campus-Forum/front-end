@@ -27,6 +27,7 @@ const isSending = ref(false);
 const error = ref("");
 const chatContainer = ref(null);
 const refreshInterval = ref(null);
+const hasNewMessages = ref(false);
 
 // 接口类型定义
 interface GuguMessage {
@@ -39,7 +40,7 @@ interface GuguMessage {
 }
 
 // 获取聊天消息
-const fetchMessages = async () => {
+const fetchMessages = async (isInitialLoad = false) => {
   try {
     const response = await fetchPublic(
       getApiUrl("/api/gugu/messages?limit=50")
@@ -47,13 +48,26 @@ const fetchMessages = async () => {
 
     if (response.ok) {
       const data = await response.json();
-      messages.value = data.messages || [];
+      const newMessages = data.messages || [];
+      
+      // 检查是否有新消息（非初次加载时）
+      if (!isInitialLoad && messages.value.length > 0) {
+        const oldMessageIds = new Set(messages.value.map(m => m.id));
+        const hasNewContent = newMessages.some(m => !oldMessageIds.has(m.id));
+        if (hasNewContent) {
+          hasNewMessages.value = true;
+        }
+      }
+      
+      messages.value = newMessages;
       error.value = "";
       
-      // 滚动到底部
-      nextTick(() => {
-        scrollToBottom();
-      });
+      // 只在初次加载或发送消息后滚动到底部
+      if (isInitialLoad) {
+        nextTick(() => {
+          scrollToBottom();
+        });
+      }
     } else {
       console.log("咕咕消息获取失败，可能服务还未实现");
       // 为演示目的，创建一些示例消息
@@ -97,8 +111,9 @@ const sendMessage = async () => {
     );
 
     if (response.ok) {
-      // 成功发送，重新获取消息
-      await fetchMessages();
+      // 成功发送，重新获取消息并滚动到底部
+      hasNewMessages.value = false; // 清除新消息指示器
+      await fetchMessages(true); // 标记为初始加载以触发滚动
     } else {
       throw new Error("发送失败");
     }
@@ -116,6 +131,25 @@ const sendMessage = async () => {
 const scrollToBottom = () => {
   if (chatContainer.value) {
     chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+  }
+};
+
+// 处理点击新消息指示器
+const handleNewMessagesClick = () => {
+  scrollToBottom();
+  hasNewMessages.value = false;
+};
+
+// 处理滚动事件
+const handleScroll = () => {
+  if (!chatContainer.value) return;
+  
+  const { scrollTop, scrollHeight, clientHeight } = chatContainer.value;
+  
+  // 当用户滚动到接近底部时，自动隐藏新消息指示器
+  const nearBottom = scrollHeight - scrollTop - clientHeight < 50;
+  if (nearBottom && hasNewMessages.value) {
+    hasNewMessages.value = false;
   }
 };
 
@@ -148,11 +182,11 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // 生命周期
 onMounted(() => {
-  fetchMessages();
+  fetchMessages(true); // 初次加载时滚动到底部
   
   // 设置定时刷新（每10秒）
   refreshInterval.value = setInterval(() => {
-    fetchMessages();
+    fetchMessages(false); // 定时刷新时保持用户位置
   }, 10 * 1000);
 });
 
@@ -186,7 +220,17 @@ onUnmounted(() => {
       <!-- 聊天容器 -->
       <div class="chat-container">
         <!-- 消息区域 -->
-        <div ref="chatContainer" class="messages-area">
+        <div ref="chatContainer" class="messages-area" @scroll="handleScroll">
+          <!-- 新消息指示器 -->
+          <div 
+            v-if="hasNewMessages" 
+            @click="handleNewMessagesClick"
+            class="new-messages-indicator"
+          >
+            <i class="fas fa-arrow-down"></i>
+            <span>有新消息</span>
+          </div>
+
           <!-- 加载状态 -->
           <div v-if="isLoading" class="loading-state">
             <div class="loading-spinner"></div>
@@ -271,8 +315,12 @@ onUnmounted(() => {
                 @click="sendMessage"
                 :disabled="!newMessage.trim() || isSending"
                 class="send-button"
+                :class="{ sending: isSending }"
               >
-                <span v-if="isSending">咕咕咕ing...</span>
+                <span v-if="isSending">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  发送中...
+                </span>
                 <span v-else>咕了个咕～</span>
               </button>
             </div>
@@ -366,6 +414,39 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
+  position: relative; // Added for absolute positioning of indicator
+  
+  .new-messages-indicator {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-large);
+    transition: all 0.3s ease;
+    animation: pulse-glow 2s infinite;
+    
+    &:hover {
+      background: var(--interactive-hover);
+      transform: translateX(-50%) translateY(-3px);
+      box-shadow: var(--shadow-large), 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    i {
+      font-size: 0.8rem;
+      animation: bounce 1.5s infinite;
+    }
+  }
   
   .loading-state, .empty-state {
     display: flex;
@@ -604,6 +685,14 @@ onUnmounted(() => {
         cursor: not-allowed;
         transform: none;
       }
+      
+      &.sending {
+        background: var(--interactive-hover);
+        
+        i {
+          margin-right: 0.25rem;
+        }
+      }
     }
 
     .input-hint {
@@ -612,6 +701,30 @@ onUnmounted(() => {
       color: var(--text-muted);
       text-align: center;
     }
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: var(--shadow-large);
+  }
+  50% {
+    box-shadow: var(--shadow-large), 0 0 25px rgba(59, 130, 246, 0.4);
+  }
+  100% {
+    box-shadow: var(--shadow-large);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(-2px);
   }
 }
 
