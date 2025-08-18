@@ -5,6 +5,16 @@
         {{ successMessage }}
       </div>
       
+      <!-- Show email verification component if registration succeeded and email verification is needed -->
+      <AuthEmailVerification
+        v-if="showEmailVerification"
+        :user-id="registeredUserId"
+        :user-email="registeredEmail"
+        :username="registeredUsername"
+        @verification-success="handleVerificationSuccess"
+        @back-to-register="resetRegistration"
+      />
+      
       <form v-else @submit.prevent="handleRegister" class="register-form">
         <!-- 用户名字段 -->
         <div class="form-group">
@@ -20,17 +30,25 @@
           <span v-if="errors.username" class="error-text">{{ errors.username }}</span>
         </div>
         
-        <!-- 邮箱字段 -->
+        <!-- 邮箱字段 - 现在是必填的 -->
         <div class="form-group">
-          <label for="settingEmail">邮箱 (可选)</label>
+          <label for="settingEmail">邮箱 <span class="required">*</span></label>
           <input
             id="settingEmail"
             v-model="email"
             type="email"
-            placeholder="请输入邮箱（可选）"
+            placeholder="请输入HKUST-GZ邮箱"
+            required
             @blur="validateEmail"
           />
           <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
+          <div class="email-hint">
+            <p>只允许使用 HKUST-GZ 邮箱注册：</p>
+            <ul>
+              <li>@connect.hkust-gz.edu.cn</li>
+              <li>@hkust-gz.edu.cn</li>
+            </ul>
+          </div>
         </div>
         
         <!-- 密码字段 -->
@@ -88,6 +106,15 @@
         <button type="submit" class="register-btn" :disabled="isLoading || !formValid">
           {{ isLoading ? '注册中...' : '注册' }}
         </button>
+
+        <!-- 邮箱验证说明 -->
+        <div class="verification-notice">
+          <p>注册后我们将向您的邮箱发送验证码，请确保邮箱地址正确</p>
+          <div class="trash-mail-reminder">
+            <strong>⚠️ 重要提醒：</strong>
+            <p>如果没有收到验证邮件，请检查您的垃圾邮件箱（垃圾邮件/废纸篓/杂件箱）</p>
+          </div>
+        </div>
       </form>
     </div>
   </template>
@@ -115,6 +142,12 @@
   const isLoading = ref(false);
   const successMessage = ref('');
   
+  // Email verification state
+  const showEmailVerification = ref(false);
+  const registeredUserId = ref(null);
+  const registeredEmail = ref('');
+  const registeredUsername = ref('');
+  
   // 获取auth组合式函数
   const { register } = useAuth();
   
@@ -139,18 +172,33 @@
   
   const validateEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email.value && !emailRegex.test(email.value)) {
+    const hkustDomains = ['connect.hkust-gz.edu.cn', 'hkust-gz.edu.cn'];
+    
+    if (!email.value) {
+      errors.value.email = '请输入邮箱地址';
+    } else if (!emailRegex.test(email.value)) {
       errors.value.email = '请输入有效的邮箱地址';
     } else {
-      errors.value.email = '';
+      const emailLower = email.value.toLowerCase().trim();
+      
+      // Check if it's exactly one of the allowed domains
+      const emailParts = emailLower.split('@');
+      const isHkustEmail = emailParts.length === 2 && 
+                          hkustDomains.includes(emailParts[1]);
+      
+      if (!isHkustEmail) {
+        errors.value.email = '只允许使用 HKUST-GZ 邮箱注册 (@connect.hkust-gz.edu.cn 或 @hkust-gz.edu.cn)';
+      } else {
+        errors.value.email = '';
+      }
     }
   };
   
   const validatePassword = () => {
     if (!password.value) {
       errors.value.password = '请设置密码';
-    } else if (password.value.length < 8) {
-      errors.value.password = '密码至少需要8个字符';
+    } else if (password.value.length < 6) {
+      errors.value.password = '密码至少需要6个字符';
     } else {
       errors.value.password = '';
     }
@@ -170,6 +218,7 @@
   const formValid = computed(() => {
     return (
       username.value &&
+      email.value && // Email is now required
       password.value &&
       confirmPassword.value &&
       !errors.value.username &&
@@ -201,38 +250,70 @@
       isLoading.value = true;
       registerError.value = '';
       
-      // Only include email if it's provided
-      const registerData = {
-        username: username.value,
-        password: password.value,
-        ...(email.value && { email: email.value })
-      };
+      const result = await register(username.value, email.value, password.value);
       
-      await register(registerData.username, registerData.email || '', registerData.password);
+      // 注册成功，显示邮箱验证界面
+      if (result.success) {
+        registeredUserId.value = result.userId;
+        registeredEmail.value = email.value;
+        registeredUsername.value = username.value;
+        showEmailVerification.value = true;
+        
+        // Clear form data for security
+        password.value = '';
+        confirmPassword.value = '';
+      }
       
-      // 注册成功
-      successMessage.value = '注册成功！账户已创建。';
-      
-      // 清除表单
-      username.value = '';
-      email.value = '';
-      password.value = '';
-      confirmPassword.value = '';
-      
-      // 触发事件
-      emit('register-success');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '注册失败，请稍后再试';
       registerError.value = errorMessage;
       
       // 如果是用户名已存在的错误，将错误信息显示在用户名输入框下方
-      if (errorMessage === '该用户名已被使用，请选择其他用户名') {
+      if (errorMessage.includes('用户名') && errorMessage.includes('已被使用')) {
         errors.value.username = errorMessage;
+        registerError.value = ''; // 清除全局错误信息
+      }
+      // 如果是邮箱已存在的错误，显示在邮箱输入框下方
+      else if (errorMessage.includes('邮箱') && errorMessage.includes('已被注册')) {
+        errors.value.email = errorMessage;
         registerError.value = ''; // 清除全局错误信息
       }
     } finally {
       isLoading.value = false;
     }
+  };
+
+  // Handle successful email verification
+  const handleVerificationSuccess = (data) => {
+    showEmailVerification.value = false;
+    successMessage.value = '邮箱验证成功！您现在可以正常使用论坛了。';
+    
+    // Clear all form data
+    resetForm();
+    
+    // 触发事件
+    emit('register-success', data);
+  };
+
+  // Reset registration to go back to form
+  const resetRegistration = () => {
+    showEmailVerification.value = false;
+    registeredUserId.value = null;
+    registeredEmail.value = '';
+    registeredUsername.value = '';
+    // Keep form data so user can try again
+  };
+
+  // Reset form completely
+  const resetForm = () => {
+    username.value = '';
+    email.value = '';
+    password.value = '';
+    confirmPassword.value = '';
+    Object.keys(errors.value).forEach(key => {
+      errors.value[key] = '';
+    });
+    registerError.value = '';
   };
   
   // 定义事件
@@ -433,6 +514,81 @@
 
     @media (max-width: 479px) {
       font-size: 1rem;
+    }
+  }
+
+  .required {
+    color: var(--error-color, #dc3545);
+    font-weight: bold;
+  }
+
+  .email-hint {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-tertiary, #888);
+
+    p {
+      margin: 0 0 0.25rem 0;
+      font-weight: 500;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1rem;
+      
+      li {
+        margin-bottom: 0.125rem;
+        font-family: monospace;
+        color: var(--primary-color, #4361ee);
+      }
+    }
+  }
+
+  .verification-notice {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--info-background, rgba(33, 150, 243, 0.1));
+    border-radius: 6px;
+    border-left: 4px solid var(--info-color, #2196f3);
+
+    @media (min-width: 480px) {
+      padding: 0.75rem;
+      border-radius: 4px;
+    }
+
+    p {
+      margin: 0 0 1rem 0;
+      font-size: 0.9rem;
+      color: var(--info-text, #1976d2);
+      line-height: 1.4;
+
+      @media (max-width: 479px) {
+        font-size: 1rem;
+      }
+    }
+
+    .trash-mail-reminder {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--warning-background, rgba(255, 193, 7, 0.1));
+      border-radius: 4px;
+      border-left: 3px solid var(--warning-color, #ffc107);
+
+      strong {
+        color: var(--warning-text, #f57c00);
+        font-size: 0.85rem;
+      }
+
+      p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.8rem;
+        color: var(--warning-text, #f57c00);
+        line-height: 1.3;
+
+        @media (max-width: 479px) {
+          font-size: 0.9rem;
+        }
+      }
     }
   }
   </style>
