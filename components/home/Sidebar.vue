@@ -174,7 +174,7 @@ watch(isHovered, (newValue: boolean) => {
           <hr class="nav-separator" />
         </li>
         <li>
-          <NuxtLink to="https://scheduler.unikorn.axfff.com/dashboard" target="_blank" rel="noopener noreferrer">
+          <NuxtLink to="https://scheduler.unikorn.axfff.com/dashboard/2510" target="_blank" rel="noopener noreferrer">
             <img src="/icons/sidebar_schedulerlogo.svg" alt="课程表" class="nav-icon" />
             <span class="nav-text">排课助手</span>
           </NuxtLink>

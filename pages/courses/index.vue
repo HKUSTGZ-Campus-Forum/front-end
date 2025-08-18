@@ -14,6 +14,26 @@
             <i class="fas fa-search"></i>
           </div>
           <div class="filter-box">
+            <select v-model="selectedSemester" @change="handleFilterChange">
+              <option value="">所有学期</option>
+              <option 
+                v-for="semester in availableSemesters" 
+                :key="semester.code" 
+                :value="semester.code"
+              >
+                {{ semester.display_name }}
+              </option>
+            </select>
+            <select v-model="selectedCourseType" @change="handleFilterChange">
+              <option value="">所有课程类型</option>
+              <option 
+                v-for="courseType in availableCourseTypes" 
+                :key="courseType.code" 
+                :value="courseType.code"
+              >
+                {{ courseType.name }}
+              </option>
+            </select>
             <select v-model="sortBy" @change="handleSort">
               <option value="code">课程代码</option>
               <option value="name">课程名称</option>
@@ -97,6 +117,10 @@ const isLoading = ref(true);
 const searchQuery = ref("");
 const sortBy = ref("code");
 const sortOrder = ref("asc");
+const selectedSemester = ref("");
+const selectedCourseType = ref("");
+const availableSemesters = ref([]);
+const availableCourseTypes = ref([]);
 
 // 防抖函数
 const debounce = (fn: Function, delay: number) => {
@@ -136,6 +160,16 @@ const fetchCourses = async () => {
       sort_by: sortBy.value,
       sort_order: sortOrder.value,
     });
+    
+    // Add semester filter if selected
+    if (selectedSemester.value) {
+      queryParams.append('semester', selectedSemester.value);
+    }
+    
+    // Add course type filter if selected
+    if (selectedCourseType.value) {
+      queryParams.append('course_type', selectedCourseType.value);
+    }
 
     const response = await fetchPublic(
       getApiUrl(`/api/courses?${queryParams.toString()}`)
@@ -164,6 +198,37 @@ const fetchCourses = async () => {
   }
 };
 
+// 获取可用的学期和课程类型
+const fetchFiltersData = async () => {
+  try {
+    // Fetch available semesters from courses data
+    const response = await fetchPublic(getApiUrl('/api/courses/filters'));
+    if (response.ok) {
+      const data = await response.json();
+      availableSemesters.value = data.semesters || [];
+      availableCourseTypes.value = data.course_types || [];
+      
+      // Set latest semester as default if available
+      if (availableSemesters.value.length > 0) {
+        selectedSemester.value = availableSemesters.value[0].code;
+        // 初始加载时使用默认筛选
+        fetchCourses();
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('获取筛选数据失败:', error);
+  }
+  
+  // Fallback: just fetch courses without semester filter
+  fetchCourses();
+};
+
+// 处理筛选器变化
+const handleFilterChange = () => {
+  fetchCourses();
+};
+
 // 使用防抖处理搜索
 const handleSearch = debounce(() => {
   fetchCourses();
@@ -174,9 +239,9 @@ const handleSort = () => {
   fetchCourses();
 };
 
-// 页面加载时获取课程列表
+// 页面加载时获取课程列表和筛选数据
 onMounted(() => {
-  fetchCourses();
+  fetchFiltersData();
 });
 </script>
 
