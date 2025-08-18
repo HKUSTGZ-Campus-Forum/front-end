@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { useHead } from "#imports";
 import { hkustgz } from "~/config/hkustgz";
 import { useApi } from "~/composables/useApi";
@@ -39,6 +39,7 @@ const refreshInterval = ref(null);
 const guguMessagesLimit = ref(10);
 const guguMessagesOffset = ref(0);
 const hasMoreMessages = ref(true);
+const hasNewMessages = ref(false);
 
 // 接口类型定义
 interface HotPost {
@@ -124,8 +125,24 @@ const goToGugu = () => {
   router.push("/gugu");
 };
 
+// 滚动到底部（显示最新消息）
+const scrollToBottom = (container) => {
+  if (container) {
+    container.scrollTop = container.scrollHeight;
+  }
+};
+
+// 处理点击新消息指示器
+const handleNewMessagesClick = () => {
+  const container = document.querySelector('.preview-messages.scrollable');
+  if (container) {
+    scrollToBottom(container);
+    hasNewMessages.value = false;
+  }
+};
+
 // 获取最近的咕咕消息
-const fetchRecentGuguMessages = async (loadMore = false) => {
+const fetchRecentGuguMessages = async (loadMore = false, isInitialLoad = false) => {
   if (loadMore) {
     if (!hasMoreMessages.value) return;
     isLoadingMoreGugu.value = true;
@@ -146,18 +163,37 @@ const fetchRecentGuguMessages = async (loadMore = false) => {
       const newMessages = data.messages || [];
       
       if (loadMore) {
-        // 追加新消息，避免重复
+        // 在前面追加旧消息，避免重复
         const existingIds = new Set(recentGuguMessages.value.map(m => m.id));
         const uniqueNewMessages = newMessages.filter(m => !existingIds.has(m.id));
-        recentGuguMessages.value = [...recentGuguMessages.value, ...uniqueNewMessages];
+        recentGuguMessages.value = [...uniqueNewMessages, ...recentGuguMessages.value];
         guguMessagesOffset.value += uniqueNewMessages.length;
         
         // 如果返回的消息数量少于请求的数量，说明没有更多消息了
         hasMoreMessages.value = newMessages.length === guguMessagesLimit.value;
       } else {
+        const oldMessageIds = new Set(recentGuguMessages.value.map(m => m.id));
         recentGuguMessages.value = newMessages;
         guguMessagesOffset.value = newMessages.length;
         hasMoreMessages.value = newMessages.length === guguMessagesLimit.value;
+        
+        // 检查是否有新消息
+        if (!isInitialLoad) {
+          const hasNewContent = newMessages.some(m => !oldMessageIds.has(m.id));
+          if (hasNewContent) {
+            hasNewMessages.value = true;
+          }
+        }
+        
+        // 只在初次加载时滚动到底部，定时刷新时保持用户当前阅读位置
+        if (isInitialLoad) {
+          setTimeout(() => {
+            const container = document.querySelector('.preview-messages.scrollable');
+            if (container) {
+              scrollToBottom(container);
+            }
+          }, 100);
+        }
       }
     } else {
       console.log("咕咕消息获取失败，可能服务还未实现");
@@ -172,28 +208,44 @@ const fetchRecentGuguMessages = async (loadMore = false) => {
   }
 };
 
-// 处理滚动到底部
+// 处理滚动到顶部加载更多
 const handleScroll = (event) => {
   const container = event.target;
   const scrollTop = container.scrollTop;
   const scrollHeight = container.scrollHeight;
   const clientHeight = container.clientHeight;
   
-  // 当滚动到距离底部20px时开始加载更多
-  if (scrollHeight - scrollTop - clientHeight < 20 && hasMoreMessages.value && !isLoadingMoreGugu.value) {
-    fetchRecentGuguMessages(true);
+  // 当滚动到距离顶部20px时开始加载更多（旧消息）
+  if (scrollTop < 20 && hasMoreMessages.value && !isLoadingMoreGugu.value) {
+    // 保存当前滚动位置，防止加载后跳动
+    const oldScrollHeight = container.scrollHeight;
+    const oldScrollTop = container.scrollTop;
+    
+    fetchRecentGuguMessages(true).then(() => {
+      // 恢复滚动位置
+      nextTick(() => {
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
+      });
+    });
+  }
+  
+  // 当用户滚动到接近底部时，自动隐藏新消息指示器
+  const nearBottom = scrollHeight - scrollTop - clientHeight < 50;
+  if (nearBottom && hasNewMessages.value) {
+    hasNewMessages.value = false;
   }
 };
 
 // 生命周期钩子
 onMounted(() => {
   fetchHotPosts();
-  fetchRecentGuguMessages();
+  fetchRecentGuguMessages(false, true); // 初次加载时传入 isInitialLoad = true
   
   // 设置定时刷新（每30秒）
   refreshInterval.value = setInterval(() => {
     fetchHotPosts();
-    fetchRecentGuguMessages();
+    fetchRecentGuguMessages(false, false); // 定时刷新时传入 isInitialLoad = false
   }, 30 * 1000);
 });
 
@@ -284,6 +336,17 @@ onUnmounted(() => {
                   class="preview-messages scrollable" 
                   @scroll="handleScroll"
                 >
+                  <!-- 加载更多指示器（顶部） -->
+                  <div v-if="isLoadingMoreGugu" class="loading-more-indicator top">
+                    <div class="loading-spinner-small"></div>
+                    <span>加载更多消息...</span>
+                  </div>
+                  
+                  <!-- 没有更多消息指示器（顶部） -->
+                  <div v-else-if="!hasMoreMessages && recentGuguMessages.length > 0" class="no-more-indicator top">
+                    已显示全部消息
+                  </div>
+
                   <div
                       v-for="message in recentGuguMessages"
                       :key="message.id"
@@ -295,23 +358,28 @@ onUnmounted(() => {
                     </div>
                     <div class="message-text">{{ message.content }}</div>
                   </div>
-                  
-                  <!-- 加载更多指示器 -->
-                  <div v-if="isLoadingMoreGugu" class="loading-more-indicator">
-                    <div class="loading-spinner-small"></div>
-                    <span>加载更多消息...</span>
-                  </div>
-                  
-                  <!-- 没有更多消息指示器 -->
-                  <div v-else-if="!hasMoreMessages && recentGuguMessages.length > 0" class="no-more-indicator">
-                    已显示全部消息
-                  </div>
                 </div>
                 
-                <!-- 渐变遮罩 - 只在有更多内容或正在加载时显示 -->
+                <!-- 新消息指示器 -->
+                <div 
+                  v-if="hasNewMessages" 
+                  @click="handleNewMessagesClick"
+                  class="new-messages-indicator"
+                >
+                  <i class="fas fa-arrow-down"></i>
+                  <span>有新消息</span>
+                </div>
+                
+                <!-- 顶部渐变遮罩 - 提示可向上滚动查看更多 -->
+                <div 
+                  v-if="hasMoreMessages || recentGuguMessages.length > 5" 
+                  class="scroll-fade-indicator top"
+                ></div>
+                
+                <!-- 底部渐变遮罩 - 只在有更多内容或正在加载时显示 -->
                 <div 
                   v-if="hasMoreMessages || isLoadingMoreGugu" 
-                  class="scroll-fade-indicator"
+                  class="scroll-fade-indicator bottom"
                 ></div>
               </div>
             </div>
@@ -1084,6 +1152,11 @@ onUnmounted(() => {
         color: var(--text-muted);
         font-size: 0.75rem;
         
+        &.top {
+          border-bottom: 1px solid var(--border-secondary);
+          margin-bottom: 0.25rem;
+        }
+        
         .loading-spinner-small {
           width: 12px;
           height: 12px;
@@ -1100,24 +1173,70 @@ onUnmounted(() => {
         color: var(--text-muted);
         font-size: 0.7rem;
         opacity: 0.8;
-        border-top: 1px solid var(--border-secondary);
-        margin-top: 0.25rem;
+        
+        &.top {
+          border-bottom: 1px solid var(--border-secondary);
+          margin-bottom: 0.25rem;
+        }
+      }
+
+      .new-messages-indicator {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--interactive-primary);
+        color: var(--text-inverse);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        box-shadow: var(--shadow-medium);
+        transition: all 0.3s ease;
+        animation: pulse-glow 2s infinite;
+        
+        &:hover {
+          background: var(--interactive-hover);
+          transform: translateX(-50%) translateY(-2px);
+          box-shadow: var(--shadow-large);
+        }
+        
+        i {
+          font-size: 0.7rem;
+        }
       }
 
       .scroll-fade-indicator {
         position: absolute;
-        bottom: 0;
         left: 0;
         right: 0;
         height: 20px;
-        background: linear-gradient(
-          to bottom,
-          transparent,
-          var(--surface-secondary)
-        );
         pointer-events: none;
         z-index: 1;
         opacity: 0.8;
+        
+        &.top {
+          top: 0;
+          background: linear-gradient(
+            to bottom,
+            var(--surface-secondary),
+            transparent
+          );
+        }
+        
+        &.bottom {
+          bottom: 0;
+          background: linear-gradient(
+            to bottom,
+            transparent,
+            var(--surface-secondary)
+          );
+        }
       }
 
       .preview-message {
@@ -1172,6 +1291,18 @@ onUnmounted(() => {
         }
       }
     }
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: var(--shadow-medium);
+  }
+  50% {
+    box-shadow: var(--shadow-large), 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  100% {
+    box-shadow: var(--shadow-medium);
   }
 }
 
