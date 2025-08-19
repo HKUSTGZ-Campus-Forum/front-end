@@ -69,6 +69,7 @@
       <div class="debug-actions">
         <button @click="checkManifest" class="debug-btn">Check Manifest</button>
         <button @click="forceRefresh" class="debug-btn">Refresh SW</button>
+        <button @click="resetPWAState" class="debug-btn warning">Reset PWA</button>
         <button v-if="canInstall" @click="triggerInstall" class="debug-btn primary">
           Trigger Install
         </button>
@@ -158,6 +159,43 @@ const triggerInstall = async () => {
     deferredPrompt.value.prompt()
     const { outcome } = await deferredPrompt.value.userChoice
     console.log(`📱 Install prompt: ${outcome}`)
+  }
+}
+
+const resetPWAState = async () => {
+  try {
+    console.log('🧹 Resetting PWA state...')
+    
+    // Clear our custom storage flags
+    localStorage.removeItem('pwa-install-dismissed')
+    sessionStorage.removeItem('pwa-install-session-dismissed')
+    
+    // Unregister service workers
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const registration of registrations) {
+        await registration.unregister()
+        console.log('🗑️ Unregistered service worker:', registration.scope)
+      }
+    }
+    
+    // Clear caches
+    if ('caches' in window) {
+      const cacheNames = await caches.keys()
+      for (const cacheName of cacheNames) {
+        await caches.delete(cacheName)
+        console.log('🗑️ Deleted cache:', cacheName)
+      }
+    }
+    
+    console.log('✅ PWA state reset complete')
+    alert('PWA state reset! The page will refresh.')
+    
+    // Refresh page
+    window.location.reload()
+  } catch (error) {
+    console.error('❌ Reset failed:', error)
+    alert('Reset failed: ' + error.message)
   }
 }
 
@@ -348,6 +386,16 @@ onMounted(async () => {
 
 .debug-btn.primary:hover {
   background: #4338ca;
+}
+
+.debug-btn.warning {
+  background: #f59e0b;
+  color: white;
+  border-color: #f59e0b;
+}
+
+.debug-btn.warning:hover {
+  background: #d97706;
 }
 
 .debug-trigger {
