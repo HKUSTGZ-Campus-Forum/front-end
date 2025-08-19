@@ -2,7 +2,7 @@
   <div v-if="showGuide" class="install-guide-container">
     <!-- Floating Install Button -->
     <div 
-      v-if="!isExpanded && canInstall" 
+      v-if="!isExpanded && showGuide" 
       class="install-float-btn"
       @click="isExpanded = true"
     >
@@ -96,6 +96,10 @@ const showGuide = computed(() => {
   // Don't show if already installed
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false
   
+  // Don't show if dismissed for current session
+  if (sessionStorage.getItem('pwa-install-session-dismissed') === 'true') return false
+  
+  // Always show the manual guide (don't wait for install prompt)
   return true
 })
 
@@ -195,22 +199,31 @@ const detectPlatform = () => {
 
 onMounted(() => {
   if (process.client) {
-    // Check if already dismissed this session
-    if (sessionStorage.getItem('pwa-install-session-dismissed') === 'true') {
-      return
-    }
-
+    // Clear any session dismissal for debugging
+    sessionStorage.removeItem('pwa-install-session-dismissed')
+    
+    // Debug logging
+    console.log('[PWA] Install Guide Debug:', {
+      showGuide: showGuide.value,
+      isExpanded: isExpanded.value,
+      canInstall: canInstall.value,
+      permanentlyDismissed: localStorage.getItem('pwa-install-dismissed'),
+      sessionDismissed: sessionStorage.getItem('pwa-install-session-dismissed'),
+      isStandalone: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches,
+      userAgent: navigator.userAgent
+    })
+    
     detectPlatform()
     
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
     
-    // Auto-show after a delay if installable
+    // Auto-show after a delay
     setTimeout(() => {
-      if (canInstall.value && !isExpanded.value) {
-        // Show floating button automatically after user has been on site
+      if (!isExpanded.value && showGuide.value) {
+        console.log('[PWA] Auto-showing install guide')
       }
-    }, 2000) // Show after 15 seconds
+    }, 2000)
   }
 })
 
