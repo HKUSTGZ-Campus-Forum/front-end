@@ -18,24 +18,36 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/topbar_logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/image/uniKorn.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/image/uniKorn.png",
-      "sizes": "any",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/image/uniKorn.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/image/uniKorn.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
       "src": "/image/uniKorn.png",
-      "sizes": "512x512",
+      "sizes": "1080x1080",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "narrow"
     }
   ]
 }

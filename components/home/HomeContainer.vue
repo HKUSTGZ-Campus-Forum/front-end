@@ -97,6 +97,12 @@ onUnmounted(() => {
     }">
       <slot></slot>
     </div>
+
+    <!-- PWA Install Guide -->
+    <PwaInstallGuide />
+
+    <!-- PWA Debug Panel (development only) -->
+    <PwaDebugPanel />
   </div>
 </template>
 
