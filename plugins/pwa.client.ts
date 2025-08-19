@@ -13,8 +13,6 @@ async function registerServiceWorker() {
       scope: '/'
     });
 
-    console.log('[PWA] Service Worker registered successfully:', registration.scope);
-
     // Handle service worker updates
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
@@ -23,20 +21,11 @@ async function registerServiceWorker() {
           if (newWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
               // New service worker available
-              console.log('[PWA] New content available, please refresh');
               showUpdateNotification();
-            } else {
-              // First time installation
-              console.log('[PWA] Content cached for offline use');
             }
           }
         });
       }
-    });
-
-    // Handle service worker messages
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      console.log('[PWA] Message from service worker:', event.data);
     });
 
     // Check for updates periodically (every 24 hours)
@@ -45,7 +34,10 @@ async function registerServiceWorker() {
     }, 24 * 60 * 60 * 1000);
 
   } catch (error) {
-    console.error('[PWA] Service Worker registration failed:', error);
+    // Silent fail for better user experience
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[PWA] Service Worker registration failed:', error);
+    }
   }
 }
 

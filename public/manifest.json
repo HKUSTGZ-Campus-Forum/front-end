@@ -1,7 +1,7 @@
 {
-  "name": "UniKorn Campus Forum",
+  "name": "科广汇 - UniKorn Campus Forum",
   "short_name": "UniKorn",
-  "description": "University online community platform",
+  "description": "港科广校园社区，评课、发帖、聊天...",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

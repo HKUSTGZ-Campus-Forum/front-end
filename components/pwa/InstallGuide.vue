@@ -208,9 +208,9 @@ onMounted(() => {
     // Auto-show after a delay if installable
     setTimeout(() => {
       if (canInstall.value && !isExpanded.value) {
-        // Don't auto-expand, just show the float button
+        // Show floating button automatically after user has been on site
       }
-    }, 10000) // Show after 10 seconds
+    }, 2000) // Show after 15 seconds
   }
 })
 
