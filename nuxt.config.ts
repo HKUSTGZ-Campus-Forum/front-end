@@ -43,12 +43,46 @@ export default defineNuxtConfig({
     layoutTransition: false,
     keepalive: false,
     head: {
+      meta: [
+        // PWA meta tags
+        { name: 'application-name', content: 'UniKorn Campus Forum' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'UniKorn' },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'msapplication-config', content: '/browserconfig.xml' },
+        { name: 'msapplication-TileColor', content: '#4f46e5' },
+        { name: 'msapplication-tap-highlight', content: 'no' },
+        { name: 'theme-color', content: '#4f46e5' },
+        // Standard meta tags
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: 'University online community platform' },
+        { name: 'keywords', content: 'university, forum, community, education, students' }
+      ],
       link: [
         {
           rel: "icon",
           type: "image/x-icon",
           href: "/favicon.ico",
         },
+        // PWA manifest
+        {
+          rel: 'manifest',
+          href: '/manifest.json'
+        },
+        // Apple touch icons
+        {
+          rel: 'apple-touch-icon',
+          sizes: 'any',
+          href: '/image/uniKorn.png'
+        },
+        // Additional PWA assets
+        {
+          rel: 'mask-icon',
+          href: '/icons/topbar_logo.svg',
+          color: '#4f46e5'
+        }
       ],
     },
   },
