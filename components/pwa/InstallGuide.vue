@@ -210,7 +210,7 @@ onMounted(() => {
       if (canInstall.value && !isExpanded.value) {
         // Show floating button automatically after user has been on site
       }
-    }, 15000) // Show after 15 seconds
+    }, 2000) // Show after 15 seconds
   }
 })
 
