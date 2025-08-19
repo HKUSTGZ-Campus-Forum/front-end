@@ -1,7 +1,8 @@
 // UniKorn Campus Forum Service Worker
-const CACHE_NAME = 'unikorn-forum-v1';
-const STATIC_CACHE = 'unikorn-static-v1';
-const API_CACHE = 'unikorn-api-v1';
+const CACHE_VERSION = 'v1.0.0';
+const CACHE_NAME = `unikorn-forum-${CACHE_VERSION}`;
+const STATIC_CACHE = `unikorn-static-${CACHE_VERSION}`;
+const API_CACHE = `unikorn-api-${CACHE_VERSION}`;
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -24,7 +25,6 @@ const API_PATTERNS = [
 ];
 
 self.addEventListener('install', (event) => {
-  console.log('[SW] Install event');
   event.waitUntil(
     Promise.all([
       caches.open(STATIC_CACHE).then((cache) => {
@@ -36,7 +36,6 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activate event');
   event.waitUntil(
     Promise.all([
       // Clean up old caches
@@ -101,7 +100,6 @@ async function handleApiRequest(request) {
     return networkResponse;
   } catch (error) {
     // If network fails, try cache
-    console.log('[SW] Network failed, trying cache for:', request.url);
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
@@ -142,8 +140,6 @@ async function handleStaticRequest(request) {
     
     return networkResponse;
   } catch (error) {
-    console.log('[SW] Network failed for static request:', request.url);
-    
     // For navigation requests, return cached home page
     if (request.mode === 'navigate') {
       const cachedHome = await caches.match('/');
@@ -162,8 +158,6 @@ async function handleStaticRequest(request) {
 
 // Handle background sync for when connection is restored
 self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync event:', event.tag);
-  
   if (event.tag === 'background-sync') {
     event.waitUntil(doBackgroundSync());
   }
@@ -182,8 +176,6 @@ async function doBackgroundSync() {
 
 // Handle push notifications (if needed in future)
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push received');
-  
   const options = {
     body: event.data ? event.data.text() : 'New update available',
     icon: '/icons/topbar_logo.svg',
@@ -213,8 +205,6 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification click received');
-  
   event.notification.close();
   
   if (event.action === 'explore') {
