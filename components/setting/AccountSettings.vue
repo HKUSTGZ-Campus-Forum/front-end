@@ -268,6 +268,111 @@
       </div>
     </div>
 
+    <!-- Connected Apps Section -->
+    <div class="settings-section">
+      <h2 class="section-title">已连接应用</h2>
+      <div class="connected-apps-card">
+        <p class="section-description">
+          管理已授权访问您账号的第三方应用
+        </p>
+        
+        <!-- Loading state -->
+        <div v-if="isLoadingApps" class="loading-state">
+          <div class="loading-spinner">⟳</div>
+          <span>加载中...</span>
+        </div>
+        
+        <!-- Connected apps list -->
+        <div v-else-if="connectedApps.length > 0" class="apps-list">
+          <div v-for="app in connectedApps" :key="app.id" class="app-item">
+            <div class="app-info">
+              <div class="app-header">
+                <h4 class="app-name">{{ app.client_name }}</h4>
+                <div class="app-status">
+                  <span v-if="app.is_expired" class="status-expired">已过期</span>
+                  <span v-else class="status-active">活跃</span>
+                </div>
+              </div>
+              
+              <p v-if="app.client_description" class="app-description">
+                {{ app.client_description }}
+              </p>
+              
+              <div class="app-details">
+                <div class="detail-item">
+                  <span class="detail-label">权限范围:</span>
+                  <div class="scopes">
+                    <span v-for="scope in getFormattedScopes(app.scope)" :key="scope" class="scope-tag">
+                      {{ scope }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">连接时间:</span>
+                  <span class="detail-value">{{ formatDate(app.created_at) }}</span>
+                </div>
+                
+                <div class="detail-item">
+                  <span class="detail-label">最后使用:</span>
+                  <span class="detail-value">{{ formatDate(app.last_used) }}</span>
+                </div>
+                
+                <div v-if="app.client_uri" class="detail-item">
+                  <span class="detail-label">应用网址:</span>
+                  <a :href="app.client_uri" target="_blank" class="app-link">
+                    {{ app.client_uri }}
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            <div class="app-actions">
+              <button 
+                @click="revokeAppAccess(app)"
+                class="revoke-btn"
+                :disabled="revokingAppId === app.id"
+              >
+                <span v-if="revokingAppId === app.id">撤销中...</span>
+                <span v-else>撤销授权</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- No connected apps -->
+        <div v-else class="no-apps">
+          <div class="no-apps-icon">🔗</div>
+          <h3>暂无已连接应用</h3>
+          <p class="no-apps-description">
+            您还没有授权任何第三方应用访问您的账号。
+            当您使用"Campus Forum 账号登录"功能时，已连接的应用将在这里显示。
+          </p>
+        </div>
+        
+        <!-- Error state -->
+        <div v-if="appsError" class="error-message">
+          {{ appsError }}
+        </div>
+        
+        <!-- Success message -->
+        <div v-if="appsSuccessMessage" class="success-message">
+          {{ appsSuccessMessage }}
+        </div>
+        
+        <div class="apps-actions">
+          <button 
+            @click="refreshConnectedApps" 
+            class="refresh-btn"
+            :disabled="isLoadingApps"
+          >
+            <span class="refresh-icon">↻</span>
+            刷新列表
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Email Verification Modal for existing users -->
     <div v-if="showEmailVerification && user?.id" class="modal-overlay" @click="closeEmailVerification">
       <div class="modal-content" @click.stop>
@@ -284,7 +389,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useApi } from '~/composables/useApi'
 
@@ -317,6 +422,13 @@ const passwordErrors = ref({
   new: '',
   confirm: ''
 })
+
+// OAuth apps state
+const connectedApps = ref([])
+const isLoadingApps = ref(false)
+const revokingAppId = ref(null)
+const appsError = ref('')
+const appsSuccessMessage = ref('')
 
 let cooldownTimer: NodeJS.Timeout | null = null
 
@@ -620,6 +732,130 @@ const handleEmailVerificationSuccess = async () => {
 const closeEmailVerification = () => {
   showEmailVerification.value = false
 }
+
+// OAuth Apps Management
+const loadConnectedApps = async () => {
+  if (!user.value?.id) return
+  
+  isLoadingApps.value = true
+  appsError.value = ''
+  
+  try {
+    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value.id}/oauth-tokens`)
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.msg || '获取连接应用失败')
+    }
+    
+    const data = await response.json()
+    connectedApps.value = data.connected_apps || []
+    
+  } catch (err) {
+    console.error('Load connected apps error:', err)
+    appsError.value = err instanceof Error ? err.message : '获取连接应用失败，请重试'
+  } finally {
+    isLoadingApps.value = false
+  }
+}
+
+const revokeAppAccess = async (app) => {
+  if (!user.value?.id || !confirm(`确定要撤销 "${app.client_name}" 的访问权限吗？\n\n撤销后，该应用将无法继续访问您的账号信息。`)) {
+    return
+  }
+  
+  revokingAppId.value = app.id
+  appsError.value = ''
+  appsSuccessMessage.value = ''
+  
+  try {
+    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value.id}/oauth-tokens/${app.id}/revoke`, {
+      method: 'POST'
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.msg || '撤销授权失败')
+    }
+    
+    const data = await response.json()
+    appsSuccessMessage.value = data.msg || `已成功撤销 "${app.client_name}" 的访问权限`
+    
+    // Remove the revoked app from the list
+    connectedApps.value = connectedApps.value.filter(a => a.id !== app.id)
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      appsSuccessMessage.value = ''
+    }, 5000)
+    
+  } catch (err) {
+    console.error('Revoke app access error:', err)
+    appsError.value = err instanceof Error ? err.message : '撤销授权失败，请重试'
+  } finally {
+    revokingAppId.value = null
+  }
+}
+
+const refreshConnectedApps = async () => {
+  appsSuccessMessage.value = ''
+  appsError.value = ''
+  await loadConnectedApps()
+}
+
+const getFormattedScopes = (scopeString) => {
+  if (!scopeString) return []
+  
+  const scopeMap = {
+    'profile': '基本信息',
+    'email': '邮箱地址', 
+    'courses': '课程数据'
+  }
+  
+  return scopeString.split(' ')
+    .map(scope => scopeMap[scope] || scope)
+    .filter(Boolean)
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '未知'
+  
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) {
+      return '今天'
+    } else if (diffDays === 1) {
+      return '昨天'
+    } else if (diffDays < 7) {
+      return `${diffDays} 天前`
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7)
+      return `${weeks} 周前`
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30)
+      return `${months} 个月前`
+    } else {
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    }
+  } catch {
+    return '未知'
+  }
+}
+
+// Load connected apps on component mount
+onMounted(() => {
+  if (user.value?.id) {
+    loadConnectedApps()
+  }
+})
 
 // Cleanup timer on unmount
 onUnmounted(() => {
@@ -1024,48 +1260,263 @@ onUnmounted(() => {
   }
 }
 
-// Email Change Section Styles
-.email-change-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-secondary, #e0e0e0);
+// Connected Apps Section Styles
+.connected-apps-card {
+  .section-description {
+    color: var(--text-secondary, #666);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
   
-  .change-email-btn {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    color: var(--primary-color, #4361ee);
-    border: 1px solid var(--primary-color, #4361ee);
-    border-radius: 4px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s;
+  .loading-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary, #666);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
     
-    &:hover {
-      background: var(--primary-color, #4361ee);
-      color: white;
+    .loading-spinner {
+      font-size: 1.5rem;
+      animation: spin 1s linear infinite;
     }
   }
   
-  .change-email-form {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: var(--surface-secondary, #f8f9fa);
-    border-radius: 6px;
-    border: 1px solid var(--border-primary, #e0e0e0);
+  .no-apps {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary, #666);
     
-    h4 {
-      margin: 0 0 0.5rem 0;
-      color: var(--text-primary, #333);
-      font-size: 1.1rem;
-    }
-    
-    .change-email-note {
-      color: var(--text-secondary, #666);
-      font-size: 0.85rem;
+    .no-apps-icon {
+      font-size: 3rem;
       margin-bottom: 1rem;
-      line-height: 1.4;
-      font-style: italic;
+      opacity: 0.5;
     }
+    
+    h3 {
+      color: var(--text-primary, #333);
+      margin: 0 0 1rem 0;
+      font-size: 1.2rem;
+    }
+    
+    .no-apps-description {
+      max-width: 400px;
+      margin: 0 auto;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+  }
+  
+  .apps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .app-item {
+    border: 1px solid var(--border-primary, #e0e0e0);
+    border-radius: 8px;
+    padding: 1.25rem;
+    background: var(--surface-secondary, #fafafa);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    
+    @media (max-width: 767px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .app-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      gap: 1rem;
+      
+      @media (max-width: 479px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+    }
+    
+    .app-name {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary, #333);
+      line-height: 1.3;
+    }
+    
+    .app-status {
+      .status-active {
+        background: var(--success-background, rgba(40, 167, 69, 0.1));
+        color: var(--success-color, #28a745);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      
+      .status-expired {
+        background: var(--warning-background, rgba(255, 193, 7, 0.1));
+        color: var(--warning-color, #ffc107);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+    }
+    
+    .app-description {
+      color: var(--text-secondary, #666);
+      margin: 0 0 1rem 0;
+      line-height: 1.4;
+      font-size: 0.95rem;
+    }
+    
+    .app-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .detail-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      
+      @media (max-width: 479px) {
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+    }
+    
+    .detail-label {
+      font-weight: 500;
+      color: var(--text-primary, #333);
+      min-width: 80px;
+      flex-shrink: 0;
+    }
+    
+    .detail-value {
+      color: var(--text-secondary, #666);
+    }
+    
+    .scopes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      
+      .scope-tag {
+        background: var(--primary-color-alpha, rgba(67, 97, 238, 0.1));
+        color: var(--primary-color, #4361ee);
+        padding: 0.25rem 0.75rem;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+    }
+    
+    .app-link {
+      color: var(--primary-color, #4361ee);
+      text-decoration: none;
+      word-break: break-all;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    
+    .app-actions {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      
+      @media (max-width: 767px) {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  }
+  
+  .apps-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.revoke-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--error-color, #dc3545);
+  border: 1px solid var(--error-color, #dc3545);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  
+  &:hover:not(:disabled) {
+    background: var(--error-color, #dc3545);
+    color: white;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.refresh-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--text-secondary, #666);
+  border: 1px solid var(--border-primary, #e0e0e0);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover:not(:disabled) {
+    border-color: var(--text-secondary, #666);
+    background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .refresh-icon {
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover .refresh-icon {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
