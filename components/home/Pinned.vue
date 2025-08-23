@@ -5,6 +5,7 @@ import { useAuth } from "~/composables/useAuth"
 import { useRouter } from "vue-router"
 import SearchDropdown from "~/components/ui/SearchDropdown.vue"
 import UserAvatar from "~/components/user/UserAvatar.vue"
+import NotificationBell from "~/components/ui/NotificationBell.vue"
 
 const router = useRouter();
 
@@ -110,6 +111,11 @@ const handleSearchSelect = (type: string, item: any) => {
           @search="handleSearch"
           @select="handleSearchSelect"
         />
+      </div>
+
+      <!-- 通知铃铛 - 仅登录用户显示 -->
+      <div v-if="isLoggedIn" class="notification-section">
+        <NotificationBell />
       </div>
 
       <!-- 用户下拉菜单 -->
@@ -321,6 +327,15 @@ const handleSearchSelect = (type: string, item: any) => {
 
   @media (max-width: 767px) {
     display: none;
+  }
+}
+
+.notification-section {
+  display: flex;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    margin-right: 0.5rem;
   }
 }
 

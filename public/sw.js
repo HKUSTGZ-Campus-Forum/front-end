@@ -174,42 +174,88 @@ async function doBackgroundSync() {
   );
 }
 
-// Handle push notifications (if needed in future)
+// Handle push notifications
 self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'New update available',
+  let notificationData = {
+    title: 'UniKorn Forum',
+    body: 'You have a new notification',
     icon: '/icons/topbar_logo.svg',
     badge: '/favicon.ico',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: '1'
+      primaryKey: '1',
+      url: '/notifications'
     },
     actions: [
       {
-        action: 'explore',
-        title: 'View',
+        action: 'view',
+        title: '查看',
         icon: '/icons/sidebar_logo.svg'
       },
       {
-        action: 'close',
-        title: 'Close',
-        icon: '/favicon.ico'
+        action: 'dismiss',
+        title: '关闭'
       }
-    ]
+    ],
+    requireInteraction: false,
+    tag: 'default-notification'
   };
+
+  // Parse push data if available
+  if (event.data) {
+    try {
+      const pushData = event.data.json();
+      notificationData = {
+        ...notificationData,
+        ...pushData
+      };
+    } catch (error) {
+      console.error('Error parsing push data:', error);
+      // Fallback to text data
+      notificationData.body = event.data.text() || notificationData.body;
+    }
+  }
   
   event.waitUntil(
-    self.registration.showNotification('UniKorn Forum', options)
+    self.registration.showNotification(notificationData.title, notificationData)
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+  // Get the URL to open from notification data
+  let urlToOpen = '/notifications';
+  
+  if (event.notification.data && event.notification.data.url) {
+    urlToOpen = event.notification.data.url;
   }
+  
+  // Handle action clicks
+  if (event.action === 'view') {
+    // Use the URL from notification data
+  } else if (event.action === 'dismiss') {
+    // Just close the notification (already done above)
+    return;
+  }
+  
+  // Open or focus the app window
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Try to find an existing window
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          // Navigate to the notification URL and focus the window
+          client.navigate(urlToOpen);
+          return client.focus();
+        }
+      }
+      
+      // If no existing window, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });
