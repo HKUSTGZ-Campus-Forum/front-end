@@ -1,5 +1,11 @@
 <template>
-  <div class="notification-bell" @click="toggleDropdown" ref="bellRef">
+  <div 
+    class="notification-bell" 
+    ref="bellRef"
+    @click="handleClick"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
     <!-- Bell Icon -->
     <div class="bell-icon" :class="{ 'has-unread': hasUnread }">
       <svg 
@@ -32,7 +38,12 @@
     </div>
     
     <!-- Dropdown -->
-    <div v-if="showDropdown" class="notification-dropdown">
+    <div 
+      v-if="showDropdown" 
+      class="notification-dropdown"
+      @mouseenter="handleDropdownMouseEnter"
+      @mouseleave="handleDropdownMouseLeave"
+    >
       <div class="dropdown-header">
         <h3>通知</h3>
         <div class="header-actions">
@@ -117,6 +128,7 @@ const {
   hasUnread,
   fetchNotifications,
   fetchUnreadCount,
+  markAsRead,
   markAllAsRead,
   getNotificationUrl,
   formatNotificationTime 
@@ -136,12 +148,58 @@ const showDropdown = ref(false)
 const markingAllRead = ref(false)
 const bellRef = ref<HTMLElement>()
 const refreshInterval = ref<NodeJS.Timeout>()
+const isMobile = ref(false)
+const hoverTimeout = ref<NodeJS.Timeout>()
 
 // Methods
 const toggleDropdown = async () => {
   showDropdown.value = !showDropdown.value
   if (showDropdown.value) {
     await loadNotifications()
+  }
+}
+
+const handleClick = async (event: Event) => {
+  if (isMobile.value) {
+    // Mobile: use click behavior
+    await toggleDropdown()
+  }
+  // Desktop: ignore click, use hover behavior instead
+}
+
+const handleMouseEnter = async () => {
+  if (!isMobile.value) {
+    // Desktop: show dropdown on hover
+    if (hoverTimeout.value) {
+      clearTimeout(hoverTimeout.value)
+    }
+    if (!showDropdown.value) {
+      showDropdown.value = true
+      await loadNotifications()
+    }
+  }
+}
+
+const handleMouseLeave = () => {
+  if (!isMobile.value) {
+    // Desktop: hide dropdown after a short delay
+    hoverTimeout.value = setTimeout(() => {
+      showDropdown.value = false
+    }, 200) // Small delay to allow moving to dropdown
+  }
+}
+
+const handleDropdownMouseEnter = () => {
+  if (!isMobile.value && hoverTimeout.value) {
+    // Cancel hide timeout when mouse enters dropdown
+    clearTimeout(hoverTimeout.value)
+  }
+}
+
+const handleDropdownMouseLeave = () => {
+  if (!isMobile.value) {
+    // Hide dropdown when mouse leaves
+    showDropdown.value = false
   }
 }
 
@@ -187,9 +245,9 @@ const handleNotificationClick = async (notification: any) => {
   router.push(url)
 }
 
-// Click outside to close dropdown
+// Click outside to close dropdown (mobile only)
 const handleClickOutside = (event: Event) => {
-  if (bellRef.value && !bellRef.value.contains(event.target as Node)) {
+  if (isMobile.value && bellRef.value && !bellRef.value.contains(event.target as Node)) {
     closeDropdown()
   }
 }
@@ -206,6 +264,13 @@ const startRefreshInterval = () => {
 
 // Lifecycle
 onMounted(async () => {
+  // Detect if device is mobile
+  const checkIsMobile = () => {
+    isMobile.value = window.innerWidth <= 768 || 'ontouchstart' in window
+  }
+  checkIsMobile()
+  window.addEventListener('resize', checkIsMobile)
+  
   // Initial load
   fetchUnreadCount()
   startRefreshInterval()
@@ -228,7 +293,7 @@ onMounted(async () => {
     console.warn('Failed to initialize push notifications:', err)
   }
   
-  // Add click outside listener
+  // Add click outside listener for mobile
   document.addEventListener('click', handleClickOutside)
 })
 
@@ -236,7 +301,11 @@ onUnmounted(() => {
   if (refreshInterval.value) {
     clearInterval(refreshInterval.value)
   }
+  if (hoverTimeout.value) {
+    clearTimeout(hoverTimeout.value)
+  }
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', () => {})
 })
 </script>
 
