@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
 import { usePushNotifications } from '~/composables/usePushNotifications'
 import { useRouter } from 'vue-router'
@@ -138,7 +138,10 @@ const {
   isSupported: isPushSupported,
   canSubscribe: canSubscribeToPush,
   subscribe: subscribeToPush,
-  init: initPush
+  init: initPush,
+  updateBadge,
+  clearBadge,
+  refreshBadge
 } = usePushNotifications()
 
 const router = useRouter()
@@ -150,6 +153,11 @@ const bellRef = ref<HTMLElement>()
 const refreshInterval = ref<NodeJS.Timeout>()
 const isMobile = ref(false)
 const hoverTimeout = ref<NodeJS.Timeout>()
+
+// Watch unread count and update badge
+watch(unreadCount, (newCount) => {
+  updateBadge(newCount)
+}, { immediate: false })
 
 // Methods
 const toggleDropdown = async () => {
@@ -221,6 +229,8 @@ const handleMarkAllRead = async () => {
   markingAllRead.value = true
   try {
     await markAllAsRead()
+    // Update app badge to 0
+    clearBadge()
   } catch (err) {
     console.error('Failed to mark all as read:', err)
   } finally {
@@ -235,6 +245,8 @@ const handleNotificationClick = async (notification: any) => {
   if (!notification.read) {
     try {
       await markAsRead(notification.id)
+      // Update badge count after marking as read
+      refreshBadge()
     } catch (err) {
       console.error('Failed to mark notification as read:', err)
     }
@@ -258,7 +270,10 @@ const startRefreshInterval = () => {
   
   // Refresh unread count every 30 seconds
   refreshInterval.value = setInterval(() => {
-    fetchUnreadCount()
+    fetchUnreadCount().then(() => {
+      // Update badge with current unread count
+      updateBadge(unreadCount.value)
+    })
   }, 30000)
 }
 
@@ -272,7 +287,10 @@ onMounted(async () => {
   window.addEventListener('resize', checkIsMobile)
   
   // Initial load
-  fetchUnreadCount()
+  fetchUnreadCount().then(() => {
+    // Set initial badge count
+    updateBadge(unreadCount.value)
+  })
   startRefreshInterval()
   
   // Initialize push notifications

@@ -160,6 +160,8 @@ async function handleStaticRequest(request) {
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
     event.waitUntil(doBackgroundSync());
+  } else if (event.tag === 'update-badge') {
+    event.waitUntil(updateUnreadBadge());
   }
 });
 
@@ -179,8 +181,8 @@ self.addEventListener('push', (event) => {
   let notificationData = {
     title: 'UniKorn Forum',
     body: 'You have a new notification',
-    icon: '/icons/topbar_logo.svg',
-    badge: '/favicon.ico',
+    icon: '/image/uniKorn.png',
+    badge: '/image/uniKorn.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -191,7 +193,7 @@ self.addEventListener('push', (event) => {
       {
         action: 'view',
         title: '查看',
-        icon: '/icons/sidebar_logo.svg'
+        icon: '/image/uniKorn.png'
       },
       {
         action: 'dismiss',
@@ -210,8 +212,13 @@ self.addEventListener('push', (event) => {
         ...notificationData,
         ...pushData
       };
+      
+      // Update app badge if unread count is provided
+      if (pushData.unread_count !== undefined) {
+        updateAppBadge(pushData.unread_count);
+      }
     } catch (error) {
-      console.error('Error parsing push data:', error);
+      console.error('[SW] Error parsing push data:', error);
       // Fallback to text data
       notificationData.body = event.data.text() || notificationData.body;
     }
@@ -259,3 +266,85 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Handle messages from the main app
+self.addEventListener('message', (event) => {
+  console.log('[SW] Message received:', event.data);
+  
+  if (event.data && event.data.type === 'UPDATE_BADGE') {
+    updateAppBadge(event.data.count);
+  } else if (event.data && event.data.type === 'CLEAR_BADGE') {
+    updateAppBadge(0);
+  } else if (event.data && event.data.type === 'REFRESH_BADGE') {
+    updateUnreadBadge();
+  } else if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
+    // Respond with auth token request (handled by client)
+    event.ports[0].postMessage({ token: null });
+  }
+});
+
+// Helper function to update app badge
+function updateAppBadge(count) {
+  console.log('[SW] Updating app badge to:', count);
+  
+  if ('setAppBadge' in self.navigator) {
+    if (count > 0) {
+      self.navigator.setAppBadge(count).catch((error) => {
+        console.error('[SW] Error setting app badge:', error);
+      });
+    } else {
+      self.navigator.clearAppBadge().catch((error) => {
+        console.error('[SW] Error clearing app badge:', error);
+      });
+    }
+  } else {
+    console.log('[SW] Badge API not supported');
+  }
+}
+
+// Helper function to fetch and update unread count
+async function updateUnreadBadge() {
+  try {
+    // Get auth token from clients
+    const clients = await self.clients.matchAll({ type: 'window' });
+    if (clients.length === 0) {
+      console.log('[SW] No active clients, clearing badge');
+      updateAppBadge(0);
+      return;
+    }
+
+    // Request auth token from client
+    const token = await new Promise((resolve) => {
+      const messageChannel = new MessageChannel();
+      messageChannel.port1.onmessage = (event) => {
+        resolve(event.data.token);
+      };
+      clients[0].postMessage({ type: 'GET_AUTH_TOKEN' }, [messageChannel.port2]);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => resolve(null), 5000);
+    });
+
+    if (!token) {
+      console.log('[SW] No auth token available, clearing badge');
+      updateAppBadge(0);
+      return;
+    }
+
+    const response = await fetch(`${self.location.origin}/api/notifications/unread-count`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      updateAppBadge(data.unread_count || 0);
+    } else {
+      console.error('[SW] Failed to fetch unread count:', response.status);
+    }
+  } catch (error) {
+    console.error('[SW] Error updating unread badge:', error);
+  }
+}

@@ -215,6 +215,34 @@ export const usePushNotifications = () => {
     }
   }
   
+  // Update app badge count
+  const updateBadge = (count: number) => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'UPDATE_BADGE',
+        count
+      })
+    }
+  }
+
+  // Clear app badge
+  const clearBadge = () => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CLEAR_BADGE'
+      })
+    }
+  }
+
+  // Refresh badge from server
+  const refreshBadge = () => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'REFRESH_BADGE'
+      })
+    }
+  }
+
   // Initialize push notifications
   const init = async () => {
     checkSupport()
@@ -228,6 +256,17 @@ export const usePushNotifications = () => {
           console.warn('Failed to get VAPID public key:', err)
         }
       }
+    }
+
+    // Setup service worker message handling for auth tokens
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
+          const { getAuthToken } = useAuth()
+          const token = getAuthToken()
+          event.ports[0].postMessage({ token })
+        }
+      })
     }
   }
   
@@ -264,7 +303,10 @@ export const usePushNotifications = () => {
     unsubscribe,
     checkSubscription,
     sendTestNotification,
-    init
+    init,
+    updateBadge,
+    clearBadge,
+    refreshBadge
   }
 }
 
