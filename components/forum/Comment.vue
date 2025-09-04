@@ -12,7 +12,14 @@
             :clickable="true"
             @click="goToUserProfile"
           />
-          <span class="comment-author">{{ commentAuthor }}</span>
+          <div class="comment-author-details">
+            <span class="comment-author">{{ commentAuthor }}</span>
+            <IdentityBadge 
+              :identity="comment.display_identity"
+              size="xs"
+              :show-tooltip="true"
+            />
+          </div>
         </div>
         <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
       </div>
@@ -108,7 +115,9 @@ import { onMounted } from "vue";
 import CommentForm from "./CommentForm.vue";
 import EmojiReation from "./EmojiReation.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
+import IdentityBadge from "~/components/identity/IdentityBadge.vue";
 import { ConfirmModal, ErrorModal, SuccessModal } from "../ui";
+import type { UserIdentity } from "~/types/identity";
 
 interface Props {
   comment: Comment;
@@ -333,6 +342,14 @@ onMounted(() => {
   // Mobile adjustments
   @media (max-width: 480px) {
     gap: 0.375rem;
+  }
+
+  .comment-author-details {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 }
 

@@ -23,7 +23,14 @@
                 :clickable="true"
                 @click="goToUserProfile"
               />
-              <span class="author">{{ postData.author || "匿名用户" }}</span>
+              <div class="author-details">
+                <span class="author">{{ postData.author || "匿名用户" }}</span>
+                <IdentityBadge 
+                  :identity="postData.display_identity"
+                  size="xs"
+                  :show-tooltip="true"
+                />
+              </div>
             </div>
             <span class="date"
               >发布于: {{ formatDate(postData.publishDate) }}</span
@@ -176,6 +183,7 @@ import CommentList from "~/components/forum/CommentList.vue";
 import { SuccessModal, ErrorModal, ConfirmModal, ImageModal } from "~/components/ui";
 import EmojiReactions from "~/components/forum/EmojiReation.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
+import IdentityBadge from "~/components/identity/IdentityBadge.vue";
 
 // Composables
 const route = useRoute();
@@ -599,6 +607,13 @@ onMounted(() => {
   // Mobile layout
   @media (max-width: 480px) {
     width: 100%;
+  }
+  
+  .author-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
   
   .author {
