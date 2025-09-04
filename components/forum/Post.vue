@@ -5,6 +5,8 @@ import { defineProps, withDefaults, computed } from "vue";
 import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
 import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
 import UserAvatar from "~/components/user/UserAvatar.vue";
+import IdentityBadge from "~/components/identity/IdentityBadge.vue";
+import type { UserIdentity } from "~/types/identity";
 
 // 定义帖子属性接口，基于数据库结构
 interface PostProps {
@@ -20,6 +22,7 @@ interface PostProps {
   reaction_count?: number;
   view_count?: number;
   tags?: Array<{ tag_id: number; name: string }>;
+  display_identity?: UserIdentity | null; // Identity verification badge
   // 其他可能的属性
 }
 
@@ -29,7 +32,7 @@ const props = withDefaults(defineProps<PostProps>(), {
   excerpt: "无内容摘要...",
   comment_count: 0,
   reaction_count: 0,
-  views_count: 0,
+  view_count: 0,
   tags: () => [],
 });
 
@@ -99,7 +102,14 @@ const goToUserProfile = (userId?: number) => {
           :clickable="!!user_id"
           @click="goToUserProfile"
         />
-        <span class="author">{{ displayAuthor }}</span>
+        <div class="author-details">
+          <span class="author">{{ displayAuthor }}</span>
+          <IdentityBadge 
+            :identity="display_identity"
+            size="xs"
+            :show-tooltip="true"
+          />
+        </div>
       </div>
       <span class="date">{{ formatDate(publishDate) }}</span>
     </div>
@@ -248,6 +258,19 @@ const goToUserProfile = (userId?: number) => {
     @media (max-width: 480px) {
       width: 100%;
       padding: 0.25rem 0;
+    }
+
+    .author-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      
+      @media (max-width: 480px) {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
     }
 
     .author {

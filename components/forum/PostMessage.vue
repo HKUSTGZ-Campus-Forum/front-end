@@ -35,6 +35,16 @@
         }}</span>
       </div>
 
+      <!-- 身份选择 -->
+      <div class="form-group">
+        <IdentitySelector 
+          v-model="selectedIdentityId"
+          size="md"
+          :show-label="true"
+          @change="handleIdentityChange"
+        />
+      </div>
+
       <!-- 上传图片 -->
       <div class="form-group">
         <label>图片附件</label>
@@ -96,7 +106,9 @@ import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import { useFileUpload } from "~/composables/useFileUpload";
 import FileUpload from "~/components/FileUpload.vue";
+import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { FileRecord } from "~/types/file";
+import type { UserIdentity } from "~/types/identity";
 
 const isUploading = ref(false);
 const { deleteFile } = useFileUpload();
@@ -113,6 +125,7 @@ const tags = ref([]);
 const content = ref("");
 const uploadedImages = ref<FileRecord[]>([]);
 const uploadMsg = ref("最多可上传5张图片");
+const selectedIdentityId = ref<number | null>(null);
 
 // 错误和状态
 const errors = ref({
@@ -199,6 +212,11 @@ const removeUploadedImage = async (index: number) => {
   }
 };
 
+// 处理身份选择变化
+const handleIdentityChange = (identity: UserIdentity | null) => {
+  selectedIdentityId.value = identity?.id || null;
+};
+
 // 计算表单是否有效
 const formValid = computed(() => {
   return (
@@ -227,6 +245,7 @@ const resetForm = () => {
   content.value = "";
   uploadedImages.value = [];
   uploadMsg.value = "最多可上传5张图片";
+  selectedIdentityId.value = null;
   errors.value = {
     title: "",
     content: "",
@@ -252,6 +271,7 @@ const handleSubmit = async () => {
       content: content.value,
       tags: tags.value,
       file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
+      display_identity_id: selectedIdentityId.value,
     };
 
     const response = await fetchWithAuth(

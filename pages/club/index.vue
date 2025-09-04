@@ -1,7 +1,7 @@
 <template>
   <HomeContainer>
     <div class="posts-container">
-      <h1 class="page-title">论坛文章</h1>
+      <h1 class="page-title">社团活动</h1>
 
       <!-- 新增筛选和操作栏 -->
       <div class="filter-action-bar">
@@ -19,7 +19,7 @@
         </div>
 
         <NuxtLink to="/forum/postMessage" class="post-button">
-          <i class="fas fa-plus"></i> 我要发帖
+          <i class="fas fa-plus"></i> 发布社团活动
         </NuxtLink>
       </div>
 
@@ -49,7 +49,7 @@
         <!-- Loading indicator -->
         <div v-if="isLoadingMore" class="loading-more">
           <div class="loading-spinner"></div>
-          <span>加载更多帖子...</span>
+          <span>加载更多社团活动...</span>
         </div>
 
         <!-- Error message -->
@@ -63,6 +63,13 @@
         <!-- End of content message -->
         <div v-if="hasReachedEnd && !isLoadingMore" class="end-of-content">
           <span>已经到底啦 ~</span>
+        </div>
+
+        <!-- Empty state when no posts -->
+        <div v-if="!isLoadingMore && posts.length === 0" class="empty-state">
+          <div class="empty-icon">🏛️</div>
+          <h3>暂无社团活动</h3>
+          <p>还没有社团活动发布，快来发布第一个吧！</p>
         </div>
       </div>
 
@@ -156,23 +163,24 @@ async function fetchPosts(reset = false) {
     loadMoreError.value = "";
     
     const { sort_by, sort_order } = sortMapping[sortBy.value] || sortMapping.latest;
-    const { getApiUrl } = useApi();
     
-    const response = await fetch(
-      getApiUrl("/api/posts?") +
-        new URLSearchParams({
-          page: currentPage.value.toString(),
-          limit: "20",
-          sort_by: sort_by,
-          sort_order: sort_order,
-        })
+    // Add tag filter for "club" using fetchWithAuth
+    const response = await fetchWithAuth("/api/posts?" +
+      new URLSearchParams({
+        page: currentPage.value.toString(),
+        limit: "20",
+        sort_by: sort_by,
+        sort_order: sort_order,
+        tags: "club", // Filter posts with "club" tag
+      })
     );
     
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.error || "获取文章列表失败");
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "获取社团活动失败");
     }
+
+    const data = await response.json();
 
     // Transform data format
     const newPosts = data.posts.map((post) => ({
@@ -196,8 +204,8 @@ async function fetchPosts(reset = false) {
     hasReachedEnd.value = currentPage.value >= totalPages.value;
     
   } catch (error) {
-    console.error("获取文章列表失败:", error);
-    loadMoreError.value = error.message || "获取文章列表失败，请稍后重试";
+    console.error("获取社团活动失败:", error);
+    loadMoreError.value = error.message || "获取社团活动失败，请稍后重试";
   } finally {
     isLoadingMore.value = false;
   }
@@ -270,6 +278,7 @@ onMounted(() => {
   margin-bottom: 1rem;
   font-size: 2rem;
   text-align: center;
+  color: var(--text-primary);
   
   // Responsive typography
   @media (max-width: 480px) {
@@ -290,9 +299,9 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--surface-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-small);
   
   // Mobile layout - stack vertically on small screens
   @media (max-width: 480px) {
@@ -321,7 +330,7 @@ onMounted(() => {
   .filter-label {
     margin-right: 0.5rem;
     font-weight: 500;
-    color: #555;
+    color: var(--text-secondary);
     
     // Hide label on very small screens to save space
     @media (max-width: 320px) {
@@ -331,10 +340,10 @@ onMounted(() => {
 
   .filter-select {
     padding: 0.5rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background-color: white;
-    color: #333;
+    background-color: var(--surface-primary);
+    color: var(--text-primary);
     cursor: pointer;
     min-height: 44px; // Touch-friendly minimum height
     
@@ -347,8 +356,8 @@ onMounted(() => {
 
     &:focus {
       outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      border-color: var(--interactive-primary);
+      box-shadow: 0 0 0 2px var(--interactive-focus);
     }
   }
 }
@@ -358,8 +367,8 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #3498db;
-  color: white;
+  background-color: var(--interactive-primary);
+  color: var(--text-inverse);
   border-radius: 4px;
   text-decoration: none;
   font-weight: 500;
@@ -379,13 +388,13 @@ onMounted(() => {
   }
 
   &:hover {
-    background-color: #2980b9;
+    background-color: var(--interactive-hover);
   }
   
   // Touch feedback for mobile
   &:active {
     transform: translateY(1px);
-    background-color: #2574a9;
+    background-color: var(--interactive-active);
   }
 
   i {
@@ -412,6 +421,45 @@ onMounted(() => {
   }
 }
 
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+  
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+  
+  p {
+    font-size: 1rem;
+    opacity: 0.8;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 3rem 1rem;
+    
+    .empty-icon {
+      font-size: 3rem;
+    }
+    
+    h3 {
+      font-size: 1.25rem;
+    }
+    
+    p {
+      font-size: 0.9rem;
+    }
+  }
+}
+
 /* Mobile-optimized pagination */
 .pagination {
   display: flex;
@@ -430,8 +478,8 @@ onMounted(() => {
   button {
     padding: 0.5rem 1rem;
     border: none;
-    background-color: #3498db;
-    color: white;
+    background-color: var(--interactive-primary);
+    color: var(--text-inverse);
     border-radius: 4px;
     cursor: pointer;
     min-height: 44px; // Touch-friendly minimum height
@@ -445,23 +493,24 @@ onMounted(() => {
     }
 
     &:disabled {
-      background-color: #ccc;
+      background-color: var(--interactive-disabled);
       cursor: not-allowed;
     }
 
     &:hover:not(:disabled) {
-      background-color: #2980b9;
+      background-color: var(--interactive-hover);
     }
     
     // Touch feedback
     &:active:not(:disabled) {
       transform: translateY(1px);
-      background-color: #2574a9;
+      background-color: var(--interactive-active);
     }
   }
 
   .page-number {
     font-weight: bold;
+    color: var(--text-primary);
     
     @media (max-width: 480px) {
       font-size: 1rem;
@@ -474,14 +523,14 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: #666;
+  color: var(--text-secondary);
   gap: 1rem;
   
   .loading-spinner {
     width: 24px;
     height: 24px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
+    border: 3px solid var(--border-primary);
+    border-top: 3px solid var(--interactive-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -490,8 +539,8 @@ onMounted(() => {
 .load-more-error {
   text-align: center;
   padding: 1.5rem;
-  color: #e74c3c;
-  background-color: #fef2f2;
+  color: var(--status-error);
+  background-color: var(--status-error-bg);
   border-radius: 8px;
   margin: 1rem 0;
   
@@ -504,15 +553,15 @@ onMounted(() => {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background-color: #3498db;
-    color: white;
+    background-color: var(--interactive-primary);
+    color: var(--text-inverse);
     border: none;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
     
     &:hover {
-      background-color: #2980b9;
+      background-color: var(--interactive-hover);
     }
     
     i {
@@ -524,9 +573,9 @@ onMounted(() => {
 .end-of-content {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-primary);
   margin-top: 1rem;
 }
 
