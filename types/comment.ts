@@ -1,3 +1,5 @@
+import type { UserIdentity } from './identity';
+
 export interface Comment {
   id: number;
   post_id: number;
@@ -9,6 +11,7 @@ export interface Comment {
   updated_at: string;
   author?: string;
   author_avatar?: string | null;
+  display_identity?: UserIdentity | null; // Identity verification badge
   replies?: Comment[]; // 子评论
 }
 
@@ -16,4 +19,5 @@ export interface CommentCreateData {
   content: string;
   post_id: number;
   parent_comment_id?: number;
+  display_identity_id?: number | null;
 }

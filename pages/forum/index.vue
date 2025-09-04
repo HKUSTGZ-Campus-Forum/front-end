@@ -33,6 +33,7 @@
           :title="post.title"
           :author="post.author"
           :author_avatar="post.author_avatar"
+          :display_identity="post.display_identity"
           :publish-date="post.publishDate"
           :excerpt="post.content"
           :content="post.content"

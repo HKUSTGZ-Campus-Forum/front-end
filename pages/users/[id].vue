@@ -7,6 +7,8 @@ import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import AvatarUpload from "~/components/user/AvatarUpload.vue";
+import IdentityBadge from "~/components/identity/IdentityBadge.vue";
+import type { UserIdentity } from "~/types/identity";
 
 const { isLoggedIn, user, updateLocalUserData } = useAuth();
 const { fetchWithAuth, getApiUrl } = useApi();
@@ -23,6 +25,7 @@ interface UserInfo {
   createdAt?: string;
   created_at?: string;
   role_name?: string; // 🔥 后端返回的角色名
+  identities?: UserIdentity[]; // 🔥 用户身份认证列表
 }
 
 interface UserStats {
@@ -62,6 +65,11 @@ const userId = route.params.id;
 // Check if this is the current user's profile
 const isOwnProfile = computed(() => {
   return isLoggedIn.value && user.value && String(user.value.id) === String(userId);
+});
+
+// Get approved identities for display
+const approvedIdentities = computed(() => {
+  return userInfo.value.identities?.filter(identity => identity.status === 'approved') || [];
 });
 
 // 🔥 修复：获取用户信息，根据登录状态选择API
@@ -128,8 +136,10 @@ const fetchUserInfo = async () => {
 
     const data = await response.json();
     const statsData = statsResponse.ok ? await statsResponse.json() : null;
-    // console.log("📥 获取到的用户数据:", data);
-    // console.log("📊 获取到的统计数据:", statsData);
+    console.log("📥 获取到的用户数据:", data);
+    console.log("📊 获取到的统计数据:", statsData);
+    console.log("🔍 用户身份数据:", data.identities);
+    console.log("✅ 已通过身份数据:", data.identities?.filter(i => i.status === 'approved'));
 
     // 🔥 适配后端返回的数据结构
     userInfo.value = {
@@ -142,6 +152,7 @@ const fetchUserInfo = async () => {
       createdAt: data.created_at,
       created_at: data.created_at,
       role_name: data.role_name,
+      identities: data.identities || [], // 🔥 用户身份认证列表
     };
 
     // 🔥 使用新的统计数据API
@@ -438,6 +449,16 @@ useHead({
                   userInfo.role_name || "用户"
                 }}</span>
                 <span class="badge badge-success">正常</span>
+                <!-- 🔥 显示用户的身份认证徽章 -->
+                <div v-if="approvedIdentities.length > 0" class="identity-badges">
+                  <IdentityBadge 
+                    v-for="identity in approvedIdentities"
+                    :key="identity.id"
+                    :identity="identity"
+                    size="sm"
+                    :show-tooltip="true"
+                  />
+                </div>
               </div>
             </div>
 
@@ -509,6 +530,23 @@ useHead({
             >
               <span class="detail-label">邮箱</span>
               <span class="detail-value">{{ userInfo.email }}</span>
+            </div>
+
+            <!-- 🔥 身份认证详情 -->
+            <div class="detail-item" v-if="approvedIdentities.length > 0">
+              <span class="detail-label">身份认证</span>
+              <div class="detail-value identity-list">
+                <div v-for="identity in approvedIdentities" :key="identity.id" class="identity-detail">
+                  <IdentityBadge 
+                    :identity="identity"
+                    size="xs"
+                    :show-tooltip="false"
+                  />
+                  <span class="identity-verified-time" v-if="identity.verified_at">
+                    {{ formatDate(identity.verified_at) }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -928,9 +966,16 @@ useHead({
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    align-items: center;
 
     @media (max-width: 768px) {
       justify-content: center;
+    }
+
+    .identity-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
   }
 }
@@ -1086,6 +1131,25 @@ useHead({
       font-size: 1rem;
       word-break: break-word;
     }
+
+    &.identity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+  }
+}
+
+.identity-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  .identity-verified-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: normal;
   }
 }
 

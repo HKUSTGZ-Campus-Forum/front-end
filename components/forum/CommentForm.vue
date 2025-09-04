@@ -8,6 +8,16 @@
       :disabled="isLoading"
     ></textarea>
 
+    <!-- Identity Selector for top-level comments -->
+    <div v-if="!parentCommentId" class="identity-selector-wrapper">
+      <IdentitySelector 
+        v-model="selectedIdentityId"
+        size="sm"
+        :show-label="false"
+        @change="handleIdentityChange"
+      />
+    </div>
+
     <div class="form-actions">
       <button
         v-if="parentCommentId"
@@ -34,7 +44,9 @@
 import { ref } from "vue";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
+import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { Comment, CommentCreateData } from "~/types/comment";
+import type { UserIdentity } from "~/types/identity";
 
 interface Props {
   postId: number;
@@ -54,6 +66,12 @@ const { fetchWithAuth, getApiUrl } = useApi();
 const content = ref("");
 const isLoading = ref(false);
 const error = ref("");
+const selectedIdentityId = ref<number | null>(null);
+
+// Handle identity selection
+const handleIdentityChange = (identity: UserIdentity | null) => {
+  selectedIdentityId.value = identity?.id || null;
+};
 
 const submitComment = async () => {
   if (!user.value) {
@@ -73,6 +91,7 @@ const submitComment = async () => {
     const commentData: CommentCreateData = {
       content: content.value.trim(),
       post_id: props.postId,
+      display_identity_id: selectedIdentityId.value,
     };
 
     if (props.parentCommentId) {
@@ -98,6 +117,7 @@ const submitComment = async () => {
 
     // 清空表单
     content.value = "";
+    selectedIdentityId.value = null;
 
     // 通知父组件
     emit("comment-added", newComment);
@@ -155,6 +175,14 @@ const submitComment = async () => {
         opacity: 0.7;
       }
     }
+  }
+}
+
+.identity-selector-wrapper {
+  margin: 0.75rem 0;
+  
+  @media (max-width: 480px) {
+    margin: 1rem 0;
   }
 }
 
