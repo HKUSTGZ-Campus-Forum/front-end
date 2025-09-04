@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<PostProps>(), {
   excerpt: "无内容摘要...",
   comment_count: 0,
   reaction_count: 0,
-  views_count: 0,
+  view_count: 0,
   tags: () => [],
 });
 

@@ -139,6 +139,16 @@ watch(isHovered, (newValue: boolean) => {
         </li>
         <li>
           <NuxtLink
+            to="/club"
+            :class="{ active: route.path.startsWith('/club') }"
+            @click="handleNavClick"
+          >
+            <img src="/icons/sidebar_club.svg" alt="社团" class="nav-icon" />
+            <span class="nav-text">社团</span>
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink
             to="/gugu"
             :class="{ active: route.path.startsWith('/gugu') }"
             @click="handleNavClick"
