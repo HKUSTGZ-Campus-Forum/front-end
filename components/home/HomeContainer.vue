@@ -95,7 +95,12 @@ onUnmounted(() => {
       'sidebar-collapsed': fold.updates && !isMobile,
       'mobile-content': isMobile
     }">
-      <slot></slot>
+      <div class="content-wrapper">
+        <slot></slot>
+      </div>
+      
+      <!-- Site Footer -->
+      <CommonFooter />
     </div>
 
     <!-- PWA Install Guide -->
@@ -123,11 +128,17 @@ onUnmounted(() => {
 .main-content {
   margin-left: 200px; /* 侧边栏展开时的边距 */
   margin-top: 70px; /* 顶部栏高度 */
-  padding: 1rem;
   min-height: calc(100vh - 70px);
   transition: margin-left 0.3s ease;
   background: var(--bg-primary, transparent); /* Use theme background */
   color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  
+  .content-wrapper {
+    flex: 1;
+    padding: 1rem;
+  }
   
   &.sidebar-collapsed {
     margin-left: 100px; /* 侧边栏折叠时的边距 */
@@ -137,8 +148,11 @@ onUnmounted(() => {
   &.mobile-content {
     margin-left: 0;
     margin-top: 60px; /* Shorter mobile header */
-    padding: 0.75rem;
     min-height: calc(100vh - 60px);
+    
+    .content-wrapper {
+      padding: 0.75rem;
+    }
   }
 }
 
@@ -147,8 +161,11 @@ onUnmounted(() => {
   .main-content {
     margin-left: 0 !important;
     margin-top: 60px;
-    padding: 0.75rem;
     min-height: calc(100vh - 60px);
+    
+    .content-wrapper {
+      padding: 0.75rem;
+    }
   }
 }
 
@@ -163,12 +180,8 @@ onUnmounted(() => {
 
 // Small mobile devices
 @media (max-width: 480px) {
-  .main-content {
+  .main-content .content-wrapper {
     padding: 0.5rem;
-    
-    &.mobile-content {
-      padding: 0.5rem;
-    }
   }
 }
 </style>
