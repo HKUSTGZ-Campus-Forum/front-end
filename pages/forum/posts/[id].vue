@@ -392,6 +392,7 @@ const fetchPostData = async () => {
       tags: data.tags || [],
       user_id: data.author_id || data.user_id,
       files: data.files || [], // Include files from API response
+      display_identity: data.display_identity || null, // Identity verification badge
     };
   } catch (error) {
     console.error("获取帖子失败:", error);
