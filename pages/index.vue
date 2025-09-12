@@ -5,6 +5,8 @@ import { hkustgz } from "~/config/hkustgz";
 import { useApi } from "~/composables/useApi";
 import { useRouter } from "vue-router";
 import UserAvatar from "~/components/user/UserAvatar.vue";
+import IdentityBadge from "~/components/identity/IdentityBadge.vue";
+import type { UserIdentity } from "~/types/identity";
 
 // 设置页面的元信息
 useHead({
@@ -58,6 +60,7 @@ interface HotPost {
     name: string;
     type: string;
   }>;
+  display_identity?: UserIdentity | null; // Identity verification badge
 }
 
 // 获取热门帖子
@@ -440,7 +443,14 @@ onUnmounted(() => {
                 :clickable="true"
                 @click.stop="goToUserProfile(post.author_id)"
               />
-              <span class="author-name">{{ post.author }}</span>
+              <div class="author-details">
+                <span class="author-name">{{ post.author }}</span>
+                <IdentityBadge 
+                  :identity="post.display_identity"
+                  size="xs"
+                  :show-tooltip="true"
+                />
+              </div>
             </div>
 
             <p class="post-content">{{ post.content }}</p>
@@ -914,6 +924,19 @@ onUnmounted(() => {
       font-size: 0.85rem;
       // Ensure proper touch target for avatar
       min-height: 32px;
+      
+      .author-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        
+        @media (max-width: 480px) {
+          flex-direction: row;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+      }
       
       .author-name {
         color: var(--text-secondary);
