@@ -46,7 +46,14 @@ export function useApi() {
         Authorization: `Bearer ${token}`,
       };
 
-      return fetch(getApiUrl(url), { ...options, headers });
+      // Auto-stringify body if it's an object and content-type is JSON
+      const processedOptions = { ...options, headers };
+      if (options.body && typeof options.body === 'object' &&
+          headers['Content-Type'] === 'application/json') {
+        processedOptions.body = JSON.stringify(options.body);
+      }
+
+      return fetch(getApiUrl(url), processedOptions);
     };
 
     try {
