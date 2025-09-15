@@ -21,6 +21,7 @@
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "dayjs-nuxt": "^2.1.11",
+    "lodash-es": "^4.17.21",
     "nuxt": "^3.17.5",
     "pinia": "^2.3.1",
     "pinia-plugin-persistedstate": "^3.2.0",

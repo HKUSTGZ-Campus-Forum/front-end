@@ -143,8 +143,8 @@ watch(isHovered, (newValue: boolean) => {
             :class="{ active: route.path.startsWith('/club') }"
             @click="handleNavClick"
           >
-            <img src="/icons/sidebar_club.svg" alt="社团" class="nav-icon" />
-            <span class="nav-text">社团</span>
+            <img src="/icons/sidebar_club.svg" alt="活动" class="nav-icon" />
+            <span class="nav-text">活动</span>
           </NuxtLink>
         </li>
         <li>
@@ -155,6 +155,16 @@ watch(isHovered, (newValue: boolean) => {
           >
             <img src="/icons/sidebar_gugulogo.svg" alt="咕咕" class="nav-icon" />
             <span class="nav-text">咕咕</span>
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink
+            to="/matching"
+            :class="{ active: route.path.startsWith('/matching') }"
+            @click="handleNavClick"
+          >
+            <img src="/icons/sidebar_matching.svg" alt="组队" class="nav-icon" />
+            <span class="nav-text">组队</span>
           </NuxtLink>
         </li>
         <li>

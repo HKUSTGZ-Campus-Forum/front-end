@@ -31,6 +31,9 @@ export default defineNuxtConfig({
     strategy: "no_prefix",
     langDir: "locales/",
     lazy: true,
+    bundle: {
+      optimizeTranslationDirective: false
+    }
   },
   imports: {
     dirs: ["store/**"],
@@ -38,6 +41,14 @@ export default defineNuxtConfig({
   devServer: {
     host: "localhost",
     port: 3000,
+  },
+  vite: {
+    server: {
+      hmr: {
+        port: 3001,
+        host: 'localhost'
+      }
+    }
   },
   app: {
     layoutTransition: false,

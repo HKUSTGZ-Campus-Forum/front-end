@@ -3,7 +3,7 @@ import type { UploadOptions, UploadUrlResponse, FileRecord, FileType } from '~/t
 import { useApi } from './useApi'
 import { compressImage, COMPRESSION_PRESETS, type CompressionOptions, type CompressionResult } from '~/utils/imageCompression'
 
-export const useFileUpload = () => {
+export const useCustomFileUpload = () => {
   const isUploading = ref(false)
   const uploadProgress = ref(0)
   const error = ref<Error | null>(null)
