@@ -59,13 +59,22 @@
               </div>
             </div>
             <div class="prompt-actions">
-              <NuxtLink to="/matching/profile" class="btn btn-primary btn-lg">
-                {{ profile?.id ? '继续完善资料' : '开始设置' }}
-                <Icon name="arrow-right" />
-              </NuxtLink>
-              <button v-if="profile?.bio" @click="skipToDiscover" class="btn btn-outline">
-                先去看看项目
-              </button>
+              <template v-if="isLoggedIn">
+                <NuxtLink to="/matching/profile" class="btn btn-primary btn-lg">
+                  {{ profile?.id ? '继续完善资料' : '开始设置' }}
+                  <Icon name="arrow-right" />
+                </NuxtLink>
+                <button v-if="profile?.bio" @click="skipToDiscover" class="btn btn-outline">
+                  先去看看项目
+                </button>
+              </template>
+              <template v-else>
+                <NuxtLink to="/login?redirect=/matching" class="btn btn-primary btn-lg">
+                  登录开始设置
+                  <Icon name="arrow-right" />
+                </NuxtLink>
+                <p class="login-hint">需要登录后才能设置个人资料和匹配队友</p>
+              </template>
             </div>
           </div>
         </div>
@@ -158,11 +167,11 @@ import MatchingNavigation from '~/components/matching/MatchingNavigation.vue'
 
 // Composables
 const { fetchWithAuth } = useApi()
+const { isLoggedIn, user } = useAuth()
 
 // Page meta
 definePageMeta({
   title: 'Teammate Matching',
-  requiresAuth: true,
 })
 
 // Reactive data
@@ -221,6 +230,12 @@ const getOnboardingDescription = computed(() => {
 
 // Fetch dashboard data
 const fetchDashboardData = async () => {
+  if (!isLoggedIn.value) {
+    console.log('👤 User not logged in, skipping dashboard fetch')
+    loading.value = false
+    return
+  }
+
   try {
     console.log('🔄 Fetching dashboard data...')
     const rawResponse = await fetchWithAuth('/api/matching/dashboard')
@@ -768,6 +783,13 @@ onMounted(async () => {
 .btn-sm {
   padding: 6px 12px;
   font-size: 0.8rem;
+}
+
+.login-hint {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 8px 0 0 0;
+  text-align: center;
 }
 
 @media (max-width: 768px) {

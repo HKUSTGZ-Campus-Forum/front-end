@@ -251,6 +251,7 @@ const { user } = useAuth()
 // Page meta
 definePageMeta({
   title: 'Project Detail',
+  requiresAuth: true,
 })
 
 // Reactive data
