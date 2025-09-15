@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { FileType, FileRecord } from '~/types/file'
-import { useFileUpload } from '~/composables/useFileUpload'
+import { useCustomFileUpload } from '~/composables/useFileUpload'
 
 const props = defineProps<{
   fileType: FileType
@@ -106,7 +106,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const uploadedFile = ref<FileRecord | null>(null)
 const isDragging = ref(false)
 
-const { uploadFile, deleteFile, isUploading, uploadProgress, error, compressionInfo } = useFileUpload()
+const { uploadFile, deleteFile, isUploading, uploadProgress, error, compressionInfo } = useCustomFileUpload()
 
 const isImage = computed(() => {
   if (!uploadedFile.value?.url) return false
@@ -165,7 +165,7 @@ const processFile = async (file: File) => {
       onError: (err) => emit('upload-error', err)
     })
   } catch (err) {
-    // Error is already handled by useFileUpload
+    // Error is already handled by useCustomFileUpload
     console.error('Upload failed:', err)
   }
 }

@@ -19,4 +19,11 @@ export const usePersistHomeStore = defineStore({
       sitemaps: true, // 站点地图区块的折叠状态
     },
   }),
+
+  // 添加操作方法
+  actions: {
+    toggleSidebar() {
+      this.fold.updates = !this.fold.updates;
+    }
+  },
 });

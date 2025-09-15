@@ -1,23 +1,36 @@
 <template>
   <HomeContainer>
-    <div class="project-create">
+    <div class="project-edit">
       <MatchingBreadcrumbs />
 
-      <div class="create-header">
-        <h1>
-          <Icon name="plus-circle" class="title-icon" />
-          创建项目
-        </h1>
-        <p>分享你的项目想法，找到合适的队友</p>
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <Icon name="spinner" class="spinning" />
+        <p>正在加载项目信息...</p>
+      </div>
 
-        <!-- Creation tip -->
-        <div class="creation-tip">
-          <Icon name="lightbulb" class="tip-icon" />
-          <span>💡 即使只是一个模糊的想法或几个关键词，也可以创建项目。系统会帮你找到合适的队友来完善想法！</span>
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state">
+        <Icon name="alert-circle" class="error-icon" />
+        <h2>项目未找到</h2>
+        <p>{{ error }}</p>
+        <div class="error-actions">
+          <NuxtLink to="/matching/discover" class="btn btn-primary">
+            返回项目列表
+          </NuxtLink>
         </div>
       </div>
 
-      <form @submit.prevent="createProject" class="project-form">
+      <!-- Edit Form -->
+      <div v-else class="edit-header">
+        <h1>
+          <Icon name="edit" class="title-icon" />
+          编辑项目
+        </h1>
+        <p>更新项目信息，吸引更多合适的队友</p>
+      </div>
+
+      <form v-if="!loading && !error" @submit.prevent="updateProject" class="project-form">
         <!-- Basic Info Section -->
         <div class="form-section">
           <h2>基本信息</h2>
@@ -38,7 +51,7 @@
             <textarea
               id="description"
               v-model="form.description"
-              placeholder="详细描述你的项目想法、目标和愿景。即使是模糊的想法或关键词也可以..."
+              placeholder="详细描述你的项目想法、目标和愿景..."
               rows="4"
               required
               maxlength="1000"
@@ -87,16 +100,28 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="duration_estimate">预计时长</label>
-            <select id="duration_estimate" v-model="form.duration_estimate">
-              <option value="">选择预计时长...</option>
-              <option value="1-2weeks">1-2周</option>
-              <option value="1month">1个月</option>
-              <option value="2-3months">2-3个月</option>
-              <option value="semester">一学期</option>
-              <option value="longterm">长期项目</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="duration_estimate">预计时长</label>
+              <select id="duration_estimate" v-model="form.duration_estimate">
+                <option value="">选择预计时长...</option>
+                <option value="1-2weeks">1-2周</option>
+                <option value="1month">1个月</option>
+                <option value="2-3months">2-3个月</option>
+                <option value="semester">一学期</option>
+                <option value="longterm">长期项目</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="status">项目状态</label>
+              <select id="status" v-model="form.status">
+                <option value="recruiting">招募中</option>
+                <option value="active">进行中</option>
+                <option value="completed">已完成</option>
+                <option value="cancelled">已取消</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -216,13 +241,19 @@
 
         <!-- Form Actions -->
         <div class="form-actions">
-          <button type="button" @click="$router.go(-1)" class="btn btn-secondary">
-            取消
+          <button type="button" @click="confirmDelete" class="btn btn-danger" :disabled="updating">
+            <Icon v-if="deleting" name="spinner" class="spinning" />
+            删除项目
           </button>
-          <button type="submit" :disabled="!isFormValid || creating" class="btn btn-primary">
-            <Icon v-if="creating" name="spinner" class="spinning" />
-            创建项目
-          </button>
+          <div class="action-buttons-right">
+            <button type="button" @click="$router.go(-1)" class="btn btn-secondary">
+              取消
+            </button>
+            <button type="submit" :disabled="!isFormValid || updating" class="btn btn-primary">
+              <Icon v-if="updating" name="spinner" class="spinning" />
+              保存更新
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -230,20 +261,28 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import SkillSelector from '~/components/matching/SkillSelector.vue'
 import MatchingBreadcrumbs from '~/components/matching/MatchingBreadcrumbs.vue'
 
 // Composables
 const { fetchWithAuth } = useApi()
+const route = useRoute()
+const { user } = useAuth()
 
 // Page meta
 definePageMeta({
-  title: 'Create Project',
+  title: '编辑项目',
   requiresAuth: true,
 })
 
 // Reactive data
+const project = ref(null)
+const loading = ref(true)
+const error = ref('')
+const updating = ref(false)
+const deleting = ref(false)
+
 const form = ref({
   title: '',
   description: '',
@@ -251,6 +290,7 @@ const form = ref({
   project_type: '',
   difficulty_level: '',
   duration_estimate: '',
+  status: '',
   required_skills: [],
   preferred_skills: [],
   team_size_min: 1,
@@ -266,8 +306,6 @@ const communicationTools = ref({
   slack: false,
   email: true,
 })
-
-const creating = ref(false)
 
 // Popular suggestions
 const popularSkills = [
@@ -298,7 +336,11 @@ const roleSuggestions = [
   '内容创作者', '研究员', '导师'
 ]
 
-// Computed properties
+// Computed
+const projectId = computed(() => route.params.id)
+const isCreator = computed(() => {
+  return user.value && project.value && user.value.id === project.value.user_id
+})
 const isFormValid = computed(() => {
   return form.value.title?.trim() &&
          form.value.description?.trim() &&
@@ -306,10 +348,75 @@ const isFormValid = computed(() => {
 })
 
 // Methods
-const createProject = async () => {
-  if (!isFormValid.value || creating.value) return
+const loadProject = async () => {
+  loading.value = true
+  error.value = ''
 
-  creating.value = true
+  try {
+    console.log('🔄 Loading project for editing, ID:', projectId.value)
+    const rawResponse = await fetchWithAuth(`/api/projects/${projectId.value}`)
+
+    if (!rawResponse.ok) {
+      throw new Error(`HTTP ${rawResponse.status}: ${rawResponse.statusText}`)
+    }
+
+    const response = await rawResponse.json()
+
+    if (response.success) {
+      project.value = response.project
+
+      // Check if current user is the creator
+      if (!isCreator.value) {
+        error.value = '您只能编辑自己创建的项目'
+        return
+      }
+
+      // Populate form with existing data
+      populateForm(response.project)
+    } else {
+      error.value = response.message || 'Project not found'
+    }
+  } catch (err) {
+    console.error('💥 Error loading project for editing:', err)
+    error.value = 'Failed to load project'
+  } finally {
+    loading.value = false
+  }
+}
+
+const populateForm = (projectData) => {
+  // Populate basic form fields
+  form.value = {
+    title: projectData.title || '',
+    description: projectData.description || '',
+    goal: projectData.goal || '',
+    project_type: projectData.project_type || '',
+    difficulty_level: projectData.difficulty_level || '',
+    duration_estimate: projectData.duration_estimate || '',
+    status: projectData.status || '',
+    required_skills: projectData.required_skills || [],
+    preferred_skills: projectData.preferred_skills || [],
+    team_size_min: projectData.team_size_min || 1,
+    team_size_max: projectData.team_size_max || 5,
+    looking_for_roles: projectData.looking_for_roles || [],
+    collaboration_method: projectData.collaboration_method || '',
+    meeting_frequency: projectData.meeting_frequency || '',
+  }
+
+  // Populate communication tools
+  const tools = projectData.communication_tools || []
+  communicationTools.value = {
+    wechat: tools.includes('wechat'),
+    discord: tools.includes('discord'),
+    slack: tools.includes('slack'),
+    email: tools.includes('email'),
+  }
+}
+
+const updateProject = async () => {
+  if (!isFormValid.value || updating.value) return
+
+  updating.value = true
 
   try {
     // Prepare communication tools array
@@ -319,44 +426,125 @@ const createProject = async () => {
     const payload = {
       ...form.value,
       communication_tools: selectedTools,
-      status: 'recruiting'
     }
 
-    const rawResponse = await fetchWithAuth('/api/projects/', {
-      method: 'POST',
-      body: payload
+    console.log('🔄 Updating project:', {
+      projectId: projectId.value,
+      payload
     })
 
+    const rawResponse = await fetchWithAuth(`/api/projects/${projectId.value}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!rawResponse.ok) {
+      throw new Error(`HTTP ${rawResponse.status}: ${rawResponse.statusText}`)
+    }
+
     const response = await rawResponse.json()
+    console.log('📡 Project update response:', response)
 
     if (response.success) {
-      // Redirect to project detail or dashboard
-      await navigateTo(`/matching/projects/${response.project.id}`)
+      // Redirect back to project detail page (no alert needed)
+      await navigateTo(`/matching/projects/${projectId.value}`)
     } else {
-      throw new Error(response.message || 'Failed to create project')
+      console.error('❌ Failed to update project:', response.message)
+      // Could add a toast notification here instead of alert
     }
   } catch (error) {
-    console.error('💥 Error creating project:', error)
-    // Error logged to console, no popup alert
+    console.error('💥 Error updating project:', error)
+    // Could add a toast notification here instead of alert
   } finally {
-    creating.value = false
+    updating.value = false
   }
 }
+
+const confirmDelete = () => {
+  if (confirm('确定要删除这个项目吗？此操作不可撤销。')) {
+    deleteProject()
+  }
+}
+
+const deleteProject = async () => {
+  if (deleting.value) return
+
+  deleting.value = true
+
+  try {
+    console.log('🗑️ Deleting project:', projectId.value)
+
+    const rawResponse = await fetchWithAuth(`/api/projects/${projectId.value}`, {
+      method: 'DELETE'
+    })
+
+    if (!rawResponse.ok) {
+      throw new Error(`HTTP ${rawResponse.status}: ${rawResponse.statusText}`)
+    }
+
+    const response = await rawResponse.json()
+    console.log('📡 Project delete response:', response)
+
+    if (response.success) {
+      // Redirect to projects list
+      await navigateTo('/matching/projects')
+    } else {
+      console.error('❌ Failed to delete project:', response.message)
+      alert('删除失败: ' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('💥 Error deleting project:', error)
+    alert('删除失败: ' + error.message)
+  } finally {
+    deleting.value = false
+  }
+}
+
+// Lifecycle
+onMounted(async () => {
+  await loadProject()
+})
 </script>
 
 <style scoped>
-.project-create {
+.project-edit {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.create-header {
+.loading-state, .error-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-icon {
+  font-size: 3rem;
+  color: #e74c3c;
+  margin-bottom: 16px;
+}
+
+.error-state h2 {
+  color: var(--text-primary, #2c3e50);
+  margin-bottom: 16px;
+}
+
+.error-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.edit-header {
   text-align: center;
   margin-bottom: 40px;
 }
 
-.create-header h1 {
+.edit-header h1 {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -370,31 +558,10 @@ const createProject = async () => {
   color: #3498db;
 }
 
-.create-header p {
+.edit-header p {
   font-size: 1.1rem;
   color: var(--text-secondary, #7f8c8d);
-  margin: 0 0 20px 0;
-}
-
-.creation-tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 16px;
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: var(--text-secondary, #7f8c8d);
-  text-align: left;
-}
-
-.tip-icon {
-  flex-shrink: 0;
-  color: #ffc107;
-  margin-top: 2px;
+  margin: 0;
 }
 
 .project-form {
@@ -488,9 +655,15 @@ textarea {
 .form-actions {
   padding: 30px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 16px;
   background: #f8f9fa;
+}
+
+.action-buttons-right {
+  display: flex;
+  gap: 16px;
 }
 
 .btn {
@@ -533,6 +706,17 @@ textarea {
   background: #ecf0f1;
 }
 
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+  border-color: #e74c3c;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+
 .spinning {
   animation: spin 1s linear infinite;
 }
@@ -552,7 +736,13 @@ textarea {
   }
 
   .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons-right {
     flex-direction: column-reverse;
+    width: 100%;
   }
 
   .checkbox-group {

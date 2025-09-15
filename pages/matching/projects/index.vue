@@ -19,14 +19,14 @@
       <!-- Loading State -->
       <div v-if="loading" class="loading-state">
         <Icon name="spinner" class="spinning" />
-        <p>Loading projects...</p>
+        <p>加载项目中...</p>
       </div>
 
       <!-- Empty State -->
       <div v-else-if="!projects.length" class="empty-state">
         <Icon name="briefcase" class="empty-icon" />
-        <h3>No projects yet</h3>
-        <p>Create your first project to find teammates and bring your ideas to life.</p>
+        <h3>还没有项目</h3>
+        <p>创建您的第一个项目，寻找队友，实现您的创意。</p>
         <NuxtLink to="/matching/projects/create" class="btn btn-primary">
           <Icon name="plus" />
           创建项目
@@ -127,21 +127,21 @@
                     class="btn btn-success btn-xs"
                     :disabled="processingApplication"
                   >
-                    Accept
+                    接受
                   </button>
                   <button
                     @click="handleApplication(application.id, 'reject')"
                     class="btn btn-outline btn-xs"
                     :disabled="processingApplication"
                   >
-                    Reject
+                    拒绝
                   </button>
                 </div>
               </div>
 
               <div v-if="project.pending_applications.length > 3" class="more-applications">
                 <button @click="viewAllApplications(project.id)" class="btn btn-link">
-                  View all {{ project.pending_applications.length }} applications
+                  查看全部 {{ project.pending_applications.length }} 份申请
                 </button>
               </div>
             </div>
@@ -153,7 +153,7 @@
               :to="`/matching/projects/${project.id}`"
               class="btn btn-outline"
             >
-              View Details
+              查看详情
             </NuxtLink>
 
             <button
@@ -161,7 +161,7 @@
               @click="toggleRecruitment(project.id, false)"
               class="btn btn-secondary"
             >
-              Stop Recruiting
+              停止招募
             </button>
 
             <button
@@ -169,14 +169,30 @@
               @click="toggleRecruitment(project.id, true)"
               class="btn btn-primary"
             >
-              Resume Recruiting
+              恢复招募
+            </button>
+
+            <button
+              v-else-if="project.status === 'completed'"
+              @click="toggleRecruitment(project.id, true)"
+              class="btn btn-success"
+            >
+              重新激活
+            </button>
+
+            <button
+              v-else-if="project.status === 'cancelled'"
+              @click="toggleRecruitment(project.id, true)"
+              class="btn btn-primary"
+            >
+              重新启动
             </button>
 
             <NuxtLink
-              :to="`/matching/projects/${project.id}/edit`"
+              :to="`/matching/projects/edit/${project.id}`"
               class="btn btn-outline"
             >
-              Edit
+              编辑
             </NuxtLink>
           </div>
         </div>
@@ -186,7 +202,7 @@
       <div v-if="hasMore" class="load-more">
         <button @click="loadMore" :disabled="loadingMore" class="btn btn-outline">
           <Icon v-if="loadingMore" name="spinner" class="spinning" />
-          Load More
+          加载更多
         </button>
       </div>
     </div>
@@ -199,6 +215,7 @@ import MatchingBreadcrumbs from '~/components/matching/MatchingBreadcrumbs.vue'
 
 // Composables
 const { fetchWithAuth } = useApi()
+const { user } = useAuth()
 
 // Page meta
 definePageMeta({
@@ -296,11 +313,10 @@ const handleApplication = async (applicationId, action) => {
       // Refresh projects to update application counts
       await loadProjects()
     } else {
-      alert(response.message || 'Failed to process application')
+      console.error(`❌ Application ${action} failed:`, response.message)
     }
   } catch (error) {
-    console.error(`Error ${action}ing application:`, error)
-    alert('Failed to process application')
+    console.error(`💥 Error ${action}ing application:`, error)
   } finally {
     processingApplication.value = false
   }
@@ -310,12 +326,31 @@ const toggleRecruitment = async (projectId, startRecruiting) => {
   try {
     const status = startRecruiting ? 'recruiting' : 'active'
 
-    const rawResponse = await fetchWithAuth(`/api/projects/${projectId}/`, {
-      method: 'PUT',
-      body: { status }
+    // Find the project to check ownership
+    const project = projects.value.find(p => p.id === projectId)
+    console.log('🔄 Attempting to update project:', {
+      projectId,
+      projectTitle: project?.title,
+      projectUserId: project?.user_id,
+      currentUserId: user.value?.id,
+      targetStatus: status
     })
 
+    const rawResponse = await fetchWithAuth(`/api/projects/${projectId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status })
+    })
+
+    if (!rawResponse.ok) {
+      const errorResponse = await rawResponse.json().catch(() => ({}))
+      throw new Error(`HTTP ${rawResponse.status}: ${errorResponse.message || rawResponse.statusText}`)
+    }
+
     const response = await rawResponse.json()
+    console.log('📡 Project update response:', response)
 
     if (response.success) {
       // Update local project status
@@ -323,12 +358,14 @@ const toggleRecruitment = async (projectId, startRecruiting) => {
       if (project) {
         project.status = status
       }
+      // No alert - status change is visually reflected immediately
     } else {
-      alert(response.message || 'Failed to update project')
+      console.error('❌ Project update failed:', response)
+      // Only show error in console, no popup
     }
   } catch (error) {
-    console.error('Error updating project:', error)
-    alert('Failed to update project')
+    console.error('💥 Error updating project:', error)
+    // Only show error in console, no popup
   }
 }
 

@@ -98,7 +98,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '~/composables/useAuth';
 import { useApi } from '~/composables/useApi';
-import { useFileUpload } from '~/composables/useFileUpload';
+import { useCustomFileUpload } from '~/composables/useFileUpload';
 
 interface Props {
   userId?: number;
@@ -113,7 +113,7 @@ const emit = defineEmits<Emits>();
 
 const { user, updateUserProfile } = useAuth();
 const { fetchWithAuth } = useApi();
-const { uploadFile } = useFileUpload();
+const { uploadFile } = useCustomFileUpload();
 
 // Reactive data
 const fileInput = ref<HTMLInputElement>();

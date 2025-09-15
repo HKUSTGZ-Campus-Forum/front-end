@@ -194,8 +194,8 @@
 
           <!-- Creator Actions -->
           <template v-if="isCreator">
-            <NuxtLink :to="`/matching/projects/${project.id}/edit`" class="btn btn-outline">
-              Edit Project
+            <NuxtLink :to="`/matching/projects/edit/${project.id}`" class="btn btn-outline">
+              编辑项目
             </NuxtLink>
 
             <button
@@ -203,7 +203,7 @@
               @click="updateProjectStatus('active')"
               class="btn btn-secondary"
             >
-              Start Project
+              开始项目
             </button>
 
             <button
@@ -211,7 +211,7 @@
               @click="updateProjectStatus('completed')"
               class="btn btn-success"
             >
-              Mark Complete
+              标记完成
             </button>
           </template>
 
@@ -324,34 +324,30 @@ const updateProjectStatus = async (newStatus) => {
   try {
     const rawResponse = await fetchWithAuth(`/api/projects/${project.value.id}`, {
       method: 'PUT',
-      body: { status: newStatus }
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus })
     })
 
     const response = await rawResponse.json()
 
     if (response.success) {
       project.value.status = newStatus
+      // Status change is visually reflected immediately, no alert needed
     } else {
-      alert(response.message || 'Failed to update project status')
+      console.error('❌ Project status update failed:', response.message)
     }
   } catch (err) {
-    console.error('Error updating project status:', err)
-    alert('Failed to update project status')
+    console.error('💥 Error updating project status:', err)
   }
 }
 
 const contactCreator = () => {
-  // Show a simple contact dialog
-  const message = `Hi ${project.value.creator.username}, I'm interested in your project "${project.value.title}". I'd like to learn more about how I can contribute.`
-
-  const shouldContinue = confirm(
-    `Contact ${project.value.creator.username} about "${project.value.title}"?\n\n` +
-    `This will help you connect with the project creator. You can find their contact info in their profile.`
-  )
-
-  if (shouldContinue) {
-    // Could be enhanced to show contact modal or send notification
-    console.log('Contact creator:', project.value.creator)
+  // Show creator profile modal directly (no confirmation dialog)
+  if (project.value?.creator?.id) {
+    selectedUserId.value = project.value.creator.id
+    showProfileModal.value = true
   }
 }
 
@@ -369,31 +365,15 @@ const handleContactUser = (contactInfo) => {
   const contactMethods = contactInfo.contactMethods || []
 
   if (contactMethods.length === 0) {
-    alert('该用户未提供联系方式')
+    console.log('该用户未提供联系方式')
     return
   }
 
-  // Create a formatted message with all contact methods
-  const contactText = contactMethods.map(method => {
-    const methodNames = {
-      email: '邮箱',
-      wechat: '微信',
-      qq: 'QQ',
-      phone: '电话',
-      telegram: 'Telegram',
-      discord: 'Discord'
-    }
+  // Log contact info to console instead of showing alert
+  console.log('📞 联系方式:', contactMethods)
 
-    const methodName = methodNames[method.method] || method.method
-    return `${methodName}: ${method.value}`
-  }).join('\n')
-
-  const message = `${contactInfo.username} 的联系方式:\n\n${contactText}\n\n请通过以上方式联系该用户。`
-
-  // Use a more user-friendly dialog
-  alert(message)
-
-  showProfileModal.value = false
+  // The modal will stay open so users can see the contact info
+  // showProfileModal.value = false
 }
 
 // Formatting helpers

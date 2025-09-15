@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { usePersistHomeStore } from '~/store/homeStore';
+import { usePersistHomeStore } from '~/store/modules/home';
 import { ref, onMounted, onUnmounted } from 'vue';
 
 // 获取主页状态
