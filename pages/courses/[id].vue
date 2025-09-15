@@ -398,7 +398,7 @@ import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import HomeContainer from "~/components/home/HomeContainer.vue";
 import FileUpload from "~/components/FileUpload.vue";
-import { useFileUpload } from "~/composables/useFileUpload";
+import { useCustomFileUpload } from "~/composables/useFileUpload";
 // 🔥 导入统一弹窗组件
 import { SuccessModal, ErrorModal, ConfirmModal } from "~/components/ui";
 
@@ -449,7 +449,7 @@ interface ReviewForm {
 // Composables
 const { user, isLoggedIn } = useAuth();
 const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
-const { deleteFile } = useFileUpload();
+const { deleteFile } = useCustomFileUpload();
 const route = useRoute();
 const router = useRouter();
 

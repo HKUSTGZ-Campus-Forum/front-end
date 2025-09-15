@@ -104,14 +104,14 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
-import { useFileUpload } from "~/composables/useFileUpload";
+import { useCustomFileUpload } from "~/composables/useFileUpload";
 import FileUpload from "~/components/FileUpload.vue";
 import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { FileRecord } from "~/types/file";
 import type { UserIdentity } from "~/types/identity";
 
 const isUploading = ref(false);
-const { deleteFile } = useFileUpload();
+const { deleteFile } = useCustomFileUpload();
 const uploadProgress = ref(0);
 
 const { token } = useAuth();
