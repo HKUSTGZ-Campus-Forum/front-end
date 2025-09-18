@@ -1,7 +1,7 @@
 <template>
   <div class="contact-method-selector">
-    <h4>联系方式设置</h4>
-    <p class="description">设置您的公开联系方式，其他用户可以通过这些方式与您联系</p>
+    <h4>{{ t('Contact information Settings') }}</h4>
+    <p class="description">{{ t('Set your public contact information, other users can contact you through these methods') }}</p>
 
     <div class="contact-methods">
       <!-- Email -->
@@ -10,8 +10,8 @@
           <div class="method-info">
             <Icon name="mail" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">邮箱</div>
-              <div class="method-desc">通过邮件联系</div>
+              <div class="method-name">{{ t('Email') }}</div>
+              <div class="method-desc">{{ t('Contact via email') }}</div>
             </div>
           </div>
           <label class="toggle">
@@ -40,8 +40,8 @@
           <div class="method-info">
             <Icon name="message-square" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">微信</div>
-              <div class="method-desc">通过微信联系</div>
+              <div class="method-name">{{ t('WeChat') }}</div>
+              <div class="method-desc">{{ t('Contact via WeChat') }}</div>
             </div>
           </div>
           <label class="toggle">
@@ -70,8 +70,8 @@
           <div class="method-info">
             <Icon name="message-circle" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">QQ</div>
-              <div class="method-desc">通过QQ联系</div>
+              <div class="method-name">{{ t('QQ') }}</div>
+              <div class="method-desc">{{ t('Contact via QQ') }}</div>
             </div>
           </div>
           <label class="toggle">
@@ -100,8 +100,8 @@
           <div class="method-info">
             <Icon name="send" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">Telegram</div>
-              <div class="method-desc">通过Telegram联系</div>
+              <div class="method-name">{{ t('Telegram') }}</div>
+              <div class="method-desc">{{ t('Contact via Telegram') }}</div>
             </div>
           </div>
           <label class="toggle">
@@ -130,8 +130,8 @@
           <div class="method-info">
             <Icon name="hash" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">Discord</div>
-              <div class="method-desc">通过Discord联系</div>
+              <div class="method-name">{{ t('Discord') }}</div>
+              <div class="method-desc">{{ t('Contact via Discord') }}</div>
             </div>
           </div>
           <label class="toggle">
@@ -160,8 +160,8 @@
           <div class="method-info">
             <Icon name="phone" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">电话</div>
-              <div class="method-desc">通过电话联系</div>
+              <div class="method-name">{{ t('Phone') }}</div>
+              <div class="method-desc">{{ t('Contact via Phone') }}</div>
             </div>
           </div>
           <label class="toggle">
@@ -189,7 +189,8 @@
     <div class="privacy-notice">
       <Icon name="shield" class="privacy-icon" />
       <div class="privacy-text">
-        <strong>公开信息提醒:</strong> 您填写的联系方式将在您的个人资料中公开显示，所有查看您资料的用户都能看到。请谨慎填写个人信息。
+        <strong>{{ t('Privacy Notice') }}</strong> <br />
+        {{ t('Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.') }}
       </div>
     </div>
   </div>

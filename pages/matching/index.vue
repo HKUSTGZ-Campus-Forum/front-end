@@ -5,9 +5,9 @@
       <div class="dashboard-header">
         <h1 class="dashboard-title">
           <Icon name="users" class="title-icon" />
-          队友匹配
+          {{ t('Team Matching') }}
         </h1>
-        <p class="dashboard-subtitle">找到合作伙伴和有趣的项目</p>
+        <p class="dashboard-subtitle">{{ t('Find partners and interesting projects') }}</p>
       </div>
 
       <!-- Onboarding Flow -->
@@ -277,7 +277,9 @@ const fetchDashboardData = async () => {
     loading.value = false
   }
 }
-
+import { useI18n } from "vue-i18n";
+import { useRoute } from "#app"; // Use Nuxt's built-in composables
+const { t } = useI18n();
 
 // Fallback profile fetching
 const fetchProfileSeparately = async () => {

@@ -114,7 +114,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_homelogo.svg" alt="首页" class="nav-icon" />
-            <span class="nav-text">首页</span>
+            <span class="nav-text">{{ t('home') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -124,7 +124,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_forumlogo.svg" alt="论坛" class="nav-icon" />
-            <span class="nav-text">论坛</span>
+            <span class="nav-text">{{ t('forum') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -134,7 +134,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_courselogo.svg" alt="课程" class="nav-icon" />
-            <span class="nav-text">课程</span>
+            <span class="nav-text">{{ t('courses') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -144,7 +144,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_club.svg" alt="活动" class="nav-icon" />
-            <span class="nav-text">活动</span>
+            <span class="nav-text">{{ t('activity') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -154,7 +154,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_gugulogo.svg" alt="咕咕" class="nav-icon" />
-            <span class="nav-text">咕咕</span>
+            <span class="nav-text">{{ t('gugu') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -164,7 +164,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_matching.svg" alt="组队" class="nav-icon" />
-            <span class="nav-text">组队</span>
+            <span class="nav-text">{{ t('Form a team') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -176,7 +176,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_userlogo.svg" alt="用户" class="nav-icon" />
-            <span class="nav-text">用户</span>
+            <span class="nav-text">{{ t('users') }}</span>
           </NuxtLink>
           <!-- Show login link when not logged in -->
           <NuxtLink
@@ -186,7 +186,7 @@ watch(isHovered, (newValue: boolean) => {
             @click="handleNavClick"
           >
             <img src="/icons/sidebar_userlogo.svg" alt="登录" class="nav-icon" />
-            <span class="nav-text">登录</span>
+            <span class="nav-text">{{ t('login') }}</span>
           </NuxtLink>
         </li>
         <!-- External Links Divider -->
@@ -196,7 +196,7 @@ watch(isHovered, (newValue: boolean) => {
         <li>
           <NuxtLink to="https://scheduler.unikorn.axfff.com/dashboard/2510" target="_blank" rel="noopener noreferrer">
             <img src="/icons/sidebar_schedulerlogo.svg" alt="课程表" class="nav-icon" />
-            <span class="nav-text">排课助手</span>
+            <span class="nav-text">{{ t('Scheduler') }}</span>
           </NuxtLink>
         </li>
         <li>

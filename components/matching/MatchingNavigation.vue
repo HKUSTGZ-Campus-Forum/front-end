@@ -19,11 +19,11 @@
           <Icon :name="isProfileComplete ? 'check-circle' : 'user-circle'" />
         </div>
         <div class="nav-card-content">
-          <h3>个人资料</h3>
-          <p>{{ isProfileComplete ? '资料已完善' : '设置你的技能和兴趣' }}</p>
+          <h3>{{ t('Profile Settings') }}</h3>
+          <p>{{ isProfileComplete ? t('Profile is complete') : t('Set your skills and interests') }}</p>
           <div class="nav-card-status">
-            <span v-if="!isProfileComplete" class="status-badge status-required">必需</span>
-            <span v-else class="status-badge status-completed">✓ 已完成</span>
+            <span v-if="!isProfileComplete" class="status-badge status-required">{{ t('Required') }}</span>
+            <span v-else class="status-badge status-completed">✓ {{ t('Completed') }}</span>
           </div>
         </div>
         <Icon name="arrow-right" class="nav-card-arrow" />
