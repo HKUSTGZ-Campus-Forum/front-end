@@ -5,6 +5,7 @@ interface User {
   id: string;
   username: string;
   isFirstLogin: boolean;
+  profile_picture_url?: string;
   // 其他用户信息
 }
 

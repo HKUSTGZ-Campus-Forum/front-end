@@ -9,7 +9,13 @@ import NotificationBell from "~/components/ui/NotificationBell.vue"
 
 const router = useRouter();
 
-const { t } = useI18n();
+const { locale, setLocale, t } = useI18n();
+
+const toggleLanguage = () => {
+  const newLocale = locale.value === 'zh' ? 'en' : 'zh';
+  setLocale(newLocale);
+};
+
 const { isLoggedIn, logout, user } = useAuth(); // 获取登录状态和用户信息
 // 定义组件属性，允许自定义
 const props = defineProps({
@@ -102,11 +108,16 @@ const handleSearchSelect = (type: string, item: any) => {
 
     <!-- 右侧功能区 -->
     <div class="right-section">
+      <!-- 语言切换按钮 -->
+      <div class="language-switcher">
+        <button @click="toggleLanguage">{{ locale === 'zh' ? '中文' : 'EN' }}</button>
+      </div>
+
       <!-- 搜索框 -->
       <div v-if="showSearch" class="search-form">
         <SearchDropdown
           v-model="searchQuery"
-          placeholder="搜索帖子、用户、课程..."
+          :placeholder="t('Search for posts, users, courses...')"
           :show-history="true"
           @search="handleSearch"
           @select="handleSearchSelect"
@@ -133,37 +144,37 @@ const handleSearchSelect = (type: string, item: any) => {
             />
             <!-- Not logged in - show login button -->
             <div v-else class="login-button" :class="{ 'mobile-login': isMobile }">
-              <span class="login-text">登录</span>
+              <span class="login-text">{{ t('login') }}</span>
             </div>
           </a>
           <ul class="dropdown-menu">
             <!-- Logged in user menu -->
             <template v-if="isLoggedIn">
               <li class="dropdown-header" v-if="user?.username">{{ user.username }}</li>
-              <li class="dropdown-header" v-else>用户</li>
+              <li class="dropdown-header" v-else>{{ t('users') }}</li>
               <li>
-                <NuxtLink class="dropdown-item" to="/activity">活动日志</NuxtLink>
+                <NuxtLink class="dropdown-item" to="/activity">{{ t('activity') }}</NuxtLink>
               </li>
               <li>
-                <NuxtLink class="dropdown-item" to="/setting/theme">设置</NuxtLink>
+                <NuxtLink class="dropdown-item" to="/setting/theme">{{ t('settings') }}</NuxtLink>
               </li>
               <li><hr class="divider" /></li>
               <li>
                 <a class="dropdown-item" href="#" @click.prevent="handleLoginOrLogout">
-                  退出登录
+                  {{ t('logout') }}
                 </a>
               </li>
             </template>
             <!-- Guest user menu -->
             <template v-else>
-              <li class="dropdown-header">访客用户</li>
+              <li class="dropdown-header">{{ t('Visitor user') }}</li>
               <li>
                 <a class="dropdown-item" href="#" @click.prevent="handleLoginOrLogout">
-                  登录
+                  {{ t('login') }}
                 </a>
               </li>
               <li>
-                <NuxtLink class="dropdown-item" to="/register">注册</NuxtLink>
+                <NuxtLink class="dropdown-item" to="/register">{{ t('register') }}</NuxtLink>
               </li>
             </template>
           </ul>
@@ -276,6 +287,27 @@ const handleSearchSelect = (type: string, item: any) => {
       padding: 2px 4px;
     }
   }
+}
+
+.language-switcher button {
+  background: var(--interactive-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 20px;
+  padding: 0.375rem 0.75rem;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.language-switcher button:hover {
+  background: var(--interactive-hover);
+  border-color: var(--border-focus);
+  transform: translateY(-1px);
 }
 
 .sidebar-toggle {

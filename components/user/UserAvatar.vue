@@ -34,7 +34,7 @@ import { useApi } from '~/composables/useApi';
 export interface Props {
   avatarUrl?: string | null;
   username?: string;
-  userId?: number;
+  userId?: number | string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   clickable?: boolean;
   showTooltip?: boolean;
@@ -44,7 +44,7 @@ export interface Props {
 }
 
 interface Emits {
-  (e: 'click', userId?: number): void;
+  (e: 'click', userId?: number | string): void;
   (e: 'imageError'): void;
   (e: 'avatarRefreshed', newUrl: string): void;
 }
@@ -76,7 +76,7 @@ const MAX_REFRESH_ATTEMPTS = 2;
 
 // Initialize avatar URL
 const initializeAvatarUrl = () => {
-  currentAvatarUrl.value = props.avatarUrl;
+  currentAvatarUrl.value = props.avatarUrl ?? null;
   imageError.value = false;
   retryCount.value = 0;
   refreshAttempts.value = 0;
