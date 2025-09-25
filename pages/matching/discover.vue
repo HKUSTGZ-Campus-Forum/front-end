@@ -6,47 +6,41 @@
       <!-- Header -->
       <div class="page-header">
         <h1>
-          <Icon name="search" class="title-icon" />
-          发现项目
+          <Icon :name="searchMode === 'projects' ? 'search' : 'users'" class="title-icon" />
+          {{ searchMode === 'projects' ? '发现项目' : '发现队友' }}
         </h1>
-        <p>找到与你的技能和兴趣匹配的项目</p>
+        <p>{{ searchMode === 'projects' ? '找到与你的技能和兴趣匹配的项目' : '找到合适的队友加入你的项目' }}</p>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button
+            :class="['mode-btn', { active: searchMode === 'projects' }]"
+            @click="switchSearchMode('projects')"
+          >
+            <Icon name="folder" />
+            发现项目
+          </button>
+          <button
+            :class="['mode-btn', { active: searchMode === 'teammates' }]"
+            @click="switchSearchMode('teammates')"
+          >
+            <Icon name="users" />
+            发现队友
+          </button>
+        </div>
       </div>
 
       <!-- Filters -->
       <div class="filters-section">
         <div class="filters-row">
-          <div class="filter-group">
+          <div class="filter-group search-group">
             <label>搜索</label>
             <input
               v-model="filters.query"
               @input="debouncedSearch"
-              placeholder="搜索项目..."
+              :placeholder="searchMode === 'projects' ? '搜索项目...' : '搜索队友...'"
               class="filter-input"
             />
-          </div>
-
-          <div class="filter-group">
-            <label>项目类型</label>
-            <select v-model="filters.type" @change="searchProjects" class="filter-select">
-              <option value="">全部类型</option>
-              <option value="web">Web开发</option>
-              <option value="mobile">移动应用</option>
-              <option value="ai">AI/机器学习</option>
-              <option value="game">游戏开发</option>
-              <option value="research">研究项目</option>
-              <option value="hardware">硬件项目</option>
-              <option value="other">其他</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label>难度等级</label>
-            <select v-model="filters.difficulty" @change="searchProjects" class="filter-select">
-              <option value="">全部等级</option>
-              <option value="beginner">初级</option>
-              <option value="intermediate">中级</option>
-              <option value="advanced">高级</option>
-            </select>
           </div>
 
           <div class="filter-group">
@@ -57,14 +51,14 @@
                 @click="switchView('recommended')"
               >
                 <Icon name="stars" />
-                推荐项目
+                {{ searchMode === 'projects' ? '推荐项目' : '推荐队友' }}
               </button>
               <button
                 :class="['view-btn', { active: viewMode === 'all' }]"
                 @click="switchView('all')"
               >
                 <Icon name="list" />
-                全部项目
+                {{ searchMode === 'projects' ? '全部项目' : '全部队友' }}
               </button>
             </div>
           </div>
@@ -76,7 +70,7 @@
         <!-- Loading -->
         <div v-if="loading" class="loading-section">
           <Icon name="spinner" class="spinning" />
-          <p>正在为你寻找项目...</p>
+          <p>{{ searchMode === 'projects' ? '正在为你寻找项目...' : '正在为你寻找队友...' }}</p>
         </div>
 
         <!-- Profile Required Message -->
@@ -84,7 +78,7 @@
           <Icon name="user-circle" class="prompt-icon" />
           <div class="profile-message">
             <h3>需要完善个人资料</h3>
-            <p>完成个人资料设置后，系统将为你推荐最匹配的项目</p>
+            <p>{{ searchMode === 'projects' ? '完成个人资料设置后，系统将为你推荐最匹配的项目' : '完成个人资料设置后，系统将为你推荐最合适的队友' }}</p>
             <div class="profile-requirements">
               <div class="requirement-item">
                 <Icon name="circle" class="req-icon" />
@@ -106,7 +100,7 @@
               去完善资料
             </NuxtLink>
             <button @click="switchView('all')" class="btn btn-outline">
-              先看看所有项目
+              {{ searchMode === 'projects' ? '先看看所有项目' : '先看看所有队友' }}
             </button>
           </div>
         </div>
@@ -116,32 +110,38 @@
           <!-- Results Header -->
           <div class="results-header">
             <h2>
-              {{ viewMode === 'recommended' ? '为你推荐' : '全部项目' }}
-              <span class="results-count">({{ projects.length }})</span>
+              {{ getResultsTitle() }}
+              <span class="results-count">({{ searchMode === 'projects' ? projects.length : teammates.length }})</span>
             </h2>
           </div>
 
           <!-- No Results -->
-          <div v-if="projects.length === 0 && !loading" class="no-results">
-            <Icon name="search" class="no-results-icon" />
-            <h3>暂无项目</h3>
-            <p>尝试调整筛选条件或稍后查看新项目</p>
+          <div v-if="(searchMode === 'projects' ? projects.length === 0 : teammates.length === 0) && !loading" class="no-results">
+            <Icon :name="searchMode === 'projects' ? 'search' : 'users'" class="no-results-icon" />
+            <h3>{{ searchMode === 'projects' ? '暂无项目' : '暂无队友' }}</h3>
+            <p>{{ searchMode === 'projects' ? '尝试调整筛选条件或稍后查看新项目' : '尝试调整筛选条件或稍后查看新用户' }}</p>
           </div>
 
-          <!-- Project Grid -->
-          <div v-else class="project-grid">
-            <!-- Debug info (development only) -->
-            <div v-if="projects.length > 0 && isDevelopment" class="debug-info">
-              <p style="color: #666; font-size: 0.8rem; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
-                🔍 调试信息: 找到 {{ projects.length }} 个项目 • 模式: {{ viewMode }}
-              </p>
-            </div>
+          <!-- Results Grid -->
+          <div v-else class="results-grid">
 
+            <!-- Project Cards -->
             <ProjectCard
+              v-if="searchMode === 'projects'"
               v-for="(project, index) in projects"
-              :key="`${viewMode}-${project.project?.id || project.id || index}`"
+              :key="`project-${viewMode}-${project.project?.id || project.id || index}`"
               :project="project.project || project"
               :match-info="project.similarity_score ? project : null"
+            />
+
+            <!-- User Cards -->
+            <UserCard
+              v-if="searchMode === 'teammates'"
+              v-for="(teammate, index) in teammates"
+              :key="`teammate-${viewMode}-${teammate.profile?.user_id || teammate.user_id || index}`"
+              :profile="teammate.profile || teammate"
+              :match-info="teammate.similarity_score ? teammate : null"
+              @view-user="viewUserProfile"
             />
           </div>
 
@@ -149,12 +149,21 @@
           <div v-if="hasMore" class="load-more-section">
             <button @click="loadMore" :disabled="loadingMore" class="btn btn-outline btn-lg">
               <Icon v-if="loadingMore" name="spinner" class="spinning" />
-              加载更多项目
+              {{ searchMode === 'projects' ? '加载更多项目' : '加载更多队友' }}
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- User Profile Modal (teleported to body) -->
+    <Teleport to="body">
+      <UserProfileModal
+        :is-open="showUserProfileModal"
+        :user-id="selectedUserId"
+        @close="showUserProfileModal = false"
+      />
+    </Teleport>
   </HomeContainer>
 </template>
 
@@ -163,6 +172,8 @@ import { ref, computed, onMounted } from 'vue'
 import { debounce } from 'lodash-es'
 import MatchingBreadcrumbs from '~/components/matching/MatchingBreadcrumbs.vue'
 import ProjectCard from '~/components/matching/ProjectCard.vue'
+import UserCard from '~/components/matching/UserCard.vue'
+import UserProfileModal from '~/components/matching/UserProfileModal.vue'
 
 // Composables
 const { fetchWithAuth, fetchPublic } = useApi()
@@ -174,24 +185,33 @@ definePageMeta({
 })
 
 // Reactive data
+const searchMode = ref('projects') // 'projects' or 'teammates'
 const viewMode = ref('recommended')
 const profile = ref(null)
 const projects = ref([])
+const teammates = ref([])
 const loading = ref(true)
 const loadingMore = ref(false)
 const hasMore = ref(false)
 const currentPage = ref(1)
 
-// Development mode detection
-const isDevelopment = computed(() => process.dev)
+// User profile modal state
+const showUserProfileModal = ref(false)
+const selectedUserId = ref(null)
 
 const filters = ref({
-  query: '',
-  type: '',
-  difficulty: '',
+  query: ''
 })
 
 // Methods
+const search = async (resetPage = true) => {
+  if (searchMode.value === 'projects') {
+    return searchProjects(resetPage)
+  } else {
+    return searchTeammates(resetPage)
+  }
+}
+
 const searchProjects = async (resetPage = true) => {
   if (resetPage) {
     currentPage.value = 1
@@ -207,19 +227,9 @@ const searchProjects = async (resetPage = true) => {
       const params = new URLSearchParams({
         limit: '10'
       })
-      console.log('🔍 Fetching recommended projects with params:', params.toString())
 
       const rawResponse = await fetchWithAuth(`/api/matching/projects?${params}`)
       response = await rawResponse.json()
-
-      console.log('📡 Raw server response for recommendations:', {
-        success: response.success,
-        matchesCount: response.matches?.length || 0,
-        matches: response.matches,
-        profile: response.profile,
-        message: response.message,
-        fullResponse: response
-      })
     } else {
       // Get all projects with filters
       const params = new URLSearchParams({
@@ -229,61 +239,21 @@ const searchProjects = async (resetPage = true) => {
       })
 
       if (filters.value.query) params.append('q', filters.value.query)
-      if (filters.value.type) params.append('type', filters.value.type)
-      if (filters.value.difficulty) params.append('difficulty', filters.value.difficulty)
-
-      console.log('🔍 Fetching all projects with params:', params.toString())
 
       const rawResponse = await fetchPublic(`/api/projects/?${params}`)
       response = await rawResponse.json()
-
-      console.log('📡 Raw server response for all projects:', {
-        success: response.success,
-        projectsCount: response.projects?.length || 0,
-        projects: response.projects,
-        pagination: response.pagination,
-        fullResponse: response
-      })
     }
-
-    console.log('🎯 Processing response...')
 
     if (response.success) {
       if (viewMode.value === 'recommended') {
         const matches = response.matches || []
-        console.log('✅ Setting recommended projects:', {
-          matchesReceived: matches.length,
-          matchesData: matches.map(m => ({
-            id: m.project?.id || m.id,
-            title: m.project?.title || m.title,
-            similarity_score: m.similarity_score,
-            compatibility_score: m.compatibility_score,
-            match_reasons: m.match_reasons,
-            hasProject: !!m.project,
-            projectData: m.project
-          }))
-        })
-
-        // Ensure matches have proper project data
         const validMatches = matches.filter(m => m.project || (m.id && m.title))
-        console.log('📊 Valid matches after filtering:', validMatches.length)
 
         projects.value = validMatches
         hasMore.value = false
       } else {
         const projectList = response.projects || []
-        console.log('✅ Setting all projects:', {
-          projectsReceived: projectList.length,
-          projectsData: projectList.map(p => ({
-            id: p.id,
-            title: p.title,
-            hasRequiredFields: !!(p.id && p.title)
-          }))
-        })
-
-        // Ensure projects have required data
         const validProjects = projectList.filter(p => p.id && p.title)
-        console.log('📊 Valid projects after filtering:', validProjects.length)
 
         if (resetPage) {
           projects.value = validProjects
@@ -294,24 +264,12 @@ const searchProjects = async (resetPage = true) => {
         const pagination = response.pagination || {}
         hasMore.value = pagination.page < pagination.pages
       }
-
-      console.log('🏁 Final projects state:', {
-        viewMode: viewMode.value,
-        projectsCount: projects.value.length,
-        hasMore: hasMore.value
-      })
     } else {
-      console.error('❌ Server returned unsuccessful response:', response)
+      // Handle unsuccessful response silently or add user-friendly error handling here
     }
   } catch (error) {
-    console.error('💥 Error searching projects:', {
-      error: error,
-      message: error.message,
-      status: error.status,
-      data: error.data
-    })
+    // Handle errors silently or add user-friendly error handling here
     if (error.status === 400 && error.data?.profile_required) {
-      // Profile required for recommendations
       profile.value = null
     }
   } finally {
@@ -320,9 +278,59 @@ const searchProjects = async (resetPage = true) => {
   }
 }
 
+const searchTeammates = async (resetPage = true) => {
+  if (resetPage) {
+    currentPage.value = 1
+    teammates.value = []
+  }
+
+  loading.value = resetPage
+
+  try {
+    let response
+    if (viewMode.value === 'recommended') {
+      // Get recommended teammates (requires a specific project context)
+      // For now, fall back to all teammates since we don't have project context in discover page
+      viewMode.value = 'all'
+    }
+
+    // Get all teammates with filters
+    const params = new URLSearchParams({
+      page: currentPage.value.toString(),
+      limit: '12'
+    })
+
+    if (filters.value.query) params.append('q', filters.value.query)
+
+    const rawResponse = await fetchPublic(`/api/profiles/?${params}`)
+    response = await rawResponse.json()
+
+    if (response.success) {
+      const profileList = response.profiles || []
+      const validProfiles = profileList.filter(p => p.user_id && p.user)
+
+      if (resetPage) {
+        teammates.value = validProfiles
+      } else {
+        teammates.value.push(...validProfiles)
+      }
+
+      const pagination = response.pagination || {}
+      hasMore.value = pagination.page < pagination.pages
+    } else {
+      // Handle unsuccessful response silently or add user-friendly error handling here
+    }
+  } catch (error) {
+    // Handle errors silently or add user-friendly error handling here
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
 const debouncedSearch = debounce(() => {
   if (viewMode.value === 'all') {
-    searchProjects()
+    search()
   }
 }, 500)
 
@@ -330,7 +338,29 @@ const switchView = async (mode) => {
   if (viewMode.value === mode) return
 
   viewMode.value = mode
-  await searchProjects()
+  await search()
+}
+
+const switchSearchMode = async (mode) => {
+  if (searchMode.value === mode) return
+
+  // Clear previous results
+  projects.value = []
+  teammates.value = []
+
+  // Reset filters
+  filters.value = {
+    query: ''
+  }
+
+  searchMode.value = mode
+
+  // For teammates, recommended mode isn't available in discover page (needs project context)
+  if (mode === 'teammates' && viewMode.value === 'recommended') {
+    viewMode.value = 'all'
+  }
+
+  await search()
 }
 
 const loadMore = async () => {
@@ -338,41 +368,40 @@ const loadMore = async () => {
 
   loadingMore.value = true
   currentPage.value++
-  await searchProjects(false)
+  await search(false)
+}
+
+const getResultsTitle = () => {
+  if (searchMode.value === 'projects') {
+    return viewMode.value === 'recommended' ? '为你推荐' : '全部项目'
+  } else {
+    return viewMode.value === 'recommended' ? '为你推荐' : '全部队友'
+  }
+}
+
+const viewUserProfile = (userId) => {
+  selectedUserId.value = userId
+  showUserProfileModal.value = true
 }
 
 
 const loadProfile = async () => {
   try {
-    console.log('👤 Loading user profile...')
     const rawResponse = await fetchWithAuth('/api/profiles')
     const response = await rawResponse.json()
 
-    console.log('👤 Profile response:', {
-      success: response.success,
-      profileExists: !!response.profile,
-      profileData: response.profile,
-      message: response.message
-    })
-
     if (response.success) {
       profile.value = response.profile
-      console.log('✅ Profile loaded successfully:', {
-        hasProfile: !!response.profile,
-        profileComplete: response.profile?.bio && response.profile?.skills?.length > 0,
-        bio: response.profile?.bio,
-        skillsCount: response.profile?.skills?.length || 0
-      })
     }
   } catch (error) {
-    console.error('💥 Error loading profile:', error)
+    // Handle errors silently or add user-friendly error handling here
   }
 }
 
 // Lifecycle
 onMounted(async () => {
   await loadProfile()
-  await searchProjects()
+  await search()
 })
 </script>
 
@@ -405,7 +434,51 @@ onMounted(async () => {
 .page-header p {
   font-size: 1.1rem;
   color: var(--text-secondary, #7f8c8d);
-  margin: 0;
+  margin: 0 0 20px 0;
+}
+
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  background: var(--surface-secondary, #f8f9fa);
+  border-radius: 10px;
+  padding: 4px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  color: var(--text-secondary, #7f8c8d);
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-primary, #2c3e50);
+}
+
+.mode-btn.active {
+  background: var(--interactive-primary, #3498db);
+  color: white;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.mode-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .filters-section {
@@ -418,9 +491,13 @@ onMounted(async () => {
 
 .filters-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 20px;
   align-items: end;
+}
+
+.search-group {
+  min-width: 300px;
 }
 
 .filter-group label {
@@ -603,11 +680,21 @@ onMounted(async () => {
   margin: 0;
 }
 
-.project-grid {
+.results-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+}
+
+/* Specific styling for project cards */
+.results-grid .project-card {
+  /* Project cards already have proper styling */
+}
+
+/* Specific styling for user cards */
+.results-grid .user-card {
+  /* User cards already have proper styling */
 }
 
 .load-more-section {
@@ -673,7 +760,7 @@ onMounted(async () => {
     gap: 16px;
   }
 
-  .project-grid {
+  .results-grid {
     grid-template-columns: 1fr;
   }
 
@@ -685,6 +772,15 @@ onMounted(async () => {
 
   .profile-actions {
     align-items: center;
+  }
+
+  .mode-toggle {
+    max-width: 100%;
+  }
+
+  .mode-btn {
+    padding: 10px 16px;
+    font-size: 0.9rem;
   }
 }
 </style>

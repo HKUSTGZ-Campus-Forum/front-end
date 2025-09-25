@@ -4,7 +4,7 @@
       <li class="breadcrumb-item">
         <NuxtLink to="/matching" class="breadcrumb-link">
           <Icon name="users" class="breadcrumb-icon" />
-          团队匹配
+          {{ t('Team Matching') }}
         </NuxtLink>
       </li>
       <li v-for="(item, index) in breadcrumbItems" :key="index" class="breadcrumb-item">
@@ -29,22 +29,22 @@ const breadcrumbItems = computed(() => {
   const items = []
 
   if (path.startsWith('/matching/profile')) {
-    items.push({ title: '个人资料设置', current: true })
+    items.push({ title: t('Profile Settings'), current: true })
   } else if (path.startsWith('/matching/discover')) {
-    items.push({ title: '发现项目', current: true })
+    items.push({ title: t('Discover Projects'), current: true })
   } else if (path.startsWith('/matching/projects/create')) {
-    items.push({ title: '项目', href: '/matching/projects' })
-    items.push({ title: '创建项目', current: true })
+    items.push({ title: t('Projects'), href: '/matching/projects' })
+    items.push({ title: t('Create Project'), current: true })
   } else if (path.startsWith('/matching/projects/') && path.includes('/edit')) {
-    items.push({ title: '项目', href: '/matching/projects' })
-    items.push({ title: '编辑项目', current: true })
+    items.push({ title: t('Projects'), href: '/matching/projects' })
+    items.push({ title: t('Edit Project'), current: true })
   } else if (path.startsWith('/matching/projects/') && route.params.id) {
-    items.push({ title: '项目', href: '/matching/projects' })
-    items.push({ title: '项目详情', current: true })
+    items.push({ title: t('Projects'), href: '/matching/projects' })
+    items.push({ title: t('Project Details'), current: true })
   } else if (path.startsWith('/matching/projects')) {
-    items.push({ title: '我的项目', current: true })
+    items.push({ title: t('My Projects'), current: true })
   } else if (path.startsWith('/matching/applications')) {
-    items.push({ title: '我的申请', current: true })
+    items.push({ title: t('My Applications'), current: true })
   }
 
   return items

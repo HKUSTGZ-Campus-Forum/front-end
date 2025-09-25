@@ -8,143 +8,25 @@
           <Icon name="user-circle" class="title-icon" />
           设置个人资料
         </h1>
-        <p>介绍一下你自己，获得更好的项目匹配</p>
-
-        <!-- Progress indicator -->
-        <div class="setup-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: `${setupProgress}%` }"></div>
-          </div>
-          <span class="progress-text">{{ setupProgress }}% 完成</span>
-        </div>
+        <p>简单介绍你感兴趣的问题领域并设置联系方式，以便队友能够联系到你</p>
       </div>
 
     <form @submit.prevent="saveProfile" class="profile-form">
-      <!-- Bio Section -->
+      <!-- Problem of Interest Section -->
       <div class="form-section">
-        <h2>关于你</h2>
+        <h2>你感兴趣解决什么问题？</h2>
         <div class="form-group">
-          <label for="bio">个人介绍 *</label>
+          <label for="problem_interest">描述你感兴趣的问题领域 *</label>
           <textarea
-            id="bio"
-            v-model="form.bio"
-            placeholder="介绍一下你自己、你的背景、兴趣和热情所在..."
-            rows="4"
+            id="problem_interest"
+            v-model="form.problem_interest"
+            placeholder="例如：想改善校园生活的某个方面，或者对某个技术领域很好奇想深入研究，或者想解决某个社会问题..."
+            rows="6"
             required
             maxlength="500"
           />
-          <div class="char-count">{{ form.bio?.length || 0 }}/500</div>
-        </div>
-      </div>
-
-      <!-- Skills Section -->
-      <div class="form-section">
-        <h2>技能 *</h2>
-        <div class="form-group">
-          <label>你有哪些技能？</label>
-          <SkillSelector
-            v-model="form.skills"
-            placeholder="添加技能..."
-            :suggestions="skillSuggestions"
-            :popularTags="popularSkills"
-            :showPopularTags="true"
-          />
-          <p class="help-text">至少添加3个技能以获得更好的匹配</p>
-        </div>
-      </div>
-
-      <!-- Interests Section -->
-      <div class="form-section">
-        <h2>兴趣领域</h2>
-        <div class="form-group">
-          <label>你对什么感兴趣？</label>
-          <SkillSelector
-            v-model="form.interests"
-            placeholder="添加兴趣..."
-            :suggestions="interestSuggestions"
-            :popularTags="popularInterests"
-            :showPopularTags="true"
-          />
-        </div>
-      </div>
-
-      <!-- Research Thrust Section -->
-      <div class="form-section">
-        <h2>研究方向</h2>
-        <div class="form-group">
-          <label>选择你的研究方向 (基于HKUST-GZ研究重点)</label>
-          <ThrustSelector
-            v-model="form.thrust"
-            :maxSelections="8"
-          />
-        </div>
-      </div>
-
-      <!-- Experience Level -->
-      <div class="form-section">
-        <h2>经验水平 *</h2>
-        <div class="form-group">
-          <div class="radio-group">
-            <label class="radio-option">
-              <input type="radio" v-model="form.experience_level" value="beginner" />
-              <div class="radio-content">
-                <strong>初学者</strong>
-                <p>对大多数技术都还不熟悉，渴望学习</p>
-              </div>
-            </label>
-            <label class="radio-option">
-              <input type="radio" v-model="form.experience_level" value="intermediate" />
-              <div class="radio-content">
-                <strong>中级</strong>
-                <p>有一些经验，对基础概念较为熟悉</p>
-              </div>
-            </label>
-            <label class="radio-option">
-              <input type="radio" v-model="form.experience_level" value="advanced" />
-              <div class="radio-content">
-                <strong>高级</strong>
-                <p>经验丰富，能够独立工作</p>
-              </div>
-            </label>
-            <label class="radio-option">
-              <input type="radio" v-model="form.experience_level" value="expert" />
-              <div class="radio-content">
-                <strong>专家</strong>
-                <p>专业水平很高，可以指导他人</p>
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Preferred Roles -->
-      <div class="form-section">
-        <h2>偏好角色</h2>
-        <div class="form-group">
-          <label>你在项目中偏好什么角色？</label>
-          <SkillSelector
-            v-model="form.preferred_roles"
-            placeholder="添加偏好角色..."
-            :suggestions="roleSuggestions"
-            :popularTags="popularRoles"
-            :showPopularTags="true"
-          />
-        </div>
-      </div>
-
-      <!-- Availability -->
-      <div class="form-section">
-        <h2>可用时间</h2>
-        <div class="form-group">
-          <label for="availability">你能投入多少时间？</label>
-          <select id="availability" v-model="form.availability">
-            <option value="">选择可用时间...</option>
-            <option value="full-time">全职 (30+小时/周)</option>
-            <option value="part-time">兜职 (10-20小时/周)</option>
-            <option value="weekends">仅周末</option>
-            <option value="flexible">灵活时间</option>
-            <option value="minimal">最少时间 (< 5小时/周)</option>
-          </select>
+          <div class="char-count">{{ form.problem_interest?.length || 0 }}/500</div>
+          <p class="help-text">不用担心描述得不够专业，系统会通过AI理解你的兴趣并匹配合适的项目和队友</p>
         </div>
       </div>
 
@@ -181,10 +63,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import SkillSelector from '~/components/matching/SkillSelector.vue'
-import ThrustSelector from '~/components/matching/ThrustSelector.vue'
-import ContactMethodSelector from '~/components/matching/ContactMethodSelector.vue'
 import MatchingBreadcrumbs from '~/components/matching/MatchingBreadcrumbs.vue'
+import ContactMethodSelector from '~/components/matching/ContactMethodSelector.vue'
 
 // Composables
 const { fetchWithAuth } = useApi()
@@ -197,82 +77,16 @@ definePageMeta({
 
 // Reactive data
 const form = ref({
-  bio: '',
-  skills: [],
-  interests: [],
-  thrust: [],
-  experience_level: '',
-  preferred_roles: [],
-  availability: '',
+  problem_interest: '',
   contact_methods: [],
 })
-
 
 const profile = ref(null)
 const saving = ref(false)
 
-// 常用标签 (Popular tags)
-const popularSkills = [
-  'JavaScript', 'Python', 'React', 'Vue.js', 'HTML/CSS', 'Java',
-  'UI/UX设计', '项目管理', '数据科学', '机器学习'
-]
-
-const popularInterests = [
-  'Web开发', '移动应用', 'AI/ML', 'UI/UX设计', '游戏开发',
-  '数据科学', '社会影响', '创业', '开源项目', '创新'
-]
-
-const popularRoles = [
-  '前端开发', '后端开发', 'UI/UX设计师', '项目经理',
-  '全栈开发', '产品经理'
-]
-
-// 技能建议列表 (Complete suggestions for autocomplete)
-const skillSuggestions = [
-  'JavaScript', 'Python', 'React', 'Vue.js', 'Node.js', 'TypeScript',
-  'HTML/CSS', 'Java', 'C++', 'Swift', 'Kotlin', 'Flutter', 'React Native',
-  '机器学习', '数据科学', 'AI/ML', '深度学习', 'NLP',
-  'UI/UX设计', '平面设计', 'Figma', 'Photoshop', 'Illustrator',
-  '项目管理', 'Agile', 'Scrum', '领导力', '沟通能力',
-  '数据库设计', 'SQL', 'MongoDB', 'PostgreSQL', 'MySQL',
-  '云计算', 'AWS', 'Azure', 'Google Cloud', 'DevOps', 'Docker',
-  '移动开发', 'Web开发', '后端开发', '前端开发'
-]
-
-const interestSuggestions = [
-  'Web开发', '移动应用', '游戏开发', 'AI/ML', '区块链',
-  'IoT', '机器人', '网络安全', '数据科学', '云计算',
-  '社会影响', '教育', '医疗', '金融', '电子商务',
-  '可持续发展', '绿色科技', '音乐', '艺术', '摄影',
-  '创业', '开源项目', '研究', '创新', '企业家精神'
-]
-
-const roleSuggestions = [
-  '前端开发', '后端开发', '全栈开发',
-  'UI/UX设计师', '产品经理', '项目经理', '团队负责人',
-  '数据科学家', '机器学习工程师', 'DevOps工程师',
-  '移动开发', 'QA工程师', '商业分析师', '市场营销',
-  '内容创作者', '研究员', '导师', '顾问'
-]
-
 // Computed properties
 const isFormValid = computed(() => {
-  return form.value.bio?.trim() &&
-         form.value.skills?.length >= 1 &&
-         form.value.experience_level
-})
-
-const setupProgress = computed(() => {
-  let progress = 0
-  if (form.value.bio?.trim()) progress += 25
-  if (form.value.skills?.length >= 3) progress += 25
-  else if (form.value.skills?.length >= 1) progress += 12
-  if (form.value.experience_level) progress += 20
-  if (form.value.thrust?.length) progress += 10
-  if (form.value.preferred_roles?.length) progress += 8
-  if (form.value.availability) progress += 5
-  if (form.value.contact_methods?.length) progress += 7
-  return Math.min(progress, 100)
+  return form.value.problem_interest?.trim() && form.value.contact_methods?.length > 0
 })
 
 // Methods
@@ -286,16 +100,9 @@ const loadProfile = async () => {
       profile.value = p
 
       form.value = {
-        bio: p.bio || '',
-        skills: p.skills || [],
-        interests: p.interests || [],
-        thrust: p.thrust || [],
-        experience_level: p.experience_level || '',
-        preferred_roles: p.preferred_roles || [],
-        availability: p.availability || '',
+        problem_interest: p.problem_interest || p.bio || '',  // fallback to bio if problem_interest doesn't exist yet
         contact_methods: p.contact_methods || [],
       }
-
     }
   } catch (error) {
     console.error('Error loading profile:', error)
