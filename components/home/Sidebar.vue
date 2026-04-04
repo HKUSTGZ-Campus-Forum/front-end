@@ -206,6 +206,16 @@ watch(isHovered, (newValue: boolean) => {
             <span class="nav-text">HKUST-GZ Wiki</span>
           </NuxtLink>
         </li>
+        <li>
+          <NuxtLink
+            to="/contest"
+            :class="{ active: route.path.startsWith('/contest') }"
+            @click="handleNavClick"
+          >
+            <span class="nav-icon contest-icon">🏆</span>
+            <span class="nav-text">百块奖金大赛</span>
+          </NuxtLink>
+        </li>
       </ul>
     </div>
   </div>
@@ -347,6 +357,10 @@ watch(isHovered, (newValue: boolean) => {
           width: 100%;
           height: 100%;
         }
+      }
+
+      .contest-icon {
+        font-size: 20px;
       }
 
       .nav-text {
