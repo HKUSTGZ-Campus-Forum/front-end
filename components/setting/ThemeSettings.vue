@@ -228,7 +228,7 @@ function disableAutoTheme() {
 
 // Quick actions
 function resetTheme() {
-  selectTheme('light');
+  selectTheme('keguang-blue');
   autoDarkMode.value = false;
   disableAutoTheme();
 }

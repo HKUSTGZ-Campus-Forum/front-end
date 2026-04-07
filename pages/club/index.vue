@@ -1,108 +1,10 @@
-<template>
-  <HomeContainer>
-    <div class="posts-container">
-      <h1 class="page-title">社团活动</h1>
-
-      <!-- 新增筛选和操作栏 -->
-      <div class="filter-action-bar">
-        <div class="filter-options">
-          <span class="filter-label">排序方式：</span>
-          <select
-            v-model="sortBy"
-            @change="handleSortChange($event.target.value)"
-            class="filter-select"
-          >
-            <option value="latest">最新发布</option>
-            <option value="oldest">最早发布</option>
-            <option value="hot">热度优先</option>
-          </select>
-        </div>
-
-        <NuxtLink to="/forum/postMessage" class="post-button">
-          <i class="fas fa-plus"></i> 发布社团活动
-        </NuxtLink>
-      </div>
-
-      <div class="posts-list">
-        <!-- 现有的帖子列表 -->
-        <ForumPost
-          v-for="post in posts"
-          :key="post.id"
-          :id="post.id"
-          :user_id="post.user_id"
-          :title="post.title"
-          :author="post.author"
-          :author_avatar="post.author_avatar"
-          :display_identity="post.display_identity"
-          :publish-date="post.publishDate"
-          :excerpt="post.content"
-          :content="post.content"
-          :comment_count="post.comments"
-          :reaction_count="post.reaction_count || 0"
-          :view_count="post.view_count || 0"
-          :tags="post.tags || []"
-        />
-
-        <!-- Loading trigger element for infinite scroll -->
-        <div ref="loadingTrigger" class="loading-trigger"></div>
-
-        <!-- Loading indicator -->
-        <div v-if="isLoadingMore" class="loading-more">
-          <div class="loading-spinner"></div>
-          <span>加载更多社团活动...</span>
-        </div>
-
-        <!-- Error message -->
-        <div v-if="loadMoreError" class="load-more-error">
-          <p>{{ loadMoreError }}</p>
-          <button @click="loadMorePosts" class="retry-button">
-            <i class="fas fa-redo"></i> 重试
-          </button>
-        </div>
-
-        <!-- End of content message -->
-        <div v-if="hasReachedEnd && !isLoadingMore" class="end-of-content">
-          <span>已经到底啦 ~</span>
-        </div>
-
-        <!-- Empty state when no posts -->
-        <div v-if="!isLoadingMore && posts.length === 0" class="empty-state">
-          <div class="empty-icon">🏛️</div>
-          <h3>暂无社团活动</h3>
-          <p>还没有社团活动发布，快来发布第一个吧！</p>
-        </div>
-      </div>
-
-      <!-- 保持原有的分页部分作为备选 -->
-      <div v-if="showPagination" class="pagination">
-        <button
-          @click="prevPage"
-          :disabled="currentPage <= 1"
-          class="page-btn"
-        >
-          上一页
-        </button>
-        <span class="page-info">
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
-        </span>
-        <button
-          @click="nextPage"
-          :disabled="currentPage >= totalPages"
-          class="page-btn"
-        >
-          下一页
-        </button>
-      </div>
-    </div>
-  </HomeContainer>
-</template>
-
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import ForumPost from "~/components/forum/Post.vue";
 import { formatDate } from "~/utils/dateFormat";
 import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
+
+definePageMeta({ layout: 'keguang' });
 
 const { getUsernameById } = useUser();
 const { fetchWithAuth } = useApi();
@@ -118,22 +20,18 @@ const hasReachedEnd = ref(false);
 const observer = ref(null);
 const loadingTrigger = ref(null);
 
-// Show pagination as fallback when infinite scroll is not supported
 const showPagination = computed(() => {
   return typeof IntersectionObserver === 'undefined' || hasReachedEnd.value;
 });
 
-// Map frontend sort options to backend sort fields
 const sortMapping = {
   latest: { sort_by: "created_at", sort_order: "desc" },
   oldest: { sort_by: "created_at", sort_order: "asc" },
   hot: { sort_by: "reaction_count", sort_order: "desc" },
 };
 
-// Update sort handler
 function handleSortChange(value) {
   sortBy.value = value;
-  // Reset pagination state
   currentPage.value = 1;
   posts.value = [];
   hasReachedEnd.value = false;
@@ -142,47 +40,27 @@ function handleSortChange(value) {
 }
 
 function prevPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-    fetchPosts(true);
-  }
+  if (currentPage.value > 1) { currentPage.value--; fetchPosts(true); }
 }
 
 function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-    fetchPosts(true);
-  }
+  if (currentPage.value < totalPages.value) { currentPage.value++; fetchPosts(true); }
 }
 
 async function fetchPosts(reset = false) {
   if (isLoadingMore.value) return;
-  
   try {
     isLoadingMore.value = true;
     loadMoreError.value = "";
-    
     const { sort_by, sort_order } = sortMapping[sortBy.value] || sortMapping.latest;
-    
-    // Add tag filter for "club" using fetchWithAuth
     const response = await fetchWithAuth("/api/posts?" +
-      new URLSearchParams({
-        page: currentPage.value.toString(),
-        limit: "20",
-        sort_by: sort_by,
-        sort_order: sort_order,
-        tags: "club", // Filter posts with "club" tag
-      })
+      new URLSearchParams({ page: currentPage.value.toString(), limit: "20", sort_by, sort_order, tags: "club" })
     );
-    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || "获取社团活动失败");
     }
-
     const data = await response.json();
-
-    // Transform data format
     const newPosts = data.posts.map((post) => ({
       ...post,
       author_id: post.user_id,
@@ -193,430 +71,311 @@ async function fetchPosts(reset = false) {
       views: post.view_count || 0,
       publishDate: post.created_at,
     }));
-
-    if (reset) {
-      posts.value = newPosts;
-    } else {
-      posts.value = [...posts.value, ...newPosts];
-    }
-
+    if (reset) { posts.value = newPosts; } else { posts.value = [...posts.value, ...newPosts]; }
     totalPages.value = data.total_pages;
     hasReachedEnd.value = currentPage.value >= totalPages.value;
-    
   } catch (error) {
-    console.error("获取社团活动失败:", error);
     loadMoreError.value = error.message || "获取社团活动失败，请稍后重试";
   } finally {
     isLoadingMore.value = false;
   }
 }
 
-// Load more posts when scrolling
 async function loadMorePosts() {
   if (hasReachedEnd.value || isLoadingMore.value) return;
-  
   currentPage.value++;
   await fetchPosts();
 }
 
-// Setup intersection observer
 function setupIntersectionObserver() {
   if (typeof IntersectionObserver === 'undefined') return;
-  
   observer.value = new IntersectionObserver(
     (entries) => {
-      const target = entries[0];
-      if (target.isIntersecting && !isLoadingMore.value && !hasReachedEnd.value) {
-        loadMorePosts();
-      }
+      if (entries[0].isIntersecting && !isLoadingMore.value && !hasReachedEnd.value) loadMorePosts();
     },
-    {
-      rootMargin: '100px', // Start loading before reaching the bottom
-      threshold: 0.1
-    }
+    { rootMargin: '100px', threshold: 0.1 }
   );
-
-  if (loadingTrigger.value) {
-    observer.value.observe(loadingTrigger.value);
-  }
+  if (loadingTrigger.value) observer.value.observe(loadingTrigger.value);
 }
 
-// Cleanup observer on component unmount
-onUnmounted(() => {
-  if (observer.value) {
-    observer.value.disconnect();
-  }
-});
-
-onMounted(() => {
-  fetchPosts(true);
-  setupIntersectionObserver();
-});
+onUnmounted(() => { if (observer.value) observer.value.disconnect(); });
+onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
 </script>
 
+<template>
+  <div class="kg-club">
+    <div class="kg-club-header">
+      <div>
+        <h1 class="kg-page-title">社团活动</h1>
+        <p class="kg-page-subtitle">发现精彩的校园社团活动</p>
+      </div>
+      <NuxtLink to="/forum/postMessage" class="kg-btn-primary">+ 发布活动</NuxtLink>
+    </div>
+
+    <div class="kg-sort-bar">
+      <button
+        v-for="opt in [{ value: 'latest', label: '最新' }, { value: 'hot', label: '最热' }, { value: 'oldest', label: '最早' }]"
+        :key="opt.value"
+        :class="['kg-sort-btn', { active: sortBy === opt.value }]"
+        @click="handleSortChange(opt.value)"
+      >{{ opt.label }}</button>
+    </div>
+
+    <div class="kg-post-list">
+      <NuxtLink v-for="post in posts" :key="post.id" :to="`/forum/posts/${post.id}`" class="kg-post-card">
+        <div class="kg-post-card__activity-badge">社团活动</div>
+        <h2 class="kg-post-card__title">{{ post.title }}</h2>
+        <p class="kg-post-card__excerpt">{{ post.content?.slice(0, 120) }}{{ post.content?.length > 120 ? '...' : '' }}</p>
+        <div class="kg-post-card__footer">
+          <div class="kg-post-card__author">
+            <img v-if="post.author_avatar" :src="post.author_avatar" :alt="post.author" class="kg-avatar" />
+            <div v-else class="kg-avatar kg-avatar--placeholder">{{ post.author?.charAt(0)?.toUpperCase() }}</div>
+            <span class="kg-author-name">{{ post.author }}</span>
+          </div>
+          <div class="kg-post-stats">
+            <span><i class="far fa-comment"></i> {{ post.comments }}</span>
+            <span><i class="far fa-eye"></i> {{ post.view_count }}</span>
+            <span class="kg-time">{{ formatDate(post.publishDate) }}</span>
+          </div>
+        </div>
+      </NuxtLink>
+    </div>
+
+    <div v-if="isLoadingMore && posts.length === 0" class="kg-loading">
+      <div class="kg-spinner"></div><span>加载中...</span>
+    </div>
+    <div v-if="loadMoreError" class="kg-error">
+      <p>{{ loadMoreError }}</p>
+      <button class="kg-btn-ghost" @click="fetchPosts(true)">重试</button>
+    </div>
+    <div ref="loadingTrigger" class="kg-load-trigger">
+      <div v-if="isLoadingMore && posts.length > 0" class="kg-loading kg-loading--sm">
+        <div class="kg-spinner kg-spinner--sm"></div><span>加载更多...</span>
+      </div>
+      <div v-if="hasReachedEnd && posts.length > 0" class="kg-end-label">已加载全部内容</div>
+    </div>
+
+    <div v-if="showPagination && totalPages > 1" class="kg-pagination">
+      <button class="kg-page-btn" :disabled="currentPage <= 1" @click="prevPage">上一页</button>
+      <span>{{ currentPage }} / {{ totalPages }}</span>
+      <button class="kg-page-btn" :disabled="currentPage >= totalPages" @click="nextPage">下一页</button>
+    </div>
+  </div>
+</template>
+
 <style lang="scss" scoped>
-.posts-container {
+.kg-club {
+  width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 1rem;
-  
-  // Mobile responsiveness
-  @media (max-width: 480px) {
-    padding: 0 0.75rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    padding: 0 1rem;
-  }
-  
-  @media (min-width: 769px) and (max-width: 1024px) {
-    padding: 0 1.5rem;
-  }
+  padding: 24px 20px 60px;
 }
 
-.page-title {
-  margin-bottom: 1rem;
-  font-size: 2rem;
-  text-align: center;
-  color: var(--text-primary);
-  
-  // Responsive typography
-  @media (max-width: 480px) {
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    font-size: 1.75rem;
-    margin-bottom: 0.875rem;
-  }
-}
-
-/* Mobile-optimized filter and action bar */
-.filter-action-bar {
+.kg-club-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background-color: var(--surface-secondary);
-  border-radius: 8px;
-  box-shadow: var(--shadow-small);
-  
-  // Mobile layout - stack vertically on small screens
-  @media (max-width: 480px) {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    padding: 0.875rem;
-    gap: 0.75rem;
-  }
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 12px;
 }
 
-.filter-options {
-  display: flex;
-  align-items: center;
-  
-  // Mobile layout adjustments
-  @media (max-width: 480px) {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .filter-label {
-    margin-right: 0.5rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    
-    // Hide label on very small screens to save space
-    @media (max-width: 320px) {
-      display: none;
-    }
-  }
-
-  .filter-select {
-    padding: 0.5rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 4px;
-    background-color: var(--surface-primary);
-    color: var(--text-primary);
-    cursor: pointer;
-    min-height: 44px; // Touch-friendly minimum height
-    
-    // Mobile optimizations
-    @media (max-width: 480px) {
-      padding: 0.75rem;
-      font-size: 1rem;
-      min-width: 180px;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--interactive-primary);
-      box-shadow: 0 0 0 2px var(--interactive-focus);
-    }
-  }
+.kg-page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a2a4a;
+  margin: 0 0 4px;
 }
 
-.post-button {
+.kg-page-subtitle {
+  font-size: 0.9rem;
+  color: #4a6080;
+  margin: 0;
+}
+
+.kg-btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--interactive-primary);
-  color: var(--text-inverse);
-  border-radius: 4px;
+  padding: 8px 20px;
+  background: #9EAAF4;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  min-height: 44px; // Touch-friendly minimum height
-  
-  // Mobile optimizations
-  @media (max-width: 480px) {
-    width: 100%;
-    justify-content: center;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    padding: 0.625rem 1.25rem;
-  }
-
-  &:hover {
-    background-color: var(--interactive-hover);
-  }
-  
-  // Touch feedback for mobile
-  &:active {
-    transform: translateY(1px);
-    background-color: var(--interactive-active);
-  }
-
-  i {
-    font-size: 0.9rem;
-    
-    @media (max-width: 480px) {
-      font-size: 1rem;
-    }
-  }
+  white-space: nowrap;
+  transition: background 0.2s;
+  &:hover { background: #7b8ce8; }
 }
 
-.posts-list {
+.kg-sort-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.kg-sort-btn {
+  padding: 6px 18px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 16px;
+  background: #F5FBFE;
+  color: #4a6080;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { border-color: #26a4ff; color: #26a4ff; }
+  &.active { background: #26a4ff; border-color: #26a4ff; color: #fff; font-weight: 600; }
+}
+
+.kg-post-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  
-  // Mobile spacing adjustments
-  @media (max-width: 480px) {
-    gap: 1rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    gap: 1.25rem;
-  }
+  gap: 12px;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--text-secondary);
-  
-  .empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.6;
-  }
-  
-  h3 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-  }
-  
-  p {
-    font-size: 1rem;
-    opacity: 0.8;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 3rem 1rem;
-    
-    .empty-icon {
-      font-size: 3rem;
-    }
-    
-    h3 {
-      font-size: 1.25rem;
-    }
-    
-    p {
-      font-size: 0.9rem;
-    }
-  }
+.kg-post-card {
+  display: block;
+  background: #F5FBFE;
+  border: 1.5px solid #c8dff8;
+  border-radius: 16px;
+  padding: 20px 24px 16px;
+  text-decoration: none;
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+  box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
+  &:hover { box-shadow: 0 4px 20px rgba(40, 57, 101, 0.12); border-color: #26a4ff; transform: translateY(-1px); }
 }
 
-/* Mobile-optimized pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  
-  // Mobile layout adjustments
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-    flex-wrap: wrap;
-  }
-
-  button {
-    padding: 0.5rem 1rem;
-    border: none;
-    background-color: var(--interactive-primary);
-    color: var(--text-inverse);
-    border-radius: 4px;
-    cursor: pointer;
-    min-height: 44px; // Touch-friendly minimum height
-    transition: all 0.2s ease;
-    
-    // Mobile optimizations
-    @media (max-width: 480px) {
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      min-width: 44px;
-    }
-
-    &:disabled {
-      background-color: var(--interactive-disabled);
-      cursor: not-allowed;
-    }
-
-    &:hover:not(:disabled) {
-      background-color: var(--interactive-hover);
-    }
-    
-    // Touch feedback
-    &:active:not(:disabled) {
-      transform: translateY(1px);
-      background-color: var(--interactive-active);
-    }
-  }
-
-  .page-number {
-    font-weight: bold;
-    color: var(--text-primary);
-    
-    @media (max-width: 480px) {
-      font-size: 1rem;
-    }
-  }
+.kg-post-card__activity-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: rgba(158, 170, 244, 0.2);
+  border: 1px solid #9EAAF4;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  color: #9EAAF4;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
 
-.loading-more {
+.kg-post-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a2a4a;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.kg-post-card__excerpt {
+  font-size: 0.875rem;
+  color: #4a6080;
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+.kg-post-card__footer {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: var(--text-secondary);
-  gap: 1rem;
-  
-  .loading-spinner {
-    width: 24px;
-    height: 24px;
-    border: 3px solid var(--border-primary);
-    border-top: 3px solid var(--interactive-primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
+  justify-content: space-between;
+  border-top: 1px solid #e8f4fd;
+  padding-top: 10px;
 }
 
-.load-more-error {
-  text-align: center;
-  padding: 1.5rem;
-  color: var(--status-error);
-  background-color: var(--status-error-bg);
-  border-radius: 8px;
-  margin: 1rem 0;
-  
-  p {
-    margin-bottom: 1rem;
-  }
-  
-  .retry-button {
-    display: inline-flex;
+.kg-post-card__author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #9EAAF4;
+  &--placeholder {
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: var(--interactive-primary);
-    color: var(--text-inverse);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    
-    &:hover {
-      background-color: var(--interactive-hover);
-    }
-    
-    i {
-      font-size: 0.9rem;
-    }
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
   }
 }
 
-.end-of-content {
-  text-align: center;
-  padding: 2rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  border-top: 1px solid var(--border-primary);
-  margin-top: 1rem;
+.kg-author-name {
+  font-size: 0.825rem;
+  color: #4a6080;
+  font-weight: 500;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.kg-post-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #6a85a0;
+  align-items: center;
+  i { font-size: 0.75rem; margin-right: 3px; }
 }
 
-// Mobile optimizations
-@media (max-width: 480px) {
-  .loading-more {
-    padding: 1.5rem;
-    
-    .loading-spinner {
-      width: 20px;
-      height: 20px;
-      border-width: 2px;
-    }
-  }
-  
-  .load-more-error {
-    padding: 1rem;
-    margin: 0.75rem 0;
-    
-    .retry-button {
-      width: 100%;
-      justify-content: center;
-      padding: 0.75rem;
-    }
-  }
-  
-  .end-of-content {
-    padding: 1.5rem;
-    font-size: 0.85rem;
-  }
+.kg-time { color: #9ab0c6; }
+
+.kg-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: #4a6080;
+  &--sm { padding: 20px; }
 }
 
-.loading-trigger {
-  height: 1px;
-  width: 100%;
-  margin: 1rem 0;
-  visibility: hidden;
+.kg-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #c8dff8;
+  border-top-color: #26a4ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  &--sm { width: 18px; height: 18px; border-width: 2px; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.kg-error { text-align: center; padding: 32px; color: #e05a5a; p { margin: 0 0 12px; } }
+
+.kg-btn-ghost {
+  padding: 7px 20px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 14px;
+  background: transparent;
+  color: #4a6080;
+  cursor: pointer;
+  font-size: 0.875rem;
+  &:hover { background: #F5FBFE; }
+}
+
+.kg-load-trigger { min-height: 20px; margin-top: 16px; }
+.kg-end-label { text-align: center; padding: 16px; font-size: 0.85rem; color: #9ab0c6; }
+
+.kg-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0 0;
+  font-size: 0.875rem;
+  color: #4a6080;
+}
+
+.kg-page-btn {
+  padding: 7px 20px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 14px;
+  background: #F5FBFE;
+  color: #4a6080;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  &:hover:not(:disabled) { border-color: #26a4ff; color: #26a4ff; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 </style>

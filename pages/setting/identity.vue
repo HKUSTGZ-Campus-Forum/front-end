@@ -331,7 +331,7 @@ import type { IdentityType, UserIdentity } from '~/types/identity'
 
 // Page meta
 definePageMeta({
-  layout: 'settings',
+  layout: 'keguang',
   middleware: 'auth'
 })
 

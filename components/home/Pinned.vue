@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, computed } from "vue"
 import { useI18n } from "vue-i18n"
 import { useAuth } from "~/composables/useAuth"
 import { useRouter } from "vue-router"
@@ -16,8 +16,8 @@ const toggleLanguage = () => {
   setLocale(newLocale);
 };
 
-const { isLoggedIn, logout, user } = useAuth(); // 获取登录状态和用户信息
-// 定义组件属性，允许自定义
+const { isLoggedIn, logout, user } = useAuth();
+
 const props = defineProps({
   brandName: {
     type: String,
@@ -27,29 +27,24 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
-  // 添加用户头像URL属性（作为fallback）
   userAvatar: {
     type: String,
     default: "/image/testpic1.jpg",
   },
-  // 添加用户名属性（作为fallback）
   username: {
     type: String,
     default: "测试",
   },
-  // 添加侧边栏折叠状态属性
   sidebarFolded: {
     type: Boolean,
     default: false,
   },
-  // Mobile state
   isMobile: {
     type: Boolean,
     default: false,
   },
 });
 
-// 处理侧边栏切换
 const emit = defineEmits(["toggle-sidebar"]);
 const toggleSidebar = () => {
   emit("toggle-sidebar");
@@ -57,16 +52,13 @@ const toggleSidebar = () => {
 
 const handleLoginOrLogout = async () => {
   if (isLoggedIn.value) {
-    // 如果已登录，执行登出
     await logout();
     router.push("/");
   } else {
-    // 如果未登录，跳转到登录页
     router.push("/login");
   }
 };
 
-// Search functionality
 const searchQuery = ref("")
 
 const handleSearch = (query: string) => {
@@ -80,7 +72,6 @@ const handleSearch = (query: string) => {
 
 const handleSearchSelect = (type: string, item: any) => {
   console.log("Search item selected:", type, item)
-  // The SearchDropdown component handles navigation automatically
 }
 </script>
 
@@ -92,9 +83,9 @@ const handleSearchSelect = (type: string, item: any) => {
     </button>
 
     <!-- 品牌/Logo -->
-    <a class="brand" :class="{ 
+    <a class="brand" :class="{
       'sidebar-expanded': !sidebarFolded && !isMobile,
-      'mobile-brand': isMobile 
+      'mobile-brand': isMobile,
     }" href="/">
       <div class="brand-logo">
         <img src="/icons/topbar_logo.svg" alt="uniKorn" />
@@ -124,7 +115,7 @@ const handleSearchSelect = (type: string, item: any) => {
         />
       </div>
 
-      <!-- 通知铃铛 - 仅登录用户显示 -->
+      <!-- 通知铃铛 -->
       <div v-if="isLoggedIn" class="notification-section">
         <NotificationBell />
       </div>

@@ -550,6 +550,89 @@ export const themes: ThemeConfig[] = [
         high: 0.95
       }
     }
+  },
+  // ── 科广蓝 ──────────────────────────────────────────────────
+  {
+    id: 'keguang-blue',
+    name: '科广蓝',
+    description: '科广汇定制主题，清爽蓝调配色与全新首页布局',
+    category: 'light',
+
+    background: {
+      primary: '#d7edf9',
+      secondary: '#f5fbfe',
+      gradient: 'linear-gradient(160deg, #d7edf9 0%, #eaf4fd 100%)'
+    },
+
+    colors: {
+      text: {
+        primary: '#1a2a4a',
+        secondary: '#4a6080',
+        muted: '#b3b3b3',
+        inverse: '#ffffff'
+      },
+      surface: {
+        primary: '#ffffff',
+        secondary: '#f5fbfe',
+        elevated: '#ffffff',
+        overlay: 'rgba(255, 255, 255, 0.96)'
+      },
+      interactive: {
+        primary: '#26a4ff',
+        secondary: '#bfd7fb',
+        hover: '#1a8fe0',
+        active: '#1278c4',
+        disabled: '#b3d4f0'
+      },
+      semantic: {
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        info: '#26a4ff'
+      },
+      border: {
+        primary: '#bfd7fb',
+        secondary: '#daeef9',
+        focus: '#26a4ff'
+      }
+    },
+
+    components: {
+      sidebar: {
+        background: '#283965',
+        backdrop: 'none',
+        shadow: '2px 0 12px rgba(40, 57, 101, 0.18)'
+      },
+      topbar: {
+        background: '#f5fbfd',
+        backdrop: 'blur(8px)',
+        shadow: '0 1px 4px rgba(40, 57, 101, 0.08)'
+      },
+      card: {
+        background: '#ffffff',
+        shadow: '0 2px 8px rgba(38, 164, 255, 0.08)',
+        border: '1px solid #daeef9'
+      },
+      modal: {
+        background: '#ffffff',
+        backdrop: 'rgba(26, 42, 74, 0.45)',
+        shadow: '0 20px 40px rgba(26, 42, 74, 0.15)'
+      }
+    },
+
+    effects: {
+      blur: 'blur(8px)',
+      shadow: {
+        small: '0 1px 3px rgba(38, 164, 255, 0.08)',
+        medium: '0 4px 12px rgba(38, 164, 255, 0.12)',
+        large: '0 10px 24px rgba(38, 164, 255, 0.16)'
+      },
+      opacity: {
+        low: 0.6,
+        medium: 0.85,
+        high: 0.96
+      }
+    }
   }
 ];
 
@@ -589,6 +672,10 @@ export function getLogoFilter(themeId: string): string {
       // Sunset theme - warm red/orange tones
       return 'hue-rotate(350deg) saturate(1.4) brightness(0.9)';
     
+    case 'keguang-blue':
+      // 科广蓝：侧边栏深色，图标调亮为白色
+      return 'brightness(10) saturate(0)';
+
     default:
       return 'none';
   }

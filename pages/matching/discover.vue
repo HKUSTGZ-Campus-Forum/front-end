@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="discover-page">
+  <div class="discover-page">
       <MatchingBreadcrumbs />
 
       <!-- Header -->
@@ -154,7 +153,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <!-- User Profile Modal (teleported to body) -->
     <Teleport to="body">
@@ -164,7 +162,7 @@
         @close="showUserProfileModal = false"
       />
     </Teleport>
-  </HomeContainer>
+  </div>
 </template>
 
 <script setup>
@@ -182,6 +180,7 @@ const { fetchWithAuth, fetchPublic } = useApi()
 definePageMeta({
   title: 'Discover Projects',
   requiresAuth: true,
+  layout: 'keguang',
 })
 
 // Reactive data

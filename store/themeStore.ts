@@ -4,7 +4,7 @@ import { themes, getThemeById, generateCSSVariables } from '~/utils/themes'
 
 export const useThemeStore = defineStore('theme', {
   state: (): ThemeState => ({
-    currentTheme: 'light',
+    currentTheme: 'keguang-blue',
     availableThemes: themes,
     // Legacy compatibility
     backgroundColor: '#97d4f3',
@@ -15,7 +15,11 @@ export const useThemeStore = defineStore('theme', {
   
   getters: {
     activeTheme(): ThemeConfig | undefined {
-      return getThemeById(this.currentTheme) || this.availableThemes[0];
+      return getThemeById(this.currentTheme) || getThemeById('keguang-blue') || this.availableThemes[0];
+    },
+
+    isKeguangTheme(): boolean {
+      return this.currentTheme === 'keguang-blue';
     },
     
     isLegacyTheme(): boolean {
@@ -112,16 +116,7 @@ export const useThemeStore = defineStore('theme', {
     // Migration helper
     migrateFromLegacySettings() {
       if (this.currentTheme === 'legacy' || !getThemeById(this.currentTheme)) {
-        // Try to find a matching theme based on legacy settings
-        if (this.backgroundColor === '#0f172a' || this.backgroundColor.includes('1e293b')) {
-          this.setTheme('dark');
-        } else if (this.backgroundColor.includes('#fef7ed') || this.backgroundColor.includes('fed7aa')) {
-          this.setTheme('cafe');
-        } else if (this.backgroundColor.includes('#f0f9ff') || this.backgroundColor.includes('0ea5e9')) {
-          this.setTheme('ocean');
-        } else {
-          this.setTheme('light');
-        }
+        this.setTheme('keguang-blue');
       }
     }
   },

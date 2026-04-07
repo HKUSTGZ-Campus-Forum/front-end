@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="matching-dashboard">
+  <div class="matching-dashboard">
       <!-- Header -->
       <div class="dashboard-header">
         <h1 class="dashboard-title">
@@ -158,7 +157,6 @@
         </div>
       </div>
     </div>
-  </HomeContainer>
 </template>
 
 <script setup>
@@ -172,6 +170,7 @@ const { isLoggedIn, user } = useAuth()
 // Page meta
 definePageMeta({
   title: 'Teammate Matching',
+  layout: 'keguang',
 })
 
 // Reactive data

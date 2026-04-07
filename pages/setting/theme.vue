@@ -3,56 +3,55 @@ import { storeToRefs } from "pinia";
 import { usePersistHomeStore } from "~/store/modules/home";
 import ThemeSettings from "~/components/setting/ThemeSettings.vue";
 
-// 获取主页状态
-const homeStore = usePersistHomeStore();
-
-// 设置页面元数据
 definePageMeta({
-  title: '主题设置'
+  title: '主题设置',
+  layout: 'keguang',
 });
 
-// 设置头部信息
 useHead({
   title: '主题设置 - UniKorn Campus',
-  meta: [
-    { name: 'description', content: '自定义您的校园论坛主题外观' }
-  ]
+  meta: [{ name: 'description', content: '自定义您的校园论坛主题外观' }]
 });
+
+const homeStore = usePersistHomeStore();
 </script>
 
 <template>
-  <HomeContainer>
-    <div class="settings-container">
-      <h1 class="page-title">主题设置</h1>
+  <div class="kg-settings-page">
+    <div class="kg-settings-header">
+      <h1 class="kg-page-title">主题设置</h1>
+      <p class="kg-page-subtitle">自定义您的校园论坛主题外观</p>
+    </div>
+    <div class="kg-card">
       <ThemeSettings />
     </div>
-  </HomeContainer>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.settings-container {
-  max-width: 1200px;
-  margin: 1rem auto;
-  padding: 1rem;
-  
-  @media (min-width: 768px) {
-    margin: 1.5rem auto;
-    padding: 1.5rem;
-  }
-  
-  .page-title {
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 2rem;
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    padding: 0;
-    
-    @media (min-width: 768px) {
-      text-align: left;
-      font-size: 2rem;
-    }
-  }
+.kg-settings-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.kg-settings-header { margin-bottom: 24px; }
+
+.kg-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2a4a;
+  margin: 0 0 4px;
+}
+
+.kg-page-subtitle { font-size: 0.9rem; color: #4a6080; margin: 0; }
+
+.kg-card {
+  background: #F5FBFE;
+  border: 1.5px solid #c8dff8;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  padding: 28px 32px;
 }
 </style>

@@ -1,79 +1,61 @@
-<template>
-  <HomeContainer>
-    <div class="post-message-container">
-      <h1 class="page-title">发布新帖</h1>
-      <PostMessage @post-success="handlePostSuccess" />
-    </div>
-  </HomeContainer>
-</template>
-
 <script setup>
 import { useRouter } from "vue-router";
 import PostMessage from "~/components/forum/PostMessage.vue";
 
+definePageMeta({ layout: 'keguang' });
+
 const router = useRouter();
 
-// 处理发帖成功
 const handlePostSuccess = (postId) => {
-  // 发帖成功后跳转到帖子详情页
   setTimeout(() => {
     router.push(`/forum/posts/${postId}`);
   }, 1000);
 };
 </script>
 
+<template>
+  <div class="kg-post-message">
+    <div class="kg-back-bar">
+      <NuxtLink to="/forum" class="kg-back-link">← 返回论坛</NuxtLink>
+    </div>
+    <div class="kg-card">
+      <h1 class="kg-page-title">发布帖子</h1>
+      <PostMessage @post-success="handlePostSuccess" />
+    </div>
+  </div>
+</template>
+
 <style lang="scss" scoped>
-.post-message-container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: var(--surface-primary);
-  border-radius: 8px;
-  box-shadow: var(--shadow-medium);
-  
-  // Mobile optimizations
-  @media (max-width: 480px) {
-    margin: 0;
-    padding: 1rem;
-    border-radius: 0;
-    box-shadow: none;
-    background: var(--surface-primary);
-    min-height: calc(100vh - 60px); // Account for navigation
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    margin: 1rem;
-    padding: 1.5rem;
-    border-radius: 6px;
-  }
-  
-  @media (min-width: 769px) and (max-width: 1024px) {
-    margin: 1.5rem auto;
-    padding: 1.75rem;
-  }
+.kg-post-message {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
 }
 
-.page-title {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--text-primary);
-  font-size: 1.8rem;
-  font-weight: 600;
-  
-  // Mobile typography adjustments
-  @media (max-width: 480px) {
-    font-size: 1.5rem;
-    margin-bottom: 1.25rem;
-    padding: 0 0.5rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    font-size: 1.65rem;
-    margin-bottom: 1.375rem;
-  }
-  
-  @media (min-width: 769px) and (max-width: 1024px) {
-    font-size: 1.75rem;
-  }
+.kg-back-bar {
+  margin-bottom: 16px;
+}
+
+.kg-back-link {
+  color: #26a4ff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  &:hover { text-decoration: underline; }
+}
+
+.kg-card {
+  background: #F5FBFE;
+  border: 1.5px solid #c8dff8;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  padding: 28px 32px;
+}
+
+.kg-page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a2a4a;
+  margin: 0 0 24px;
 }
 </style>
