@@ -35,10 +35,10 @@ const coursesResults = ref([])
 const coursesLoading = ref(false)
 
 const searchTabs = [
-  { id: 'posts', label: '帖子', icon: 'fas fa-file-alt' },
-  { id: 'users', label: '用户', icon: 'fas fa-users' },
-  { id: 'tags', label: '标签', icon: 'fas fa-tags' },
-  { id: 'courses', label: '课程', icon: 'fas fa-book' }
+  { id: 'posts', label: '帖子', icon: '📝' },
+  { id: 'users', label: '用户', icon: '👥' },
+  { id: 'tags', label: '标签', icon: '🏷' },
+  { id: 'courses', label: '课程', icon: '📚' }
 ]
 
 const sortOptions = [
@@ -191,7 +191,8 @@ onMounted(() => {
           :class="['kg-tab', { active: activeTab === tab.id }]"
           @click="changeTab(tab.id)"
         >
-          <i :class="tab.icon"></i> {{ tab.label }}
+          <span class="kg-tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+          {{ tab.label }}
         </button>
       </div>
 
@@ -218,7 +219,7 @@ onMounted(() => {
             <div class="kg-result-meta">
               <span>{{ post.author }}</span>
               <span>{{ formatTimeAgo(post.created_at) }}</span>
-              <span><i class="far fa-comment"></i> {{ post.comment_count || 0 }}</span>
+              <span><span class="kg-result-meta-icon" aria-hidden="true">💬</span>{{ post.comment_count || 0 }}</span>
             </div>
           </NuxtLink>
         </div>
@@ -231,7 +232,12 @@ onMounted(() => {
             :to="`/users/${u.id}`"
             class="kg-result-card kg-result-card--user"
           >
-            <UserAvatar :user="u" :size="44" />
+            <UserAvatar
+              :avatar-url="u.profile_picture_url"
+              :username="u.username"
+              :user-id="u.id"
+              size="md"
+            />
             <div class="kg-user-info">
               <p class="kg-user-name">{{ u.username }}</p>
               <p class="kg-user-bio">{{ u.bio || '暂无简介' }}</p>
@@ -364,9 +370,13 @@ onMounted(() => {
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
-  i { font-size: 0.8rem; }
   &:hover { color: #26a4ff; }
   &.active { background: #26a4ff; border-color: #26a4ff; color: #fff; font-weight: 600; }
+}
+
+.kg-tab-icon {
+  font-size: 0.86rem;
+  line-height: 1;
 }
 
 .kg-loading {
@@ -439,7 +449,11 @@ onMounted(() => {
   gap: 14px;
   font-size: 0.78rem;
   color: #9ab0c6;
-  i { margin-right: 3px; }
+}
+
+.kg-result-meta-icon {
+  margin-right: 3px;
+  font-size: 0.78rem;
 }
 
 .kg-user-info { flex: 1; }

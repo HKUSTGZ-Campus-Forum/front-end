@@ -166,9 +166,9 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
 <style lang="scss" scoped>
 .kg-club {
   width: 100%;
-  max-width: 900px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 20px 24px 60px;
 }
 
 .kg-club-header {

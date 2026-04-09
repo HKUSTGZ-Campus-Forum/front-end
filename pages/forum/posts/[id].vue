@@ -2,7 +2,6 @@
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { formatDate } from "~/utils/dateFormat";
-import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import CommentList from "~/components/forum/CommentList.vue";
@@ -15,7 +14,6 @@ definePageMeta({ layout: 'keguang' });
 
 const route = useRoute();
 const router = useRouter();
-const { getUsernameById } = useUser();
 const { fetchWithAuth, fetchPublic } = useApi();
 const { isLoggedIn, user } = useAuth();
 
@@ -226,8 +224,10 @@ onMounted(() => { fetchPostData(); });
           <div class="kg-article__meta">
             <div class="kg-author" @click="goToUserProfile">
               <UserAvatar
-                :user="{ id: postData.user_id, username: postData.author, profile_picture_url: postData.author_avatar }"
-                :size="36"
+                :avatar-url="postData.author_avatar"
+                :username="postData.author"
+                :user-id="postData.user_id"
+                size="md"
               />
               <div class="kg-author__info">
                 <span class="kg-author__name">{{ postData.author }}</span>
@@ -236,13 +236,13 @@ onMounted(() => { fetchPostData(); });
             </div>
             <div class="kg-article__actions">
               <span class="kg-meta-item">{{ formatDate(postData.publishDate) }}</span>
-              <span class="kg-meta-item"><i class="far fa-eye"></i> {{ postData.views_count }}</span>
+              <span class="kg-meta-item"><span class="kg-meta-icon" aria-hidden="true">👁</span>{{ postData.views_count }}</span>
               <button class="kg-icon-btn" @click="sharePost" :title="shareSuccess ? '已复制!' : '分享'">
-                <i :class="shareSuccess ? 'fas fa-check' : 'fas fa-share-alt'"></i>
+                <span class="kg-meta-icon" aria-hidden="true">{{ shareSuccess ? '✓' : '↗' }}</span>
                 <span v-if="shareSuccess">已复制</span>
               </button>
               <button v-if="canDeletePost" class="kg-icon-btn kg-icon-btn--danger" @click="showDeleteConfirm">
-                <i class="fas fa-trash"></i>
+                <span class="kg-meta-icon" aria-hidden="true">🗑</span>
               </button>
             </div>
           </div>
@@ -377,6 +377,11 @@ onMounted(() => { fetchPostData(); });
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.kg-meta-icon {
+  font-size: 0.82rem;
+  line-height: 1;
 }
 
 .kg-icon-btn {

@@ -11,7 +11,7 @@ import type { UserIdentity } from "~/types/identity";
 definePageMeta({ layout: 'keguang' });
 
 const { isLoggedIn, user, updateLocalUserData } = useAuth();
-const { fetchWithAuth, getApiUrl } = useApi();
+const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 const route = useRoute();
 
 interface UserInfo {
@@ -22,11 +22,22 @@ interface UserInfo {
 interface UserStats {
   postCount: number; commentCount: number; likesReceived: number; viewCount: number; totalScore: number;
 }
+interface UserPost {
+  id: number;
+  title: string;
+  content?: string;
+  created_at?: string;
+  comment_count?: number;
+  view_count?: number;
+}
 
 const userInfo = ref<UserInfo>({ id: 0, username: "" });
 const userStats = ref<UserStats>({ postCount: 0, commentCount: 0, likesReceived: 0, viewCount: 0, totalScore: 0 });
+const userPosts = ref<UserPost[]>([]);
 const isLoading = ref(false);
+const postsLoading = ref(false);
 const error = ref("");
+const postsError = ref("");
 const showAvatarUpload = ref(false);
 
 const isEditingUsername = ref(false);
@@ -88,11 +99,6 @@ const fetchUserInfo = async () => {
 
 const retry = () => { fetchUserInfo(); };
 
-const handleImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iNjAiIGZpbGw9IiNmMGYwZjAiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjQ1IiByPSIyMCIgZmlsbD0iI2QwZDBkMCIvPjxwYXRoIGQ9Ik0yMCAxMDBjMC0yMiAxOC00MCA0MC00MHM0MCAxOCA0MCA0MCIgZmlsbD0iI2QwZDBkMCIvPjwvc3ZnPg==";
-};
-
 const formatDate = (dateString?: string) => {
   if (!dateString) return "未知";
   try { return new Date(dateString).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }); }
@@ -100,6 +106,46 @@ const formatDate = (dateString?: string) => {
 };
 
 const formatUID = (id: number) => id.toString().padStart(10, '0');
+
+const buildPostExcerpt = (content?: string) => {
+  if (!content) return "暂无内容";
+  const normalized = content.replace(/\s+/g, " ").trim();
+  if (!normalized) return "暂无内容";
+  return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
+};
+
+const fetchUserPosts = async () => {
+  if (!userId || userId === "0") return;
+
+  try {
+    postsLoading.value = true;
+    postsError.value = "";
+
+    const response = await fetchPublic(
+      getApiUrl(`/api/posts?user_id=${userId}&limit=10&sort_by=created_at&sort_order=desc`)
+    );
+
+    if (!response.ok) {
+      throw new Error(`加载帖子失败 (${response.status})`);
+    }
+
+    const data = await response.json();
+    const posts = Array.isArray(data) ? data : (data.posts || []);
+    userPosts.value = posts.map((post: any) => ({
+      id: post.id,
+      title: post.title || "无标题",
+      content: post.content || "",
+      created_at: post.created_at,
+      comment_count: post.comment_count || 0,
+      view_count: post.view_count || 0,
+    }));
+  } catch (err: any) {
+    postsError.value = err.message || "加载帖子失败";
+    userPosts.value = [];
+  } finally {
+    postsLoading.value = false;
+  }
+};
 
 const handleAvatarUpdated = (newAvatarUrl: string) => {
   userInfo.value.profile_picture_url = newAvatarUrl;
@@ -146,9 +192,12 @@ const saveUsername = async () => {
   finally { isSavingUsername.value = false; }
 };
 
-onMounted(() => {
-  if (userId && userId !== "0") fetchUserInfo();
-  else error.value = "无效的用户ID";
+onMounted(async () => {
+  if (userId && userId !== "0") {
+    await Promise.all([fetchUserInfo(), fetchUserPosts()]);
+  } else {
+    error.value = "无效的用户ID";
+  }
 });
 
 useHead({
@@ -175,8 +224,10 @@ useHead({
           <div class="kg-avatar-section">
             <div class="kg-avatar-wrap" @click="isOwnProfile && (showAvatarUpload = !showAvatarUpload)">
               <UserAvatar
-                :user="{ id: userInfo.id, username: userInfo.username, profile_picture_url: userInfo.profile_picture_url }"
-                :size="80"
+                :avatar-url="userInfo.profile_picture_url"
+                :username="userInfo.username"
+                :user-id="userInfo.id"
+                size="xl"
               />
               <div v-if="isOwnProfile" class="kg-avatar-edit-overlay">编辑</div>
             </div>
@@ -240,6 +291,31 @@ useHead({
         </div>
       </div>
 
+      <div class="kg-card kg-posts-card">
+        <h2 class="kg-section-title">最近帖子</h2>
+
+        <div v-if="postsLoading" class="kg-posts-state">正在加载帖子...</div>
+        <div v-else-if="postsError" class="kg-posts-state kg-posts-state--error">{{ postsError }}</div>
+        <div v-else-if="userPosts.length === 0" class="kg-posts-state">该用户暂时还没有发布帖子</div>
+
+        <div v-else class="kg-post-list">
+          <NuxtLink
+            v-for="post in userPosts"
+            :key="post.id"
+            :to="`/forum/posts/${post.id}`"
+            class="kg-post-item"
+          >
+            <p class="kg-post-title">{{ post.title }}</p>
+            <p class="kg-post-excerpt">{{ buildPostExcerpt(post.content) }}</p>
+            <div class="kg-post-meta">
+              <span>💬 {{ post.comment_count || 0 }}</span>
+              <span>👁 {{ post.view_count || 0 }}</span>
+              <span>{{ formatDate(post.created_at) }}</span>
+            </div>
+          </NuxtLink>
+        </div>
+      </div>
+
       <!-- 身份管理入口 -->
       <div v-if="isOwnProfile" class="kg-card kg-quick-links">
         <h2 class="kg-section-title">账号管理</h2>
@@ -268,9 +344,9 @@ useHead({
 <style lang="scss" scoped>
 .kg-user-profile {
   width: 100%;
-  max-width: 760px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 20px 24px 60px;
 }
 
 .kg-loading {
@@ -456,6 +532,59 @@ useHead({
 }
 
 .kg-stat-label { font-size: 0.75rem; color: #6a85a0; }
+
+.kg-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kg-post-item {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e8f4fd;
+  background: rgba(40, 57, 101, 0.03);
+  text-decoration: none;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #26a4ff;
+    background: rgba(38, 164, 255, 0.04);
+  }
+}
+
+.kg-post-title {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a2a4a;
+}
+
+.kg-post-excerpt {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #4a6080;
+}
+
+.kg-post-meta {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  font-size: 0.76rem;
+  color: #7b95af;
+}
+
+.kg-posts-state {
+  padding: 16px 0;
+  color: #6a85a0;
+  font-size: 0.88rem;
+}
+
+.kg-posts-state--error {
+  color: #e05a5a;
+}
 
 .kg-link-list { display: flex; flex-direction: column; gap: 8px; }
 

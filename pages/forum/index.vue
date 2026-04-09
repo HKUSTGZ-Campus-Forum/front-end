@@ -1,13 +1,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { formatDate } from "~/utils/dateFormat";
-import { useUser } from "~/composables/useUser";
 import { useApi } from "~/composables/useApi";
+import UserAvatar from "~/components/user/UserAvatar.vue";
 
 definePageMeta({ layout: 'keguang' });
 
-const { getUsernameById } = useUser();
-const { fetchWithAuth } = useApi();
 const posts = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
@@ -168,20 +166,18 @@ onMounted(() => {
         </div>
         <div class="kg-post-card__footer">
           <div class="kg-post-card__author">
-            <img
-              v-if="post.author_avatar"
-              :src="post.author_avatar"
-              :alt="post.author"
+            <UserAvatar
+              :avatar-url="post.author_avatar"
+              :username="post.author"
+              :user-id="post.user_id || post.author_id"
+              size="sm"
               class="kg-post-card__avatar"
             />
-            <div v-else class="kg-post-card__avatar kg-post-card__avatar--placeholder">
-              {{ post.author?.charAt(0)?.toUpperCase() }}
-            </div>
             <span class="kg-post-card__author-name">{{ post.author }}</span>
           </div>
           <div class="kg-post-card__stats">
-            <span class="kg-stat"><i class="far fa-comment"></i> {{ post.comments }}</span>
-            <span class="kg-stat"><i class="far fa-eye"></i> {{ post.view_count }}</span>
+            <span class="kg-stat"><span class="kg-stat-icon" aria-hidden="true">💬</span>{{ post.comments }}</span>
+            <span class="kg-stat"><span class="kg-stat-icon" aria-hidden="true">👁</span>{{ post.view_count }}</span>
             <span class="kg-stat kg-stat--time">{{ formatDate(post.publishDate) }}</span>
           </div>
         </div>
@@ -217,9 +213,9 @@ onMounted(() => {
 <style lang="scss" scoped>
 .kg-forum {
   width: 100%;
-  max-width: 900px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 20px 24px 60px;
 }
 
 .kg-forum-header {
@@ -344,19 +340,8 @@ onMounted(() => {
 }
 
 .kg-post-card__avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #9EAAF4;
-  &--placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #fff;
-  }
+  border: 1px solid #c8dff8;
+  box-shadow: 0 1px 3px rgba(40, 57, 101, 0.12);
 }
 
 .kg-post-card__author-name {
@@ -377,8 +362,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  i { font-size: 0.75rem; }
   &--time { color: #9ab0c6; }
+}
+
+.kg-stat-icon {
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 .kg-loading {

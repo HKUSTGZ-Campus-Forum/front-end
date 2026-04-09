@@ -50,7 +50,7 @@ const handleLoginOrLogout = () => {
       </div>
 
       <div class="kg-topnav__user">
-        <NuxtLink v-if="isLoggedIn && user" to="/profile" class="kg-topnav__avatar-link">
+        <NuxtLink v-if="isLoggedIn && user" :to="`/users/${user.id}`" class="kg-topnav__avatar-link">
           <UserAvatar
             :avatar-url="user.profile_picture_url"
             :username="user.username"
