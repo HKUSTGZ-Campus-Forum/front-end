@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="redirect-page">
+  <div class="redirect-page">
       <div class="content-box">
         <Icon name="info" class="info-icon" />
         <h1>Feature Simplified</h1>
@@ -17,10 +16,9 @@
             <Icon name="home" />
             Back to Dashboard
           </NuxtLink>
-        </div>
       </div>
     </div>
-  </HomeContainer>
+  </div>
 </template>
 
 <script setup>
@@ -28,6 +26,7 @@
 definePageMeta({
   title: 'Applications - Feature Removed',
   requiresAuth: true,
+  layout: 'keguang',
 })
 </script>
 

@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="project-detail">
+  <div class="project-detail">
       <MatchingBreadcrumbs />
 
       <!-- Loading State -->
@@ -223,9 +222,6 @@
       </div>
     </div>
 
-
-  </HomeContainer>
-
   <!-- User Profile Modal (teleported to body) -->
   <Teleport to="body">
     <UserProfileModal
@@ -252,6 +248,7 @@ const { user } = useAuth()
 definePageMeta({
   title: 'Project Detail',
   requiresAuth: true,
+  layout: 'keguang',
 })
 
 // Reactive data

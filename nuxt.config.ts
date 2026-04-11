@@ -116,11 +116,12 @@ export default defineNuxtConfig({
       // routes: ["/", "/login", "/register"], // optional: define known static routes
       ignore: [
         // 忽略特定路径，不进行预渲染
+        "/profile", // 当前登录用户主页（会重定向）
         "/user", // 排除用户相关页面
         "/user/**", // 排除用户相关的所有子路径
+        "/users/**", // 排除动态用户主页
         // "/admin/**", // 排除管理员路径
-        // "/profile/**", // 排除个人资料页面
-        "/settings/**", // 排除设置页面
+        "/setting/**", // 排除设置页面
       ],
     },
   },

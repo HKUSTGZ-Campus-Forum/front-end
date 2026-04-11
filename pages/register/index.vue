@@ -1,105 +1,71 @@
+<script setup>
+import { useRouter, useRoute } from 'vue-router';
+import RegisterComponent from '~/components/setting/Register.vue';
+
+definePageMeta({ layout: 'keguang-auth' });
+
+const router = useRouter();
+const route = useRoute();
+
+const handleRegisterSuccess = () => {
+  setTimeout(() => {
+    const redirectParam = route.query.redirect ? `&redirect=${encodeURIComponent(route.query.redirect)}` : '';
+    router.push(`/login?registered=true${redirectParam}`);
+  }, 1500);
+};
+</script>
+
 <template>
-    <HomeContainer>
-      <div class="register-page-container">
-        <h1 class="page-title">用户注册</h1>
-        
-        <!-- 使用注册组件 -->
-        <RegisterComponent @register-success="handleRegisterSuccess" />
-        
-        <div class="login-link">
-          已有账号? 
-          <NuxtLink to="/login">立即登录</NuxtLink>
-        </div>
-      </div>
-    </HomeContainer>
-  </template>
-  
-  <script setup>
-  import { useRouter, useRoute } from 'vue-router';
-  import RegisterComponent from '~/components/setting/Register.vue';
-  
-  const router = useRouter();
-  const route = useRoute();
-  
-  // 处理注册成功
-  const handleRegisterSuccess = () => {
-    // 注册成功后延迟跳转到登录页，保持redirect参数
-    setTimeout(() => {
-      const redirectParam = route.query.redirect ? `&redirect=${encodeURIComponent(route.query.redirect)}` : '';
-      router.push(`/login?registered=true${redirectParam}`);
-    }, 1500);
-  };
-  </script>
-  
-  <style lang="scss" scoped>
-  .register-page-container {
-    max-width: 550px;
-    margin: 1rem auto;
-    padding: 1rem;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  <div class="kg-register-card">
+    <h1 class="kg-register-title">加入我们</h1>
+    <p class="kg-register-subtitle">创建您的 UniKorn 科广汇账号</p>
 
-    @media (min-width: 480px) {
-      margin: 1.5rem auto;
-      padding: 1.5rem;
-    }
+    <RegisterComponent @register-success="handleRegisterSuccess" />
 
-    @media (min-width: 768px) {
-      margin: 2rem auto;
-      padding: 2rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-  }
-  
-  .page-title {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
-    font-size: 1.5rem;
-    font-weight: 600;
+    <div class="kg-form-footer">
+      已有账号？
+      <NuxtLink to="/login" class="kg-link">立即登录</NuxtLink>
+    </div>
+  </div>
+</template>
 
-    @media (min-width: 480px) {
-      font-size: 1.65rem;
-    }
+<style lang="scss" scoped>
+.kg-register-card {
+  width: 100%;
+  max-width: 480px;
+  background: #F5FBFE;
+  border: 1.5px solid #c8dff8;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(40, 57, 101, 0.12);
+  padding: 40px 36px;
+}
 
-    @media (min-width: 768px) {
-      font-size: 1.8rem;
-    }
-  }
-  
-  .login-link {
-    text-align: center;
-    margin-top: 1.5rem;
-    font-size: 0.95rem;
+.kg-register-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a2a4a;
+  margin: 0 0 6px;
+  text-align: center;
+}
 
-    @media (max-width: 479px) {
-      font-size: 1rem;
-    }
-    
-    a {
-      color: var(--color-blue-7, #9fc3e7);
-      font-weight: 500;
-      text-decoration: none;
-      padding: 0.5rem;
-      border-radius: 4px;
-      display: inline-block;
-      min-height: 44px; // Touch-friendly minimum size
-      line-height: 1.2;
+.kg-register-subtitle {
+  font-size: 0.9rem;
+  color: #4a6080;
+  margin: 0 0 32px;
+  text-align: center;
+}
 
-      @media (min-width: 480px) {
-        padding: 0.25rem;
-        min-height: auto;
-      }
-      
-      &:hover {
-        text-decoration: underline;
-        background-color: rgba(159, 195, 231, 0.1);
-      }
+.kg-form-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #4a6080;
+}
 
-      &:active {
-        background-color: rgba(159, 195, 231, 0.2);
-      }
-    }
-  }
-  </style>
+.kg-link {
+  color: #26a4ff;
+  text-decoration: none;
+  font-weight: 600;
+  &:hover { text-decoration: underline; }
+}
+</style>

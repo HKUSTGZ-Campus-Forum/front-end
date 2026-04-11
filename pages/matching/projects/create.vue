@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="project-create">
+  <div class="project-create">
       <MatchingBreadcrumbs />
 
       <div class="create-header">
@@ -61,7 +60,6 @@
         @restart="onInterviewRestart"
       />
     </div>
-  </HomeContainer>
 </template>
 
 <script setup>
@@ -76,6 +74,7 @@ const { fetchWithAuth } = useApi()
 definePageMeta({
   title: 'Create Project',
   requiresAuth: true,
+  layout: 'keguang',
 })
 
 // Reactive data

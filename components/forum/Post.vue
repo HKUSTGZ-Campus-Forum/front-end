@@ -66,10 +66,6 @@ const displayExcerpt = computed(() => {
 
 // 显示作者ID
 const displayAuthor = computed(() => {
-  // 优先使用用户ID
-  if (props.author) {
-    return `用户：${props.author}`;
-  }
   return props.author || "匿名用户";
 });
 
@@ -124,23 +120,23 @@ const goToUserProfile = (userId?: number) => {
 
     <div class="post-stats">
       <span class="reactions" v-if="reaction_count !== undefined">
-        <i class="fas fa-heart"></i>
+        <span class="stat-icon" aria-hidden="true">❤️</span>
         <span class="stat-label">点赞</span>
         {{ reaction_count }}
       </span>
       <span class="comments">
-        <i class="fas fa-comment"></i>
+        <span class="stat-icon" aria-hidden="true">💬</span>
         <span class="stat-label">评论</span>
         {{ comment_count }}
       </span>
       <span class="views" v-if="view_count !== undefined">
-        <i class="fas fa-eye"></i>
+        <span class="stat-icon" aria-hidden="true">👁</span>
         <span class="stat-label">浏览</span>
         {{ view_count }}
       </span>
     </div>
 
-    <NuxtLink :to="`/forum/post/${id}`" class="read-more">阅读更多</NuxtLink>
+    <NuxtLink :to="`/forum/posts/${id}`" class="read-more">阅读更多</NuxtLink>
   </div>
 </template>
 
@@ -383,6 +379,11 @@ const goToUserProfile = (userId?: number) => {
       @media (max-width: 480px) {
         font-size: 0.8rem;
       }
+    }
+
+    .stat-icon {
+      font-size: 0.85rem;
+      line-height: 1;
     }
   }
 }

@@ -274,6 +274,7 @@ const { user } = useAuth()
 definePageMeta({
   title: '编辑项目',
   requiresAuth: true,
+  layout: 'keguang',
 })
 
 // Reactive data

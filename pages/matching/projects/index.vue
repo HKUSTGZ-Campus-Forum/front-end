@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="projects-page">
+  <div class="projects-page">
       <MatchingBreadcrumbs />
 
       <div class="page-header">
@@ -206,7 +205,6 @@
         </button>
       </div>
     </div>
-  </HomeContainer>
 </template>
 
 <script setup>
@@ -221,6 +219,7 @@ const { user } = useAuth()
 definePageMeta({
   title: 'My Projects',
   requiresAuth: true,
+  layout: 'keguang',
 })
 
 // Reactive data

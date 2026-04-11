@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useThemeStore } from '~/store/themeStore'
+import { generateCSSVariables } from '~/utils/themes'
 
 /**
  * Composable for accessing theme functionality in components

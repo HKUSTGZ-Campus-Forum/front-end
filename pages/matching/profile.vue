@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="profile-setup">
+  <div class="profile-setup">
       <MatchingBreadcrumbs />
 
       <div class="setup-header">
@@ -58,7 +57,6 @@
       </div>
     </form>
     </div>
-  </HomeContainer>
 </template>
 
 <script setup>
@@ -73,6 +71,7 @@ const { fetchWithAuth } = useApi()
 definePageMeta({
   title: 'Profile Setup',
   requiresAuth: true,
+  layout: 'keguang',
 })
 
 // Reactive data

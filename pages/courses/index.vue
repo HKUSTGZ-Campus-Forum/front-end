@@ -1,95 +1,9 @@
-<template>
-  <HomeContainer>
-    <div class="courses-page">
-      <div class="courses-header">
-        <h1>课程列表</h1>
-        <div class="search-filter-bar">
-          <div class="search-box">
-            <input
-              type="text"
-              v-model="searchQuery"
-              placeholder="搜索课程..."
-              @input="handleSearch"
-            />
-            <i class="fas fa-search"></i>
-          </div>
-          <div class="filter-box">
-            <select v-model="selectedSemester" @change="handleFilterChange">
-              <option value="">所有学期</option>
-              <option 
-                v-for="semester in availableSemesters" 
-                :key="semester.code" 
-                :value="semester.code"
-              >
-                {{ semester.display_name }}
-              </option>
-            </select>
-            <select v-model="selectedCourseType" @change="handleFilterChange">
-              <option value="">所有课程类型</option>
-              <option 
-                v-for="courseType in availableCourseTypes" 
-                :key="courseType.code" 
-                :value="courseType.code"
-              >
-                {{ courseType.name }}
-              </option>
-            </select>
-            <select v-model="sortBy" @change="handleSort">
-              <option value="code">课程代码</option>
-              <option value="name">课程名称</option>
-              <option value="created_at">创建时间</option>
-            </select>
-            <select v-model="sortOrder" @change="handleSort">
-              <option value="asc">升序</option>
-              <option value="desc">降序</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="courses-grid" v-if="!isLoading">
-        <NuxtLink 
-          v-for="course in courses" 
-          :key="course.id" 
-          :to="`/courses/${course.id}`"
-          class="course-card"
-        >
-          <div class="course-header">
-            <h2 class="course-code">{{ course.code }}</h2>
-            <span class="course-credits">{{ course.credits }} 学分</span>
-          </div>
-          <h3 class="course-name">{{ course.name }}</h3>
-          <p class="course-description">
-            {{ course.description || "暂无课程描述" }}
-          </p>
-          <div class="course-footer">
-            <span class="instructor"
-              >讲师: {{ course.instructor?.username || "未分配" }}</span
-            >
-            <span class="view-course-hint">
-              点击查看课程详情
-            </span>
-          </div>
-        </NuxtLink>
-      </div>
-
-      <div v-else class="loading-state">
-        <i class="fas fa-spinner fa-spin"></i>
-        <span>加载中...</span>
-      </div>
-
-      <div v-if="!isLoading && courses.length === 0" class="no-courses">
-        <i class="fas fa-book"></i>
-        <p>暂无课程</p>
-      </div>
-    </div>
-  </HomeContainer>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
+
+definePageMeta({ layout: 'keguang' });
 
 interface Course {
   id: number;
@@ -103,10 +17,7 @@ interface Course {
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
-  instructor?: {
-    id: number;
-    username: string;
-  };
+  instructor?: { id: number; username: string };
 }
 
 const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
@@ -122,7 +33,6 @@ const selectedCourseType = ref("");
 const availableSemesters = ref([]);
 const availableCourseTypes = ref([]);
 
-// 防抖函数
 const debounce = (fn: Function, delay: number) => {
   let timeoutId: NodeJS.Timeout;
   return (...args: any[]) => {
@@ -131,55 +41,26 @@ const debounce = (fn: Function, delay: number) => {
   };
 };
 
-// 获取讲师信息
 const fetchInstructorInfo = async (instructorId: number) => {
   try {
-    const response = await fetchPublic(
-      getApiUrl(`/api/users/public/${instructorId}`)
-    );
-    if (!response.ok) {
-      throw new Error("Failed to fetch instructor info");
-    }
+    const response = await fetchPublic(getApiUrl(`/api/users/public/${instructorId}`));
+    if (!response.ok) throw new Error("Failed to fetch instructor info");
     const data = await response.json();
-    return {
-      id: data.id,
-      username: data.username,
-    };
+    return { id: data.id, username: data.username };
   } catch (error) {
-    console.error("获取讲师信息失败:", error);
     return null;
   }
 };
 
-// 获取课程列表
 const fetchCourses = async () => {
   try {
     isLoading.value = true;
-    const queryParams = new URLSearchParams({
-      q: searchQuery.value,
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value,
-    });
-    
-    // Add semester filter if selected
-    if (selectedSemester.value) {
-      queryParams.append('semester', selectedSemester.value);
-    }
-    
-    // Add course type filter if selected
-    if (selectedCourseType.value) {
-      queryParams.append('course_type', selectedCourseType.value);
-    }
-
-    const response = await fetchPublic(
-      getApiUrl(`/api/courses?${queryParams.toString()}`)
-    );
-    if (!response.ok) {
-      throw new Error("Failed to fetch courses");
-    }
+    const queryParams = new URLSearchParams({ q: searchQuery.value, sort_by: sortBy.value, sort_order: sortOrder.value });
+    if (selectedSemester.value) queryParams.append('semester', selectedSemester.value);
+    if (selectedCourseType.value) queryParams.append('course_type', selectedCourseType.value);
+    const response = await fetchPublic(getApiUrl(`/api/courses?${queryParams.toString()}`));
+    if (!response.ok) throw new Error("Failed to fetch courses");
     const data = await response.json();
-
-    // 获取所有课程的讲师信息
     const coursesWithInstructors = await Promise.all(
       data.map(async (course: Course) => {
         if (course.instructor_id) {
@@ -189,7 +70,6 @@ const fetchCourses = async () => {
         return course;
       })
     );
-
     courses.value = coursesWithInstructors;
   } catch (error) {
     console.error("获取课程列表失败:", error);
@@ -198,20 +78,15 @@ const fetchCourses = async () => {
   }
 };
 
-// 获取可用的学期和课程类型
 const fetchFiltersData = async () => {
   try {
-    // Fetch available semesters from courses data
     const response = await fetchPublic(getApiUrl('/api/courses/filters'));
     if (response.ok) {
       const data = await response.json();
       availableSemesters.value = data.semesters || [];
       availableCourseTypes.value = data.course_types || [];
-      
-      // Set latest semester as default if available
       if (availableSemesters.value.length > 0) {
         selectedSemester.value = availableSemesters.value[0].code;
-        // 初始加载时使用默认筛选
         fetchCourses();
         return;
       }
@@ -219,423 +94,286 @@ const fetchFiltersData = async () => {
   } catch (error) {
     console.error('获取筛选数据失败:', error);
   }
-  
-  // Fallback: just fetch courses without semester filter
   fetchCourses();
 };
 
-// 处理筛选器变化
-const handleFilterChange = () => {
-  fetchCourses();
-};
+const handleFilterChange = () => { fetchCourses(); };
+const handleSearch = debounce(() => { fetchCourses(); }, 300);
+const handleSort = () => { fetchCourses(); };
 
-// 使用防抖处理搜索
-const handleSearch = debounce(() => {
-  fetchCourses();
-}, 300);
-
-// 处理排序
-const handleSort = () => {
-  fetchCourses();
-};
-
-// 页面加载时获取课程列表和筛选数据
-onMounted(() => {
-  fetchFiltersData();
-});
+onMounted(() => { fetchFiltersData(); });
 </script>
 
+<template>
+  <div class="kg-courses">
+    <div class="kg-courses-header">
+      <h1 class="kg-page-title">课程评价</h1>
+      <p class="kg-page-subtitle">查看并分享课程体验</p>
+    </div>
+
+    <div class="kg-card kg-filters">
+      <input
+        v-model="searchQuery"
+        class="kg-search-input"
+        type="text"
+        placeholder="搜索课程名称或代码..."
+        @input="handleSearch"
+      />
+      <div class="kg-filter-row">
+        <select v-model="selectedSemester" class="kg-select" @change="handleFilterChange">
+          <option value="">全部学期</option>
+          <option v-for="sem in availableSemesters" :key="sem.code" :value="sem.code">
+            {{ sem.display_name }}
+          </option>
+        </select>
+        <select v-model="selectedCourseType" class="kg-select" @change="handleFilterChange">
+          <option value="">全部类型</option>
+          <option v-for="type in availableCourseTypes" :key="type.code" :value="type.code">
+            {{ type.name }}
+          </option>
+        </select>
+        <select v-model="sortBy" class="kg-select" @change="handleSort">
+          <option value="code">按课程代码</option>
+          <option value="name">按课程名称</option>
+        </select>
+        <button class="kg-sort-toggle" @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; handleSort()">
+          {{ sortOrder === 'asc' ? '↑ 升序' : '↓ 降序' }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="isLoading" class="kg-loading">
+      <div class="kg-spinner"></div>
+      <span>加载中...</span>
+    </div>
+
+    <div v-else-if="courses.length === 0" class="kg-empty">
+      <div class="kg-empty-icon">📚</div>
+      <p>暂无课程数据</p>
+    </div>
+
+    <div v-else class="kg-course-grid">
+      <NuxtLink
+        v-for="course in courses"
+        :key="course.id"
+        :to="`/courses/${course.id}`"
+        class="kg-course-card"
+      >
+        <div class="kg-course-card__top">
+          <span class="kg-course-code">{{ course.code }}</span>
+          <span class="kg-course-credits">{{ course.credits }} 学分</span>
+        </div>
+        <h3 class="kg-course-name">{{ course.name }}</h3>
+        <p class="kg-course-desc">{{ course.description?.slice(0, 80) }}{{ course.description?.length > 80 ? '...' : '' }}</p>
+        <div class="kg-course-card__footer">
+          <span v-if="course.instructor" class="kg-course-instructor">
+            <i class="fas fa-chalkboard-teacher"></i> {{ course.instructor.username }}
+          </span>
+          <span :class="['kg-course-status', course.is_active ? 'active' : 'inactive']">
+            {{ course.is_active ? '进行中' : '已结束' }}
+          </span>
+        </div>
+      </NuxtLink>
+    </div>
+  </div>
+</template>
+
 <style lang="scss" scoped>
-.courses-page {
-  max-width: 1200px;
+.kg-courses {
+  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem;
-  
-  // Mobile optimization
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-  }
+  padding: 24px 20px 60px;
 }
 
-.courses-header {
-  margin-bottom: 2rem;
-
-  h1 {
-    font-size: 2rem;
-    color: var(--text-primary);
-    margin-bottom: 1.5rem;
-    
-    // Mobile optimization
-    @media (max-width: 768px) {
-      font-size: 1.75rem;
-      margin-bottom: 1rem;
-    }
-    
-    @media (max-width: 480px) {
-      font-size: 1.5rem;
-      margin-bottom: 0.75rem;
-    }
-  }
-  
-  // Mobile optimization
-  @media (max-width: 768px) {
-    margin-bottom: 1.5rem;
-  }
-  
-  @media (max-width: 480px) {
-    margin-bottom: 1rem;
-  }
+.kg-courses-header {
+  margin-bottom: 24px;
 }
 
-.search-filter-bar {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
+.kg-page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a2a4a;
+  margin: 0 0 4px;
 }
 
-.search-box {
-  flex: 1;
-  position: relative;
-  min-width: 200px;
-
-  input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    background: var(--surface-primary);
-    color: var(--text-primary);
-    // Ensure touch-friendly input height
-    min-height: 44px;
-    box-sizing: border-box;
-
-    &:focus {
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 2px var(--interactive-primary);
-      outline: none;
-    }
-    
-    // Mobile optimization
-    @media (max-width: 480px) {
-      font-size: 16px; // Prevent zoom on iOS
-      padding: 0.875rem 1rem 0.875rem 2.5rem;
-    }
-  }
-
-  i {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    // Ensure touch target is large enough
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  // Mobile optimization
-  @media (max-width: 768px) {
-    min-width: 100%;
-  }
+.kg-page-subtitle {
+  font-size: 0.9rem;
+  color: #4a6080;
+  margin: 0;
 }
 
-.filter-box {
-  display: flex;
-  gap: 0.5rem;
-
-  select {
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: var(--surface-primary);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    // Ensure touch-friendly select height
-    min-height: 44px;
-    box-sizing: border-box;
-
-    &:focus {
-      border-color: var(--border-focus);
-      outline: none;
-    }
-    
-    // Mobile optimization
-    @media (max-width: 480px) {
-      font-size: 16px; // Prevent zoom on iOS
-      padding: 0.875rem 1rem;
-    }
-  }
-  
-  // Mobile optimization
-  @media (max-width: 768px) {
-    flex-direction: column;
-    width: 100%;
-    
-    select {
-      width: 100%;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-  }
+.kg-card {
+  background: #F5FBFE;
+  border: 1.5px solid #c8dff8;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
 }
 
-.courses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  
-  // Mobile optimization - responsive grid
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
-  }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-  }
-  
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr; // Single column on mobile
-    gap: 0.75rem;
-  }
+.kg-filters {
+  padding: 16px 20px;
+  margin-bottom: 20px;
 }
 
-.course-card {
-  background: var(--card-bg);
+.kg-search-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1.5px solid #c8dff8;
   border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--card-shadow, var(--shadow-small));
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-decoration: none;
-  color: inherit;
-  display: block;
+  background: #fff;
+  color: #1a2a4a;
+  font-size: 0.9rem;
+  outline: none;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  &:focus { border-color: #26a4ff; }
+  &::placeholder { color: #9ab0c6; }
+}
+
+.kg-filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.kg-select {
+  padding: 7px 12px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 10px;
+  background: #fff;
+  color: #4a6080;
+  font-size: 0.85rem;
+  outline: none;
   cursor: pointer;
-  border: var(--card-border, 1px solid var(--border-primary));
-  // Ensure minimum touch target size
-  min-height: 44px;
-  position: relative;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-medium);
-    text-decoration: none;
-    color: inherit;
-  }
-  
-  // Mobile optimization
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    border-radius: 10px;
-    
-    // Adjust hover effect for mobile
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-small);
-    }
-  }
-  
-  @media (max-width: 480px) {
-    padding: 1rem;
-    border-radius: 8px;
-    
-    // Remove hover transform on small screens to prevent layout issues
-    &:hover {
-      transform: none;
-      box-shadow: var(--shadow-small);
-    }
-    
-    // Add active state for touch feedback
-    &:active {
-      transform: scale(0.98);
-      transition: transform 0.1s ease;
-    }
-  }
+  &:focus { border-color: #26a4ff; }
 }
 
-.course-header {
+.kg-sort-toggle {
+  padding: 7px 14px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 10px;
+  background: #F5FBFE;
+  color: #4a6080;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { border-color: #26a4ff; color: #26a4ff; }
+}
+
+.kg-loading {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  gap: 0.75rem;
-
-  .course-code {
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    margin: 0;
-    flex: 1;
-    min-width: 0; // Allow text to truncate
-    
-    // Mobile optimization
-    @media (max-width: 768px) {
-      font-size: 1.125rem;
-    }
-    
-    @media (max-width: 480px) {
-      font-size: 1rem;
-    }
-  }
-
-  .course-credits {
-    background: var(--surface-secondary);
-    color: var(--interactive-primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 16px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    white-space: nowrap;
-    flex-shrink: 0;
-    
-    // Mobile optimization
-    @media (max-width: 480px) {
-      font-size: 0.8125rem;
-      padding: 0.25rem 0.5rem;
-    }
-  }
-  
-  // Mobile optimization
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    
-    .course-credits {
-      align-self: flex-end;
-    }
-  }
-}
-
-.course-name {
-  font-size: 1.125rem;
-  color: var(--text-secondary);
-  margin: 0 0 0.75rem 0;
-  line-height: 1.4;
-  
-  // Mobile optimization
-  @media (max-width: 768px) {
-    font-size: 1.0625rem;
-    margin-bottom: 0.625rem;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.3;
-  }
-}
-
-.course-description {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.course-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-  gap: 0.5rem;
-
-  .instructor {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    flex: 1;
-    min-width: 0; // Allow text to truncate
-    
-    // Mobile optimization
-    @media (max-width: 480px) {
-      font-size: 0.8125rem;
-    }
-  }
-
-  .view-course-hint {
-    color: var(--interactive-primary);
-    font-size: 0.875rem;
-    font-weight: 500;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
-    
-    // Mobile optimization
-    @media (max-width: 480px) {
-      font-size: 0.8125rem;
-    }
-  }
-  
-  // Mobile optimization
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    
-    .view-course-hint {
-      align-self: flex-end;
-    }
-  }
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
-  color: var(--text-muted);
+  gap: 12px;
+  padding: 60px;
+  color: #4a6080;
+}
 
-  i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: var(--interactive-primary);
+.kg-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #c8dff8;
+  border-top-color: #26a4ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.kg-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #4a6080;
+  .kg-empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  p { font-size: 1rem; margin: 0; }
+}
+
+.kg-course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.kg-course-card {
+  display: flex;
+  flex-direction: column;
+  background: #F5FBFE;
+  border: 1.5px solid #c8dff8;
+  border-radius: 16px;
+  padding: 20px;
+  text-decoration: none;
+  box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+  &:hover {
+    box-shadow: 0 4px 20px rgba(40, 57, 101, 0.12);
+    border-color: #26a4ff;
+    transform: translateY(-2px);
   }
 }
 
-.no-courses {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-muted);
+.kg-course-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
 
-  i {
-    font-size: 3rem;
-    color: var(--text-muted);
-    margin-bottom: 1rem;
-  }
+.kg-course-code {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #26a4ff;
+  background: rgba(38, 164, 255, 0.1);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
 
-  p {
-    font-size: 1.125rem;
-  }
+.kg-course-credits {
+  font-size: 0.78rem;
+  color: #9ab0c6;
+}
+
+.kg-course-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a2a4a;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.kg-course-desc {
+  font-size: 0.83rem;
+  color: #4a6080;
+  line-height: 1.6;
+  margin: 0 0 auto;
+  padding-bottom: 12px;
+  flex: 1;
+}
+
+.kg-course-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e8f4fd;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.kg-course-instructor {
+  font-size: 0.8rem;
+  color: #6a85a0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kg-course-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+  &.active { background: rgba(38, 220, 120, 0.12); color: #1a9a55; }
+  &.inactive { background: rgba(160, 160, 160, 0.12); color: #888; }
 }
 </style>

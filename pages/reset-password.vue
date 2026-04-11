@@ -13,7 +13,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
-// Get reset token from URL query parameters
+definePageMeta({ layout: 'keguang-auth' })
+
 const route = useRoute()
 const router = useRouter()
 const resetToken = ref('')

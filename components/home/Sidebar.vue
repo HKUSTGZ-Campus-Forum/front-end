@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// 导入国际化相关功能（如果需要）
 import { useI18n } from "vue-i18n";
-import { useRoute } from "#app"; // Use Nuxt's built-in composables
+import { useRoute } from "#app";
+
 const { t } = useI18n();
 
 const props = defineProps({
@@ -20,69 +20,34 @@ const props = defineProps({
 });
 
 const { user, isLoggedIn } = useAuth();
-const { fetchWithAuth } = useApi();
 
 const route = useRoute();
 
-const currentUserId = computed(() => {
-  // console.log("🔍 当前用户状态:", isLoggedIn.value, user.value);
-
-  if (!isLoggedIn.value || !user.value) {
-    // console.log("⚠️ 用户未登录");
-    return 2; // 默认值
-  }
-
-  const userId = user.value.id;
-  // console.log("👤 用户ID:", userId);
-
-  // 🔥 修复：不在 computed 中进行异步操作
-  return userId && Number(userId) !== 0 ? userId : 1;
-});
-
-// 使用fetchWithAuth请求用户数据
-// const fetchUserData = async (userId: string | number) => {
-//   try {
-//     const response = await fetchWithAuth(`/api/users/${userId}`);
-//     console.log("👤 用户数据:", response);
-//     return response;
-//   } catch (error) {
-//     console.error("❌ 获取用户数据失败:", error);
-//     throw error;
-//   }
-// };
-
-// 添加emit用于通知父组件状态变化
 const emit = defineEmits(["update:folded", "close-mobile"]);
 
-// 本地状态，用于处理悬停效果
 const isHovered = ref(false);
 
 function handleMouseEnter() {
-  // Only handle hover on desktop
   if (!props.isMobile && props.folded) {
     isHovered.value = true;
-    emit("update:folded", false); // 直接发射展开事件
+    emit("update:folded", false);
   }
 }
 
 function handleMouseLeave() {
-  // Only handle hover on desktop
-  if (!props.isMobile && !props.folded) {
+  if (!props.isMobile && isHovered.value) {
     isHovered.value = false;
-    emit("update:folded", true); // 直接发射折叠事件
+    emit("update:folded", true);
   }
 }
 
-// Handle mobile navigation clicks
 function handleNavClick() {
   if (props.isMobile) {
     emit("close-mobile");
   }
 }
 
-// 监控悬停状态变化
 watch(isHovered, (newValue: boolean) => {
-  // 只在折叠状态下才触发展开
   if (props.folded) {
     emit("update:folded", !newValue);
   }
@@ -204,6 +169,16 @@ watch(isHovered, (newValue: boolean) => {
 <!--            <span class="nav-icon">📚</span>-->
             <img src="/icons/wiki-pure.svg" alt="登录" class="nav-icon" />
             <span class="nav-text">HKUST-GZ Wiki</span>
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink
+            to="/contest"
+            :class="{ active: route.path.startsWith('/contest') }"
+            @click="handleNavClick"
+          >
+            <span class="nav-icon contest-icon">🏆</span>
+            <span class="nav-text">百块奖金大赛</span>
           </NuxtLink>
         </li>
       </ul>
@@ -347,6 +322,17 @@ watch(isHovered, (newValue: boolean) => {
           width: 100%;
           height: 100%;
         }
+
+        // img 图标跟随主题 logo filter（深色侧边栏时变白）
+        img {
+          width: 100%;
+          height: 100%;
+          filter: var(--logo-filter, none);
+        }
+      }
+
+      .contest-icon {
+        font-size: 20px;
       }
 
       .nav-text {

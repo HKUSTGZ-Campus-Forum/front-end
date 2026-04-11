@@ -186,8 +186,8 @@ const stripHtml = (html: string) => {
         @click="handleSearch"
         :disabled="inputValue.trim().length < 2"
       >
-        <i v-if="!isSearching" class="fas fa-search"></i>
-        <i v-else class="fas fa-spinner fa-spin"></i>
+        <span v-if="!isSearching" aria-hidden="true">🔍</span>
+        <span v-else class="spin-icon" aria-hidden="true">↻</span>
       </button>
       
       <!-- Clear button -->
@@ -197,7 +197,7 @@ const stripHtml = (html: string) => {
         type="button"
         @click="clearInput"
       >
-        <i class="fas fa-times"></i>
+        <span aria-hidden="true">✕</span>
       </button>
     </div>
     
@@ -206,7 +206,7 @@ const stripHtml = (html: string) => {
       <!-- Loading state -->
       <div v-if="isSearching" class="dropdown-section">
         <div class="loading-item">
-          <i class="fas fa-spinner fa-spin"></i>
+          <span class="spin-icon" aria-hidden="true">↻</span>
           <span>搜索中...</span>
         </div>
       </div>
@@ -214,7 +214,7 @@ const stripHtml = (html: string) => {
       <!-- Error state -->
       <div v-else-if="searchError" class="dropdown-section">
         <div class="error-item">
-          <i class="fas fa-exclamation-triangle"></i>
+          <span aria-hidden="true">⚠</span>
           <span>{{ searchError }}</span>
         </div>
       </div>
@@ -224,7 +224,7 @@ const stripHtml = (html: string) => {
         <div class="section-header">
           <span>最近搜索</span>
           <button @click="clearSearchHistory" class="clear-history-btn">
-            <i class="fas fa-trash"></i>
+            <span aria-hidden="true">🗑</span>
             清除
           </button>
         </div>
@@ -235,7 +235,7 @@ const stripHtml = (html: string) => {
             class="history-item"
             @click="selectHistoryItem(query)"
           >
-            <i class="fas fa-history"></i>
+            <span aria-hidden="true">🕘</span>
             <span>{{ query }}</span>
           </button>
         </div>
@@ -246,7 +246,7 @@ const stripHtml = (html: string) => {
         <!-- Posts section -->
         <div v-if="searchResults.posts.length > 0" class="dropdown-section">
           <div class="section-header">
-            <i class="fas fa-file-alt"></i>
+            <span class="section-icon" aria-hidden="true">📝</span>
             <span>帖子 ({{ searchResults.posts.length }})</span>
           </div>
           <div class="results-list">
@@ -263,13 +263,14 @@ const stripHtml = (html: string) => {
                   <UserAvatar
                     :avatar-url="post.author_avatar"
                     :username="post.author"
+                    :user-id="post.author_id || post.user_id"
                     size="xs"
                     :clickable="false"
                   />
                   <span class="author-name">{{ post.author }}</span>
                   <span class="post-stats">
-                    <i class="fas fa-heart"></i> {{ post.reaction_count }}
-                    <i class="fas fa-comment"></i> {{ post.comment_count }}
+                    <span aria-hidden="true">❤️</span> {{ post.reaction_count }}
+                    <span aria-hidden="true">💬</span> {{ post.comment_count }}
                   </span>
                 </div>
               </div>
@@ -280,7 +281,7 @@ const stripHtml = (html: string) => {
         <!-- Users section -->
         <div v-if="searchResults.users.length > 0" class="dropdown-section">
           <div class="section-header">
-            <i class="fas fa-users"></i>
+            <span class="section-icon" aria-hidden="true">👥</span>
             <span>用户 ({{ searchResults.users.length }})</span>
           </div>
           <div class="results-list">
@@ -307,7 +308,7 @@ const stripHtml = (html: string) => {
         <!-- Tags section -->
         <div v-if="searchResults.tags.length > 0" class="dropdown-section">
           <div class="section-header">
-            <i class="fas fa-tags"></i>
+            <span class="section-icon" aria-hidden="true">🏷</span>
             <span>标签 ({{ searchResults.tags.length }})</span>
           </div>
           <div class="results-list">
@@ -317,7 +318,7 @@ const stripHtml = (html: string) => {
               class="result-item tag-item"
               @click="selectItem('tag', tag)"
             >
-              <i class="fas fa-tag"></i>
+              <span class="section-icon" aria-hidden="true">#</span>
               <div class="tag-info">
                 <h4 class="tag-name" v-html="tag.name_highlighted"></h4>
                 <span class="tag-count">{{ tag.post_count }} 个帖子</span>
@@ -329,7 +330,7 @@ const stripHtml = (html: string) => {
         <!-- Courses section -->
         <div v-if="searchResults.courses.length > 0" class="dropdown-section">
           <div class="section-header">
-            <i class="fas fa-book"></i>
+            <span class="section-icon" aria-hidden="true">📚</span>
             <span>课程 ({{ searchResults.courses.length }})</span>
           </div>
           <div class="results-list">
@@ -339,7 +340,7 @@ const stripHtml = (html: string) => {
               class="result-item course-item"
               @click="selectItem('course', course)"
             >
-              <i class="fas fa-graduation-cap"></i>
+              <span class="section-icon" aria-hidden="true">🎓</span>
               <div class="course-info">
                 <h4 class="course-code" v-html="course.code_highlighted"></h4>
                 <p class="course-name" v-html="course.name_highlighted"></p>
@@ -351,7 +352,7 @@ const stripHtml = (html: string) => {
         <!-- View all results -->
         <div class="dropdown-footer">
           <button class="view-all-btn" @click="handleSearch">
-            <i class="fas fa-search"></i>
+            <span aria-hidden="true">🔎</span>
             查看全部 {{ totalResults }} 个结果
           </button>
         </div>
@@ -360,7 +361,7 @@ const stripHtml = (html: string) => {
       <!-- No results -->
       <div v-else-if="inputValue.trim().length >= 2" class="dropdown-section">
         <div class="no-results">
-          <i class="fas fa-search"></i>
+          <span aria-hidden="true">🔍</span>
           <span>没有找到相关结果</span>
         </div>
       </div>
@@ -440,6 +441,17 @@ const stripHtml = (html: string) => {
   }
 }
 
+.spin-icon {
+  display: inline-block;
+  animation: search-dropdown-spin 0.8s linear infinite;
+}
+
+@keyframes search-dropdown-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .search-results-dropdown {
   position: absolute;
   top: calc(100% + 0.25rem);
@@ -473,7 +485,7 @@ const stripHtml = (html: string) => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   
-  i {
+  .section-icon {
     margin-right: 0.5rem;
   }
   
@@ -490,7 +502,7 @@ const stripHtml = (html: string) => {
       color: #dc2626;
     }
     
-    i {
+    span {
       margin-right: 0.25rem;
     }
   }
@@ -563,10 +575,6 @@ const stripHtml = (html: string) => {
         align-items: center;
         gap: 0.75rem;
         margin-left: auto;
-        
-        i {
-          margin-right: 0.25rem;
-        }
       }
     }
   }
@@ -598,7 +606,7 @@ const stripHtml = (html: string) => {
 }
 
 .tag-item, .course-item {
-  i {
+  .section-icon {
     color: var(--interactive-primary);
     margin-right: 0.75rem;
     font-size: 1rem;
@@ -634,7 +642,7 @@ const stripHtml = (html: string) => {
   color: var(--text-secondary);
   font-size: 0.875rem;
   
-  i {
+  > span:first-child {
     margin-right: 0.5rem;
   }
 }
@@ -663,7 +671,7 @@ const stripHtml = (html: string) => {
     background-color: var(--interactive-secondary);
   }
   
-  i {
+  > span:first-child {
     color: var(--text-muted);
     margin-right: 0.75rem;
   }
@@ -696,7 +704,7 @@ const stripHtml = (html: string) => {
     border-color: var(--border-focus);
   }
   
-  i {
+  > span:first-child {
     margin-right: 0.5rem;
   }
 }
