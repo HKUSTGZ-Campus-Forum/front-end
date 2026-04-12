@@ -10,7 +10,25 @@
           :key="idx"
           class="slide"
         >
-          <img :src="slide.image" :alt="slide.alt" class="slide-img" />
+          <div class="slide-inner">
+            <NuxtLink
+              v-if="slide.href && !isExternalHref(slide.href)"
+              :to="slide.href"
+              class="slide-link"
+            >
+              <img :src="slide.image" :alt="slide.alt" class="slide-img" />
+            </NuxtLink>
+            <a
+              v-else-if="slide.href && isExternalHref(slide.href)"
+              :href="slide.href"
+              class="slide-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img :src="slide.image" :alt="slide.alt" class="slide-img" />
+            </a>
+            <img v-else :src="slide.image" :alt="slide.alt" class="slide-img" />
+          </div>
         </div>
       </div>
     </div>
@@ -42,10 +60,34 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const slides = [
-  { image: '/image/banner/welcome_cn_2.jpg', alt: '欢迎来到科广汇（中文）' },
-  { image: '/image/banner/welcome_en.jpg',   alt: '欢迎来到科广汇（English）' },
+/** 可选 href：站内路径（如 /contest）或 http(s) 外链；省略则不可点击 */
+type BannerSlide = {
+  image: string
+  alt: string
+  href?: string
+}
+
+const slides: BannerSlide[] = [
+  {
+    image: '/image/banner/AMWC-1.png',
+    alt: '第一届百块奖金web大赛',
+    href: '/contest',
+  },
+  { 
+    image: '/image/banner/welcome_cn_2.jpg', 
+    alt: '欢迎来到科广汇（中文）',
+    href: '/'
+  },
+  { 
+    image: '/image/banner/welcome_en.jpg', 
+    alt: '欢迎来到科广汇（English）',
+    href: '/'
+  },
 ]
+
+function isExternalHref(url: string) {
+  return /^https?:\/\//i.test(url)
+}
 
 const current = ref(0)
 let timer: ReturnType<typeof setInterval>
@@ -104,6 +146,21 @@ onUnmounted(() => clearInterval(timer))
   flex: 0 0 100%;
   width: 100%;
   height: 100%;
+}
+
+.slide-inner {
+  width: 100%;
+  height: 100%;
+}
+
+.slide-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  line-height: 0;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
 }
 
 .slide-img {
