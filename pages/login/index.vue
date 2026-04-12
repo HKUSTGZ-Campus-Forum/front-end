@@ -26,7 +26,7 @@ async function handleLogin() {
     errorMessage.value = "";
     const user = await login(username.value, password.value, rememberMe.value);
     if (user?.isFirstLogin) {
-      router.push("/setting/background");
+      router.push("/setting/theme");
     } else {
       const redirectPath = route.query.redirect || "/";
       router.push(redirectPath);

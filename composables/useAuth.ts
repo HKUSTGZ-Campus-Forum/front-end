@@ -24,6 +24,15 @@ export function useAuth() {
   const config = useRuntimeConfig();
   const apiBaseUrl = config.public.apiBaseUrl;
 
+  /** 与 useApi.getApiUrl 一致：浏览器用相对路径，避免 localhost / 127.0.0.1 混用触发 CORS */
+  function resolveAuthApiUrl(path: string): string {
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const clean = path.startsWith("/") ? path : `/${path}`;
+    if (import.meta.client) return clean;
+    const base = String(apiBaseUrl || "").replace(/\/$/, "");
+    return base ? `${base}${clean}` : clean;
+  }
+
   const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
 
   // 内部 fetch 函数，不依赖 useApi
@@ -150,7 +159,7 @@ export function useAuth() {
       }
 
       const response = await authFetch(
-        `${apiBaseUrl}/api/users/${userId}`
+        resolveAuthApiUrl(`/api/users/${userId}`)
       );
 
       if (!response.ok) {
@@ -197,7 +206,7 @@ export function useAuth() {
       const userId = user.value.id;
 
       const response = await authFetch(
-        `${apiBaseUrl}/api/users/${userId}`,
+        resolveAuthApiUrl(`/api/users/${userId}`),
         {
           method: "PUT",
           body: JSON.stringify(userData),
@@ -247,8 +256,8 @@ export function useAuth() {
     isRefreshing.value = true;
     refreshPromise = (async () => {
       try {
-        console.log('📤 Sending refresh request to:', `${apiBaseUrl}/api/auth/refresh`);
-        const response = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+        console.log('📤 Sending refresh request to:', resolveAuthApiUrl('/api/auth/refresh'));
+        const response = await fetch(resolveAuthApiUrl('/api/auth/refresh'), {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${refreshToken.value}`
@@ -298,7 +307,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+      const response = await fetch(resolveAuthApiUrl('/api/auth/login'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -363,7 +372,7 @@ export function useAuth() {
     try {
       if (accessToken.value) {
         console.log('📤 Sending logout request to server...');
-        await authFetch(`${apiBaseUrl}/api/auth/logout`, {
+        await authFetch(resolveAuthApiUrl('/api/auth/logout'), {
           method: "POST",
         }).catch(console.error);
       }
@@ -396,7 +405,7 @@ export function useAuth() {
     try {
       console.log("开始注册请求，发送数据:", { username, email: email || undefined });
 
-      const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
+      const response = await fetch(resolveAuthApiUrl('/api/auth/register'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -465,7 +474,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/verify-email`, {
+      const response = await fetch(resolveAuthApiUrl('/api/auth/verify-email'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -496,7 +505,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/resend-verification`, {
+      const response = await fetch(resolveAuthApiUrl('/api/auth/resend-verification'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -526,7 +535,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/forgot-password`, {
+      const response = await fetch(resolveAuthApiUrl('/api/auth/forgot-password'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -554,7 +563,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/reset-password`, {
+      const response = await fetch(resolveAuthApiUrl('/api/auth/reset-password'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -585,7 +594,7 @@ export function useAuth() {
     error.value = null;
 
     try {
-      const response = await authFetch(`${apiBaseUrl}/api/auth/change-password`, {
+      const response = await authFetch(resolveAuthApiUrl('/api/auth/change-password'), {
         method: "POST",
         body: JSON.stringify({
           current_password: currentPassword,

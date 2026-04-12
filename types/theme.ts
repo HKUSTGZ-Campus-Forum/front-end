@@ -3,8 +3,8 @@ export interface ThemeConfig {
   id: string;
   name: string;
   description: string;
-  category: 'light' | 'dark' | 'colored';
-  
+  category: 'light' | 'dark';
+
   // Background styling
   background: {
     primary: string;
@@ -12,7 +12,7 @@ export interface ThemeConfig {
     image?: string;
     gradient?: string;
   };
-  
+
   // Component colors
   colors: {
     // Text colors
@@ -22,7 +22,7 @@ export interface ThemeConfig {
       muted: string;
       inverse: string;
     };
-    
+
     // Surface colors
     surface: {
       primary: string;
@@ -30,7 +30,7 @@ export interface ThemeConfig {
       elevated: string;
       overlay: string;
     };
-    
+
     // Interactive colors
     interactive: {
       primary: string;
@@ -39,7 +39,7 @@ export interface ThemeConfig {
       active: string;
       disabled: string;
     };
-    
+
     // Semantic colors
     semantic: {
       success: string;
@@ -47,7 +47,7 @@ export interface ThemeConfig {
       error: string;
       info: string;
     };
-    
+
     // Border colors
     border: {
       primary: string;
@@ -55,7 +55,7 @@ export interface ThemeConfig {
       focus: string;
     };
   };
-  
+
   // Component-specific styling
   components: {
     sidebar: {
@@ -63,26 +63,26 @@ export interface ThemeConfig {
       backdrop?: string;
       shadow?: string;
     };
-    
+
     topbar: {
       background: string;
       backdrop?: string;
       shadow?: string;
     };
-    
+
     card: {
       background: string;
       shadow?: string;
       border?: string;
     };
-    
+
     modal: {
       background: string;
       backdrop: string;
       shadow?: string;
     };
   };
-  
+
   // Effects and overlays
   effects: {
     blur: string;
@@ -102,9 +102,4 @@ export interface ThemeConfig {
 export interface ThemeState {
   currentTheme: string;
   availableThemes: ThemeConfig[];
-  // Legacy support
-  backgroundColor?: string;
-  backgroundImage?: string | null;
-  backgroundOpacity?: number;
-  customTheme?: Partial<ThemeConfig>;
 }

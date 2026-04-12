@@ -83,10 +83,6 @@ const resendCooldown = ref(0)
 
 let cooldownTimer: NodeJS.Timeout | null = null
 
-// Get API base URL from runtime config
-const config = useRuntimeConfig()
-const apiBaseUrl = config.public.apiBaseUrl
-
 // Computed properties
 const isValidEmail = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -113,7 +109,7 @@ async function handleForgotPassword() {
   successMessage.value = ''
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/forgot-password`, {
+    const response = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

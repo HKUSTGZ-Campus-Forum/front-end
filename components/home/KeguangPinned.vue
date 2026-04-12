@@ -27,7 +27,7 @@ const handleSearch = (query: string) => {
 }
 
 const handleLoginOrLogout = () => {
-  router.push('/login')
+  navigateTo('/login')
 }
 </script>
 
@@ -59,7 +59,7 @@ const handleLoginOrLogout = () => {
             class="topbar-user-avatar"
           />
         </NuxtLink>
-        <button v-else class="login-btn-text" @click="handleLoginOrLogout">
+        <button type="button" v-else class="login-btn-text" @click="handleLoginOrLogout">
           {{ t('login') }}
         </button>
       </div>

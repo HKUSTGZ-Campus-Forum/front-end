@@ -18,16 +18,37 @@ export function useApi() {
 
   // Helper function to get full API URL
   function getApiUrl(url: string): string {
-    // If URL is already absolute, return as-is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    
-    // For relative URLs, prepend the API base URL
-    const baseUrl = config.public.apiBaseUrl;
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-    
-    return `${baseUrl}${cleanUrl}`;
+
+    // 相对路径：浏览器走同源 /api/...；SSR 拼上配置的绝对 base
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      if (import.meta.client) {
+        return cleanUrl;
+      }
+      const baseUrl = String(config.public.apiBaseUrl || '').replace(/\/$/, '');
+      return baseUrl ? `${baseUrl}${cleanUrl}` : cleanUrl;
+    }
+
+    // 绝对地址：在浏览器上若指向本机 Nuxt（localhost / 127.0.0.1 与当前页混用），改为相对路径以免 CORS
+    if (import.meta.client && typeof window !== 'undefined') {
+      try {
+        const u = new URL(url);
+        const loc = window.location;
+        const isLoop = (h: string) => h === 'localhost' || h === '127.0.0.1';
+        if (
+          isLoop(u.hostname) &&
+          isLoop(loc.hostname) &&
+          u.port === loc.port &&
+          u.pathname.startsWith('/api')
+        ) {
+          return `${u.pathname}${u.search}`;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return url;
   }
 
   // Smart fetch that handles authentication properly
