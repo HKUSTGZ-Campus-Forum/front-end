@@ -114,17 +114,6 @@ function onMouseLeave() {
             <span class="kg-label">百块奖金大赛</span>
           </NuxtLink>
         </li>
-
-        <li class="kg-divider" aria-hidden="true">
-          <span class="kg-divider__line"></span>
-        </li>
-
-        <li>
-          <NuxtLink to="/setting/theme" :class="{ active: route.path.startsWith('/setting') }">
-            <span class="kg-icon kg-icon--emoji">&#x2699;</span>
-            <span class="kg-label">{{ t('settings') }}</span>
-          </NuxtLink>
-        </li>
       </ul>
     </div>
   </div>

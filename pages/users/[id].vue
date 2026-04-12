@@ -10,7 +10,7 @@ import type { UserIdentity } from "~/types/identity";
 
 definePageMeta({ layout: 'keguang' });
 
-const { isLoggedIn, user, updateLocalUserData } = useAuth();
+const { isLoggedIn, user, updateLocalUserData, logout } = useAuth();
 const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 const route = useRoute();
 
@@ -166,6 +166,20 @@ const validateUsername = (username: string): string | null => {
   if (username.length > 50) return "用户名不能超过50个字符";
   if (/[<>"'&/\\|?*:;]/.test(username)) return "用户名不能包含特殊符号";
   return null;
+};
+
+const isLoggingOut = ref(false);
+
+const handleLogout = async () => {
+  if (isLoggingOut.value) return;
+  isLoggingOut.value = true;
+  try {
+    await logout();
+  } catch {
+    /* logout 内部已尽力清理；失败时仍结束 loading */
+  } finally {
+    isLoggingOut.value = false;
+  }
 };
 
 const saveUsername = async () => {
@@ -335,6 +349,16 @@ useHead({
             <span>主题设置</span>
             <span class="kg-link-arrow">→</span>
           </NuxtLink>
+          <button
+            type="button"
+            class="kg-link-item kg-link-item--btn"
+            :disabled="isLoggingOut"
+            @click="handleLogout"
+          >
+            <span class="kg-link-icon">🚪</span>
+            <span>{{ isLoggingOut ? '正在退出…' : '退出登录' }}</span>
+            <span class="kg-link-arrow">→</span>
+          </button>
         </div>
       </div>
     </template>
@@ -601,6 +625,24 @@ useHead({
   font-size: 0.9rem;
   transition: all 0.2s;
   &:hover { border-color: #26a4ff; background: rgba(38, 164, 255, 0.04); }
+}
+
+button.kg-link-item--btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  box-sizing: border-box;
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #c45a5a;
+    background: rgba(224, 90, 90, 0.06);
+  }
 }
 
 .kg-link-icon { font-size: 1.2rem; }
