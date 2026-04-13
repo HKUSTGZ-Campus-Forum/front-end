@@ -103,9 +103,11 @@ export default defineNuxtConfig({
     "~/assets/css/transitions.scss",
   ],
   nitro: {
+    // 匹配 /api 后会把剩余路径拼到 target 上；target 必须带上 /api，
+    // 否则 /api/auth/login 会变成上游 /auth/login 导致 404。
     devProxy: {
       "/api": {
-        target: "https://dev.unikorn.axfff.com",
+        target: "https://dev.unikorn.axfff.com/api",
         changeOrigin: true,
       },
     },

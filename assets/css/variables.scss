@@ -1,101 +1,96 @@
 :root {
-  // Legacy compatibility
-  --background-color: #97d4f3;
-  --background-image: none;
-  --background-opacity: 1;
-  
-  // Theme system variables (will be overridden by theme)
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  // Theme system variables (defaults to 科广蓝 to prevent flash)
+  --bg-primary: #d7edf9;
+  --bg-secondary: #f5fbfe;
+  --bg-gradient: linear-gradient(160deg, #d7edf9 0%, #eaf4fd 100%);
   --bg-image: none;
-  
+
   // Text colors
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-primary: #1a2a4a;
+  --text-secondary: #4a6080;
+  --text-muted: #b3b3b3;
   --text-inverse: #ffffff;
-  
+
   // Surface colors
   --surface-primary: #ffffff;
-  --surface-secondary: #f8fafc;
+  --surface-secondary: #f5fbfe;
   --surface-elevated: #ffffff;
-  --surface-overlay: rgba(255, 255, 255, 0.95);
-  
+  --surface-overlay: rgba(255, 255, 255, 0.96);
+
   // Interactive colors
-  --interactive-primary: #3b82f6;
-  --interactive-secondary: #e2e8f0;
-  --interactive-hover: #2563eb;
-  --interactive-active: #1d4ed8;
-  --interactive-disabled: #cbd5e1;
-  
+  --interactive-primary: #26a4ff;
+  --interactive-secondary: #bfd7fb;
+  --interactive-hover: #1a8fe0;
+  --interactive-active: #1278c4;
+  --interactive-disabled: #b3d4f0;
+
   // Semantic colors
   --semantic-success: #10b981;
   --semantic-warning: #f59e0b;
   --semantic-error: #ef4444;
-  --semantic-info: #3b82f6;
-  
+  --semantic-info: #26a4ff;
+
   // Border colors
-  --border-primary: #e2e8f0;
-  --border-secondary: #f1f5f9;
-  --border-focus: #3b82f6;
-  
+  --border-primary: #bfd7fb;
+  --border-secondary: #daeef9;
+  --border-focus: #26a4ff;
+
   // Component backgrounds
-  --sidebar-bg: rgba(255, 255, 255, 0.95);
-  --sidebar-backdrop: blur(12px);
-  --sidebar-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  
-  --topbar-bg: rgba(255, 255, 255, 0.95);
-  --topbar-backdrop: blur(12px);
-  --topbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  
+  --sidebar-bg: #283965;
+  --sidebar-backdrop: none;
+  --sidebar-shadow: 2px 0 12px rgba(40, 57, 101, 0.18);
+
+  --topbar-bg: #f5fbfd;
+  --topbar-backdrop: blur(8px);
+  --topbar-shadow: 0 1px 4px rgba(40, 57, 101, 0.08);
+
   --card-bg: #ffffff;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --card-border: 1px solid #e2e8f0;
-  
+  --card-shadow: 0 2px 8px rgba(38, 164, 255, 0.08);
+  --card-border: 1px solid #daeef9;
+
   --modal-bg: #ffffff;
-  --modal-backdrop: rgba(0, 0, 0, 0.5);
-  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  
+  --modal-backdrop: rgba(26, 42, 74, 0.45);
+  --modal-shadow: 0 20px 40px rgba(26, 42, 74, 0.15);
+
   // Effects
-  --effect-blur: blur(12px);
-  --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --shadow-large: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --effect-blur: blur(8px);
+  --shadow-small: 0 1px 3px rgba(38, 164, 255, 0.08);
+  --shadow-medium: 0 4px 12px rgba(38, 164, 255, 0.12);
+  --shadow-large: 0 10px 24px rgba(38, 164, 255, 0.16);
   --opacity-low: 0.6;
-  --opacity-medium: 0.8;
-  --opacity-high: 0.95;
-  
+  --opacity-medium: 0.85;
+  --opacity-high: 0.96;
+
   // Logo filter for theme adaptation
-  --logo-filter: none;
-  
+  --logo-filter: brightness(10) saturate(0);
+
   /* Mobile-first responsive breakpoints */
   --mobile-small: 480px;
   --mobile-large: 768px;
   --tablet: 1024px;
   --desktop: 1200px;
-  
+
   /* Layout dimensions */
   --header-height: 70px;
   --sidebar-width-expanded: 200px;
   --sidebar-width-collapsed: 100px;
   --sidebar-width-mobile: 280px;
-  
+
   /* Touch targets (minimum 44px for accessibility) */
   --touch-target-min: 44px;
   --touch-target-comfortable: 48px;
-  
+
   /* Z-index layers */
   --z-sidebar-mobile: 1050;
   --z-header: 1010;
   --z-overlay: 1040;
   --z-dropdown: 1060;
-  
+
   /* Mobile spacing */
   --mobile-padding: 1rem;
   --mobile-margin: 0.5rem;
   --desktop-padding: 2rem;
-  
+
   /* Animation durations */
   --transition-fast: 0.2s;
   --transition-normal: 0.3s;
@@ -103,32 +98,14 @@
 }
 
 body {
-  // Primary background (fallback)
-  background-color: var(--background-color, var(--bg-primary));
+  background-color: var(--bg-primary);
   margin: 0;
   min-height: 100vh;
   position: relative;
   color: var(--text-primary);
   transition: background-color var(--transition-normal), color var(--transition-normal);
-  
-  // Main background layer
-  &::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    // Legacy support
-    background-image: var(--background-image, none);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: var(--background-opacity, 1);
-    z-index: -2;
-  }
-  
-  // New theme system background
+
+  // Theme background layer
   &::after {
     content: "";
     position: fixed;
@@ -138,71 +115,6 @@ body {
     height: 100%;
     background: var(--bg-gradient, var(--bg-primary));
     z-index: -1;
-  }
-  
-  // Theme-specific body classes
-  &.theme-light::after {
-    background: var(--bg-gradient);
-  }
-  
-  &.theme-dark::after {
-    background: var(--bg-gradient);
-  }
-  
-  &.theme-cafe::after {
-    background: var(--bg-gradient);
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-image, none);
-      opacity: 0.3;
-    }
-  }
-  
-  &.theme-pro-tech::after {
-    background: var(--bg-gradient);
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-image, none);
-      opacity: 0.4;
-    }
-  }
-  
-  &.theme-ocean::after {
-    background: var(--bg-gradient);
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-image, none);
-      opacity: 0.2;
-    }
-  }
-  
-  &.theme-sunset::after {
-    background: var(--bg-gradient);
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-image, none);
-      opacity: 0.25;
-    }
   }
 }
 

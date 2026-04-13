@@ -157,8 +157,7 @@ const isApplyingTheme = ref(false);
 // Categories
 const categories = [
   { id: 'light', name: '浅色', icon: '☀️' },
-  { id: 'dark', name: '深色', icon: '🌙' },
-  { id: 'colored', name: '彩色', icon: '🌈' }
+  { id: 'dark', name: '深色', icon: '🌙' }
 ];
 
 // Computed properties

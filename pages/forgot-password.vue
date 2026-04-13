@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="forgot-password-container">
+  <div class="forgot-password-container">
       <h1 class="page-title">忘记密码</h1>
       <p class="page-subtitle">输入您的邮箱地址，我们将向您发送重置密码的链接</p>
 
@@ -82,7 +81,6 @@
         </NuxtLink>
       </div>
     </div>
-  </HomeContainer>
 </template>
 
 <script setup lang="ts">
@@ -186,7 +184,7 @@ onUnmounted(() => {
 // SEO and meta
 definePageMeta({
   title: '忘记密码',
-  layout: false
+  layout: 'keguang'
 })
 
 useHead({

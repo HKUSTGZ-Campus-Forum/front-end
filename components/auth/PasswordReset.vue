@@ -122,10 +122,6 @@ const successMessage = ref('')
 const resetSuccess = ref(false)
 const confirmPasswordError = ref('')
 
-// Get API base URL from runtime config
-const config = useRuntimeConfig()
-const apiBaseUrl = config.public.apiBaseUrl
-
 // Password strength calculation
 const passwordStrength = computed(() => {
   if (!newPassword.value) return null
@@ -199,7 +195,7 @@ async function handlePasswordReset() {
   successMessage.value = ''
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/reset-password`, {
+    const response = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

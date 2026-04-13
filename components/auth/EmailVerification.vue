@@ -91,10 +91,6 @@ const resendCooldown = ref(0)
 
 let cooldownTimer: NodeJS.Timeout | null = null
 
-// Get API base URL from runtime config
-const config = useRuntimeConfig()
-const apiBaseUrl = config.public.apiBaseUrl
-
 // Format verification code input (numbers only)
 function formatCode(event: Event) {
   const target = event.target as HTMLInputElement
@@ -114,7 +110,7 @@ async function handleVerification() {
   successMessage.value = ''
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/verify-email`, {
+    const response = await fetch('/api/auth/verify-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -159,7 +155,7 @@ async function resendCode() {
   successMessage.value = ''
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/resend-verification`, {
+    const response = await fetch('/api/auth/resend-verification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

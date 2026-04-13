@@ -1,6 +1,5 @@
 <template>
-  <HomeContainer>
-    <div class="project-edit">
+  <div class="project-edit">
       <MatchingBreadcrumbs />
 
       <!-- Loading State -->
@@ -257,7 +256,6 @@
         </div>
       </form>
     </div>
-  </HomeContainer>
 </template>
 
 <script setup>

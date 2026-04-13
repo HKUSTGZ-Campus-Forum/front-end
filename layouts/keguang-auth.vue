@@ -2,7 +2,9 @@
   <div class="kg-auth-layout">
     <header class="kg-auth-header">
       <NuxtLink to="/" class="kg-auth-brand">
-        <img src="/image/uniKorn.png" alt="UniKorn" class="kg-auth-logo" />
+        <span class="kg-auth-logo-wrap" aria-hidden="true">
+          <img src="/image/uniKorn.png" alt="" class="kg-auth-logo" />
+        </span>
         <span class="kg-auth-brand-name">UniKorn 科广汇</span>
       </NuxtLink>
     </header>
@@ -36,11 +38,21 @@
   text-decoration: none;
 }
 
-.kg-auth-logo {
+.kg-auth-logo-wrap {
   width: 36px;
   height: 36px;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.kg-auth-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .kg-auth-brand-name {
