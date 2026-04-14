@@ -69,7 +69,7 @@ type BannerSlide = {
 
 const slides: BannerSlide[] = [
   {
-    image: '/image/banner/AMWC-1.png',
+    image: '/image/banner/AMWC-1.jpg',
     alt: '第一届百块奖金web大赛',
     href: '/contest',
   },

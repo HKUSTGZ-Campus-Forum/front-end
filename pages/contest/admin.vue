@@ -35,9 +35,15 @@ const infoError   = ref('')
 const infoSuccess = ref(false)
 
 const infoForm = ref({
-  title: '', description: '', rules: '', prizes: '',
+  title: '', description: '',
   start_time: '', end_time: '', is_active: true,
 })
+
+/** 对应前台「题目」Tab，存后端 rules 字段 */
+const problemBody = ref('')
+const problemSaving = ref(false)
+const problemError = ref('')
+const problemSuccess = ref(false)
 
 function toLocalInput(iso: string | null): string {
   if (!iso) return ''
@@ -59,12 +65,11 @@ async function fetchContestInfo() {
       infoForm.value = {
         title:       data.title       || '',
         description: data.description || '',
-        rules:       data.rules       || '',
-        prizes:      data.prizes      || '',
         start_time:  toLocalInput(data.start_time),
         end_time:    toLocalInput(data.end_time),
         is_active:   data.is_active ?? true,
       }
+      problemBody.value = data.rules || ''
       announcementText.value = data.announcements || ''
     }
   } catch (e) {
@@ -78,9 +83,11 @@ async function saveContestInfo() {
   infoError.value = ''; infoSuccess.value = false; infoSaving.value = true
   try {
     const payload = {
-      ...infoForm.value,
+      title: infoForm.value.title,
+      description: infoForm.value.description,
       start_time: toISOWithOffset(infoForm.value.start_time),
       end_time:   toISOWithOffset(infoForm.value.end_time),
+      is_active: infoForm.value.is_active,
     }
     const res = await fetchWithAuth('/api/contest', {
       method: 'PUT',
@@ -94,6 +101,24 @@ async function saveContestInfo() {
     infoError.value = '网络错误，请稍后重试'
   } finally {
     infoSaving.value = false
+  }
+}
+
+async function saveProblems() {
+  problemError.value = ''; problemSuccess.value = false; problemSaving.value = true
+  try {
+    const res = await fetchWithAuth('/api/contest', {
+      method: 'PUT',
+      body: JSON.stringify({ rules: problemBody.value }) as any,
+    })
+    const data = await res.json()
+    if (!res.ok) { problemError.value = data.error || '保存失败'; return }
+    problemSuccess.value = true
+    setTimeout(() => { problemSuccess.value = false }, 3000)
+  } catch {
+    problemError.value = '网络错误，请稍后重试'
+  } finally {
+    problemSaving.value = false
   }
 }
 
@@ -272,20 +297,6 @@ onMounted(async () => {
             </ClientOnly>
           </div>
 
-          <div class="kg-form-group">
-            <label>参赛规则 / 题目（支持 Markdown，比赛开始后参赛者可见）</label>
-            <ClientOnly>
-              <CommonMarkdownEditor v-model="infoForm.rules" height="300px" />
-            </ClientOnly>
-          </div>
-
-          <div class="kg-form-group">
-            <label>奖项设置（支持 Markdown）</label>
-            <ClientOnly>
-              <CommonMarkdownEditor v-model="infoForm.prizes" height="240px" />
-            </ClientOnly>
-          </div>
-
           <div class="kg-form-row">
             <div class="kg-form-group">
               <label>比赛开始时间（北京时间）</label>
@@ -316,6 +327,29 @@ onMounted(async () => {
         </form>
       </div>
 
+      <!-- 题目（对应前台「题目」标签页） -->
+      <div class="kg-card">
+        <h2 class="kg-card-title">📋 编辑题目</h2>
+        <p class="kg-card-desc">
+          对应比赛页「题目」标签；支持 Markdown。比赛开始且选手已报名后可见本内容（管理员可随时预览）。
+        </p>
+        <div v-if="infoLoading" class="kg-loading-text">加载中...</div>
+        <div v-else class="kg-form">
+          <div class="kg-form-group">
+            <ClientOnly>
+              <CommonMarkdownEditor v-model="problemBody" height="360px" />
+            </ClientOnly>
+          </div>
+          <div v-if="problemError" class="kg-msg-error">{{ problemError }}</div>
+          <div v-if="problemSuccess" class="kg-msg-success">✅ 题目已保存</div>
+          <div class="kg-form-actions">
+            <button type="button" class="kg-btn-primary" :disabled="problemSaving" @click="saveProblems">
+              {{ problemSaving ? '保存中...' : '保存题目' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 公告 -->
       <div class="kg-card">
         <h2 class="kg-card-title">📢 发布公告</h2>
@@ -339,7 +373,7 @@ onMounted(async () => {
       <!-- Organizer 管理 -->
       <div class="kg-card">
         <h2 class="kg-card-title">👥 管理者列表（Organizer）</h2>
-        <p class="kg-card-desc">Organizer 可以编辑比赛信息、发布公告、查看提交、导出数据。</p>
+        <p class="kg-card-desc">Organizer 可以编辑比赛信息与题目、发布公告、查看提交、导出数据。</p>
 
         <div v-if="orgLoading" class="kg-loading-text">加载中...</div>
         <template v-else>
