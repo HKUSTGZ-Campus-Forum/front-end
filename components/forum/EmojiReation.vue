@@ -13,13 +13,18 @@
           :title="isLoggedIn ? '点赞' : '请先登录后点赞'"
         >
           <span class="emoji">
-            <img 
-              v-if="defaultEmojiData?.image_url" 
-              :src="defaultEmojiData.image_url" 
+            <ForumUiIcon
+              v-if="defaultEmojiData?.emoji_code && getEmojiIconName(defaultEmojiData.emoji_code)"
+              :name="getEmojiIconName(defaultEmojiData.emoji_code)"
+              class="emoji-icon"
+            />
+            <img
+              v-else-if="defaultEmojiData?.image_url"
+              :src="defaultEmojiData.image_url"
               :alt="defaultEmojiData.description || 'emoji'"
               class="emoji-image"
             />
-            <span v-else>{{ defaultEmojiData ? getEmojiFromCode(defaultEmojiData.emoji_code) || "❤️" : "❤️" }}</span>
+            <ForumUiIcon v-else name="heart" class="emoji-icon" />
           </span>
           <span v-if="quickReactionCount > 0" class="count">{{ quickReactionCount }}</span>
         </button>
@@ -31,7 +36,7 @@
           :class="{ active: showEmojiPicker }"
           title="更多表情"
         >
-          <span class="chevron-icon" :class="{ 'rotated': showEmojiPicker }">▼</span>
+          <ForumUiIcon name="chevron-down" class="chevron-icon" :class="{ rotated: showEmojiPicker }" />
         </button>
       </div>
 
@@ -44,15 +49,20 @@
         :class="{
           'user-reacted': isUserReacted(reaction.emoji.id),
         }"
-      >
+        >
         <span class="emoji">
+          <ForumUiIcon
+            v-if="getEmojiIconName(reaction.emoji.emoji_code)"
+            :name="getEmojiIconName(reaction.emoji.emoji_code)"
+            class="emoji-icon"
+          />
           <img 
-            v-if="reaction.emoji.image_url" 
+            v-else-if="reaction.emoji.image_url" 
             :src="reaction.emoji.image_url" 
             :alt="reaction.emoji.description || 'emoji'"
             class="emoji-image"
           />
-          <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "❓" }}</span>
+          <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "?" }}</span>
         </span>
         <span class="count">{{ reaction.count }}</span>
       </button>
@@ -76,19 +86,27 @@
               :title="`${emoji.description || '表情'} (ID: ${emoji.id}) - URL: ${emoji.image_url}`"
             >
               <!-- Always use fallback emoji since OSS images have display issues -->
-              <span class="emoji-fallback">{{ getEmojiFromCode(emoji.emoji_code) || "❓" }}</span>
+              <ForumUiIcon
+                v-if="getEmojiIconName(emoji.emoji_code)"
+                :name="getEmojiIconName(emoji.emoji_code)"
+                class="emoji-fallback emoji-fallback--icon"
+              />
+              <span v-else class="emoji-fallback">{{ getEmojiFromCode(emoji.emoji_code) || "?" }}</span>
             </button>
           </div>
 
           <!-- 无表情状态 -->
           <div v-else class="no-emojis">
-            <p>😕 暂无可用表情</p>
+            <p class="no-emojis__title">
+              <ForumUiIcon name="info" class="no-emojis__icon" />
+              <span>暂无可用表情</span>
+            </p>
             <p style="font-size: 0.75rem; color: #999">
               数组长度: {{ availableEmojis.length }}<br />
               数据: {{ availableEmojis }}
             </p>
             <button @click="fetchAvailableEmojis" class="retry-btn">
-              🔄 重新获取
+              重新获取
             </button>
           </div>
         </div>
@@ -268,7 +286,7 @@ const handleEmojiImageError = (event, emoji) => {
   const button = event.target.closest('.emoji-option');
   if (button) {
     const fallbackSpan = document.createElement('span');
-    fallbackSpan.textContent = getEmojiFromCode(emoji.emoji_code) || "❓";
+    fallbackSpan.textContent = getEmojiFromCode(emoji.emoji_code) || "?";
     button.appendChild(fallbackSpan);
   }
 };
@@ -303,6 +321,19 @@ const getEmojiFromCode = (emojiCode) => {
 
   // 否则从映射表中查找
   return emojiMap[emojiCode] || emojiCode;
+};
+
+const getEmojiIconName = (emojiCode) => {
+  const iconMap = {
+    plus_one: "plus-one",
+    thumbs_up: "plus-one",
+    heart: "heart",
+    love: "heart",
+    party_popper: "celebrate",
+    rocket: "celebrate",
+  };
+
+  return iconMap[emojiCode] || null;
 };
 
 // 快速反应方法
@@ -699,13 +730,14 @@ onUnmounted(() => {
   }
 
   .chevron-icon {
-    font-size: 0.7rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    transform: rotate(90deg);
     transition: transform 0.2s ease;
     display: block;
-    line-height: 1;
     
     &.rotated {
-      transform: rotate(180deg);
+      transform: rotate(270deg);
     }
   }
 }
@@ -790,6 +822,11 @@ onUnmounted(() => {
     display: block;
   }
 
+  .emoji-fallback--icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
   img.emoji-image {
     width: 1.5rem;
     height: 1.5rem;
@@ -834,5 +871,24 @@ onUnmounted(() => {
   object-fit: contain;
   vertical-align: middle;
   display: block;
+}
+
+.emoji-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+
+.no-emojis__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.35rem;
+}
+
+.no-emojis__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
 }
 </style>

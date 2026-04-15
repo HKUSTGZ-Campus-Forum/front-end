@@ -423,10 +423,9 @@ onMounted(async () => {
                 <th>用户名</th>
                 <th>UID</th>
                 <th>状态</th>
-                <th>作品名称</th>
-                <th>作品介绍</th>
+                <th>队名</th>
                 <th>项目链接</th>
-                <th>队员</th>
+                <th>团队成员</th>
                 <th>最后更新</th>
               </tr>
             </thead>
@@ -440,7 +439,6 @@ onMounted(async () => {
                   <span v-else class="kg-status-submitted">已提交</span>
                 </td>
                 <td class="td-name">{{ sub.project_name === '待提交' ? '-' : sub.project_name }}</td>
-                <td class="td-desc">{{ sub.project_name === '待提交' ? '-' : sub.description }}</td>
                 <td class="td-url">
                   <a v-if="sub.project_url" :href="sub.project_url" target="_blank" class="kg-link">链接</a>
                   <span v-else class="kg-muted">-</span>
@@ -691,7 +689,6 @@ onMounted(async () => {
   .td-user { white-space: nowrap; font-weight: 500; }
   .td-uid  { white-space: nowrap; color: #6a85a0; font-size: 0.8rem; }
   .td-name { white-space: nowrap; }
-  .td-desc { max-width: 200px; white-space: pre-wrap; word-break: break-word; }
   .td-url, .td-team, .td-time { white-space: nowrap; }
   .td-time { color: #6a85a0; }
 }

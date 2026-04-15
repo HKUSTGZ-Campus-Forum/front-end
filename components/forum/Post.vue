@@ -120,17 +120,17 @@ const goToUserProfile = (userId?: number) => {
 
     <div class="post-stats">
       <span class="reactions" v-if="reaction_count !== undefined">
-        <span class="stat-icon" aria-hidden="true">❤️</span>
+        <ForumUiIcon name="heart" class="stat-icon" />
         <span class="stat-label">点赞</span>
         {{ reaction_count }}
       </span>
       <span class="comments">
-        <span class="stat-icon" aria-hidden="true">💬</span>
+        <ForumUiIcon name="comment" class="stat-icon" />
         <span class="stat-label">评论</span>
         {{ comment_count }}
       </span>
       <span class="views" v-if="view_count !== undefined">
-        <span class="stat-icon" aria-hidden="true">👁</span>
+        <ForumUiIcon name="eye" class="stat-icon" />
         <span class="stat-label">浏览</span>
         {{ view_count }}
       </span>
@@ -382,8 +382,9 @@ const goToUserProfile = (userId?: number) => {
     }
 
     .stat-icon {
-      font-size: 0.85rem;
-      line-height: 1;
+      width: 0.9rem;
+      height: 0.9rem;
+      flex-shrink: 0;
     }
   }
 }

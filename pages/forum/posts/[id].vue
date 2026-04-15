@@ -204,7 +204,10 @@ onMounted(() => { fetchPostData(); });
 <template>
   <div class="kg-post-detail">
     <div class="kg-back-bar">
-      <NuxtLink to="/forum" class="kg-back-link">← 返回论坛</NuxtLink>
+      <NuxtLink to="/forum" class="kg-back-link">
+        <ForumUiIcon name="back" class="kg-back-link__icon" />
+        <span>返回论坛</span>
+      </NuxtLink>
     </div>
 
     <div v-if="isLoading" class="kg-loading">
@@ -236,13 +239,16 @@ onMounted(() => { fetchPostData(); });
             </div>
             <div class="kg-article__actions">
               <span class="kg-meta-item">{{ formatDate(postData.publishDate) }}</span>
-              <span class="kg-meta-item"><span class="kg-meta-icon" aria-hidden="true">👁</span>{{ postData.views_count }}</span>
+              <span class="kg-meta-item">
+                <ForumUiIcon name="eye" class="kg-meta-icon" />
+                {{ postData.views_count }}
+              </span>
               <button class="kg-icon-btn" @click="sharePost" :title="shareSuccess ? '已复制!' : '分享'">
-                <span class="kg-meta-icon" aria-hidden="true">{{ shareSuccess ? '✓' : '↗' }}</span>
+                <ForumUiIcon :name="shareSuccess ? 'check' : 'share'" class="kg-meta-icon" />
                 <span v-if="shareSuccess">已复制</span>
               </button>
               <button v-if="canDeletePost" class="kg-icon-btn kg-icon-btn--danger" @click="showDeleteConfirm">
-                <span class="kg-meta-icon" aria-hidden="true">🗑</span>
+                <ForumUiIcon name="delete" class="kg-meta-icon" />
               </button>
             </div>
           </div>
@@ -312,10 +318,19 @@ onMounted(() => { fetchPostData(); });
 }
 
 .kg-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: #26a4ff;
   text-decoration: none;
   font-size: 0.9rem;
   &:hover { text-decoration: underline; }
+}
+
+.kg-back-link__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
 }
 
 .kg-card {
@@ -380,8 +395,9 @@ onMounted(() => { fetchPostData(); });
 }
 
 .kg-meta-icon {
-  font-size: 0.82rem;
-  line-height: 1;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
 }
 
 .kg-icon-btn {

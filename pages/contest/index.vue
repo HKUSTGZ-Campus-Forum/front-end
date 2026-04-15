@@ -91,13 +91,31 @@ async function handleRegister() {
   }
 }
 
-const canSubmit = computed(() => registered.value && contestStarted.value && !contestEnded.value && !isOrganizer.value)
-const canRegister = computed(() => !contestEnded.value)
+/** 与后端一致：管理后台「开放报名/提交」关闭时，接口会拒绝报名与提交 */
+const contestOpen = computed(() => contest.value?.is_active !== false)
+
+const canSubmit = computed(() =>
+  registered.value
+  && contestStarted.value
+  && !contestEnded.value
+  && !isOrganizer.value
+  && contestOpen.value,
+)
+const canRegister = computed(() => !contestEnded.value && contestOpen.value)
 
 // ── 提交逻辑 ──
 const mySubmission = ref<any>(null)
 const editMode = ref(false)
-const form = ref({ project_name: '', description: '', project_url: '', team_members: '' })
+const form = ref({ project_name: '', project_url: '', team_members: '' })
+
+function isValidHttpUrl(s: string): boolean {
+  try {
+    const u = new URL(s.trim())
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 const submitting = ref(false)
 const submitError = ref('')
 
@@ -117,7 +135,6 @@ function enterEditMode() {
   if (!mySubmission.value) return
   form.value = {
     project_name: mySubmission.value.project_name || '',
-    description: mySubmission.value.description || '',
     project_url: mySubmission.value.project_url || '',
     team_members: mySubmission.value.team_members || '',
   }
@@ -128,19 +145,26 @@ function cancelEdit() { editMode.value = false; submitError.value = '' }
 
 async function handleSubmit() {
   submitError.value = ''
-  if (!form.value.project_name.trim()) { submitError.value = '请填写作品名称'; return }
-  if (!form.value.description.trim()) { submitError.value = '请填写作品介绍'; return }
+  if (!form.value.project_name.trim()) { submitError.value = '请填写队名'; return }
+  if (form.value.project_name.trim() === '待提交') { submitError.value = '队名不能使用「待提交」'; return }
+  if (!form.value.project_url.trim()) { submitError.value = '请填写项目链接'; return }
+  if (!isValidHttpUrl(form.value.project_url)) { submitError.value = '项目链接需为有效的 http(s) 地址'; return }
+  if (!form.value.team_members.trim()) { submitError.value = '请填写团队成员'; return }
   submitting.value = true
   try {
     const res = await fetchWithAuth('/api/contest/submit', {
       method: 'POST',
-      body: JSON.stringify(form.value) as any,
+      body: JSON.stringify({
+        project_name: form.value.project_name.trim(),
+        project_url: form.value.project_url.trim(),
+        team_members: form.value.team_members.trim(),
+      }) as any,
     })
     const data = await res.json()
     if (!res.ok) { submitError.value = data.error || '提交失败'; return }
     mySubmission.value = data.submission
     editMode.value = false
-    form.value = { project_name: '', description: '', project_url: '', team_members: '' }
+    form.value = { project_name: '', project_url: '', team_members: '' }
   } catch { submitError.value = '网络错误' } finally { submitting.value = false }
 }
 
@@ -199,8 +223,23 @@ onUnmounted(() => clearInterval(timer))
           <div class="kg-page-title-row">
             <span class="kg-title-icon" role="img" aria-label="奖杯">🏆</span>
             <h1 class="kg-page-title">{{ contest?.title || '「百块奖金」校园生活 Web 开发大赛' }}</h1>
-            <div class="kg-status-pill" :class="{ ended: contestEnded, on: contestStarted && !contestEnded }">
-              {{ contestEnded ? '已结束' : contestStarted ? '进行中' : '即将开始' }}
+            <div
+              class="kg-status-pill"
+              :class="{
+                ended: contestEnded,
+                on: contestStarted && !contestEnded && contestOpen,
+                paused: contestStarted && !contestEnded && !contestOpen,
+              }"
+            >
+              {{
+                contestEnded
+                  ? '已结束'
+                  : contestStarted && !contestOpen
+                    ? '暂不开放'
+                    : contestStarted
+                      ? '进行中'
+                      : '即将开始'
+              }}
             </div>
           </div>
           <nav class="kg-tabs" aria-label="比赛导航">
@@ -283,18 +322,14 @@ onUnmounted(() => clearInterval(timer))
                   <template v-if="mySubmission && mySubmission.project_name !== '待提交' && !editMode">
                     <div class="kg-submission-view">
                       <div class="kg-field">
-                        <label>作品名称</label>
+                        <label>队名</label>
                         <p>{{ mySubmission.project_name }}</p>
                       </div>
                       <div class="kg-field">
-                        <label>作品介绍</label>
-                        <p>{{ mySubmission.description }}</p>
-                      </div>
-                      <div v-if="mySubmission.project_url" class="kg-field">
                         <label>项目链接</label>
                         <a :href="mySubmission.project_url" target="_blank" class="kg-link">{{ mySubmission.project_url }}</a>
                       </div>
-                      <div v-if="mySubmission.team_members" class="kg-field">
+                      <div class="kg-field">
                         <label>团队成员</label>
                         <p>{{ mySubmission.team_members }}</p>
                       </div>
@@ -308,20 +343,16 @@ onUnmounted(() => clearInterval(timer))
                   <template v-else>
                     <form class="kg-form" @submit.prevent="handleSubmit">
                       <div class="kg-form-group">
-                        <label>作品名称 *</label>
-                        <input v-model="form.project_name" class="kg-input" type="text" placeholder="请输入作品名称" required />
+                        <label>项目链接 *</label>
+                        <input v-model="form.project_url" class="kg-input" type="url" placeholder="https://..." required />
                       </div>
                       <div class="kg-form-group">
-                        <label>作品介绍 *</label>
-                        <textarea v-model="form.description" class="kg-textarea" rows="4" placeholder="请介绍你的作品..." required></textarea>
+                        <label>队名 *</label>
+                        <input v-model="form.project_name" class="kg-input" type="text" placeholder="请输入队名" required />
                       </div>
                       <div class="kg-form-group">
-                        <label>项目链接（可选）</label>
-                        <input v-model="form.project_url" class="kg-input" type="url" placeholder="https://..." />
-                      </div>
-                      <div class="kg-form-group">
-                        <label>团队成员（可选，1-3人）</label>
-                        <input v-model="form.team_members" class="kg-input" type="text" placeholder="姓名1, 姓名2, ..." />
+                        <label>团队成员 *</label>
+                        <input v-model="form.team_members" class="kg-input" type="text" placeholder="例如：张三, 李四" required />
                       </div>
                       <div v-if="submitError" class="kg-form-error">{{ submitError }}</div>
                       <div class="kg-form-actions">
@@ -338,8 +369,16 @@ onUnmounted(() => clearInterval(timer))
                 <p>比赛已结束，感谢参与。</p>
                 <div v-if="mySubmission && mySubmission.project_name !== '待提交'" class="kg-submission-view" style="margin-top: 12px;">
                   <div class="kg-field">
-                    <label>你提交的作品</label>
+                    <label>队名</label>
                     <p>{{ mySubmission.project_name }}</p>
+                  </div>
+                  <div v-if="mySubmission.project_url" class="kg-field">
+                    <label>项目链接</label>
+                    <a :href="mySubmission.project_url" target="_blank" class="kg-link">{{ mySubmission.project_url }}</a>
+                  </div>
+                  <div v-if="mySubmission.team_members" class="kg-field">
+                    <label>团队成员</label>
+                    <p>{{ mySubmission.team_members }}</p>
                   </div>
                 </div>
               </div>
@@ -371,7 +410,10 @@ onUnmounted(() => clearInterval(timer))
               >
                 {{ registering ? '报名中...' : '报名' }}
               </button>
-              <p v-else class="kg-aside-muted">比赛已结束，无法报名。</p>
+              <p v-else-if="contestEnded" class="kg-aside-muted">比赛已结束，无法报名。</p>
+              <p v-else class="kg-aside-muted">
+                比赛暂未开放报名：管理员已在后台关闭「开放报名/提交」。开启后即可点击报名。
+              </p>
             </template>
             <template v-else>
               <p class="kg-aside-ok">您已成功报名</p>
@@ -379,6 +421,9 @@ onUnmounted(() => clearInterval(timer))
                 比赛尚未开始，题目将在开始后显示在「题目」标签页。
               </p>
               <p v-else-if="contestEnded" class="kg-aside-text">比赛已结束。</p>
+              <p v-else-if="!contestOpen" class="kg-aside-text">
+                报名与提交已由管理员暂停，请留意公告；开启「开放报名/提交」后可继续操作。
+              </p>
               <p v-else class="kg-aside-text">请前往「题目」查看赛题并提交作品。</p>
             </template>
           </div>
@@ -510,6 +555,11 @@ onUnmounted(() => clearInterval(timer))
   &.ended {
     background: var(--surface-secondary);
     color: var(--text-muted);
+  }
+
+  &.paused {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
   }
 }
 
