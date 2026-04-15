@@ -85,7 +85,7 @@
             查看和管理您已申请的身份认证状态。
           </p>
           <button 
-            @click="showRequestForm = true"
+            @click="openGeneralRequestForm"
             class="btn btn-primary"
           >
             申请新身份
@@ -296,8 +296,8 @@
     </div>
 
     <!-- Request Form Modal -->
-    <div v-if="showRequestForm" class="modal-overlay" @click="showRequestForm = false">
-      <div class="modal-content large" @click.stop>
+    <div v-if="showRequestForm" class="modal-overlay request-modal-overlay" @click="showRequestForm = false">
+      <div class="modal-content large request-modal-content" @click.stop>
         <IdentityRequestForm
           :identity-types="identityTypes"
           :existing-requests="userIdentities"
@@ -498,13 +498,18 @@ const withdrawRequest = async (identityId: number) => {
 
 const preSelectedTypeId = ref<number | null>(null)
 
+const openGeneralRequestForm = () => {
+  preSelectedTypeId.value = null
+  showRequestForm.value = true
+}
+
 const requestIdentity = (identityType: IdentityType) => {
   preSelectedTypeId.value = identityType.id
   showRequestForm.value = true
 }
 
 const reapplyIdentity = (identity: UserIdentity) => {
-  // Open request form for reapplication
+  preSelectedTypeId.value = identity.identity_type_id
   showRequestForm.value = true
 }
 
@@ -925,6 +930,12 @@ onMounted(() => {
   padding: 1rem;
 }
 
+.request-modal-overlay {
+  align-items: flex-start;
+  padding-top: clamp(6rem, 10vh, 7.5rem);
+  padding-bottom: 2rem;
+}
+
 .modal-content {
   background: var(--surface-primary);
   border-radius: 12px;
@@ -935,6 +946,40 @@ onMounted(() => {
   
   &.large {
     max-width: 800px;
+  }
+}
+
+.request-modal-content {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  max-width: min(72vw, 980px);
+  max-height: calc(100vh - 8.5rem);
+  overflow: visible;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .request-modal-overlay {
+    padding-top: 5rem;
+  }
+
+  .request-modal-content {
+    max-width: min(88vw, 920px);
+    max-height: calc(100vh - 6.5rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .request-modal-overlay {
+    padding: 1rem;
+    align-items: center;
+  }
+
+  .request-modal-content {
+    max-width: 100%;
+    max-height: 92vh;
   }
 }
 
