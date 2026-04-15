@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useAuth } from '~/composables/useAuth'
 import type { IdentityType, IdentityVerificationRequest } from '~/types/identity'
@@ -7,6 +7,7 @@ import type { IdentityType, IdentityVerificationRequest } from '~/types/identity
 interface IdentityRequestFormProps {
   identityTypes: IdentityType[]
   existingRequests?: any[]
+  preSelectedTypeId?: number | null
 }
 
 interface IdentityRequestFormEmits {
@@ -192,6 +193,13 @@ const formatFileSize = (bytes: number): string => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
+
+// Pre-select identity type if provided
+onMounted(() => {
+  if (props.preSelectedTypeId) {
+    selectedIdentityTypeId.value = props.preSelectedTypeId
+  }
+})
 </script>
 
 <template>

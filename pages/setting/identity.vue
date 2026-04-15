@@ -298,9 +298,10 @@
     <!-- Request Form Modal -->
     <div v-if="showRequestForm" class="modal-overlay" @click="showRequestForm = false">
       <div class="modal-content large" @click.stop>
-        <IdentityRequestForm 
+        <IdentityRequestForm
           :identity-types="identityTypes"
           :existing-requests="userIdentities"
+          :pre-selected-type-id="preSelectedTypeId"
           @request-submitted="handleRequestSubmitted"
           @close="showRequestForm = false"
         />
@@ -495,8 +496,10 @@ const withdrawRequest = async (identityId: number) => {
   }
 }
 
+const preSelectedTypeId = ref<number | null>(null)
+
 const requestIdentity = (identityType: IdentityType) => {
-  // Pre-select the identity type in the form
+  preSelectedTypeId.value = identityType.id
   showRequestForm.value = true
 }
 

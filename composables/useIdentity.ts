@@ -168,13 +168,13 @@ export function useIdentity() {
       loading.value = true
       error.value = null
 
-      const response = await fetchWithAuth('/api/admin/identities/pending')
+      const response = await fetchWithAuth('/api/identities/admin/pending')
       if (!response.ok) {
         throw new Error(`Failed to fetch pending requests: ${response.status}`)
       }
 
       const data = await response.json()
-      pendingRequests.value = data.requests || []
+      pendingRequests.value = data.pending_verifications || []
       return pendingRequests.value
 
     } catch (err) {
@@ -193,7 +193,7 @@ export function useIdentity() {
       loading.value = true
       error.value = null
 
-      const response = await fetchWithAuth(`/api/admin/identities/${identityId}/approve`, {
+      const response = await fetchWithAuth(`/api/identities/admin/${identityId}/approve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -229,14 +229,14 @@ export function useIdentity() {
       loading.value = true
       error.value = null
 
-      const response = await fetchWithAuth(`/api/admin/identities/${identityId}/reject`, {
+      const response = await fetchWithAuth(`/api/identities/admin/${identityId}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
-          rejection_reason: reason,
-          notes 
+        body: JSON.stringify({
+          reason: reason,
+          notes
         })
       })
 
@@ -264,7 +264,7 @@ export function useIdentity() {
       loading.value = true
       error.value = null
 
-      const response = await fetchWithAuth(`/api/admin/identities/${identityId}/revoke`, {
+      const response = await fetchWithAuth(`/api/identities/admin/${identityId}/revoke`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
