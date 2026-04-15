@@ -403,9 +403,9 @@ onMounted(async () => {
         <div class="kg-subs-header">
           <h2 class="kg-card-title">📋 参赛情况</h2>
           <div class="kg-subs-stats">
-            <span class="kg-stat-badge kg-stat-total">总报名 {{ submissions.length }}</span>
-            <span class="kg-stat-badge kg-stat-submitted">已提交 {{ realSubmissions.length }}</span>
-            <span class="kg-stat-badge kg-stat-pending">仅报名 {{ registeredOnly.length }}</span>
+            <span class="kg-stat-badge kg-stat-total">列表条数 {{ submissions.length }}</span>
+            <span class="kg-stat-badge kg-stat-submitted">已正式提交 {{ realSubmissions.length }}</span>
+            <span class="kg-stat-badge kg-stat-pending">待提交占位 {{ registeredOnly.length }}</span>
           </div>
           <div class="kg-subs-actions">
             <button class="kg-btn-ghost" @click="fetchSubmissions" :disabled="subsLoading">刷新</button>
@@ -423,6 +423,7 @@ onMounted(async () => {
                 <th>用户名</th>
                 <th>UID</th>
                 <th>状态</th>
+                <th>赛道</th>
                 <th>队名</th>
                 <th>项目链接</th>
                 <th>团队成员</th>
@@ -438,6 +439,7 @@ onMounted(async () => {
                   <span v-if="sub.project_name === '待提交'" class="kg-status-pending">仅报名</span>
                   <span v-else class="kg-status-submitted">已提交</span>
                 </td>
+                <td class="td-track">{{ sub.track_label || sub.track || '-' }}</td>
                 <td class="td-name">{{ sub.project_name === '待提交' ? '-' : sub.project_name }}</td>
                 <td class="td-url">
                   <a v-if="sub.project_url" :href="sub.project_url" target="_blank" class="kg-link">链接</a>
@@ -689,6 +691,7 @@ onMounted(async () => {
   .td-user { white-space: nowrap; font-weight: 500; }
   .td-uid  { white-space: nowrap; color: #6a85a0; font-size: 0.8rem; }
   .td-name { white-space: nowrap; }
+  .td-track { white-space: nowrap; font-size: 0.85rem; color: #4a6080; }
   .td-url, .td-team, .td-time { white-space: nowrap; }
   .td-time { color: #6a85a0; }
 }
