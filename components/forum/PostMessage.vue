@@ -61,16 +61,21 @@
           <span class="tag-hint">
             最多 {{ MAX_TAG_COUNT }} 个标签，每个不超过 {{ MAX_TAG_LENGTH }} 个字符
           </span>
+          <span v-if="hasLockedTags" class="tag-hint">
+            带锁的标签来自课程页面，不能删除
+          </span>
           <span v-if="errors.tags" class="error-text">{{ errors.tags }}</span>
 
           <div v-if="tags.length > 0" class="tags-list">
             <span
               v-for="(tag, index) in tags"
               :key="`${tag}-${index}`"
-              class="tag"
+              :class="['tag', { 'tag--locked': isLockedTag(tag) }]"
             >
               {{ tag }}
+              <span v-if="isLockedTag(tag)" class="tag-lock">锁定</span>
               <button
+                v-if="!isLockedTag(tag)"
                 type="button"
                 class="tag-remove"
                 :aria-label="`删除标签 ${tag}`"
@@ -148,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import { useCustomFileUpload } from "~/composables/useFileUpload";
@@ -163,10 +168,19 @@ const router = useRouter();
 const MAX_TAG_COUNT = 5;
 const MAX_TAG_LENGTH = 50;
 
+const props = withDefaults(defineProps<{
+  initialTags?: string[]
+  lockedTags?: string[]
+  returnTo?: string | null
+}>(), {
+  initialTags: () => [],
+  lockedTags: () => [],
+  returnTo: null,
+});
+
 // 表单数据
 const title = ref("");
 const tagInput = ref("");
-const tags = ref<string[]>([]);
 const content = ref("");
 const uploadedImages = ref<FileRecord[]>([]);
 const selectedIdentityId = ref<number | null>(null);
@@ -180,6 +194,29 @@ const errors = ref({
 const errorMessage = ref("");
 const successMessage = ref("");
 const isLoading = ref(false);
+const normalizeTag = (tag: string) => tag.trim().replace(/\s+/g, " ");
+const normalizeTagKey = (tag: string) => normalizeTag(tag).toLocaleLowerCase();
+const dedupeTags = (rawTags: string[]) => {
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rawTag of rawTags) {
+    const normalized = normalizeTag(rawTag);
+    if (!normalized) continue;
+    const key = normalizeTagKey(normalized);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+
+  return out;
+};
+const defaultTags = computed(() => dedupeTags([...(props.lockedTags || []), ...(props.initialTags || [])]));
+const tags = ref<string[]>([...defaultTags.value]);
+const normalizedLockedTags = computed(() => new Set(
+  (props.lockedTags || []).map((tag) => normalizeTagKey(tag))
+));
+const hasLockedTags = computed(() => normalizedLockedTags.value.size > 0);
 
 
 // 验证标题
@@ -213,14 +250,14 @@ const clearTagError = () => {
   }
 };
 
-const normalizeTag = (tag: string) => tag.trim().replace(/\s+/g, " ");
-
 const handleTagKeydown = (event: KeyboardEvent) => {
   if (event.key === "Enter" || event.key === ",") {
     event.preventDefault();
     addTag();
   }
 };
+
+const isLockedTag = (tag: string) => normalizedLockedTags.value.has(normalizeTagKey(tag));
 
 const addTag = () => {
   const tag = normalizeTag(tagInput.value);
@@ -257,6 +294,10 @@ const addTag = () => {
 
 // 删除标签
 const removeTag = (index: number) => {
+  if (isLockedTag(tags.value[index])) {
+    errors.value.tags = "来源标签已锁定，不能删除";
+    return;
+  }
   tags.value.splice(index, 1);
   clearTagError();
 };
@@ -319,10 +360,15 @@ const formValid = computed(() => {
 // 取消按钮处理
 const handleCancel = () => {
   // 询问用户是否确认放弃编辑
-  if (title.value || content.value || tagInput.value || tags.value.length > 0 || uploadedImages.value.length > 0) {
+  const hasUserAddedTags = tags.value.some((tag) => !isLockedTag(tag));
+  if (title.value || content.value || tagInput.value || hasUserAddedTags || uploadedImages.value.length > 0) {
     if (!confirm("确定要放弃当前编辑的内容吗？")) {
       return;
     }
+  }
+  if (props.returnTo) {
+    router.push(props.returnTo);
+    return;
   }
   router.go(-1);
 };
@@ -330,7 +376,7 @@ const handleCancel = () => {
 const resetForm = () => {
   title.value = "";
   tagInput.value = "";
-  tags.value = [];
+  tags.value = [...defaultTags.value];
   content.value = "";
   uploadedImages.value = [];
   selectedIdentityId.value = null;
@@ -434,7 +480,11 @@ const handleSubmit = async () => {
     emit("post-success", postData.id || postData.postId);
 
     setTimeout(() => {
-      router.push(`/forum/posts/${postData.id || postData.postId}`);
+      if (props.returnTo) {
+        router.push(props.returnTo);
+      } else {
+        router.push(`/forum/posts/${postData.id || postData.postId}`);
+      }
     }, 3000);
   } catch (err) {
     errorMessage.value =
@@ -653,6 +703,7 @@ const emit = defineEmits(["post-success"]);
     .tag {
       display: inline-flex;
       align-items: center;
+      gap: 0.35rem;
       background-color: var(--color-blue-7, #9fc3e7);
       color: white;
       padding: 0.35rem 0.75rem;
@@ -689,6 +740,17 @@ const emit = defineEmits(["post-success"]);
       }
     }
   }
+}
+
+.tag--locked {
+  background-color: rgba(38, 164, 255, 0.14) !important;
+  color: #1178c8 !important;
+  border: 1px solid rgba(38, 164, 255, 0.28);
+}
+
+.tag-lock {
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .error-text {

@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from "vue";
 import { formatDate } from "~/utils/dateFormat";
 import { useApi } from "~/composables/useApi";
 import UserAvatar from "~/components/user/UserAvatar.vue";
+import { getVisiblePostTags } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
 
@@ -33,6 +34,10 @@ function getTagKey(tag, index) {
     return tag.id || tag.tag_id || tag.name || tag.tag_name || index;
   }
   return tag || index;
+}
+
+function getDisplayTags(tags) {
+  return getVisiblePostTags(tags).slice(0, 3);
 }
 
 function getTagLabel(tag) {
@@ -172,8 +177,8 @@ onMounted(() => {
         <div class="kg-post-card__body">
           <h2 class="kg-post-card__title">{{ post.title }}</h2>
           <p class="kg-post-card__excerpt">{{ post.content?.slice(0, 100) }}{{ post.content?.length > 100 ? '...' : '' }}</p>
-          <div class="kg-post-card__tags" v-if="post.tags?.length">
-            <span v-for="(tag, index) in post.tags.slice(0, 3)" :key="getTagKey(tag, index)" class="kg-tag">
+          <div class="kg-post-card__tags" v-if="getDisplayTags(post.tags).length">
+            <span v-for="(tag, index) in getDisplayTags(post.tags)" :key="getTagKey(tag, index)" class="kg-tag">
               {{ getTagLabel(tag) }}
             </span>
           </div>

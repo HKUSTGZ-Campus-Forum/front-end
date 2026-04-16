@@ -9,6 +9,7 @@ import { SuccessModal, ErrorModal, ConfirmModal, ImageModal } from "~/components
 import EmojiReactions from "~/components/forum/EmojiReation.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import IdentityBadge from "~/components/identity/IdentityBadge.vue";
+import { getVisiblePostTags } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
 
@@ -32,6 +33,7 @@ const isLoading = ref(true);
 const errorMessage = ref("");
 
 const postData = computed(() => post.value);
+const visibleTags = computed(() => getVisiblePostTags(postData.value.tags || []));
 
 const getTagKey = (tag, index) => {
   if (tag && typeof tag === 'object') {
@@ -267,8 +269,8 @@ onMounted(() => { fetchPostData(); });
             </div>
           </div>
 
-          <div v-if="postData.tags?.length" class="kg-article__tags">
-            <span v-for="(tag, index) in postData.tags" :key="getTagKey(tag, index)" class="kg-tag">
+          <div v-if="visibleTags.length" class="kg-article__tags">
+            <span v-for="(tag, index) in visibleTags" :key="getTagKey(tag, index)" class="kg-tag">
               {{ getTagLabel(tag) }}
             </span>
           </div>

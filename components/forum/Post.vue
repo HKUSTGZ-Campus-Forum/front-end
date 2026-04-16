@@ -7,6 +7,7 @@ import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import IdentityBadge from "~/components/identity/IdentityBadge.vue";
 import type { UserIdentity } from "~/types/identity";
+import { getVisiblePostTags } from "~/utils/courseOffering";
 
 // 定义帖子属性接口，基于数据库结构
 interface PostProps {
@@ -88,6 +89,8 @@ const getTagKey = (tag: { id?: number; tag_id?: number; name?: string; tag_name?
 const getTagLabel = (tag: { name?: string; tag_name?: string }) => {
   return tag.name || tag.tag_name || "";
 };
+
+const visibleTags = computed(() => getVisiblePostTags(props.tags));
 </script>
 
 <template>
@@ -118,8 +121,8 @@ const getTagLabel = (tag: { name?: string; tag_name?: string }) => {
       <span class="date">{{ formatDate(publishDate) }}</span>
     </div>
 
-    <div class="post-tags" v-if="tags && tags.length > 0">
-      <span v-for="(tag, index) in tags" :key="getTagKey(tag, index)" class="tag">
+    <div class="post-tags" v-if="visibleTags.length > 0">
+      <span v-for="(tag, index) in visibleTags" :key="getTagKey(tag, index)" class="tag">
         {{ getTagLabel(tag) }}
       </span>
     </div>

@@ -3,6 +3,8 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
+import type { CourseOffering } from "~/utils/courseOffering";
+import { getSingleQueryValue } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
 
@@ -35,7 +37,7 @@ const sortOrder = ref("asc");
 const selectedSemester = ref("");
 const selectedCourseType = ref("AIAA");
 const selectedStage = ref("UG");
-const availableSemesters = ref<any[]>([]);
+const availableSemesters = ref<CourseOffering[]>([]);
 const availableCourseTypes = ref<any[]>([]);
 
 // Extract course number from code like "AIAA 1010" -> 1010
@@ -72,7 +74,6 @@ const buildListQuery = (): Record<string, string> => {
   const q: Record<string, string> = {};
   if (selectedCourseType.value) q.course_type = selectedCourseType.value;
   if (selectedSemester.value) q.semester = selectedSemester.value;
-  else q.semester = "all";
   if (selectedStage.value) q.stage = selectedStage.value;
   else q.stage = "all";
   const sq = searchQuery.value.trim();
@@ -81,6 +82,9 @@ const buildListQuery = (): Record<string, string> => {
 };
 
 const courseListReturnQuery = computed(() => buildListQuery());
+const selectedOfferingTag = computed(() => (
+  availableSemesters.value.find((semester) => semester.code === selectedSemester.value)?.offering_tag || ""
+));
 
 const syncRouteQuery = () => {
   router.replace({ path: route.path, query: buildListQuery() });
@@ -132,34 +136,13 @@ const fetchFiltersData = async () => {
       availableCourseTypes.value = data.course_types || [];
 
       const rq = route.query;
-      const courseTypeFromRoute =
-        typeof rq.course_type === "string"
-          ? rq.course_type
-          : Array.isArray(rq.course_type) && typeof rq.course_type[0] === "string"
-            ? rq.course_type[0]
-            : undefined;
-      const semesterFromRoute =
-        typeof rq.semester === "string"
-          ? rq.semester
-          : Array.isArray(rq.semester) && typeof rq.semester[0] === "string"
-            ? rq.semester[0]
-            : undefined;
-      const stageFromRoute =
-        typeof rq.stage === "string"
-          ? rq.stage
-          : Array.isArray(rq.stage) && typeof rq.stage[0] === "string"
-            ? rq.stage[0]
-            : undefined;
-      const qFromRoute =
-        typeof rq.q === "string"
-          ? rq.q
-          : Array.isArray(rq.q) && typeof rq.q[0] === "string"
-            ? rq.q[0]
-            : undefined;
+      const courseTypeFromRoute = getSingleQueryValue(rq.course_type);
+      const semesterFromRoute = getSingleQueryValue(rq.semester);
+      const stageFromRoute = getSingleQueryValue(rq.stage);
+      const qFromRoute = getSingleQueryValue(rq.q);
 
       if (availableSemesters.value.length > 0) {
-        if (semesterFromRoute === "all") selectedSemester.value = "";
-        else if (
+        if (
           semesterFromRoute &&
           availableSemesters.value.some((s: any) => s.code === semesterFromRoute)
         ) {
@@ -233,12 +216,6 @@ onMounted(() => { fetchFiltersData(); });
           <label class="kg-filter-label">学期</label>
           <div class="kg-filter-options">
             <button
-              :class="['kg-filter-btn', { active: selectedSemester === '' }]"
-              @click="selectedSemester = ''; handleFilterChange()"
-            >
-              全部
-            </button>
-            <button
               v-for="sem in availableSemesters"
               :key="sem.code"
               :class="['kg-filter-btn', { active: selectedSemester === sem.code }]"
@@ -303,7 +280,10 @@ onMounted(() => { fetchFiltersData(); });
       <NuxtLink
         v-for="course in filteredCourses"
         :key="course.id"
-        :to="{ path: `/courses/${course.id}`, query: courseListReturnQuery }"
+        :to="{
+          path: selectedOfferingTag ? `/courses/${course.id}/offerings/${selectedOfferingTag}` : `/courses/${course.id}`,
+          query: courseListReturnQuery,
+        }"
         class="kg-course-card"
       >
         <div class="kg-course-card__top">
