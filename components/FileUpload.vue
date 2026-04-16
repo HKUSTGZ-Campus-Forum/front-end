@@ -110,7 +110,10 @@ const { uploadFile, deleteFile, isUploading, uploadProgress, error, compressionI
 
 const isImage = computed(() => {
   if (!uploadedFile.value?.url) return false
-  return /\.(jpg|jpeg|png|gif|webp)$/i.test(uploadedFile.value.original_filename)
+  if (uploadedFile.value.mime_type?.startsWith('image/')) return true
+  return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif|heic)$/i.test(
+    uploadedFile.value.original_filename || ''
+  )
 })
 
 const triggerFileInput = () => {
@@ -156,6 +159,7 @@ const processFile = async (file: File) => {
       fileType: props.fileType,
       entityType: props.entityType,
       entityId: props.entityId,
+      maxUploadBytes: props.maxSize,
       enableCompression: props.enableCompression,
       compressionOptions: props.compressionOptions,
       onSuccess: (record) => {

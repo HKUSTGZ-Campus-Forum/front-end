@@ -11,7 +11,7 @@ export const useCustomFileUpload = () => {
   const { fetchWithAuth } = useApi()
 
   const uploadFile = async (options: UploadOptions) => {
-    const { file, fileType, entityType, entityId, onProgress, onSuccess, onError, enableCompression, compressionOptions } = options
+    const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onSuccess, onError, enableCompression, compressionOptions } = options
     
     try {
       isUploading.value = true
@@ -55,6 +55,18 @@ export const useCustomFileUpload = () => {
         }
       }
 
+      if (maxUploadBytes != null && fileToUpload.size > maxUploadBytes) {
+        const err = new Error(`文件超过大小限制（最大 ${Math.round(maxUploadBytes / (1024 * 1024))}MB）`)
+        error.value = err
+        onError?.(err)
+        throw err
+      }
+
+      const effectiveContentType =
+        fileToUpload.type && fileToUpload.type.trim().length > 0
+          ? fileToUpload.type
+          : 'application/octet-stream'
+
       // Step 2: Get signed URL from backend
       const response = await fetchWithAuth('/api/files/upload', {
         method: 'POST',
@@ -66,7 +78,8 @@ export const useCustomFileUpload = () => {
           file_type: fileType,
           entity_type: entityType,
           entity_id: entityId,
-          content_type: fileToUpload.type
+          content_type: effectiveContentType,
+          file_size: fileToUpload.size
         })
       })
 
@@ -106,7 +119,7 @@ export const useCustomFileUpload = () => {
 
       // Start the upload
       xhr.open('PUT', httpsSignedUrl)
-      xhr.setRequestHeader('Content-Type', fileToUpload.type)
+      xhr.setRequestHeader('Content-Type', effectiveContentType)
       xhr.send(fileToUpload)
 
       // Wait for upload to complete

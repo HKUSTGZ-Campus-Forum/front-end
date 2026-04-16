@@ -104,7 +104,7 @@
         <FileUpload
           file-type="post_image"
           accept="image/*"
-          :max-size="5 * 1024 * 1024"
+          :max-size="MAX_POST_FILE_BYTES"
           show-preview
           allow-delete
           drag-text="点击或拖拽图片到此处上传"
@@ -113,11 +113,11 @@
           @delete-success="handleImageDeleteSuccess"
           @delete-error="handleImageDeleteError"
         />
-        <span class="upload-hint">最多可上传5张图片，每张不超过5MB</span>
+        <span class="upload-hint">最多 5 张图片，每张不超过 10MB</span>
         
         <!-- 已上传图片预览 -->
         <div v-if="uploadedImages.length > 0" class="uploaded-images">
-          <h4>已上传图片 ({{ uploadedImages.length }}/5):</h4>
+          <h4>已上传图片 ({{ uploadedImages.length }}/{{ MAX_POST_IMAGES }}):</h4>
           <div class="image-grid">
             <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
               <img :src="image.url" :alt="getGenericImageName(image, index)" class="preview-img">
@@ -127,6 +127,34 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 其他附件（非图片：PDF/Office/压缩包等） -->
+      <div class="form-group">
+        <label>其他附件</label>
+        <FileUpload
+          :key="otherUploadKey"
+          file-type="post_attachment"
+          :max-size="MAX_POST_FILE_BYTES"
+          :enable-compression="false"
+          allow-delete
+          drag-text="点击或拖拽文件到此处上传（图片请用上方区域）"
+          @upload-success="handleOtherUploadSuccess"
+          @upload-error="handleOtherUploadError"
+          @delete-success="handleOtherDeleteSuccess"
+          @delete-error="handleOtherDeleteError"
+        />
+        <span class="upload-hint">任意类型文件（单文件不超过 10MB），最多 {{ MAX_OTHER_ATTACHMENTS }} 个；图片请仅用上方「图片附件」上传。</span>
+
+        <div v-if="otherAttachments.length > 0" class="uploaded-files-list">
+          <h4>已选附件 ({{ otherAttachments.length }}/{{ MAX_OTHER_ATTACHMENTS }})</h4>
+          <ul class="other-files-ul">
+            <li v-for="(f, index) in otherAttachments" :key="f.id" class="other-file-row">
+              <span class="other-file-name">{{ f.original_filename || `附件 ${index + 1}` }}</span>
+              <button type="button" class="remove-btn" @click="removeOtherAttachment(index)">×</button>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -161,12 +189,15 @@ import FileUpload from "~/components/FileUpload.vue";
 import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { FileRecord } from "~/types/file";
 import type { UserIdentity } from "~/types/identity";
+import { MAX_POST_FILE_BYTES, isPostImageFile } from "~/utils/postFileKinds";
 
 const { deleteFile } = useCustomFileUpload();
 const { fetchWithAuth, getApiUrl } = useApi();
 const router = useRouter();
 const MAX_TAG_COUNT = 5;
 const MAX_TAG_LENGTH = 50;
+const MAX_POST_IMAGES = 5;
+const MAX_OTHER_ATTACHMENTS = 30;
 
 const props = withDefaults(defineProps<{
   initialTags?: string[]
@@ -183,6 +214,9 @@ const title = ref("");
 const tagInput = ref("");
 const content = ref("");
 const uploadedImages = ref<FileRecord[]>([]);
+const otherAttachments = ref<FileRecord[]>([]);
+/** Remount FileUpload after rejecting an upload so its internal state resets. */
+const otherUploadKey = ref(0);
 const selectedIdentityId = ref<number | null>(null);
 
 // 错误和状态
@@ -304,8 +338,8 @@ const removeTag = (index: number) => {
 
 // 图片上传相关
 const handleImageUploadSuccess = (file: FileRecord) => {
-  if (uploadedImages.value.length >= 5) {
-    errorMessage.value = "最多只能上传5张图片";
+  if (uploadedImages.value.length >= MAX_POST_IMAGES) {
+    errorMessage.value = `最多只能上传 ${MAX_POST_IMAGES} 张图片`;
     return;
   }
   uploadedImages.value.push(file);
@@ -321,6 +355,45 @@ const handleImageDeleteSuccess = () => {
 
 const handleImageDeleteError = (error: Error) => {
   errorMessage.value = `图片删除失败: ${error.message}`;
+};
+
+const handleOtherUploadSuccess = (file: FileRecord) => {
+  if (isPostImageFile(file)) {
+    errorMessage.value = "图片请使用上方「图片附件」区域上传。";
+    void deleteFile(file.id).catch(() => {});
+    otherUploadKey.value += 1;
+    return;
+  }
+  if (otherAttachments.value.length >= MAX_OTHER_ATTACHMENTS) {
+    errorMessage.value = `其他附件最多 ${MAX_OTHER_ATTACHMENTS} 个`;
+    void deleteFile(file.id).catch(() => {});
+    otherUploadKey.value += 1;
+    return;
+  }
+  otherAttachments.value.push(file);
+  otherUploadKey.value += 1;
+};
+
+const handleOtherUploadError = (err: Error) => {
+  errorMessage.value = `附件上传失败: ${err.message}`;
+};
+
+const handleOtherDeleteSuccess = () => {};
+
+const handleOtherDeleteError = (err: Error) => {
+  errorMessage.value = `附件删除失败: ${err.message}`;
+};
+
+const removeOtherAttachment = async (index: number) => {
+  const f = otherAttachments.value[index];
+  try {
+    await deleteFile(f.id);
+    otherAttachments.value.splice(index, 1);
+  } catch (error) {
+    console.error("Delete attachment error:", error);
+    errorMessage.value =
+      error instanceof Error ? `删除附件失败: ${error.message}` : "删除附件失败";
+  }
 };
 
 // 删除已上传的图片
@@ -361,7 +434,14 @@ const formValid = computed(() => {
 const handleCancel = () => {
   // 询问用户是否确认放弃编辑
   const hasUserAddedTags = tags.value.some((tag) => !isLockedTag(tag));
-  if (title.value || content.value || tagInput.value || hasUserAddedTags || uploadedImages.value.length > 0) {
+  if (
+    title.value ||
+    content.value ||
+    tagInput.value ||
+    hasUserAddedTags ||
+    uploadedImages.value.length > 0 ||
+    otherAttachments.value.length > 0
+  ) {
     if (!confirm("确定要放弃当前编辑的内容吗？")) {
       return;
     }
@@ -379,6 +459,7 @@ const resetForm = () => {
   tags.value = [...defaultTags.value];
   content.value = "";
   uploadedImages.value = [];
+  otherAttachments.value = [];
   selectedIdentityId.value = null;
   errors.value = {
     title: "",
@@ -413,7 +494,10 @@ const handleSubmit = async () => {
       title: title.value,
       content: content.value,
       tags: tags.value,
-      file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
+      file_ids: [
+        ...uploadedImages.value.map((img: FileRecord) => img.id),
+        ...otherAttachments.value.map((f: FileRecord) => f.id),
+      ],
       display_identity_id: selectedIdentityId.value,
     };
 
@@ -448,7 +532,7 @@ const handleSubmit = async () => {
         errorMessage = "请求参数错误，请检查输入内容";
       }
       } else if (response.status === 413) {
-      errorMessage = "上传内容过大，请减少图片数量或压缩图片";
+      errorMessage = "上传内容过大，请减少附件数量或压缩文件（单文件不超过 10MB）";
       } else if (response.status === 429) {
       errorMessage = "发布过于频繁，请稍后再试";
       } else if (response.status >= 500) {
@@ -1129,6 +1213,43 @@ const emit = defineEmits(["post-success"]);
         }
       }
     }
+  }
+}
+
+.uploaded-files-list {
+  margin-top: 1rem;
+
+  h4 {
+    margin: 0 0 0.75rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+  }
+
+  .other-files-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .other-file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    background: var(--surface-secondary);
+  }
+
+  .other-file-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
   }
 }
 </style>

@@ -1,4 +1,4 @@
-export type FileType = 'avatar' | 'post_image' | 'comment_attachment' | 'general';
+export type FileType = 'avatar' | 'post_image' | 'post_attachment' | 'comment_attachment' | 'general';
 
 export interface UploadUrlResponse {
   signed_url: string;
@@ -28,6 +28,8 @@ export interface UploadOptions {
   fileType: FileType;
   entityType?: string;
   entityId?: number;
+  /** Reject upload if file exceeds this size (bytes), checked after optional image compression. */
+  maxUploadBytes?: number;
   onProgress?: (progress: number) => void;
   onSuccess?: (file: FileRecord) => void;
   onError?: (error: Error) => void;
