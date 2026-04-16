@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 导入类型和工具
-import { defineProps, withDefaults, computed } from "vue";
+import { computed } from "vue";
 // 从正确的地方导入 useRouter
 import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
 import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
@@ -21,7 +21,7 @@ interface PostProps {
   comment_count?: number;
   reaction_count?: number;
   view_count?: number;
-  tags?: Array<{ tag_id: number; name: string }>;
+  tags?: Array<{ id?: number; tag_id?: number; name?: string; tag_name?: string }>;
   display_identity?: UserIdentity | null; // Identity verification badge
   // 其他可能的属性
 }
@@ -75,10 +75,18 @@ const goToPostDetail = () => {
   router.push(`/forum/posts/${props.id}`);
 };
 
-const goToUserProfile = (userId?: number) => {
-  if (userId) {
+const goToUserProfile = (userId?: string | number) => {
+  if (userId !== undefined && userId !== null && userId !== "") {
     router.push(`/users/${userId}`);
   }
+};
+
+const getTagKey = (tag: { id?: number; tag_id?: number; name?: string; tag_name?: string }, index: number) => {
+  return tag.id || tag.tag_id || tag.name || tag.tag_name || index;
+};
+
+const getTagLabel = (tag: { name?: string; tag_name?: string }) => {
+  return tag.name || tag.tag_name || "";
 };
 </script>
 
@@ -111,8 +119,8 @@ const goToUserProfile = (userId?: number) => {
     </div>
 
     <div class="post-tags" v-if="tags && tags.length > 0">
-      <span v-for="tag in tags" :key="tag.tag_id" class="tag">
-        {{ tag.name }}
+      <span v-for="(tag, index) in tags" :key="getTagKey(tag, index)" class="tag">
+        {{ getTagLabel(tag) }}
       </span>
     </div>
 

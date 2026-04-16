@@ -1,6 +1,9 @@
 export interface Tag {
-    // TagID: number;
-    TagName: string;
-    TagImportance: boolean;
-    TagColor: string; // 16进制颜色
+    id?: number;
+    tag_id?: number;
+    name?: string;
+    tag_name?: string;
+    tag_type?: string | null;
+    isImportant?: boolean;
+    tagcolor?: string;
 }

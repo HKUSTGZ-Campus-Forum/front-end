@@ -157,12 +157,13 @@ const extractRating = (content: string) => { const m = content.match(/⭐ 评分
 const extractSemester = (tags: any[]) => {
   if (!tags || !Array.isArray(tags)) return null;
   const semesterTag = tags.find((tag) => {
-    if (!tag.name || !tag.name.includes("-")) return false;
-    const semesterPart = tag.name.split("-")[1];
+    const tagName = tag?.name || tag?.tag_name;
+    if (!tagName || !tagName.includes("-")) return false;
+    const semesterPart = tagName.split("-")[1];
     return /^\d{4}(spring|summer|fall|winter|春|夏|秋|冬)$/i.test(semesterPart);
   });
   if (semesterTag) {
-    const semesterCode = semesterTag.name.split("-")[1];
+    const semesterCode = (semesterTag.name || semesterTag.tag_name).split("-")[1];
     const year = semesterCode.match(/\d{4}/)?.[0] || "";
     const seasonMatch = semesterCode.match(/(spring|summer|fall|winter|春|夏|秋|冬)$/i);
     if (seasonMatch) {

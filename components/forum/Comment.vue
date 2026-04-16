@@ -258,8 +258,8 @@ const canDelete = computed(() => {
 });
 
 // 导航到用户资料页
-const goToUserProfile = (userId?: number) => {
-  if (userId) {
+const goToUserProfile = (userId?: string | number) => {
+  if (userId !== undefined && userId !== null && userId !== "") {
     navigateTo(`/users/${userId}`);
   }
 };

@@ -88,8 +88,8 @@
           </div>
 
           <div class="post-tags" v-if="post.tags?.length">
-            <span v-for="tag in post.tags" :key="tag.id" class="post-tag">
-              {{ tag.name }}
+            <span v-for="(tag, index) in post.tags" :key="tag.id || tag.tag_id || tag.name || tag.tag_name || index" class="post-tag">
+              {{ tag.name || tag.tag_name }}
             </span>
           </div>
 
@@ -160,8 +160,10 @@ interface Post {
   like_count?: number;
   comment_count?: number;
   tags?: Array<{
-    id: number;
-    name: string;
+    id?: number;
+    tag_id?: number;
+    name?: string;
+    tag_name?: string;
   }>;
 }
 

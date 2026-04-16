@@ -35,6 +35,54 @@
         }}</span>
       </div>
 
+      <!-- 帖子标签 -->
+      <div class="form-group">
+        <label for="postTagInput">标签</label>
+        <div class="tags-container">
+          <div class="tag-input-row">
+            <input
+              id="postTagInput"
+              v-model="tagInput"
+              type="text"
+              placeholder="输入标签后按回车或点击添加"
+              maxlength="50"
+              @keydown="handleTagKeydown"
+              @blur="clearTagError"
+            />
+            <button
+              type="button"
+              class="tag-add-btn"
+              :disabled="tags.length >= MAX_TAG_COUNT"
+              @click="addTag"
+            >
+              添加
+            </button>
+          </div>
+          <span class="tag-hint">
+            最多 {{ MAX_TAG_COUNT }} 个标签，每个不超过 {{ MAX_TAG_LENGTH }} 个字符
+          </span>
+          <span v-if="errors.tags" class="error-text">{{ errors.tags }}</span>
+
+          <div v-if="tags.length > 0" class="tags-list">
+            <span
+              v-for="(tag, index) in tags"
+              :key="`${tag}-${index}`"
+              class="tag"
+            >
+              {{ tag }}
+              <button
+                type="button"
+                class="tag-remove"
+                :aria-label="`删除标签 ${tag}`"
+                @click="removeTag(index)"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- 身份选择 -->
       <div class="form-group">
         <IdentitySelector 
@@ -102,7 +150,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import { useCustomFileUpload } from "~/composables/useFileUpload";
 import FileUpload from "~/components/FileUpload.vue";
@@ -110,27 +157,25 @@ import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { FileRecord } from "~/types/file";
 import type { UserIdentity } from "~/types/identity";
 
-const isUploading = ref(false);
 const { deleteFile } = useCustomFileUpload();
-const uploadProgress = ref(0);
-
-const { token } = useAuth();
 const { fetchWithAuth, getApiUrl } = useApi();
 const router = useRouter();
+const MAX_TAG_COUNT = 5;
+const MAX_TAG_LENGTH = 50;
 
 // 表单数据
 const title = ref("");
 const tagInput = ref("");
-const tags = ref([]);
+const tags = ref<string[]>([]);
 const content = ref("");
 const uploadedImages = ref<FileRecord[]>([]);
-const uploadMsg = ref("最多可上传5张图片");
 const selectedIdentityId = ref<number | null>(null);
 
 // 错误和状态
 const errors = ref({
   title: "",
   content: "",
+  tags: "",
 });
 const errorMessage = ref("");
 const successMessage = ref("");
@@ -162,17 +207,58 @@ const validateContent = () => {
 };
 
 // 添加标签
-const addTag = () => {
-  const tag = tagInput.value.trim();
-  if (tag && !tags.value.includes(tag) && tags.value.length < 5) {
-    tags.value.push(tag);
-    tagInput.value = "";
+const clearTagError = () => {
+  if (errors.value.tags) {
+    errors.value.tags = "";
   }
+};
+
+const normalizeTag = (tag: string) => tag.trim().replace(/\s+/g, " ");
+
+const handleTagKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Enter" || event.key === ",") {
+    event.preventDefault();
+    addTag();
+  }
+};
+
+const addTag = () => {
+  const tag = normalizeTag(tagInput.value);
+
+  if (!tag) {
+    tagInput.value = "";
+    clearTagError();
+    return false;
+  }
+
+  if (tag.length > MAX_TAG_LENGTH) {
+    errors.value.tags = `标签长度不能超过 ${MAX_TAG_LENGTH} 个字符`;
+    return false;
+  }
+
+  if (tags.value.length >= MAX_TAG_COUNT) {
+    errors.value.tags = `最多只能添加 ${MAX_TAG_COUNT} 个标签`;
+    return false;
+  }
+
+  const duplicate = tags.value.some(
+    (existingTag) => existingTag.toLocaleLowerCase() === tag.toLocaleLowerCase()
+  );
+  if (duplicate) {
+    errors.value.tags = "该标签已添加";
+    return false;
+  }
+
+  tags.value.push(tag);
+  tagInput.value = "";
+  clearTagError();
+  return true;
 };
 
 // 删除标签
 const removeTag = (index: number) => {
   tags.value.splice(index, 1);
+  clearTagError();
 };
 
 // 图片上传相关
@@ -208,7 +294,9 @@ const removeUploadedImage = async (index: number) => {
     uploadedImages.value.splice(index, 1);
   } catch (error) {
     console.error('Delete error:', error);
-    errorMessage.value = `删除图片失败: ${error.message}`;
+    errorMessage.value = error instanceof Error
+      ? `删除图片失败: ${error.message}`
+      : "删除图片失败";
   }
 };
 
@@ -223,14 +311,15 @@ const formValid = computed(() => {
     title.value &&
     content.value &&
     !errors.value.title &&
-    !errors.value.content
+    !errors.value.content &&
+    !errors.value.tags
   );
 });
 
 // 取消按钮处理
 const handleCancel = () => {
   // 询问用户是否确认放弃编辑
-  if (title.value || content.value || uploadedImages.value.length > 0) {
+  if (title.value || content.value || tagInput.value || tags.value.length > 0 || uploadedImages.value.length > 0) {
     if (!confirm("确定要放弃当前编辑的内容吗？")) {
       return;
     }
@@ -244,11 +333,11 @@ const resetForm = () => {
   tags.value = [];
   content.value = "";
   uploadedImages.value = [];
-  uploadMsg.value = "最多可上传5张图片";
   selectedIdentityId.value = null;
   errors.value = {
     title: "",
     content: "",
+    tags: "",
   };
   errorMessage.value = "";
 };
@@ -257,8 +346,16 @@ const resetForm = () => {
 const handleSubmit = async () => {
   validateTitle();
   validateContent();
+  clearTagError();
 
-  if (errors.value.title || errors.value.content) {
+  if (tagInput.value.trim()) {
+    const added = addTag();
+    if (!added) {
+      return;
+    }
+  }
+
+  if (errors.value.title || errors.value.content || errors.value.tags) {
     return;
   }
 
@@ -298,6 +395,9 @@ const handleSubmit = async () => {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || "请求参数错误，请检查输入内容";
+        if (Array.isArray(errorData.tag_errors) && errorData.tag_errors.length > 0) {
+          errorMessage = errorData.tag_errors.join("；");
+        }
       } catch {
         errorMessage = "请求参数错误，请检查输入内容";
       }
@@ -494,6 +594,50 @@ const emit = defineEmits(["post-success"]);
 }
 
 .tags-container {
+  .tag-input-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+  }
+
+  .tag-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .tag-add-btn {
+    flex-shrink: 0;
+    min-width: 88px;
+    padding: 0.75rem 1rem;
+    background: var(--color-blue-7, #9fc3e7);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: #7ba8d6;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 480px) {
+      width: 100%;
+      min-height: 44px;
+    }
+  }
+
   .tags-list {
     display: flex;
     flex-wrap: wrap;
@@ -545,6 +689,13 @@ const emit = defineEmits(["post-success"]);
       }
     }
   }
+}
+
+.error-text {
+  display: block;
+  margin-top: 0.5rem;
+  color: #dc2626;
+  font-size: 0.875rem;
 }
 
 .upload-container {

@@ -33,6 +33,20 @@ const errorMessage = ref("");
 
 const postData = computed(() => post.value);
 
+const getTagKey = (tag, index) => {
+  if (tag && typeof tag === 'object') {
+    return tag.id || tag.tag_id || tag.name || tag.tag_name || index;
+  }
+  return tag || index;
+};
+
+const getTagLabel = (tag) => {
+  if (tag && typeof tag === 'object') {
+    return tag.name || tag.tag_name || '';
+  }
+  return String(tag || '');
+};
+
 const canDeletePost = computed(() => {
   if (!isLoggedIn.value || !user.value || !postData.value.user_id) return false;
   return Number(user.value.id) === Number(postData.value.user_id);
@@ -254,8 +268,8 @@ onMounted(() => { fetchPostData(); });
           </div>
 
           <div v-if="postData.tags?.length" class="kg-article__tags">
-            <span v-for="tag in postData.tags" :key="tag.id || tag.name" class="kg-tag">
-              {{ tag.name || tag }}
+            <span v-for="(tag, index) in postData.tags" :key="getTagKey(tag, index)" class="kg-tag">
+              {{ getTagLabel(tag) }}
             </span>
           </div>
         </header>
