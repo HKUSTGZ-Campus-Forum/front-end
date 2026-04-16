@@ -249,20 +249,19 @@ onMounted(() => { fetchFiltersData(); });
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Course Type Letter Navigation -->
-    <div class="kg-card kg-course-types">
-      <div class="kg-course-types-label">课程类型:</div>
-      <div class="kg-course-types-list">
-        <button
-          v-for="type in availableCourseTypes"
-          :key="type.code"
-          :class="['kg-type-chip', { active: selectedCourseType === type.code }]"
-          @click="selectCourseType(type.code)"
-        >
-          {{ type.code }}
-        </button>
+      <div class="kg-course-types">
+        <div class="kg-course-types-label">课程类型:</div>
+        <div class="kg-course-types-list">
+          <button
+            v-for="type in availableCourseTypes"
+            :key="type.code"
+            :class="['kg-type-chip', { active: selectedCourseType === type.code }]"
+            @click="selectCourseType(type.code)"
+          >
+            {{ type.code }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -338,8 +337,8 @@ onMounted(() => { fetchFiltersData(); });
 }
 
 .kg-filters {
-  padding: 16px 20px;
-  margin-bottom: 12px;
+  padding: 16px 20px 18px;
+  margin-bottom: 20px;
 }
 
 .kg-search-input {
@@ -408,10 +407,11 @@ onMounted(() => { fetchFiltersData(); });
   }
 }
 
-// Course type letter navigation
+// Course type chips (same card as search / semester / stage)
 .kg-course-types {
-  padding: 14px 20px;
-  margin-bottom: 20px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8f4fd;
   display: flex;
   align-items: flex-start;
   gap: 12px;
