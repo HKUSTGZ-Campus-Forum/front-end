@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 
 definePageMeta({ layout: 'keguang' });
+
+const route = useRoute();
+const router = useRouter();
 
 interface Course {
   id: number;
@@ -63,6 +67,25 @@ const debounce = (fn: Function, delay: number) => {
   };
 };
 
+/** 供列表页与进入详情页链接使用，返回后恢复筛选 */
+const buildListQuery = (): Record<string, string> => {
+  const q: Record<string, string> = {};
+  if (selectedCourseType.value) q.course_type = selectedCourseType.value;
+  if (selectedSemester.value) q.semester = selectedSemester.value;
+  else q.semester = "all";
+  if (selectedStage.value) q.stage = selectedStage.value;
+  else q.stage = "all";
+  const sq = searchQuery.value.trim();
+  if (sq) q.q = sq;
+  return q;
+};
+
+const courseListReturnQuery = computed(() => buildListQuery());
+
+const syncRouteQuery = () => {
+  router.replace({ path: route.path, query: buildListQuery() });
+};
+
 const fetchInstructorInfo = async (instructorId: number) => {
   try {
     const response = await fetchPublic(getApiUrl(`/api/users/public/${instructorId}`));
@@ -107,14 +130,62 @@ const fetchFiltersData = async () => {
       const data = await response.json();
       availableSemesters.value = data.semesters || [];
       availableCourseTypes.value = data.course_types || [];
+
+      const rq = route.query;
+      const courseTypeFromRoute =
+        typeof rq.course_type === "string"
+          ? rq.course_type
+          : Array.isArray(rq.course_type) && typeof rq.course_type[0] === "string"
+            ? rq.course_type[0]
+            : undefined;
+      const semesterFromRoute =
+        typeof rq.semester === "string"
+          ? rq.semester
+          : Array.isArray(rq.semester) && typeof rq.semester[0] === "string"
+            ? rq.semester[0]
+            : undefined;
+      const stageFromRoute =
+        typeof rq.stage === "string"
+          ? rq.stage
+          : Array.isArray(rq.stage) && typeof rq.stage[0] === "string"
+            ? rq.stage[0]
+            : undefined;
+      const qFromRoute =
+        typeof rq.q === "string"
+          ? rq.q
+          : Array.isArray(rq.q) && typeof rq.q[0] === "string"
+            ? rq.q[0]
+            : undefined;
+
       if (availableSemesters.value.length > 0) {
-        selectedSemester.value = availableSemesters.value[0].code;
+        if (semesterFromRoute === "all") selectedSemester.value = "";
+        else if (
+          semesterFromRoute &&
+          availableSemesters.value.some((s: any) => s.code === semesterFromRoute)
+        ) {
+          selectedSemester.value = semesterFromRoute;
+        } else {
+          selectedSemester.value = availableSemesters.value[0].code;
+        }
       }
-      // Default to AIAA if available, otherwise first type
+
       if (availableCourseTypes.value.length > 0) {
-        const hasAIAA = availableCourseTypes.value.some((t: any) => t.code === 'AIAA');
-        selectedCourseType.value = hasAIAA ? 'AIAA' : availableCourseTypes.value[0].code;
+        if (
+          courseTypeFromRoute &&
+          availableCourseTypes.value.some((t: any) => t.code === courseTypeFromRoute)
+        ) {
+          selectedCourseType.value = courseTypeFromRoute;
+        } else {
+          const hasAIAA = availableCourseTypes.value.some((t: any) => t.code === "AIAA");
+          selectedCourseType.value = hasAIAA ? "AIAA" : availableCourseTypes.value[0].code;
+        }
       }
+
+      if (typeof qFromRoute === "string") searchQuery.value = qFromRoute;
+
+      if (stageFromRoute === "all" || stageFromRoute === "") selectedStage.value = "";
+      else if (stageFromRoute === "UG" || stageFromRoute === "PG") selectedStage.value = stageFromRoute;
+
       fetchCourses();
       return;
     }
@@ -126,11 +197,18 @@ const fetchFiltersData = async () => {
 
 const selectCourseType = (code: string) => {
   selectedCourseType.value = code;
+  syncRouteQuery();
   fetchCourses();
 };
 
-const handleFilterChange = () => { fetchCourses(); };
-const handleSearch = debounce(() => { fetchCourses(); }, 300);
+const handleFilterChange = () => {
+  syncRouteQuery();
+  fetchCourses();
+};
+const handleSearch = debounce(() => {
+  syncRouteQuery();
+  fetchCourses();
+}, 300);
 
 onMounted(() => { fetchFiltersData(); });
 </script>
@@ -225,7 +303,7 @@ onMounted(() => { fetchFiltersData(); });
       <NuxtLink
         v-for="course in filteredCourses"
         :key="course.id"
-        :to="`/courses/${course.id}`"
+        :to="{ path: `/courses/${course.id}`, query: courseListReturnQuery }"
         class="kg-course-card"
       >
         <div class="kg-course-card__top">

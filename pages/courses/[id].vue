@@ -51,6 +51,28 @@ const showConfirmModal = ref(false);
 const errorMsg = ref("");
 
 const courseId = computed(() => route.params.id as string);
+
+/** 从列表带进详情的 query，用于返回时恢复课程类型 / 学期等筛选 */
+const listBackQuery = computed((): Record<string, string> => {
+  const q = route.query;
+  const out: Record<string, string> = {};
+  const pick = (key: string) => {
+    const v = q[key];
+    if (typeof v === "string" && v !== "") out[key] = v;
+    else if (Array.isArray(v) && typeof v[0] === "string" && v[0] !== "") out[key] = v[0];
+  };
+  pick("course_type");
+  pick("semester");
+  pick("stage");
+  pick("q");
+  return out;
+});
+
+const listBackTo = computed(() => ({
+  path: "/courses",
+  query: listBackQuery.value,
+}));
+
 const averageRating = computed(() => {
   const ratedReviews = reviews.value.filter((r) => r.rating);
   if (ratedReviews.length === 0) return 0;
@@ -197,7 +219,7 @@ useHead({
 <template>
   <div class="kg-course-detail">
     <div class="kg-back-bar">
-      <NuxtLink to="/courses" class="kg-back-link">← 返回课程列表</NuxtLink>
+      <NuxtLink :to="listBackTo" class="kg-back-link">← 返回课程列表</NuxtLink>
     </div>
 
     <div v-if="isLoading" class="kg-loading">
@@ -208,7 +230,7 @@ useHead({
       <p>{{ error }}</p>
       <div class="kg-error-actions">
         <button class="kg-btn-ghost" @click="fetchCourseDetail">重试</button>
-        <NuxtLink to="/courses" class="kg-btn-primary-outline">返回列表</NuxtLink>
+        <NuxtLink :to="listBackTo" class="kg-btn-primary-outline">返回列表</NuxtLink>
       </div>
     </div>
 
