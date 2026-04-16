@@ -3,29 +3,28 @@
     <p v-if="errorMsg" class="post-docx-viewer__error">{{ errorMsg }}</p>
     <template v-else>
       <div v-if="loading" class="post-docx-viewer__hint">加载 Word 文档…</div>
-      <template v-else>
-        <div v-if="pageCount > 1" class="post-docx-viewer__toolbar">
-          <button
-            type="button"
-            class="post-docx-viewer__btn"
-            :disabled="currentPage <= 0"
-            @click="goPrev"
-          >
-            上一页
-          </button>
-          <span class="post-docx-viewer__page">{{ currentPage + 1 }} / {{ pageCount }}</span>
-          <button
-            type="button"
-            class="post-docx-viewer__btn"
-            :disabled="currentPage >= pageCount - 1"
-            @click="goNext"
-          >
-            下一页
-          </button>
-        </div>
-        <div ref="styleHost" class="post-docx-viewer__style-host" />
-        <div ref="bodyHost" class="post-docx-viewer__body" />
-      </template>
+      <!-- body/style 在加载时也要在 DOM 中，否则 renderAsync 拿不到容器 -->
+      <div v-if="pageCount > 1" class="post-docx-viewer__toolbar">
+        <button
+          type="button"
+          class="post-docx-viewer__btn"
+          :disabled="loading || currentPage <= 0"
+          @click="goPrev"
+        >
+          上一页
+        </button>
+        <span class="post-docx-viewer__page">{{ currentPage + 1 }} / {{ pageCount }}</span>
+        <button
+          type="button"
+          class="post-docx-viewer__btn"
+          :disabled="loading || currentPage >= pageCount - 1"
+          @click="goNext"
+        >
+          下一页
+        </button>
+      </div>
+      <div ref="styleHost" class="post-docx-viewer__style-host" aria-hidden="true" />
+      <div ref="bodyHost" class="post-docx-viewer__body" />
     </template>
   </div>
 </template>
@@ -81,14 +80,15 @@ async function loadDocx() {
     return;
   }
 
-  const body = bodyHost.value;
-  const style = styleHost.value;
-  if (!body || !style) {
-    loading.value = false;
-    return;
-  }
-
   try {
+    await nextTick();
+    const body = bodyHost.value;
+    const style = styleHost.value;
+    if (!body || !style) {
+      errorMsg.value = "预览容器未就绪，请刷新页面重试。";
+      return;
+    }
+
     body.innerHTML = "";
     style.innerHTML = "";
     const res = await fetch(props.url);
@@ -185,15 +185,24 @@ watch(
   color: var(--text-secondary, #4b5563);
 }
 
+/* 不用 display:none：部分浏览器对隐藏节点内的 <style> 解析不稳定 */
 .post-docx-viewer__style-host {
-  display: none;
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .post-docx-viewer__body {
   max-height: 70vh;
   overflow: auto;
   border-radius: 6px;
-  background: #9ca3af;
+  background: #d1d5db;
   padding: 8px;
 }
 

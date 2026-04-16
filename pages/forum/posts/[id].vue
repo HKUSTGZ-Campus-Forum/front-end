@@ -319,7 +319,7 @@ onMounted(() => { fetchPostData(); });
           >
             <p class="kg-preview-filename">{{ file.original_filename || 'PDF 附件' }}</p>
             <ClientOnly>
-              <PostPdfPageViewer :url="filePublicUrl(file)" />
+              <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="file.id" />
               <template #fallback>
                 <p class="kg-preview-fallback">预览加载中…</p>
               </template>

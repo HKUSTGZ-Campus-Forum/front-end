@@ -2,41 +2,44 @@
   <div class="post-pdf-viewer">
     <p v-if="errorMsg" class="post-pdf-viewer__error">{{ errorMsg }}</p>
     <template v-else>
+      <!-- canvas 必须在加载过程中也挂在 DOM 里，否则 pdf.js 无法绘制 -->
       <div v-if="loading" class="post-pdf-viewer__hint">加载 PDF…</div>
-      <template v-else>
-        <div class="post-pdf-viewer__toolbar">
-          <button
-            type="button"
-            class="post-pdf-viewer__btn"
-            :disabled="pageNum <= 1"
-            @click="goPrev"
-          >
-            上一页
-          </button>
-          <span class="post-pdf-viewer__page">{{ pageNum }} / {{ totalPages }}</span>
-          <button
-            type="button"
-            class="post-pdf-viewer__btn"
-            :disabled="pageNum >= totalPages"
-            @click="goNext"
-          >
-            下一页
-          </button>
-        </div>
-        <div class="post-pdf-viewer__canvas-wrap">
-          <canvas ref="canvasRef" class="post-pdf-viewer__canvas" />
-        </div>
-      </template>
+      <div v-if="totalPages > 0" class="post-pdf-viewer__toolbar">
+        <button
+          type="button"
+          class="post-pdf-viewer__btn"
+          :disabled="loading || pageNum <= 1"
+          @click="goPrev"
+        >
+          上一页
+        </button>
+        <span class="post-pdf-viewer__page">{{ pageNum }} / {{ totalPages }}</span>
+        <button
+          type="button"
+          class="post-pdf-viewer__btn"
+          :disabled="loading || pageNum >= totalPages"
+          @click="goNext"
+        >
+          下一页
+        </button>
+      </div>
+      <div class="post-pdf-viewer__canvas-wrap">
+        <canvas ref="canvasRef" class="post-pdf-viewer__canvas" />
+      </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, shallowRef, nextTick, onUnmounted } from "vue";
+import { useApi } from "~/composables/useApi";
 
 const props = defineProps<{
   url: string;
+  fileId?: number;
 }>();
+
+const { fetchWithAuth, getApiUrl } = useApi();
 
 const loading = ref(true);
 const errorMsg = ref("");
@@ -59,6 +62,35 @@ async function ensurePdfJs() {
   return pdfjsModule;
 }
 
+async function fetchPdfData(): Promise<Uint8Array> {
+  // 优先通过后端代理获取（避免 OSS CORS 问题）
+  if (props.fileId) {
+    const proxyUrl = getApiUrl(`/api/files/proxy/${props.fileId}`);
+    const res = await fetchWithAuth(proxyUrl, {
+      headers: { Accept: "application/pdf" },
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const buf = await res.arrayBuffer();
+    if (!buf.byteLength) throw new Error("empty");
+    return new Uint8Array(buf);
+  }
+
+  // 回退：直接请求 URL（兼容无 fileId 的场景）
+  const res = await fetch(props.url, {
+    mode: "cors",
+    credentials: "omit",
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const buf = await res.arrayBuffer();
+  if (!buf.byteLength) throw new Error("empty");
+  return new Uint8Array(buf);
+}
+
 async function loadAndRender() {
   errorMsg.value = "";
   loading.value = true;
@@ -70,7 +102,7 @@ async function loadAndRender() {
     loading.value = false;
     return;
   }
-  if (!props.url?.trim()) {
+  if (!props.fileId && !props.url?.trim()) {
     loading.value = false;
     errorMsg.value = "无效的 PDF 地址";
     return;
@@ -82,8 +114,9 @@ async function loadAndRender() {
       errorMsg.value = "无法在服务端渲染 PDF";
       return;
     }
+    const data = await fetchPdfData();
     const task = pdfjs.getDocument({
-      url: props.url,
+      data,
       withCredentials: false,
     });
     const pdf = await task.promise;
@@ -93,12 +126,15 @@ async function loadAndRender() {
       errorMsg.value = "PDF 无页面";
       return;
     }
+    loading.value = false;
     await nextTick();
     await paintPage();
-  } catch {
-    errorMsg.value =
-      "无法加载 PDF（若控制台有 CORS 报错，请在 OSS 为该 Bucket 配置允许本站域名的跨域）。";
-  } finally {
+  } catch (err) {
+    const hint =
+      err instanceof TypeError
+        ? "网络或跨域被拦截（请为 OSS 配置 CORS：允许本站 Origin，暴露 ETag / Content-Length 等头）。"
+        : "无法解析或打开该 PDF，请确认文件未损坏，或尝试下载后本地打开。";
+    errorMsg.value = `无法加载 PDF。${hint}`;
     loading.value = false;
   }
 }
@@ -111,15 +147,26 @@ async function paintPage() {
   const page = await pdf.getPage(pageNum.value);
   const base = page.getViewport({ scale: 1 });
   const maxW = typeof window !== "undefined" ? Math.min(900, window.innerWidth - 48) : 900;
-  const scale = maxW / base.width;
-  const viewport = page.getViewport({ scale });
+  const outputScale = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+  const cssScale = maxW / base.width;
+  const viewport = page.getViewport({ scale: cssScale * outputScale });
 
-  const ctx = canvas.getContext("2d");
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  canvas.style.width = `${Math.floor(viewport.width / outputScale)}px`;
+  canvas.style.height = `${Math.floor(viewport.height / outputScale)}px`;
+
+  const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) return;
 
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-  await page.render({ canvasContext: ctx, viewport }).promise;
+  // v5 解构：canvas 默认取自 canvasContext.canvas，必须提供 2d context
+  await page
+    .render({
+      canvasContext: ctx,
+      viewport,
+      background: "rgb(255, 255, 255)",
+    })
+    .promise;
 }
 
 function goPrev() {
@@ -133,7 +180,7 @@ function goNext() {
 }
 
 watch(
-  () => props.url,
+  () => [props.url, props.fileId],
   () => {
     void loadAndRender();
   },
