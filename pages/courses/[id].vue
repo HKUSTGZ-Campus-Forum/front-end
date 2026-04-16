@@ -90,9 +90,9 @@ const fetchCourseReviews = async () => {
 
 const fetchAvailableSemesters = async () => {
   const defaults = [
-        { code: "2024spring", display_name: "23-24春", year: "2024", season: "spring", season_display: "春" },
+        { code: "2024spring", display_name: "24-25春", year: "2024", season: "spring", season_display: "春" },
         { code: "2024fall", display_name: "24-25秋", year: "2024", season: "fall", season_display: "秋" },
-        { code: "2025spring", display_name: "24-25春", year: "2025", season: "spring", season_display: "春" },
+        { code: "2025spring", display_name: "25-26春", year: "2025", season: "spring", season_display: "春" },
         { code: "2025fall", display_name: "25-26秋", year: "2025", season: "fall", season_display: "秋" }
       ];
   try {
