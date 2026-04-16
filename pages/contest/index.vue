@@ -232,6 +232,58 @@ watch(
   },
 )
 
+/** 公告「新」标记：与 localStorage 中已读内容指纹对比；进入公告 Tab 即视为已读 */
+const ANNOUNCE_FP_PREFIX = 'unikorn_contest_announce_seen_fp:'
+
+function fingerprintAnnouncements(text: string): string {
+  let h = 5381
+  for (let i = 0; i < text.length; i++) {
+    h = ((h << 5) + h) ^ text.charCodeAt(i)
+  }
+  return `${h}:${text.length}`
+}
+
+const lastSeenAnnouncementFp = ref<string | null>(null)
+const announcementSeenHydrated = ref(false)
+
+watch(
+  () => contest.value?.id,
+  (id) => {
+    if (!import.meta.client || id == null) return
+    try {
+      lastSeenAnnouncementFp.value = localStorage.getItem(`${ANNOUNCE_FP_PREFIX}${id}`)
+    } catch {
+      lastSeenAnnouncementFp.value = null
+    }
+    announcementSeenHydrated.value = true
+  },
+  { immediate: true },
+)
+
+watch(
+  [activeTab, () => contest.value?.id, () => contest.value?.announcements],
+  () => {
+    if (activeTab.value !== 'announcements' || !import.meta.client) return
+    const id = contest.value?.id
+    if (id == null) return
+    const fp = fingerprintAnnouncements(contest.value?.announcements ?? '')
+    const key = `${ANNOUNCE_FP_PREFIX}${id}`
+    try {
+      localStorage.setItem(key, fp)
+    } catch {}
+    lastSeenAnnouncementFp.value = fp
+  },
+)
+
+const showAnnouncementNewBadge = computed(() => {
+  if (!announcementSeenHydrated.value) return false
+  if (isOrganizer.value) return false
+  const text = contest.value?.announcements?.trim()
+  if (!text) return false
+  const fp = fingerprintAnnouncements(contest.value!.announcements ?? '')
+  return fp !== lastSeenAnnouncementFp.value
+})
+
 function formatTime(iso: string | null): string {
   if (!iso) return '待公布'
   return new Date(iso).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai' })
@@ -298,7 +350,8 @@ onUnmounted(() => clearInterval(timer))
               :class="{ active: activeTab === 'announcements' }"
               @click="activeTab = 'announcements'"
             >
-              比赛公告
+              <span class="kg-tab-label">比赛公告</span>
+              <span v-if="showAnnouncementNewBadge" class="kg-tab-badge-new" aria-hidden="true">新</span>
             </button>
             <button
               v-if="showTabProblems"
@@ -669,6 +722,9 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .kg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 18px;
   border: none;
   background: transparent;
@@ -700,6 +756,23 @@ onUnmounted(() => clearInterval(timer))
     background: var(--interactive-primary);
     border-radius: 2px 2px 0 0;
   }
+}
+
+.kg-tab-badge-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.1rem;
+  padding: 0 0.3em;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: #ef4444;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 // ── Layout ──
