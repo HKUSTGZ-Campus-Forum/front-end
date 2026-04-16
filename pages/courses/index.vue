@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 
@@ -29,9 +29,31 @@ const searchQuery = ref("");
 const sortBy = ref("code");
 const sortOrder = ref("asc");
 const selectedSemester = ref("");
-const selectedCourseType = ref("");
-const availableSemesters = ref([]);
-const availableCourseTypes = ref([]);
+const selectedCourseType = ref("AIAA");
+const selectedStage = ref("UG");
+const availableSemesters = ref<any[]>([]);
+const availableCourseTypes = ref<any[]>([]);
+
+// Extract course number from code like "AIAA 1010" -> 1010
+const getCourseNumber = (code: string): number => {
+  const parts = code.split(/\s+/);
+  if (parts.length >= 2) {
+    const num = parseInt(parts[1]);
+    return isNaN(num) ? 0 : num;
+  }
+  return 0;
+};
+
+// Filter courses by stage (UG/PG) on frontend
+const filteredCourses = computed(() => {
+  if (!selectedStage.value) return courses.value;
+  return courses.value.filter(course => {
+    const num = getCourseNumber(course.code);
+    if (selectedStage.value === 'UG') return num >= 1000 && num <= 4999;
+    if (selectedStage.value === 'PG') return num >= 5000;
+    return true;
+  });
+});
 
 const debounce = (fn: Function, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -87,9 +109,14 @@ const fetchFiltersData = async () => {
       availableCourseTypes.value = data.course_types || [];
       if (availableSemesters.value.length > 0) {
         selectedSemester.value = availableSemesters.value[0].code;
-        fetchCourses();
-        return;
       }
+      // Default to AIAA if available, otherwise first type
+      if (availableCourseTypes.value.length > 0) {
+        const hasAIAA = availableCourseTypes.value.some((t: any) => t.code === 'AIAA');
+        selectedCourseType.value = hasAIAA ? 'AIAA' : availableCourseTypes.value[0].code;
+      }
+      fetchCourses();
+      return;
     }
   } catch (error) {
     console.error('获取筛选数据失败:', error);
@@ -97,9 +124,13 @@ const fetchFiltersData = async () => {
   fetchCourses();
 };
 
+const selectCourseType = (code: string) => {
+  selectedCourseType.value = code;
+  fetchCourses();
+};
+
 const handleFilterChange = () => { fetchCourses(); };
 const handleSearch = debounce(() => { fetchCourses(); }, 300);
-const handleSort = () => { fetchCourses(); };
 
 onMounted(() => { fetchFiltersData(); });
 </script>
@@ -120,24 +151,62 @@ onMounted(() => { fetchFiltersData(); });
         @input="handleSearch"
       />
       <div class="kg-filter-row">
-        <select v-model="selectedSemester" class="kg-select" @change="handleFilterChange">
-          <option value="">全部学期</option>
-          <option v-for="sem in availableSemesters" :key="sem.code" :value="sem.code">
-            {{ sem.display_name }}
-          </option>
-        </select>
-        <select v-model="selectedCourseType" class="kg-select" @change="handleFilterChange">
-          <option value="">全部类型</option>
-          <option v-for="type in availableCourseTypes" :key="type.code" :value="type.code">
-            {{ type.name }}
-          </option>
-        </select>
-        <select v-model="sortBy" class="kg-select" @change="handleSort">
-          <option value="code">按课程代码</option>
-          <option value="name">按课程名称</option>
-        </select>
-        <button class="kg-sort-toggle" @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; handleSort()">
-          {{ sortOrder === 'asc' ? '↑ 升序' : '↓ 降序' }}
+        <div class="kg-filter-group">
+          <label class="kg-filter-label">学期</label>
+          <div class="kg-filter-options">
+            <button
+              :class="['kg-filter-btn', { active: selectedSemester === '' }]"
+              @click="selectedSemester = ''; handleFilterChange()"
+            >
+              全部
+            </button>
+            <button
+              v-for="sem in availableSemesters"
+              :key="sem.code"
+              :class="['kg-filter-btn', { active: selectedSemester === sem.code }]"
+              @click="selectedSemester = sem.code; handleFilterChange()"
+            >
+              {{ sem.display_name }}
+            </button>
+          </div>
+        </div>
+        <div class="kg-filter-group">
+          <label class="kg-filter-label">阶段</label>
+          <div class="kg-filter-options">
+            <button
+              :class="['kg-filter-btn', { active: selectedStage === '' }]"
+              @click="selectedStage = ''; handleFilterChange()"
+            >
+              全部
+            </button>
+            <button
+              :class="['kg-filter-btn', { active: selectedStage === 'UG' }]"
+              @click="selectedStage = 'UG'; handleFilterChange()"
+            >
+              本科 (UG)
+            </button>
+            <button
+              :class="['kg-filter-btn', { active: selectedStage === 'PG' }]"
+              @click="selectedStage = 'PG'; handleFilterChange()"
+            >
+              研究生 (PG)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course Type Letter Navigation -->
+    <div class="kg-card kg-course-types">
+      <div class="kg-course-types-label">课程类型:</div>
+      <div class="kg-course-types-list">
+        <button
+          v-for="type in availableCourseTypes"
+          :key="type.code"
+          :class="['kg-type-chip', { active: selectedCourseType === type.code }]"
+          @click="selectCourseType(type.code)"
+        >
+          {{ type.code }}
         </button>
       </div>
     </div>
@@ -147,14 +216,14 @@ onMounted(() => { fetchFiltersData(); });
       <span>加载中...</span>
     </div>
 
-    <div v-else-if="courses.length === 0" class="kg-empty">
+    <div v-else-if="filteredCourses.length === 0" class="kg-empty">
       <div class="kg-empty-icon">📚</div>
       <p>暂无课程数据</p>
     </div>
 
     <div v-else class="kg-course-grid">
       <NuxtLink
-        v-for="course in courses"
+        v-for="course in filteredCourses"
         :key="course.id"
         :to="`/courses/${course.id}`"
         class="kg-course-card"
@@ -212,7 +281,7 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-filters {
   padding: 16px 20px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .kg-search-input {
@@ -233,33 +302,99 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-filter-row {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.kg-select {
-  padding: 7px 12px;
+.kg-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kg-filter-label {
+  font-size: 0.84rem;
+  color: #4a6080;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 32px;
+}
+
+.kg-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kg-filter-btn {
+  padding: 5px 14px;
   border: 1.5px solid #c8dff8;
   border-radius: 10px;
   background: #fff;
   color: #4a6080;
-  font-size: 0.85rem;
-  outline: none;
-  cursor: pointer;
-  &:focus { border-color: #26a4ff; }
-}
-
-.kg-sort-toggle {
-  padding: 7px 14px;
-  border: 1.5px solid #c8dff8;
-  border-radius: 10px;
-  background: #F5FBFE;
-  color: #4a6080;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  &:hover { border-color: #26a4ff; color: #26a4ff; }
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #26a4ff;
+    color: #26a4ff;
+  }
+
+  &.active {
+    background: #26a4ff;
+    border-color: #26a4ff;
+    color: #fff;
+  }
+}
+
+// Course type letter navigation
+.kg-course-types {
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.kg-course-types-label {
+  font-size: 0.85rem;
+  color: #4a6080;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-top: 5px;
+}
+
+.kg-course-types-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kg-type-chip {
+  padding: 5px 14px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 10px;
+  background: #fff;
+  color: #4a6080;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #26a4ff;
+    color: #26a4ff;
+  }
+
+  &.active {
+    background: #26a4ff;
+    border-color: #26a4ff;
+    color: #fff;
+  }
 }
 
 .kg-loading {
