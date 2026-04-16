@@ -1,12 +1,23 @@
 <script setup>
-import { useRouter } from "vue-router";
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import PostMessage from "~/components/forum/PostMessage.vue";
+import { getSingleQueryValue } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
 
+const route = useRoute();
 const router = useRouter();
+const lockedTags = computed(() => {
+  const raw = route.query.lockedTag;
+  if (Array.isArray(raw)) return raw.filter((item) => typeof item === "string");
+  if (typeof raw === "string") return [raw];
+  return [];
+});
+const returnTo = computed(() => getSingleQueryValue(route.query.returnTo) || null);
 
 const handlePostSuccess = (postId) => {
+  if (returnTo.value) return;
   setTimeout(() => {
     router.push(`/forum/posts/${postId}`);
   }, 1000);
@@ -16,14 +27,18 @@ const handlePostSuccess = (postId) => {
 <template>
   <div class="kg-post-message">
     <div class="kg-back-bar">
-      <NuxtLink to="/forum" class="kg-back-link">
+      <NuxtLink :to="returnTo || '/forum'" class="kg-back-link">
         <ForumUiIcon name="back" class="kg-back-link__icon" />
-        <span>返回论坛</span>
+        <span>{{ returnTo ? '返回课程页面' : '返回论坛' }}</span>
       </NuxtLink>
     </div>
     <div class="kg-card">
       <h1 class="kg-page-title">发布帖子</h1>
-      <PostMessage @post-success="handlePostSuccess" />
+      <PostMessage
+        :locked-tags="lockedTags"
+        :return-to="returnTo"
+        @post-success="handlePostSuccess"
+      />
     </div>
   </div>
 </template>

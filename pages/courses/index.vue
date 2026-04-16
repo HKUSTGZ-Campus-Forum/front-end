@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
+import type { CourseOffering } from "~/utils/courseOffering";
+import { getSingleQueryValue } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
+
+const route = useRoute();
+const router = useRouter();
 
 interface Course {
   id: number;
@@ -29,9 +35,31 @@ const searchQuery = ref("");
 const sortBy = ref("code");
 const sortOrder = ref("asc");
 const selectedSemester = ref("");
-const selectedCourseType = ref("");
-const availableSemesters = ref([]);
-const availableCourseTypes = ref([]);
+const selectedCourseType = ref("AIAA");
+const selectedStage = ref("UG");
+const availableSemesters = ref<CourseOffering[]>([]);
+const availableCourseTypes = ref<any[]>([]);
+
+// Extract course number from code like "AIAA 1010" -> 1010
+const getCourseNumber = (code: string): number => {
+  const parts = code.split(/\s+/);
+  if (parts.length >= 2) {
+    const num = parseInt(parts[1]);
+    return isNaN(num) ? 0 : num;
+  }
+  return 0;
+};
+
+// Filter courses by stage (UG/PG) on frontend
+const filteredCourses = computed(() => {
+  if (!selectedStage.value) return courses.value;
+  return courses.value.filter(course => {
+    const num = getCourseNumber(course.code);
+    if (selectedStage.value === 'UG') return num >= 1000 && num <= 4999;
+    if (selectedStage.value === 'PG') return num >= 5000;
+    return true;
+  });
+});
 
 const debounce = (fn: Function, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -39,6 +67,27 @@ const debounce = (fn: Function, delay: number) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
+};
+
+/** 供列表页与进入详情页链接使用，返回后恢复筛选 */
+const buildListQuery = (): Record<string, string> => {
+  const q: Record<string, string> = {};
+  if (selectedCourseType.value) q.course_type = selectedCourseType.value;
+  if (selectedSemester.value) q.semester = selectedSemester.value;
+  if (selectedStage.value) q.stage = selectedStage.value;
+  else q.stage = "all";
+  const sq = searchQuery.value.trim();
+  if (sq) q.q = sq;
+  return q;
+};
+
+const courseListReturnQuery = computed(() => buildListQuery());
+const selectedOfferingTag = computed(() => (
+  availableSemesters.value.find((semester) => semester.code === selectedSemester.value)?.offering_tag || ""
+));
+
+const syncRouteQuery = () => {
+  router.replace({ path: route.path, query: buildListQuery() });
 };
 
 const fetchInstructorInfo = async (instructorId: number) => {
@@ -85,11 +134,43 @@ const fetchFiltersData = async () => {
       const data = await response.json();
       availableSemesters.value = data.semesters || [];
       availableCourseTypes.value = data.course_types || [];
+
+      const rq = route.query;
+      const courseTypeFromRoute = getSingleQueryValue(rq.course_type);
+      const semesterFromRoute = getSingleQueryValue(rq.semester);
+      const stageFromRoute = getSingleQueryValue(rq.stage);
+      const qFromRoute = getSingleQueryValue(rq.q);
+
       if (availableSemesters.value.length > 0) {
-        selectedSemester.value = availableSemesters.value[0].code;
-        fetchCourses();
-        return;
+        if (
+          semesterFromRoute &&
+          availableSemesters.value.some((s: any) => s.code === semesterFromRoute)
+        ) {
+          selectedSemester.value = semesterFromRoute;
+        } else {
+          selectedSemester.value = availableSemesters.value[0].code;
+        }
       }
+
+      if (availableCourseTypes.value.length > 0) {
+        if (
+          courseTypeFromRoute &&
+          availableCourseTypes.value.some((t: any) => t.code === courseTypeFromRoute)
+        ) {
+          selectedCourseType.value = courseTypeFromRoute;
+        } else {
+          const hasAIAA = availableCourseTypes.value.some((t: any) => t.code === "AIAA");
+          selectedCourseType.value = hasAIAA ? "AIAA" : availableCourseTypes.value[0].code;
+        }
+      }
+
+      if (typeof qFromRoute === "string") searchQuery.value = qFromRoute;
+
+      if (stageFromRoute === "all" || stageFromRoute === "") selectedStage.value = "";
+      else if (stageFromRoute === "UG" || stageFromRoute === "PG") selectedStage.value = stageFromRoute;
+
+      fetchCourses();
+      return;
     }
   } catch (error) {
     console.error('获取筛选数据失败:', error);
@@ -97,9 +178,20 @@ const fetchFiltersData = async () => {
   fetchCourses();
 };
 
-const handleFilterChange = () => { fetchCourses(); };
-const handleSearch = debounce(() => { fetchCourses(); }, 300);
-const handleSort = () => { fetchCourses(); };
+const selectCourseType = (code: string) => {
+  selectedCourseType.value = code;
+  syncRouteQuery();
+  fetchCourses();
+};
+
+const handleFilterChange = () => {
+  syncRouteQuery();
+  fetchCourses();
+};
+const handleSearch = debounce(() => {
+  syncRouteQuery();
+  fetchCourses();
+}, 300);
 
 onMounted(() => { fetchFiltersData(); });
 </script>
@@ -120,25 +212,56 @@ onMounted(() => { fetchFiltersData(); });
         @input="handleSearch"
       />
       <div class="kg-filter-row">
-        <select v-model="selectedSemester" class="kg-select" @change="handleFilterChange">
-          <option value="">全部学期</option>
-          <option v-for="sem in availableSemesters" :key="sem.code" :value="sem.code">
-            {{ sem.display_name }}
-          </option>
-        </select>
-        <select v-model="selectedCourseType" class="kg-select" @change="handleFilterChange">
-          <option value="">全部类型</option>
-          <option v-for="type in availableCourseTypes" :key="type.code" :value="type.code">
-            {{ type.name }}
-          </option>
-        </select>
-        <select v-model="sortBy" class="kg-select" @change="handleSort">
-          <option value="code">按课程代码</option>
-          <option value="name">按课程名称</option>
-        </select>
-        <button class="kg-sort-toggle" @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; handleSort()">
-          {{ sortOrder === 'asc' ? '↑ 升序' : '↓ 降序' }}
-        </button>
+        <div class="kg-filter-group">
+          <label class="kg-filter-label">学期</label>
+          <div class="kg-filter-options">
+            <button
+              v-for="sem in availableSemesters"
+              :key="sem.code"
+              :class="['kg-filter-btn', { active: selectedSemester === sem.code }]"
+              @click="selectedSemester = sem.code; handleFilterChange()"
+            >
+              {{ sem.display_name }}
+            </button>
+          </div>
+        </div>
+        <div class="kg-filter-group">
+          <label class="kg-filter-label">阶段</label>
+          <div class="kg-filter-options">
+            <button
+              :class="['kg-filter-btn', { active: selectedStage === '' }]"
+              @click="selectedStage = ''; handleFilterChange()"
+            >
+              全部
+            </button>
+            <button
+              :class="['kg-filter-btn', { active: selectedStage === 'UG' }]"
+              @click="selectedStage = 'UG'; handleFilterChange()"
+            >
+              本科 (UG)
+            </button>
+            <button
+              :class="['kg-filter-btn', { active: selectedStage === 'PG' }]"
+              @click="selectedStage = 'PG'; handleFilterChange()"
+            >
+              研究生 (PG)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kg-course-types">
+        <div class="kg-course-types-label">课程类型:</div>
+        <div class="kg-course-types-list">
+          <button
+            v-for="type in availableCourseTypes"
+            :key="type.code"
+            :class="['kg-type-chip', { active: selectedCourseType === type.code }]"
+            @click="selectCourseType(type.code)"
+          >
+            {{ type.code }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -147,16 +270,19 @@ onMounted(() => { fetchFiltersData(); });
       <span>加载中...</span>
     </div>
 
-    <div v-else-if="courses.length === 0" class="kg-empty">
+    <div v-else-if="filteredCourses.length === 0" class="kg-empty">
       <div class="kg-empty-icon">📚</div>
       <p>暂无课程数据</p>
     </div>
 
     <div v-else class="kg-course-grid">
       <NuxtLink
-        v-for="course in courses"
+        v-for="course in filteredCourses"
         :key="course.id"
-        :to="`/courses/${course.id}`"
+        :to="{
+          path: selectedOfferingTag ? `/courses/${course.id}/offerings/${selectedOfferingTag}` : `/courses/${course.id}`,
+          query: courseListReturnQuery,
+        }"
         class="kg-course-card"
       >
         <div class="kg-course-card__top">
@@ -211,7 +337,7 @@ onMounted(() => { fetchFiltersData(); });
 }
 
 .kg-filters {
-  padding: 16px 20px;
+  padding: 16px 20px 18px;
   margin-bottom: 20px;
 }
 
@@ -233,33 +359,100 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-filter-row {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.kg-select {
-  padding: 7px 12px;
+.kg-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kg-filter-label {
+  font-size: 0.84rem;
+  color: #4a6080;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 32px;
+}
+
+.kg-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kg-filter-btn {
+  padding: 5px 14px;
   border: 1.5px solid #c8dff8;
   border-radius: 10px;
   background: #fff;
   color: #4a6080;
-  font-size: 0.85rem;
-  outline: none;
-  cursor: pointer;
-  &:focus { border-color: #26a4ff; }
-}
-
-.kg-sort-toggle {
-  padding: 7px 14px;
-  border: 1.5px solid #c8dff8;
-  border-radius: 10px;
-  background: #F5FBFE;
-  color: #4a6080;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  &:hover { border-color: #26a4ff; color: #26a4ff; }
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #26a4ff;
+    color: #26a4ff;
+  }
+
+  &.active {
+    background: #26a4ff;
+    border-color: #26a4ff;
+    color: #fff;
+  }
+}
+
+// Course type chips (same card as search / semester / stage)
+.kg-course-types {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8f4fd;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.kg-course-types-label {
+  font-size: 0.85rem;
+  color: #4a6080;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-top: 5px;
+}
+
+.kg-course-types-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kg-type-chip {
+  padding: 5px 14px;
+  border: 1.5px solid #c8dff8;
+  border-radius: 10px;
+  background: #fff;
+  color: #4a6080;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #26a4ff;
+    color: #26a4ff;
+  }
+
+  &.active {
+    background: #26a4ff;
+    border-color: #26a4ff;
+    color: #fff;
+  }
 }
 
 .kg-loading {

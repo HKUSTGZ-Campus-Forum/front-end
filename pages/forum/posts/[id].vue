@@ -9,6 +9,17 @@ import { SuccessModal, ErrorModal, ConfirmModal, ImageModal } from "~/components
 import EmojiReactions from "~/components/forum/EmojiReation.vue";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import IdentityBadge from "~/components/identity/IdentityBadge.vue";
+import { getVisiblePostTags } from "~/utils/courseOffering";
+import PostPdfPageViewer from "~/components/forum/PostPdfPageViewer.vue";
+import PostDocxPagesViewer from "~/components/forum/PostDocxPagesViewer.vue";
+import PostOfficeDocViewer from "~/components/forum/PostOfficeDocViewer.vue";
+import {
+  isPostImageFile,
+  isPdfFile,
+  isDocxFile,
+  isLegacyDocFile,
+  isDownloadOnlyFile,
+} from "~/utils/postFileKinds";
 
 definePageMeta({ layout: 'keguang' });
 
@@ -32,6 +43,21 @@ const isLoading = ref(true);
 const errorMessage = ref("");
 
 const postData = computed(() => post.value);
+const visibleTags = computed(() => getVisiblePostTags(postData.value.tags || []));
+
+const getTagKey = (tag, index) => {
+  if (tag && typeof tag === 'object') {
+    return tag.id || tag.tag_id || tag.name || tag.tag_name || index;
+  }
+  return tag || index;
+};
+
+const getTagLabel = (tag) => {
+  if (tag && typeof tag === 'object') {
+    return tag.name || tag.tag_name || '';
+  }
+  return String(tag || '');
+};
 
 const canDeletePost = computed(() => {
   if (!isLoggedIn.value || !user.value || !postData.value.user_id) return false;
@@ -40,8 +66,26 @@ const canDeletePost = computed(() => {
 
 const postImages = computed(() => {
   if (!postData.value.files) return [];
-  return postData.value.files.filter(file => file && isImageFile(file));
+  return postData.value.files.filter((file) => file && isPostImageFile(file));
 });
+
+const postPdfFiles = computed(() =>
+  (postData.value.files || []).filter((f) => f && isPdfFile(f))
+);
+
+const postDocxFiles = computed(() =>
+  (postData.value.files || []).filter((f) => f && isDocxFile(f))
+);
+
+const postLegacyDocFiles = computed(() =>
+  (postData.value.files || []).filter((f) => f && isLegacyDocFile(f))
+);
+
+const postDownloadOnlyFiles = computed(() =>
+  (postData.value.files || []).filter((f) => f && isDownloadOnlyFile(f))
+);
+
+const filePublicUrl = (file) => file?.url || file?.file_url || "";
 
 const showDeleteConfirm = () => {
   if (!canDeletePost.value) {
@@ -142,13 +186,6 @@ const fetchPostData = async () => {
   } finally {
     isLoading.value = false;
   }
-};
-
-const isImageFile = (file) => {
-  if (!file) return false;
-  if (file.mime_type && file.mime_type.startsWith('image/')) return true;
-  if (file.original_filename) return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(file.original_filename);
-  return false;
 };
 
 const getGenericImageName = (file, index) => {
@@ -253,9 +290,9 @@ onMounted(() => { fetchPostData(); });
             </div>
           </div>
 
-          <div v-if="postData.tags?.length" class="kg-article__tags">
-            <span v-for="tag in postData.tags" :key="tag.id || tag.name" class="kg-tag">
-              {{ tag.name || tag }}
+          <div v-if="visibleTags.length" class="kg-article__tags">
+            <span v-for="(tag, index) in visibleTags" :key="getTagKey(tag, index)" class="kg-tag">
+              {{ getTagLabel(tag) }}
             </span>
           </div>
         </header>
@@ -271,6 +308,79 @@ onMounted(() => { fetchPostData(); });
           >
             <img :src="file.url || file.file_url" :alt="getGenericImageName(file, idx)" @error="handleImageError" @load="handleImageLoad" />
           </div>
+        </div>
+
+        <div v-if="postPdfFiles.length" class="kg-article__file-previews">
+          <h3 class="kg-article__files-heading">PDF</h3>
+          <div
+            v-for="file in postPdfFiles"
+            :key="'pdf-' + file.id"
+            class="kg-preview-card"
+          >
+            <p class="kg-preview-filename">{{ file.original_filename || 'PDF 附件' }}</p>
+            <ClientOnly>
+              <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="file.id" />
+              <template #fallback>
+                <p class="kg-preview-fallback">预览加载中…</p>
+              </template>
+            </ClientOnly>
+          </div>
+        </div>
+
+        <div v-if="postDocxFiles.length" class="kg-article__file-previews">
+          <h3 class="kg-article__files-heading">Word（.docx）</h3>
+          <div
+            v-for="file in postDocxFiles"
+            :key="'docx-' + file.id"
+            class="kg-preview-card"
+          >
+            <p class="kg-preview-filename">{{ file.original_filename || 'Word 附件' }}</p>
+            <ClientOnly>
+              <PostDocxPagesViewer :url="filePublicUrl(file)" />
+              <template #fallback>
+                <p class="kg-preview-fallback">预览加载中…</p>
+              </template>
+            </ClientOnly>
+          </div>
+        </div>
+
+        <div v-if="postLegacyDocFiles.length" class="kg-article__file-previews">
+          <h3 class="kg-article__files-heading">Word（.doc）</h3>
+          <div
+            v-for="file in postLegacyDocFiles"
+            :key="'doc-' + file.id"
+            class="kg-preview-card"
+          >
+            <p class="kg-preview-filename">{{ file.original_filename || 'Word 附件' }}</p>
+            <ClientOnly>
+              <PostOfficeDocViewer
+                :url="filePublicUrl(file)"
+                :original-filename="file.original_filename"
+              />
+              <template #fallback>
+                <p class="kg-preview-fallback">预览加载中…</p>
+              </template>
+            </ClientOnly>
+          </div>
+        </div>
+
+        <div v-if="postDownloadOnlyFiles.length" class="kg-article__downloads">
+          <h3 class="kg-article__files-heading">附件下载</h3>
+          <ul class="kg-download-list">
+            <li v-for="file in postDownloadOnlyFiles" :key="'dl-' + file.id">
+              <a
+                class="kg-download-link"
+                :href="filePublicUrl(file)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ file.original_filename || '附件' }}
+              </a>
+              <span v-if="file.file_size" class="kg-download-meta">
+                {{ Math.round(file.file_size / 1024) }} KB
+              </span>
+            </li>
+          </ul>
         </div>
 
         <div class="kg-article__reactions">
@@ -460,6 +570,70 @@ onMounted(() => { fetchPostData(); });
     transition: transform 0.2s;
   }
   &:hover img { transform: scale(1.04); }
+}
+
+.kg-article__files-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2a4a;
+  margin: 0 0 12px;
+}
+
+.kg-article__file-previews {
+  margin: 20px 0;
+}
+
+.kg-preview-card {
+  margin-bottom: 20px;
+}
+
+.kg-preview-filename {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  color: #4a6080;
+  word-break: break-all;
+}
+
+.kg-preview-fallback {
+  margin: 0;
+  padding: 12px;
+  font-size: 0.875rem;
+  color: #6a85a0;
+}
+
+.kg-article__downloads {
+  margin: 20px 0;
+}
+
+.kg-download-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.kg-download-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  border-bottom: 1px solid #e8f4fd;
+}
+
+.kg-download-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.kg-download-link:hover {
+  text-decoration: underline;
+}
+
+.kg-download-meta {
+  font-size: 0.8rem;
+  color: #6a85a0;
 }
 
 .kg-article__reactions {

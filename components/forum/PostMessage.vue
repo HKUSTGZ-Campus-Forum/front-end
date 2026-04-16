@@ -35,6 +35,59 @@
         }}</span>
       </div>
 
+      <!-- 帖子标签 -->
+      <div class="form-group">
+        <label for="postTagInput">标签</label>
+        <div class="tags-container">
+          <div class="tag-input-row">
+            <input
+              id="postTagInput"
+              v-model="tagInput"
+              type="text"
+              placeholder="输入标签后按回车或点击添加"
+              maxlength="50"
+              @keydown="handleTagKeydown"
+              @blur="clearTagError"
+            />
+            <button
+              type="button"
+              class="tag-add-btn"
+              :disabled="tags.length >= MAX_TAG_COUNT"
+              @click="addTag"
+            >
+              添加
+            </button>
+          </div>
+          <span class="tag-hint">
+            最多 {{ MAX_TAG_COUNT }} 个标签，每个不超过 {{ MAX_TAG_LENGTH }} 个字符
+          </span>
+          <span v-if="hasLockedTags" class="tag-hint">
+            带锁的标签来自课程页面，不能删除
+          </span>
+          <span v-if="errors.tags" class="error-text">{{ errors.tags }}</span>
+
+          <div v-if="tags.length > 0" class="tags-list">
+            <span
+              v-for="(tag, index) in tags"
+              :key="`${tag}-${index}`"
+              :class="['tag', { 'tag--locked': isLockedTag(tag) }]"
+            >
+              {{ tag }}
+              <span v-if="isLockedTag(tag)" class="tag-lock">锁定</span>
+              <button
+                v-if="!isLockedTag(tag)"
+                type="button"
+                class="tag-remove"
+                :aria-label="`删除标签 ${tag}`"
+                @click="removeTag(index)"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- 身份选择 -->
       <div class="form-group">
         <IdentitySelector 
@@ -51,7 +104,7 @@
         <FileUpload
           file-type="post_image"
           accept="image/*"
-          :max-size="5 * 1024 * 1024"
+          :max-size="MAX_POST_FILE_BYTES"
           show-preview
           allow-delete
           drag-text="点击或拖拽图片到此处上传"
@@ -60,11 +113,11 @@
           @delete-success="handleImageDeleteSuccess"
           @delete-error="handleImageDeleteError"
         />
-        <span class="upload-hint">最多可上传5张图片，每张不超过5MB</span>
+        <span class="upload-hint">最多 5 张图片，每张不超过 10MB</span>
         
         <!-- 已上传图片预览 -->
         <div v-if="uploadedImages.length > 0" class="uploaded-images">
-          <h4>已上传图片 ({{ uploadedImages.length }}/5):</h4>
+          <h4>已上传图片 ({{ uploadedImages.length }}/{{ MAX_POST_IMAGES }}):</h4>
           <div class="image-grid">
             <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
               <img :src="image.url" :alt="getGenericImageName(image, index)" class="preview-img">
@@ -74,6 +127,34 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 其他附件（非图片：PDF/Office/压缩包等） -->
+      <div class="form-group">
+        <label>其他附件</label>
+        <FileUpload
+          :key="otherUploadKey"
+          file-type="post_attachment"
+          :max-size="MAX_POST_FILE_BYTES"
+          :enable-compression="false"
+          allow-delete
+          drag-text="点击或拖拽文件到此处上传（图片请用上方区域）"
+          @upload-success="handleOtherUploadSuccess"
+          @upload-error="handleOtherUploadError"
+          @delete-success="handleOtherDeleteSuccess"
+          @delete-error="handleOtherDeleteError"
+        />
+        <span class="upload-hint">任意类型文件（单文件不超过 10MB），最多 {{ MAX_OTHER_ATTACHMENTS }} 个；图片请仅用上方「图片附件」上传。</span>
+
+        <div v-if="otherAttachments.length > 0" class="uploaded-files-list">
+          <h4>已选附件 ({{ otherAttachments.length }}/{{ MAX_OTHER_ATTACHMENTS }})</h4>
+          <ul class="other-files-ul">
+            <li v-for="(f, index) in otherAttachments" :key="f.id" class="other-file-row">
+              <span class="other-file-name">{{ f.original_filename || `附件 ${index + 1}` }}</span>
+              <button type="button" class="remove-btn" @click="removeOtherAttachment(index)">×</button>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -100,41 +181,76 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import { useCustomFileUpload } from "~/composables/useFileUpload";
 import FileUpload from "~/components/FileUpload.vue";
 import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { FileRecord } from "~/types/file";
 import type { UserIdentity } from "~/types/identity";
+import { MAX_POST_FILE_BYTES, isPostImageFile } from "~/utils/postFileKinds";
 
-const isUploading = ref(false);
 const { deleteFile } = useCustomFileUpload();
-const uploadProgress = ref(0);
-
-const { token } = useAuth();
 const { fetchWithAuth, getApiUrl } = useApi();
 const router = useRouter();
+const MAX_TAG_COUNT = 5;
+const MAX_TAG_LENGTH = 50;
+const MAX_POST_IMAGES = 5;
+const MAX_OTHER_ATTACHMENTS = 30;
+
+const props = withDefaults(defineProps<{
+  initialTags?: string[]
+  lockedTags?: string[]
+  returnTo?: string | null
+}>(), {
+  initialTags: () => [],
+  lockedTags: () => [],
+  returnTo: null,
+});
 
 // 表单数据
 const title = ref("");
 const tagInput = ref("");
-const tags = ref([]);
 const content = ref("");
 const uploadedImages = ref<FileRecord[]>([]);
-const uploadMsg = ref("最多可上传5张图片");
+const otherAttachments = ref<FileRecord[]>([]);
+/** Remount FileUpload after rejecting an upload so its internal state resets. */
+const otherUploadKey = ref(0);
 const selectedIdentityId = ref<number | null>(null);
 
 // 错误和状态
 const errors = ref({
   title: "",
   content: "",
+  tags: "",
 });
 const errorMessage = ref("");
 const successMessage = ref("");
 const isLoading = ref(false);
+const normalizeTag = (tag: string) => tag.trim().replace(/\s+/g, " ");
+const normalizeTagKey = (tag: string) => normalizeTag(tag).toLocaleLowerCase();
+const dedupeTags = (rawTags: string[]) => {
+  const out: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rawTag of rawTags) {
+    const normalized = normalizeTag(rawTag);
+    if (!normalized) continue;
+    const key = normalizeTagKey(normalized);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+
+  return out;
+};
+const defaultTags = computed(() => dedupeTags([...(props.lockedTags || []), ...(props.initialTags || [])]));
+const tags = ref<string[]>([...defaultTags.value]);
+const normalizedLockedTags = computed(() => new Set(
+  (props.lockedTags || []).map((tag) => normalizeTagKey(tag))
+));
+const hasLockedTags = computed(() => normalizedLockedTags.value.size > 0);
 
 
 // 验证标题
@@ -162,23 +278,68 @@ const validateContent = () => {
 };
 
 // 添加标签
-const addTag = () => {
-  const tag = tagInput.value.trim();
-  if (tag && !tags.value.includes(tag) && tags.value.length < 5) {
-    tags.value.push(tag);
-    tagInput.value = "";
+const clearTagError = () => {
+  if (errors.value.tags) {
+    errors.value.tags = "";
   }
+};
+
+const handleTagKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Enter" || event.key === ",") {
+    event.preventDefault();
+    addTag();
+  }
+};
+
+const isLockedTag = (tag: string) => normalizedLockedTags.value.has(normalizeTagKey(tag));
+
+const addTag = () => {
+  const tag = normalizeTag(tagInput.value);
+
+  if (!tag) {
+    tagInput.value = "";
+    clearTagError();
+    return false;
+  }
+
+  if (tag.length > MAX_TAG_LENGTH) {
+    errors.value.tags = `标签长度不能超过 ${MAX_TAG_LENGTH} 个字符`;
+    return false;
+  }
+
+  if (tags.value.length >= MAX_TAG_COUNT) {
+    errors.value.tags = `最多只能添加 ${MAX_TAG_COUNT} 个标签`;
+    return false;
+  }
+
+  const duplicate = tags.value.some(
+    (existingTag) => existingTag.toLocaleLowerCase() === tag.toLocaleLowerCase()
+  );
+  if (duplicate) {
+    errors.value.tags = "该标签已添加";
+    return false;
+  }
+
+  tags.value.push(tag);
+  tagInput.value = "";
+  clearTagError();
+  return true;
 };
 
 // 删除标签
 const removeTag = (index: number) => {
+  if (isLockedTag(tags.value[index])) {
+    errors.value.tags = "来源标签已锁定，不能删除";
+    return;
+  }
   tags.value.splice(index, 1);
+  clearTagError();
 };
 
 // 图片上传相关
 const handleImageUploadSuccess = (file: FileRecord) => {
-  if (uploadedImages.value.length >= 5) {
-    errorMessage.value = "最多只能上传5张图片";
+  if (uploadedImages.value.length >= MAX_POST_IMAGES) {
+    errorMessage.value = `最多只能上传 ${MAX_POST_IMAGES} 张图片`;
     return;
   }
   uploadedImages.value.push(file);
@@ -196,6 +357,45 @@ const handleImageDeleteError = (error: Error) => {
   errorMessage.value = `图片删除失败: ${error.message}`;
 };
 
+const handleOtherUploadSuccess = (file: FileRecord) => {
+  if (isPostImageFile(file)) {
+    errorMessage.value = "图片请使用上方「图片附件」区域上传。";
+    void deleteFile(file.id).catch(() => {});
+    otherUploadKey.value += 1;
+    return;
+  }
+  if (otherAttachments.value.length >= MAX_OTHER_ATTACHMENTS) {
+    errorMessage.value = `其他附件最多 ${MAX_OTHER_ATTACHMENTS} 个`;
+    void deleteFile(file.id).catch(() => {});
+    otherUploadKey.value += 1;
+    return;
+  }
+  otherAttachments.value.push(file);
+  otherUploadKey.value += 1;
+};
+
+const handleOtherUploadError = (err: Error) => {
+  errorMessage.value = `附件上传失败: ${err.message}`;
+};
+
+const handleOtherDeleteSuccess = () => {};
+
+const handleOtherDeleteError = (err: Error) => {
+  errorMessage.value = `附件删除失败: ${err.message}`;
+};
+
+const removeOtherAttachment = async (index: number) => {
+  const f = otherAttachments.value[index];
+  try {
+    await deleteFile(f.id);
+    otherAttachments.value.splice(index, 1);
+  } catch (error) {
+    console.error("Delete attachment error:", error);
+    errorMessage.value =
+      error instanceof Error ? `删除附件失败: ${error.message}` : "删除附件失败";
+  }
+};
+
 // 删除已上传的图片
 const removeUploadedImage = async (index: number) => {
   const imageToRemove = uploadedImages.value[index];
@@ -208,7 +408,9 @@ const removeUploadedImage = async (index: number) => {
     uploadedImages.value.splice(index, 1);
   } catch (error) {
     console.error('Delete error:', error);
-    errorMessage.value = `删除图片失败: ${error.message}`;
+    errorMessage.value = error instanceof Error
+      ? `删除图片失败: ${error.message}`
+      : "删除图片失败";
   }
 };
 
@@ -223,17 +425,30 @@ const formValid = computed(() => {
     title.value &&
     content.value &&
     !errors.value.title &&
-    !errors.value.content
+    !errors.value.content &&
+    !errors.value.tags
   );
 });
 
 // 取消按钮处理
 const handleCancel = () => {
   // 询问用户是否确认放弃编辑
-  if (title.value || content.value || uploadedImages.value.length > 0) {
+  const hasUserAddedTags = tags.value.some((tag) => !isLockedTag(tag));
+  if (
+    title.value ||
+    content.value ||
+    tagInput.value ||
+    hasUserAddedTags ||
+    uploadedImages.value.length > 0 ||
+    otherAttachments.value.length > 0
+  ) {
     if (!confirm("确定要放弃当前编辑的内容吗？")) {
       return;
     }
+  }
+  if (props.returnTo) {
+    router.push(props.returnTo);
+    return;
   }
   router.go(-1);
 };
@@ -241,14 +456,15 @@ const handleCancel = () => {
 const resetForm = () => {
   title.value = "";
   tagInput.value = "";
-  tags.value = [];
+  tags.value = [...defaultTags.value];
   content.value = "";
   uploadedImages.value = [];
-  uploadMsg.value = "最多可上传5张图片";
+  otherAttachments.value = [];
   selectedIdentityId.value = null;
   errors.value = {
     title: "",
     content: "",
+    tags: "",
   };
   errorMessage.value = "";
 };
@@ -257,8 +473,16 @@ const resetForm = () => {
 const handleSubmit = async () => {
   validateTitle();
   validateContent();
+  clearTagError();
 
-  if (errors.value.title || errors.value.content) {
+  if (tagInput.value.trim()) {
+    const added = addTag();
+    if (!added) {
+      return;
+    }
+  }
+
+  if (errors.value.title || errors.value.content || errors.value.tags) {
     return;
   }
 
@@ -270,7 +494,10 @@ const handleSubmit = async () => {
       title: title.value,
       content: content.value,
       tags: tags.value,
-      file_ids: uploadedImages.value.map((img: FileRecord) => img.id),
+      file_ids: [
+        ...uploadedImages.value.map((img: FileRecord) => img.id),
+        ...otherAttachments.value.map((f: FileRecord) => f.id),
+      ],
       display_identity_id: selectedIdentityId.value,
     };
 
@@ -298,11 +525,14 @@ const handleSubmit = async () => {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || "请求参数错误，请检查输入内容";
+        if (Array.isArray(errorData.tag_errors) && errorData.tag_errors.length > 0) {
+          errorMessage = errorData.tag_errors.join("；");
+        }
       } catch {
         errorMessage = "请求参数错误，请检查输入内容";
       }
       } else if (response.status === 413) {
-      errorMessage = "上传内容过大，请减少图片数量或压缩图片";
+      errorMessage = "上传内容过大，请减少附件数量或压缩文件（单文件不超过 10MB）";
       } else if (response.status === 429) {
       errorMessage = "发布过于频繁，请稍后再试";
       } else if (response.status >= 500) {
@@ -334,7 +564,11 @@ const handleSubmit = async () => {
     emit("post-success", postData.id || postData.postId);
 
     setTimeout(() => {
-      router.push(`/forum/posts/${postData.id || postData.postId}`);
+      if (props.returnTo) {
+        router.push(props.returnTo);
+      } else {
+        router.push(`/forum/posts/${postData.id || postData.postId}`);
+      }
     }, 3000);
   } catch (err) {
     errorMessage.value =
@@ -494,6 +728,50 @@ const emit = defineEmits(["post-success"]);
 }
 
 .tags-container {
+  .tag-input-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+  }
+
+  .tag-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .tag-add-btn {
+    flex-shrink: 0;
+    min-width: 88px;
+    padding: 0.75rem 1rem;
+    background: var(--color-blue-7, #9fc3e7);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: #7ba8d6;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 480px) {
+      width: 100%;
+      min-height: 44px;
+    }
+  }
+
   .tags-list {
     display: flex;
     flex-wrap: wrap;
@@ -509,6 +787,7 @@ const emit = defineEmits(["post-success"]);
     .tag {
       display: inline-flex;
       align-items: center;
+      gap: 0.35rem;
       background-color: var(--color-blue-7, #9fc3e7);
       color: white;
       padding: 0.35rem 0.75rem;
@@ -545,6 +824,24 @@ const emit = defineEmits(["post-success"]);
       }
     }
   }
+}
+
+.tag--locked {
+  background-color: rgba(38, 164, 255, 0.14) !important;
+  color: #1178c8 !important;
+  border: 1px solid rgba(38, 164, 255, 0.28);
+}
+
+.tag-lock {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.error-text {
+  display: block;
+  margin-top: 0.5rem;
+  color: #dc2626;
+  font-size: 0.875rem;
 }
 
 .upload-container {
@@ -916,6 +1213,43 @@ const emit = defineEmits(["post-success"]);
         }
       }
     }
+  }
+}
+
+.uploaded-files-list {
+  margin-top: 1rem;
+
+  h4 {
+    margin: 0 0 0.75rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+  }
+
+  .other-files-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .other-file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    background: var(--surface-secondary);
+  }
+
+  .other-file-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
   }
 }
 </style>

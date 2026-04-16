@@ -62,12 +62,6 @@ function onMouseLeave() {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/gugu" :class="{ active: route.path.startsWith('/gugu') }">
-            <img src="/icons/sidebar_gugulogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('gugu') }}</span>
-          </NuxtLink>
-        </li>
-        <li>
           <NuxtLink to="/matching" :class="{ active: route.path.startsWith('/matching') }">
             <img src="/icons/sidebar_matching.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('Form a team') }}</span>

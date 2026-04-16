@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import CarouselBanner from "~/components/home/CarouselBanner.vue";
@@ -8,6 +8,9 @@ import PostCardGrid from "~/components/home/PostCardGrid.vue";
 const router = useRouter();
 const { fetchWithAuth, fetchPublic } = useApi();
 const { isLoggedIn } = useAuth();
+
+const GUGU_INITIAL_LIMIT = 6;
+const GUGU_PAGE_LIMIT = 20;
 
 // ── 热门帖子 ───────────────────────────────────────────────────────
 const hotPosts = ref([]);
@@ -32,24 +35,62 @@ const fetchHotPosts = async () => {
 
 // ── 咕咕消息 ──────────────────────────────────────────────────────
 const kgAllGuguMessages = ref<any[]>([]);
-const kgGuguDisplayCount = ref(6);
 const kgGuguLoading = ref(false);
+const kgGuguLoadingOlder = ref(false);
+const kgGuguHasMoreOlder = ref(false);
 const kgGuguInputText = ref('');
 const kgGuguSending = ref(false);
+const kgChatInputRef = ref<HTMLTextAreaElement | null>(null);
 
 const fetchKgGuguMessages = async () => {
   kgGuguLoading.value = true;
   try {
     const { getApiUrl } = useApi();
-    const response = await fetchPublic(getApiUrl('/api/gugu/recent?limit=100'));
+    const q = new URLSearchParams({
+      limit: String(GUGU_INITIAL_LIMIT),
+    });
+    const response = await fetchPublic(
+      getApiUrl(`/api/gugu/messages?${q.toString()}`)
+    );
     if (response.ok) {
       const data = await response.json();
       kgAllGuguMessages.value = data.messages || [];
+      kgGuguHasMoreOlder.value = Boolean(data.has_more);
     }
   } catch {
     kgAllGuguMessages.value = [];
+    kgGuguHasMoreOlder.value = false;
   } finally {
     kgGuguLoading.value = false;
+  }
+};
+
+const fetchKgGuguOlderPage = async () => {
+  const list = kgAllGuguMessages.value;
+  if (!list.length || kgGuguLoadingOlder.value || !kgGuguHasMoreOlder.value) return;
+  const oldest = list[list.length - 1];
+  if (!oldest?.id) return;
+
+  kgGuguLoadingOlder.value = true;
+  try {
+    const { getApiUrl } = useApi();
+    const q = new URLSearchParams({
+      limit: String(GUGU_PAGE_LIMIT),
+      before_id: String(oldest.id),
+    });
+    const response = await fetchPublic(
+      getApiUrl(`/api/gugu/messages?${q.toString()}`)
+    );
+    if (response.ok) {
+      const data = await response.json();
+      const chunk = data.messages || [];
+      kgAllGuguMessages.value = [...list, ...chunk];
+      kgGuguHasMoreOlder.value = Boolean(data.has_more);
+    }
+  } catch {
+    // 保留已加载列表，不关闭 has_more，便于用户重试
+  } finally {
+    kgGuguLoadingOlder.value = false;
   }
 };
 
@@ -84,8 +125,10 @@ const sendKgGuguMessage = async () => {
   }
 };
 
-const kgLoadMoreMessages = () => {
-  kgGuguDisplayCount.value += 6;
+const focusKgGuguInput = () => {
+  nextTick(() => {
+    kgChatInputRef.value?.focus();
+  });
 };
 
 // ── 工具函数 ──────────────────────────────────────────────────────
@@ -103,8 +146,6 @@ const formatTimeAgo = (dateString: string) => {
   if (diffDays < 7) return `${diffDays}天前`;
   return date.toLocaleDateString("zh-CN");
 };
-
-const goToGugu = () => router.push("/gugu");
 
 onMounted(() => {
   fetchHotPosts();
@@ -142,6 +183,7 @@ onMounted(() => {
       <!-- 输入区 -->
       <div class="kg-chat-input-row">
         <textarea
+          ref="kgChatInputRef"
           class="kg-chat-input"
           v-model="kgGuguInputText"
           placeholder="写下你想说的话吧......"
@@ -164,7 +206,7 @@ onMounted(() => {
         </div>
         <template v-else>
           <div
-            v-for="msg in kgAllGuguMessages.slice(0, kgGuguDisplayCount)"
+            v-for="msg in kgAllGuguMessages"
             :key="msg.id"
             class="kg-message-item"
           >
@@ -175,18 +217,20 @@ onMounted(() => {
               <div class="kg-msg-meta">
                 <span class="kg-msg-author">{{ msg.author || '匿名用户' }}</span>
                 <span class="kg-msg-time">{{ formatTimeAgo(msg.created_at) }}</span>
-                <span class="kg-msg-reply" @click="goToGugu">回复</span>
+                <span class="kg-msg-reply" @click="focusKgGuguInput">回复</span>
               </div>
               <div class="kg-msg-text">{{ msg.content }}</div>
             </div>
           </div>
 
-          <!-- 加载更多 / 已到尽头 -->
           <div
-            v-if="kgGuguDisplayCount < kgAllGuguMessages.length"
+            v-if="kgGuguHasMoreOlder"
             class="kg-view-more-chat"
-            @click="kgLoadMoreMessages"
-          >查看更多历史消息</div>
+            :class="{ 'kg-view-more-chat--disabled': kgGuguLoadingOlder }"
+            @click="fetchKgGuguOlderPage"
+          >
+            {{ kgGuguLoadingOlder ? '加载中…' : '查看更多历史消息' }}
+          </div>
           <div v-else class="kg-no-more-chat">已显示全部历史消息</div>
         </template>
       </div>
@@ -471,6 +515,12 @@ onMounted(() => {
   &:hover {
     color: #5577d4;
     text-decoration: underline;
+  }
+
+  &--disabled {
+    pointer-events: none;
+    opacity: 0.65;
+    cursor: default;
   }
 }
 
