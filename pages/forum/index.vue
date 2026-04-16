@@ -176,8 +176,14 @@ onMounted(() => {
             <span class="kg-post-card__author-name">{{ post.author }}</span>
           </div>
           <div class="kg-post-card__stats">
-            <span class="kg-stat"><span class="kg-stat-icon" aria-hidden="true">💬</span>{{ post.comments }}</span>
-            <span class="kg-stat"><span class="kg-stat-icon" aria-hidden="true">👁</span>{{ post.view_count }}</span>
+            <span class="kg-stat">
+              <ForumUiIcon name="comment" class="kg-stat-icon" />
+              {{ post.comments }}
+            </span>
+            <span class="kg-stat">
+              <ForumUiIcon name="eye" class="kg-stat-icon" />
+              {{ post.view_count }}
+            </span>
             <span class="kg-stat kg-stat--time">{{ formatDate(post.publishDate) }}</span>
           </div>
         </div>
@@ -366,8 +372,9 @@ onMounted(() => {
 }
 
 .kg-stat-icon {
-  font-size: 0.78rem;
-  line-height: 1;
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
 }
 
 .kg-loading {

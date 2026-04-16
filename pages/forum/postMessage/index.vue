@@ -16,7 +16,10 @@ const handlePostSuccess = (postId) => {
 <template>
   <div class="kg-post-message">
     <div class="kg-back-bar">
-      <NuxtLink to="/forum" class="kg-back-link">← 返回论坛</NuxtLink>
+      <NuxtLink to="/forum" class="kg-back-link">
+        <ForumUiIcon name="back" class="kg-back-link__icon" />
+        <span>返回论坛</span>
+      </NuxtLink>
     </div>
     <div class="kg-card">
       <h1 class="kg-page-title">发布帖子</h1>
@@ -38,10 +41,19 @@ const handlePostSuccess = (postId) => {
 }
 
 .kg-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: #26a4ff;
   text-decoration: none;
   font-size: 0.9rem;
   &:hover { text-decoration: underline; }
+}
+
+.kg-back-link__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
 }
 
 .kg-card {

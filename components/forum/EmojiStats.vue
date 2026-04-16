@@ -8,13 +8,18 @@
         :title="`${reaction.count} 个 ${reaction.emoji.description || getEmojiFromCode(reaction.emoji.emoji_code)} 反应`"
       >
         <span class="emoji">
+          <ForumUiIcon
+            v-if="getEmojiIconName(reaction.emoji.emoji_code)"
+            :name="getEmojiIconName(reaction.emoji.emoji_code)"
+            class="emoji-icon"
+          />
           <img 
-            v-if="reaction.emoji.image_url" 
+            v-else-if="reaction.emoji.image_url" 
             :src="reaction.emoji.image_url" 
             :alt="reaction.emoji.description || 'emoji'"
             class="emoji-image"
           />
-          <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "❓" }}</span>
+          <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "?" }}</span>
         </span>
         <span class="count">{{ reaction.count }}</span>
       </span>
@@ -62,6 +67,19 @@ const getEmojiFromCode = (emojiCode) => {
 
   // Otherwise look up in mapping table
   return emojiMap[emojiCode] || emojiCode;
+};
+
+const getEmojiIconName = (emojiCode) => {
+  const iconMap = {
+    plus_one: "plus-one",
+    thumbs_up: "plus-one",
+    heart: "heart",
+    love: "heart",
+    party_popper: "celebrate",
+    rocket: "celebrate",
+  };
+
+  return iconMap[emojiCode] || null;
 };
 
 const props = defineProps({
@@ -182,5 +200,11 @@ onMounted(() => {
   font-size: 0.75rem;
   color: #999;
   font-weight: 500;
+}
+
+.emoji-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  display: block;
 }
 </style>
