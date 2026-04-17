@@ -86,6 +86,16 @@ const postDownloadOnlyFiles = computed(() =>
 );
 
 const filePublicUrl = (file) => file?.url || file?.file_url || "";
+const fileDisplayName = (file, fallback = "附件") =>
+  file?.original_filename || fallback;
+const formatFileSize = (fileSize) => {
+  if (!fileSize || Number.isNaN(Number(fileSize))) return "";
+  const size = Number(fileSize);
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${Math.max(1, Math.round(size / 1024))} KB`;
+};
 
 const showDeleteConfirm = () => {
   if (!canDeletePost.value) {
@@ -317,13 +327,27 @@ onMounted(() => { fetchPostData(); });
             :key="'pdf-' + file.id"
             class="kg-preview-card"
           >
-            <p class="kg-preview-filename">{{ file.original_filename || 'PDF 附件' }}</p>
+            <p class="kg-preview-filename">{{ fileDisplayName(file, 'PDF 附件') }}</p>
             <ClientOnly>
               <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="file.id" />
               <template #fallback>
                 <p class="kg-preview-fallback">预览加载中…</p>
               </template>
             </ClientOnly>
+            <div class="kg-preview-actions">
+              <a
+                class="kg-download-link"
+                :href="filePublicUrl(file)"
+                :download="fileDisplayName(file, 'PDF 附件')"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                下载附件
+              </a>
+              <span v-if="file.file_size" class="kg-download-meta">
+                {{ formatFileSize(file.file_size) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -334,13 +358,27 @@ onMounted(() => { fetchPostData(); });
             :key="'docx-' + file.id"
             class="kg-preview-card"
           >
-            <p class="kg-preview-filename">{{ file.original_filename || 'Word 附件' }}</p>
+            <p class="kg-preview-filename">{{ fileDisplayName(file, 'Word 附件') }}</p>
             <ClientOnly>
               <PostDocxPagesViewer :url="filePublicUrl(file)" />
               <template #fallback>
                 <p class="kg-preview-fallback">预览加载中…</p>
               </template>
             </ClientOnly>
+            <div class="kg-preview-actions">
+              <a
+                class="kg-download-link"
+                :href="filePublicUrl(file)"
+                :download="fileDisplayName(file, 'Word 附件')"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                下载附件
+              </a>
+              <span v-if="file.file_size" class="kg-download-meta">
+                {{ formatFileSize(file.file_size) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -351,7 +389,7 @@ onMounted(() => { fetchPostData(); });
             :key="'doc-' + file.id"
             class="kg-preview-card"
           >
-            <p class="kg-preview-filename">{{ file.original_filename || 'Word 附件' }}</p>
+            <p class="kg-preview-filename">{{ fileDisplayName(file, 'Word 附件') }}</p>
             <ClientOnly>
               <PostOfficeDocViewer
                 :url="filePublicUrl(file)"
@@ -361,6 +399,20 @@ onMounted(() => { fetchPostData(); });
                 <p class="kg-preview-fallback">预览加载中…</p>
               </template>
             </ClientOnly>
+            <div class="kg-preview-actions">
+              <a
+                class="kg-download-link"
+                :href="filePublicUrl(file)"
+                :download="fileDisplayName(file, 'Word 附件')"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                下载附件
+              </a>
+              <span v-if="file.file_size" class="kg-download-meta">
+                {{ formatFileSize(file.file_size) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -371,13 +423,14 @@ onMounted(() => { fetchPostData(); });
               <a
                 class="kg-download-link"
                 :href="filePublicUrl(file)"
+                :download="fileDisplayName(file)"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {{ file.original_filename || '附件' }}
+                {{ fileDisplayName(file) }}
               </a>
               <span v-if="file.file_size" class="kg-download-meta">
-                {{ Math.round(file.file_size / 1024) }} KB
+                {{ formatFileSize(file.file_size) }}
               </span>
             </li>
           </ul>
@@ -599,6 +652,14 @@ onMounted(() => { fetchPostData(); });
   padding: 12px;
   font-size: 0.875rem;
   color: #6a85a0;
+}
+
+.kg-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
 .kg-article__downloads {

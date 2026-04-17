@@ -10,15 +10,6 @@
       referrerpolicy="strict-origin-when-cross-origin"
       :src="embedUrl"
     />
-    <a
-      v-if="downloadUrl"
-      class="post-office-doc__download"
-      :href="downloadUrl"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      下载 {{ displayName }}
-    </a>
   </div>
 </template>
 
@@ -34,12 +25,6 @@ const embedUrl = computed(() => {
   if (!props.url?.trim()) return "";
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(props.url)}`;
 });
-
-const downloadUrl = computed(() => props.url || "");
-
-const displayName = computed(
-  () => props.originalFilename || "文档.doc"
-);
 </script>
 
 <style scoped>
@@ -63,17 +48,5 @@ const displayName = computed(
   border: none;
   border-radius: 6px;
   background: #fff;
-}
-
-.post-office-doc__download {
-  display: inline-block;
-  margin-top: 12px;
-  font-size: 0.9rem;
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.post-office-doc__download:hover {
-  text-decoration: underline;
 }
 </style>
