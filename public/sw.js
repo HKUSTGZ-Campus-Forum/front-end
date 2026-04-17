@@ -1,5 +1,5 @@
 // UniKorn Campus Forum Service Worker
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.0.1';
 const CACHE_NAME = `unikorn-forum-${CACHE_VERSION}`;
 const STATIC_CACHE = `unikorn-static-${CACHE_VERSION}`;
 const API_CACHE = `unikorn-api-${CACHE_VERSION}`;
@@ -20,7 +20,6 @@ const STATIC_ASSETS = [
 const API_PATTERNS = [
   '/api/analytics/hot-posts',
   '/api/analytics/daily-summary',
-  '/api/posts',
   '/api/courses'
 ];
 
@@ -76,6 +75,12 @@ self.addEventListener('fetch', (event) => {
 
 async function handleApiRequest(request) {
   const url = new URL(request.url);
+
+  // Forum post payloads include temporary file access URLs or view endpoints
+  // and must always come from the network to avoid stale attachment metadata.
+  if (url.pathname.startsWith('/api/posts')) {
+    return fetch(request);
+  }
   
   // Only cache public read-only endpoints
   const isCacheable = API_PATTERNS.some(pattern => 

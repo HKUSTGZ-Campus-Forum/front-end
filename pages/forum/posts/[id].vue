@@ -85,7 +85,8 @@ const postDownloadOnlyFiles = computed(() =>
   (postData.value.files || []).filter((f) => f && isDownloadOnlyFile(f))
 );
 
-const filePublicUrl = (file) => file?.url || file?.file_url || "";
+const filePublicUrl = (file) =>
+  file?.view_url || (file?.id ? `/api/files/view/${file.id}` : file?.url || file?.file_url || "");
 const fileDisplayName = (file, fallback = "附件") =>
   file?.original_filename || fallback;
 const formatFileSize = (fileSize) => {
@@ -316,7 +317,7 @@ onMounted(() => { fetchPostData(); });
             class="kg-image-thumb"
             @click="openImageModal(file)"
           >
-            <img :src="file.url || file.file_url" :alt="getGenericImageName(file, idx)" @error="handleImageError" @load="handleImageLoad" />
+            <img :src="filePublicUrl(file)" :alt="getGenericImageName(file, idx)" @error="handleImageError" @load="handleImageLoad" />
           </div>
         </div>
 
@@ -329,7 +330,7 @@ onMounted(() => { fetchPostData(); });
           >
             <p class="kg-preview-filename">{{ fileDisplayName(file, 'PDF 附件') }}</p>
             <ClientOnly>
-              <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="file.id" />
+              <PostPdfPageViewer :url="filePublicUrl(file)" />
               <template #fallback>
                 <p class="kg-preview-fallback">预览加载中…</p>
               </template>
