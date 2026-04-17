@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import CarouselBanner from "~/components/home/CarouselBanner.vue";
 import PostCardGrid from "~/components/home/PostCardGrid.vue";
+import UserAvatar from "~/components/user/UserAvatar.vue";
 
 const router = useRouter();
 const { fetchWithAuth, fetchPublic } = useApi();
@@ -41,6 +42,14 @@ const kgGuguHasMoreOlder = ref(false);
 const kgGuguInputText = ref('');
 const kgGuguSending = ref(false);
 const kgChatInputRef = ref<HTMLTextAreaElement | null>(null);
+const kgReplyTarget = ref<any | null>(null);
+
+const getReplyDisplayName = (message: any) => message?.author || '匿名用户';
+const getReplyPreview = (message: any, maxLength = 60) => {
+  const raw = String(message?.content || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return '原消息已不可用';
+  return raw.length > maxLength ? `${raw.slice(0, maxLength)}...` : raw;
+};
 
 const fetchKgGuguMessages = async () => {
   kgGuguLoading.value = true;
@@ -109,13 +118,17 @@ const sendKgGuguMessage = async () => {
     const response = await fetchWithAuth(getApiUrl('/api/gugu/messages'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: text }),
+      body: JSON.stringify({
+        content: text,
+        reply_to_message_id: kgReplyTarget.value?.id ?? null,
+      }),
     });
     if (response.ok) {
       const data = await response.json();
       if (data.data) {
         kgAllGuguMessages.value.unshift(data.data);
         kgGuguInputText.value = '';
+        kgReplyTarget.value = null;
       }
     }
   } catch (err) {
@@ -129,6 +142,15 @@ const focusKgGuguInput = () => {
   nextTick(() => {
     kgChatInputRef.value?.focus();
   });
+};
+
+const replyToKgMessage = (message: any) => {
+  kgReplyTarget.value = message;
+  focusKgGuguInput();
+};
+
+const clearKgReplyTarget = () => {
+  kgReplyTarget.value = null;
 };
 
 // ── 工具函数 ──────────────────────────────────────────────────────
@@ -181,12 +203,29 @@ onMounted(() => {
       <h2 class="kg-chat-title">聊聊新鲜事儿～咕咕</h2>
 
       <!-- 输入区 -->
+      <div v-if="kgReplyTarget" class="kg-chat-reply-banner">
+        <div class="kg-chat-reply-banner__content">
+          <span class="kg-chat-reply-banner__label">
+            正在回复 {{ getReplyDisplayName(kgReplyTarget) }}
+          </span>
+          <span class="kg-chat-reply-banner__text">
+            {{ getReplyPreview(kgReplyTarget) }}
+          </span>
+        </div>
+        <button
+          type="button"
+          class="kg-chat-reply-banner__clear"
+          @click="clearKgReplyTarget"
+        >
+          取消
+        </button>
+      </div>
       <div class="kg-chat-input-row">
         <textarea
           ref="kgChatInputRef"
           class="kg-chat-input"
           v-model="kgGuguInputText"
-          placeholder="写下你想说的话吧......"
+          :placeholder="kgReplyTarget ? `回复 ${getReplyDisplayName(kgReplyTarget)}......` : '写下你想说的话吧......'"
           rows="2"
           @keydown.enter.exact.prevent="sendKgGuguMessage"
           @keydown.enter.shift.exact="() => {}"
@@ -211,13 +250,27 @@ onMounted(() => {
             class="kg-message-item"
           >
             <div class="kg-msg-avatar">
-              <img v-if="msg.author_avatar" :src="msg.author_avatar" :alt="msg.author" />
+              <UserAvatar
+                :avatar-url="msg.author_avatar"
+                :username="msg.author || '匿名用户'"
+                :user-id="msg.author_id"
+                size="md"
+                :show-tooltip="false"
+              />
             </div>
             <div class="kg-msg-body">
               <div class="kg-msg-meta">
                 <span class="kg-msg-author">{{ msg.author || '匿名用户' }}</span>
                 <span class="kg-msg-time">{{ formatTimeAgo(msg.created_at) }}</span>
-                <span class="kg-msg-reply" @click="focusKgGuguInput">回复</span>
+                <span class="kg-msg-reply" @click="replyToKgMessage(msg)">回复</span>
+              </div>
+              <div v-if="msg.reply_to" class="kg-msg-quote">
+                <div class="kg-msg-quote__author">
+                  回复 {{ getReplyDisplayName(msg.reply_to) }}
+                </div>
+                <div class="kg-msg-quote__text">
+                  {{ getReplyPreview(msg.reply_to, 100) }}
+                </div>
               </div>
               <div class="kg-msg-text">{{ msg.content }}</div>
             </div>
@@ -358,6 +411,47 @@ onMounted(() => {
   margin-bottom: 18px;
 }
 
+.kg-chat-reply-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #eef4ff;
+  border: 1px solid #c9d8ff;
+}
+
+.kg-chat-reply-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.kg-chat-reply-banner__label {
+  color: #42548f;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.kg-chat-reply-banner__text {
+  color: #5b6994;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.kg-chat-reply-banner__clear {
+  border: none;
+  background: transparent;
+  color: #5871c8;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+}
+
 .kg-chat-input {
   width: 100%;
   padding: 10px 14px 10px 36px;
@@ -422,20 +516,13 @@ onMounted(() => {
 }
 
 .kg-msg-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #c8ced8;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   margin-top: 8px;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kg-msg-body {
@@ -500,6 +587,28 @@ onMounted(() => {
   padding: 9px 14px 11px;
   background: #FFFFFF;
   border-radius: 0 0 10px 10px;
+}
+
+.kg-msg-quote {
+  margin: 10px 14px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.65);
+  border-left: 3px solid #7f97e8;
+}
+
+.kg-msg-quote__author {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #43599f;
+  margin-bottom: 3px;
+}
+
+.kg-msg-quote__text {
+  font-size: 0.8rem;
+  color: #54637f;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 .kg-view-more-chat {
