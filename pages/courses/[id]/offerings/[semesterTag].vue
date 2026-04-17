@@ -4,7 +4,6 @@ import { useRoute } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import {
   buildCourseListBackQuery,
-  COURSE_REVIEW_TAG,
   getVisiblePostTags,
   type CourseOffering,
 } from "~/utils/courseOffering";
@@ -121,13 +120,11 @@ const fetchDiscussions = async () => {
     isLoadingDiscussions.value = true;
     const params = new URLSearchParams({
       limit: "30",
-      sort_by: "created_at",
-      sort_order: "desc",
-      tags: [courseDetail.value.code, semesterTag.value].join(","),
-      tag_match: "all",
-      exclude_tags: COURSE_REVIEW_TAG,
+      offering: semesterTag.value,
     });
-    const response = await fetchPublic(getApiUrl(`/api/posts?${params.toString()}`));
+    const response = await fetchPublic(
+      getApiUrl(`/api/courses/${courseId.value}/discussions?${params.toString()}`)
+    );
     if (!response.ok) {
       throw new Error(`获取讨论区失败: ${response.status}`);
     }
