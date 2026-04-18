@@ -153,6 +153,11 @@ const clearKgReplyTarget = () => {
   kgReplyTarget.value = null;
 };
 
+const goToKgUserProfile = (userId?: number | string) => {
+  if (!userId) return;
+  router.push(`/users/${userId}`);
+};
+
 // ── 工具函数 ──────────────────────────────────────────────────────
 const formatTimeAgo = (dateString: string) => {
   const date = new Date(dateString);
@@ -255,7 +260,9 @@ onMounted(() => {
                 :username="msg.author || '匿名用户'"
                 :user-id="msg.author_id"
                 size="md"
+                :clickable="Boolean(msg.author_id)"
                 :show-tooltip="false"
+                @click="goToKgUserProfile"
               />
             </div>
             <div class="kg-msg-body">
@@ -264,15 +271,17 @@ onMounted(() => {
                 <span class="kg-msg-time">{{ formatTimeAgo(msg.created_at) }}</span>
                 <span class="kg-msg-reply" @click="replyToKgMessage(msg)">回复</span>
               </div>
-              <div v-if="msg.reply_to" class="kg-msg-quote">
-                <div class="kg-msg-quote__author">
-                  回复 {{ getReplyDisplayName(msg.reply_to) }}
+              <div class="kg-msg-text">
+                <div v-if="msg.reply_to" class="kg-msg-quote">
+                  <div class="kg-msg-quote__author">
+                    回复 {{ getReplyDisplayName(msg.reply_to) }}
+                  </div>
+                  <div class="kg-msg-quote__text">
+                    {{ getReplyPreview(msg.reply_to, 100) }}
+                  </div>
                 </div>
-                <div class="kg-msg-quote__text">
-                  {{ getReplyPreview(msg.reply_to, 100) }}
-                </div>
+                <div class="kg-msg-text__content">{{ msg.content }}</div>
               </div>
-              <div class="kg-msg-text">{{ msg.content }}</div>
             </div>
           </div>
 
@@ -584,31 +593,36 @@ onMounted(() => {
   color: #2a3a5a;
   line-height: 1.55;
   word-break: break-word;
-  padding: 9px 14px 11px;
+  padding: 10px 14px 12px;
   background: #FFFFFF;
   border-radius: 0 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .kg-msg-quote {
-  margin: 10px 14px 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.65);
-  border-left: 3px solid #7f97e8;
+  padding-left: 10px;
+  border-left: 3px solid #9bb2ef;
+  opacity: 0.92;
 }
 
 .kg-msg-quote__author {
-  font-size: 0.76rem;
+  font-size: 0.73rem;
   font-weight: 600;
-  color: #43599f;
-  margin-bottom: 3px;
+  color: #5870bb;
+  margin-bottom: 2px;
 }
 
 .kg-msg-quote__text {
-  font-size: 0.8rem;
-  color: #54637f;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  color: #7a86a5;
+  line-height: 1.4;
   word-break: break-word;
+}
+
+.kg-msg-text__content {
+  color: #2a3a5a;
 }
 
 .kg-view-more-chat {

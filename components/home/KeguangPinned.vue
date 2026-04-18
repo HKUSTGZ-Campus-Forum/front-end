@@ -19,6 +19,7 @@ const navStyle = computed(() => ({
 }))
 
 const searchQuery = ref('')
+const isLoggingOut = ref(false)
 
 const handleSearch = (query: string) => {
   if (query.trim()) {
@@ -28,6 +29,18 @@ const handleSearch = (query: string) => {
 
 const handleLoginOrLogout = () => {
   navigateTo('/login')
+}
+
+const handleMenuLogout = async () => {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try {
+    await logout()
+  } catch {
+    // logout 内部已处理清理与跳转
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
 
@@ -50,15 +63,48 @@ const handleLoginOrLogout = () => {
       </div>
 
       <div class="kg-topnav__user">
-        <NuxtLink v-if="isLoggedIn && user" :to="`/users/${user.id}`" class="kg-topnav__avatar-link">
-          <UserAvatar
-            :avatar-url="user.profile_picture_url"
-            :username="user.username"
-            :user-id="user.id"
-            size="md"
-            class="topbar-user-avatar"
-          />
-        </NuxtLink>
+        <div v-if="isLoggedIn && user" class="kg-topnav__user-menu">
+          <NuxtLink :to="`/users/${user.id}`" class="kg-topnav__avatar-link">
+            <UserAvatar
+              :avatar-url="user.profile_picture_url"
+              :username="user.username"
+              :user-id="user.id"
+              size="md"
+              class="topbar-user-avatar"
+            />
+          </NuxtLink>
+
+          <div class="kg-topnav__menu-panel">
+            <div class="kg-topnav__menu-header">
+              <span class="kg-topnav__menu-name">{{ user.username }}</span>
+              <span class="kg-topnav__menu-subtitle">账号管理</span>
+            </div>
+
+            <div class="kg-topnav__menu-list">
+              <NuxtLink to="/setting/account" class="kg-topnav__menu-item">
+                <span class="kg-topnav__menu-icon">⚙️</span>
+                <span>账号设置</span>
+              </NuxtLink>
+              <NuxtLink to="/setting/identity" class="kg-topnav__menu-item">
+                <span class="kg-topnav__menu-icon">🎓</span>
+                <span>身份认证</span>
+              </NuxtLink>
+              <NuxtLink to="/setting/theme" class="kg-topnav__menu-item">
+                <span class="kg-topnav__menu-icon">🎨</span>
+                <span>主题设置</span>
+              </NuxtLink>
+              <button
+                type="button"
+                class="kg-topnav__menu-item kg-topnav__menu-item--button"
+                :disabled="isLoggingOut"
+                @click="handleMenuLogout"
+              >
+                <span class="kg-topnav__menu-icon">🚪</span>
+                <span>{{ isLoggingOut ? '正在退出…' : '退出登录' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
         <button type="button" v-else class="login-btn-text" @click="handleLoginOrLogout">
           {{ t('login') }}
         </button>
@@ -118,6 +164,30 @@ const handleLoginOrLogout = () => {
   flex-shrink: 0;
 }
 
+.kg-topnav__user-menu {
+  position: relative;
+  padding: 8px 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: calc(100% - 6px);
+    right: 0;
+    width: 240px;
+    height: 18px;
+  }
+
+  &:hover,
+  &:focus-within {
+    .kg-topnav__menu-panel {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+  }
+}
+
 .kg-topnav__avatar-link {
   display: flex;
   align-items: center;
@@ -134,6 +204,96 @@ const handleLoginOrLogout = () => {
       border-color: #26a4ff;
     }
   }
+}
+
+.kg-topnav__menu-panel {
+  position: absolute;
+  top: calc(100% + 1px);
+  right: 0;
+  min-width: 220px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #dbe9fb;
+  box-shadow: 0 18px 40px rgba(40, 57, 101, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  pointer-events: none;
+  z-index: 1020;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 18px;
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.98);
+    border-left: 1px solid #dbe9fb;
+    border-top: 1px solid #dbe9fb;
+    transform: rotate(45deg);
+  }
+}
+
+.kg-topnav__menu-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #edf4ff;
+}
+
+.kg-topnav__menu-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1a2a4a;
+}
+
+.kg-topnav__menu-subtitle {
+  font-size: 0.76rem;
+  color: #8ca0bb;
+}
+
+.kg-topnav__menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kg-topnav__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #294066;
+  font-size: 0.87rem;
+  font-weight: 500;
+  background: #f6fbff;
+  border: 1px solid transparent;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    background: #eef6ff;
+    border-color: #d6e7ff;
+    transform: translateX(2px);
+  }
+}
+
+.kg-topnav__menu-item--button {
+  cursor: pointer;
+  font: inherit;
+}
+
+.kg-topnav__menu-icon {
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .login-btn-text {
@@ -165,6 +325,11 @@ const handleLoginOrLogout = () => {
 
   .kg-topnav__search {
     min-width: 120px;
+  }
+
+  .kg-topnav__menu-panel {
+    right: -8px;
+    min-width: 200px;
   }
 }
 </style>

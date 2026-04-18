@@ -3,6 +3,11 @@ import pkg from "./package.json";
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
   devtools: { enabled: false },
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag) => tag === "iconify-icon",
+    },
+  },
   ui: {
     fonts: false,
   },
