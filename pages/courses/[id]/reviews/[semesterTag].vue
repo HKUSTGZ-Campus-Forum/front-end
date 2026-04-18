@@ -8,6 +8,7 @@ import { useCustomFileUpload } from "~/composables/useFileUpload";
 import { ErrorModal, SuccessModal } from "~/components/ui";
 import {
   buildCourseListBackQuery,
+  COURSE_REVIEW_LABEL,
   COURSE_REVIEW_TAG,
   type CourseOffering,
 } from "~/utils/courseOffering";
@@ -86,6 +87,11 @@ const offeringHomeTo = computed(() => ({
 const selectedOffering = computed(() => (
   offerings.value.find((offering) => offering.offering_tag === semesterTag.value) || null
 ));
+const fixedReviewTags = computed(() => [
+  courseDetail.value.code,
+  selectedOffering.value?.display_name || semesterTag.value,
+  COURSE_REVIEW_LABEL,
+].filter(Boolean));
 
 const extractRating = (content: string) => {
   const match = content.match(/⭐ 评分：(\d)/);
@@ -174,7 +180,7 @@ const submitReview = async () => {
     const payload = {
       title: reviewForm.value.title.trim() || `${selectedOffering.value?.display_name || semesterTag.value} ${courseDetail.value.name} 课程评价`,
       content,
-      tags: [courseDetail.value.code, semesterTag.value, COURSE_REVIEW_TAG],
+      tags: [courseDetail.value.code, semesterTag.value, COURSE_REVIEW_TAG, COURSE_REVIEW_LABEL],
       file_ids: uploadedFileIds.value,
     };
 
@@ -286,20 +292,22 @@ useHead({
 
     <template v-else>
       <div class="kg-card kg-course-header">
-        <div class="kg-offering-chip-row">
-          <span class="kg-offering-chip">{{ selectedOffering?.display_name }}</span>
-          <span class="kg-offering-chip kg-offering-chip--outline">{{ semesterTag }}</span>
+        <div class="kg-course-header-top">
+          <h1 class="kg-course-name">
+            <span class="kg-course-name__code">{{ courseDetail.code }}</span>
+            <span class="kg-course-name__title">{{ courseDetail.name }}</span>
+          </h1>
+          <span v-if="courseDetail.credits" class="kg-meta-chip">{{ courseDetail.credits }} 学分</span>
         </div>
-        <div class="kg-course-title-row">
-          <div>
-            <span class="kg-course-code-badge">{{ courseDetail.code }}</span>
-            <h1 class="kg-course-name">{{ courseDetail.name }}</h1>
-          </div>
+
+        <div class="kg-course-header-tags">
+          <span class="kg-offering-chip">{{ selectedOffering?.display_name }}</span>
           <span :class="['kg-status-badge', courseDetail.is_active ? 'active' : 'inactive']">
-            {{ courseDetail.is_active ? '开放评课' : '关闭评课' }}
+            {{ courseDetail.is_active ? '开放中' : '已结束' }}
           </span>
         </div>
-        <p class="kg-page-intro">这里展示的是 {{ selectedOffering?.display_name || semesterTag }} 这一 offering 的课程评价。</p>
+
+        <p class="kg-page-intro">这里展示的是{{ selectedOffering?.display_name || semesterTag }}学期{{ courseDetail.code }}的课程评价</p>
       </div>
 
       <div class="kg-card kg-reviews">
@@ -312,6 +320,12 @@ useHead({
 
         <div v-if="isLoggedIn && showReviewForm" class="kg-review-form">
           <h3 class="kg-form-title">发表 {{ selectedOffering?.display_name || semesterTag }} 的课程评价</h3>
+          <div class="kg-fixed-tags">
+            <span class="kg-fixed-tags__label">固定标签</span>
+            <div class="kg-fixed-tags__list">
+              <span v-for="tag in fixedReviewTags" :key="tag" class="kg-fixed-tag">{{ tag }}</span>
+            </div>
+          </div>
           <form @submit.prevent="submitReview">
             <div class="kg-form-group">
               <label>评分（可选）</label>
@@ -426,7 +440,7 @@ useHead({
 <style lang="scss" scoped>
 .kg-course-detail {
   width: 100%;
-  max-width: 920px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 20px 20px 60px;
 }
@@ -453,10 +467,9 @@ useHead({
   box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
   padding: 24px 28px;
   margin-bottom: 20px;
+  min-width: 0;
 }
 
-.kg-offering-chip-row,
-.kg-course-title-row,
 .kg-reviews-header,
 .kg-form-actions,
 .kg-error-actions,
@@ -468,10 +481,29 @@ useHead({
   flex-wrap: wrap;
 }
 
+.kg-course-header {
+  padding: 24px 28px 20px;
+}
+
+.kg-course-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kg-course-header-tags {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
 .kg-offering-chip {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
+  padding: 8px 18px;
   border-radius: 999px;
   background: rgba(38, 164, 255, 0.12);
   color: #1178c8;
@@ -483,38 +515,54 @@ useHead({
   }
 }
 
-.kg-course-code-badge {
-  display: inline-block;
-  padding: 2px 10px;
-  background: rgba(38, 164, 255, 0.1);
-  border: 1px solid rgba(38, 164, 255, 0.3);
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #26a4ff;
-  margin-bottom: 6px;
+.kg-course-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: #1d3560;
+  font-size: clamp(1.55rem, 2.2vw, 2.4rem);
+  line-height: 1.12;
+  font-weight: 800;
 }
 
-.kg-course-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a2a4a;
-  margin: 0;
+.kg-course-name__code {
+  margin-right: 10px;
+}
+
+.kg-course-name__code,
+.kg-course-name__title {
+  display: inline;
 }
 
 .kg-page-intro {
   color: #4a6080;
   margin: 14px 0 0;
   line-height: 1.7;
+  font-size: 0.9rem;
 }
 
 .kg-status-badge {
-  padding: 5px 14px;
-  border-radius: 16px;
-  font-size: 0.78rem;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-size: 0.82rem;
   font-weight: 700;
-  &.active { background: rgba(38, 200, 120, 0.15); color: #1a9a55; border: 1px solid rgba(38, 200, 120, 0.3); }
+  &.active { background: rgba(38, 200, 120, 0.15); color: #17934f; border: 1px solid rgba(38, 200, 120, 0.28); }
   &.inactive { background: rgba(160, 160, 160, 0.12); color: #888; border: 1px solid rgba(160, 160, 160, 0.3); }
+}
+
+.kg-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 10px 18px;
+  min-width: 80px;
+  border-radius: 999px;
+  background: rgba(40, 57, 101, 0.06);
+  color: #4a6080;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .kg-section-title,
@@ -526,6 +574,38 @@ useHead({
 .kg-form-title {
   font-size: 1rem;
   margin-bottom: 16px;
+}
+
+.kg-fixed-tags {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.kg-fixed-tags__label {
+  color: #4a6080;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.kg-fixed-tags__list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kg-fixed-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(38, 164, 255, 0.22);
+  background: rgba(38, 164, 255, 0.08);
+  color: #1f73b7;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .kg-btn-primary,
@@ -572,6 +652,7 @@ useHead({
   border-top: 1px solid #e8f4fd;
   padding-top: 18px;
   margin-top: 18px;
+  min-width: 0;
 }
 
 .kg-form-group {
@@ -663,6 +744,7 @@ useHead({
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .kg-reviewer-name,
@@ -674,6 +756,8 @@ useHead({
 .kg-review-title {
   margin: 12px 0 8px;
   font-size: 1rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .kg-review-date,
@@ -689,6 +773,16 @@ useHead({
   margin: 0;
   line-height: 1.75;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.kg-review-header {
+  min-width: 0;
+}
+
+.kg-review-stars {
+  flex-shrink: 0;
 }
 
 .kg-action-btn {
@@ -738,7 +832,33 @@ useHead({
   }
 
   .kg-course-name {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+  }
+
+  .kg-course-header {
+    padding: 20px 16px;
+  }
+
+  .kg-course-header-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kg-course-header-tags {
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .kg-offering-chip,
+  .kg-status-badge,
+  .kg-meta-chip {
+    width: fit-content;
+    padding: 8px 18px;
+  }
+
+  .kg-page-intro {
+    margin-top: 12px;
+    font-size: 0.86rem;
   }
 }
 </style>

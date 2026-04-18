@@ -330,7 +330,7 @@ onMounted(() => { fetchFiltersData(); });
 }
 
 .kg-card {
-  background: #F5FBFE;
+  background: #FFFFFF;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
@@ -492,7 +492,7 @@ onMounted(() => { fetchFiltersData(); });
 .kg-course-card {
   display: flex;
   flex-direction: column;
-  background: #F5FBFE;
+  background: #FFFFFF;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
   padding: 20px;

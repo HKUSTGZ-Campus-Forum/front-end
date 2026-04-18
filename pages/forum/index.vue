@@ -262,14 +262,15 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 20px;
-  background: #9EAAF4;
+  margin-top: 16px;
+  background: #26A4FF;
   color: #fff;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s;
-  &:hover { background: #7b8ce8; }
+  &:hover { background: #1693ee; }
 }
 
 .kg-sort-bar {
@@ -282,7 +283,7 @@ onMounted(() => {
   padding: 6px 18px;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
-  background: #F5FBFE;
+  background: #FFFFFF;
   color: #4a6080;
   font-size: 0.875rem;
   cursor: pointer;
@@ -304,7 +305,7 @@ onMounted(() => {
 
 .kg-post-card {
   display: block;
-  background: #F5FBFE;
+  background: #FFFFFF;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
   padding: 20px 24px 16px;
