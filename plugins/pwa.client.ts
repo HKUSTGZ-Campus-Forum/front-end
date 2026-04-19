@@ -1,76 +1,124 @@
-// PWA Service Worker Registration Plugin
+import { useServiceWorkerUpdate } from "~/composables/useServiceWorkerUpdate";
+
+const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
+
 export default defineNuxtPlugin(() => {
-  if (process.client && 'serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      registerServiceWorker();
-    });
+  if (!("serviceWorker" in navigator)) {
+    return;
   }
-});
 
-async function registerServiceWorker() {
-  try {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/'
+  const runtimeConfig = useRuntimeConfig();
+  const buildVersion = runtimeConfig.public.appBuildVersion || runtimeConfig.public.appVersion;
+  const serviceWorkerUrl = `/sw.js?v=${encodeURIComponent(buildVersion)}`;
+  const { setUpdateReady, clearUpdateState } = useServiceWorkerUpdate();
+
+  let registrationRef: ServiceWorkerRegistration | null = null;
+  let intervalId: number | null = null;
+  let hasReloaded = false;
+
+  const triggerUpdateCheck = () => {
+    registrationRef?.update().catch((error) => {
+      console.warn("[PWA] Failed to check for service worker updates:", error);
     });
+  };
 
-    // Handle service worker updates
-    registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing;
-      if (newWorker) {
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed') {
-            if (navigator.serviceWorker.controller) {
-              // New service worker available
-              showUpdateNotification();
-            }
-          }
-        });
+  const markUpdateReady = (registration: ServiceWorkerRegistration, version?: string | null) => {
+    if (!registration.waiting) {
+      return;
+    }
+
+    setUpdateReady(registration, version);
+  };
+
+  const watchInstallingWorker = (
+    registration: ServiceWorkerRegistration,
+    worker: ServiceWorker | null,
+  ) => {
+    if (!worker) {
+      return;
+    }
+
+    worker.addEventListener("statechange", () => {
+      if (worker.state === "installed" && navigator.serviceWorker.controller) {
+        markUpdateReady(registration, buildVersion);
       }
     });
+  };
 
-    // Check for updates periodically (every 24 hours)
-    setInterval(() => {
-      registration.update();
-    }, 24 * 60 * 60 * 1000);
-
-  } catch (error) {
-    // Silent fail for better user experience
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[PWA] Service Worker registration failed:', error);
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hasReloaded) {
+      return;
     }
+
+    hasReloaded = true;
+    clearUpdateState();
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.addEventListener("message", async (event) => {
+    if (!event.data?.type) {
+      return;
+    }
+
+    if (event.data.type === "NEW_VERSION_READY") {
+      const registration =
+        registrationRef || (await navigator.serviceWorker.getRegistration("/"));
+
+      if (registration?.waiting) {
+        markUpdateReady(registration, event.data.version || buildVersion);
+      }
+    }
+
+    if (event.data.type === "SW_ACTIVATED") {
+      clearUpdateState();
+    }
+  });
+
+  window.addEventListener("focus", triggerUpdateCheck);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      triggerUpdateCheck();
+    }
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (intervalId !== null) {
+      window.clearInterval(intervalId);
+    }
+  });
+
+  const registerServiceWorker = async () => {
+    try {
+      const registration = await navigator.serviceWorker.register(serviceWorkerUrl, {
+        scope: "/",
+      });
+
+      registrationRef = registration;
+
+      if (registration.waiting) {
+        markUpdateReady(registration, buildVersion);
+      }
+
+      watchInstallingWorker(registration, registration.installing);
+
+      registration.addEventListener("updatefound", () => {
+        watchInstallingWorker(registration, registration.installing);
+      });
+
+      triggerUpdateCheck();
+      intervalId = window.setInterval(triggerUpdateCheck, UPDATE_CHECK_INTERVAL);
+    } catch (error) {
+      if (import.meta.dev) {
+        console.error("[PWA] Service worker registration failed:", error);
+      }
+    }
+  };
+
+  if (document.readyState === "complete") {
+    void registerServiceWorker();
+  } else {
+    window.addEventListener("load", () => {
+      void registerServiceWorker();
+    }, { once: true });
   }
-}
-
-function showUpdateNotification() {
-  // Simple notification that new content is available
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #10b981;
-    color: white;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 10000;
-    font-family: system-ui, -apple-system, sans-serif;
-    max-width: 300px;
-  `;
-
-  notification.innerHTML = `
-    <div style="font-weight: 600; margin-bottom: 4px;">更新可用</div>
-    <div style="font-size: 14px; margin-bottom: 12px;">发现新内容，刷新页面获取最新版本</div>
-    <button onclick="window.location.reload()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 8px;">刷新</button>
-    <button onclick="this.parentElement.remove()" style="background: transparent; border: none; color: white; padding: 6px 12px; cursor: pointer; opacity: 0.8;">稍后</button>
-  `;
-
-  document.body.appendChild(notification);
-
-  // Auto-remove after 30 seconds
-  setTimeout(() => {
-    if (notification.parentElement) {
-      notification.remove();
-    }
-  }, 30000);
-}
+});
