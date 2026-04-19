@@ -85,7 +85,7 @@
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-number">{{ dashboardData.stats?.projects_created || 0 }}</div>
-            <div class="stat-label">创建项目</div>
+            <div class="stat-label">已创建项目</div>
           </div>
           <div class="stat-card">
             <div class="stat-number">{{ profileCompletion }}%</div>
@@ -118,42 +118,11 @@
               <span class="completion-text">{{ profileCompletion }}% 完成</span>
             </div>
           </NuxtLink>
-
-
-          <NuxtLink to="/matching/projects" class="action-card">
-            <Icon name="briefcase" class="action-icon" />
-            <h3>我的项目</h3>
-            <p>管理你的项目和团队成员</p>
-          </NuxtLink>
         </div>
 
         <!-- Recent Activity -->
         <div class="activity-section">
-          <h2>我的项目</h2>
-
-          <!-- My Projects -->
-          <div v-if="dashboardData.user_projects?.length" class="activity-card">
-            <h3>我的项目</h3>
-            <div class="project-list">
-              <div
-                v-for="project in dashboardData.user_projects.slice(0, 3)"
-                :key="project.id"
-                class="project-item"
-              >
-                <div class="project-info">
-                  <h4>{{ project.title }}</h4>
-                  <p class="project-stats">
-                    {{ project.current_team_size }}/{{ project.team_size_max }} 成员
-                    • {{ project.interest_count }} 关注
-                  </p>
-                </div>
-                <NuxtLink :to="`/matching/projects/${project.id}`" class="btn btn-sm btn-outline">
-管理
-                </NuxtLink>
-              </div>
-            </div>
-            <NuxtLink to="/matching/projects" class="view-all-link">查看所有项目</NuxtLink>
-          </div>
+          <MyProjectsPanel embedded />
         </div>
       </div>
     </div>
@@ -161,11 +130,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import MatchingNavigation from '~/components/matching/MatchingNavigation.vue'
+import { useI18n } from 'vue-i18n'
+import MyProjectsPanel from '~/components/matching/MyProjectsPanel.vue'
 
 // Composables
 const { fetchWithAuth } = useApi()
-const { isLoggedIn, user } = useAuth()
+const { isLoggedIn } = useAuth()
 
 // Page meta
 definePageMeta({
@@ -276,9 +246,7 @@ const fetchDashboardData = async () => {
     loading.value = false
   }
 }
-import { useI18n } from "vue-i18n";
-import { useRoute } from "#app"; // Use Nuxt's built-in composables
-const { t } = useI18n();
+const { t } = useI18n()
 
 // Fallback profile fetching
 const fetchProfileSeparately = async () => {
@@ -310,20 +278,6 @@ const fetchProfileSeparately = async () => {
 // Navigation helpers
 const skipToDiscover = () => {
   navigateTo('/matching/discover')
-}
-
-// Format date helper
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now - date
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
-
-  return date.toLocaleDateString()
 }
 
 // Lifecycle
@@ -645,99 +599,6 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-.activity-section h2 {
-  font-size: 1.8rem;
-  color: var(--text-primary, #2c3e50);
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-.activity-card {
-  background: var(--surface-primary, white);
-  border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-medium, 0 2px 10px rgba(0,0,0,0.08));
-  border: 1px solid var(--border-primary, #e3e8ef);
-}
-
-.activity-card h3 {
-  margin: 0 0 20px 0;
-  font-size: 1.2rem;
-  color: var(--text-primary, #2c3e50);
-  font-weight: 600;
-}
-
-.application-list, .project-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.application-item, .project-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.application-info h4, .project-info h4 {
-  margin: 0 0 4px 0;
-  font-size: 1rem;
-  color: var(--text-primary, #2c3e50);
-}
-
-.application-date, .project-stats, .project-name {
-  font-size: 0.9rem;
-  color: var(--text-secondary, #7f8c8d);
-  margin: 0;
-}
-
-.applicant-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.applicant-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-pending { background: #fff3cd; color: #856404; }
-.status-accepted { background: #d1ecf1; color: #0c5460; }
-.status-rejected { background: #f8d7da; color: #721c24; }
-
-.application-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.view-all-link {
-  display: inline-block;
-  margin-top: 15px;
-  color: var(--interactive-primary, #3498db);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.view-all-link:hover {
-  text-decoration: underline;
-}
-
 .btn {
   padding: 8px 16px;
   border-radius: 6px;
@@ -781,11 +642,6 @@ onMounted(async () => {
   background: #ecf0f1;
 }
 
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 0.8rem;
-}
-
 .login-hint {
   font-size: 0.9rem;
   opacity: 0.8;
@@ -803,14 +659,5 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 
-  .application-item, .project-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .application-actions {
-    align-self: flex-end;
-  }
 }
 </style>

@@ -475,9 +475,9 @@ onMounted(() => { fetchPostData(); });
 <style lang="scss" scoped>
 .kg-post-detail {
   width: 100%;
-  max-width: 860px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 20px 20px 60px;
+  padding: 20px 24px 60px;
 }
 
 .kg-back-bar {
@@ -501,7 +501,7 @@ onMounted(() => { fetchPostData(); });
 }
 
 .kg-card {
-  background: #F5FBFE;
+  background: #FFFFFF;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
   box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
