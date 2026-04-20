@@ -1,8 +1,21 @@
 import pkg from "./package.json";
 
+const appBuildVersion =
+  process.env.NUXT_PUBLIC_APP_BUILD_VERSION ||
+  process.env.GITHUB_SHA ||
+  process.env.GIT_COMMIT_SHA ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.CF_PAGES_COMMIT_SHA ||
+  pkg.version;
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
   devtools: { enabled: false },
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag) => tag === "iconify-icon",
+    },
+  },
   ui: {
     fonts: false,
   },
@@ -131,6 +144,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       appVersion: pkg.version,
+      appBuildVersion,
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? "http://127.0.0.1:3000" : "https://unikorn.axfff.com"),
     },
   },

@@ -133,9 +133,15 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
             <span class="kg-author-name">{{ post.author }}</span>
           </div>
           <div class="kg-post-stats">
-            <span><i class="far fa-comment"></i> {{ post.comments }}</span>
-            <span><i class="far fa-eye"></i> {{ post.view_count }}</span>
-            <span class="kg-time">{{ formatDate(post.publishDate) }}</span>
+            <span class="kg-stat" title="评论数">
+              <ForumUiIcon name="comment" class="kg-stat-icon" />
+              {{ post.comments }}
+            </span>
+            <span class="kg-stat" title="浏览数">
+              <ForumUiIcon name="eye" class="kg-stat-icon" />
+              {{ post.view_count }}
+            </span>
+            <span class="kg-stat kg-stat--time">{{ formatDate(post.publishDate) }}</span>
           </div>
         </div>
       </NuxtLink>
@@ -196,7 +202,8 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
   display: inline-flex;
   align-items: center;
   padding: 8px 20px;
-  background: #9EAAF4;
+  margin-top: 16px;
+  background: #26A4FF;
   color: #fff;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -204,7 +211,7 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.2s;
-  &:hover { background: #7b8ce8; }
+  &:hover { background: #1693ee; }
 }
 
 .kg-sort-bar {
@@ -217,7 +224,7 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
   padding: 6px 18px;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
-  background: #F5FBFE;
+  background: #FFFFFF;
   color: #4a6080;
   font-size: 0.875rem;
   cursor: pointer;
@@ -234,7 +241,7 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
 
 .kg-post-card {
   display: block;
-  background: #F5FBFE;
+  background: #FFFFFF;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
   padding: 20px 24px 16px;
@@ -309,14 +316,24 @@ onMounted(() => { fetchPosts(true); setupIntersectionObserver(); });
 
 .kg-post-stats {
   display: flex;
-  gap: 12px;
-  font-size: 0.8rem;
-  color: #6a85a0;
   align-items: center;
-  i { font-size: 0.75rem; margin-right: 3px; }
+  gap: 14px;
 }
 
-.kg-time { color: #9ab0c6; }
+.kg-stat {
+  font-size: 0.8rem;
+  color: #6a85a0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  &--time { color: #9ab0c6; }
+}
+
+.kg-stat-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+}
 
 .kg-loading {
   display: flex;

@@ -16,6 +16,7 @@ type TagLike = {
 } | string | null | undefined
 
 export const COURSE_REVIEW_TAG = "course-review"
+export const COURSE_REVIEW_LABEL = "课程评价"
 
 export function getSingleQueryValue(value: unknown): string | undefined {
   if (typeof value === "string" && value !== "") return value

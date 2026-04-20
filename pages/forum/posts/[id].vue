@@ -85,7 +85,10 @@ const postDownloadOnlyFiles = computed(() =>
   (postData.value.files || []).filter((f) => f && isDownloadOnlyFile(f))
 );
 
-const filePublicUrl = (file) => file?.url || file?.file_url || "";
+const getFileId = (file) => file?.id ?? file?.file_id ?? null;
+const filePublicUrl = (file) =>
+  file?.view_url ||
+  (getFileId(file) ? `/api/files/view/${getFileId(file)}` : file?.url || file?.file_url || "");
 const fileDisplayName = (file, fallback = "附件") =>
   file?.original_filename || fallback;
 const formatFileSize = (fileSize) => {
@@ -212,7 +215,8 @@ const getGenericImageName = (file, index) => {
 
 const openImageModal = (file) => {
   const images = postImages.value;
-  const index = images.findIndex(img => img.id === file.id);
+  const targetId = getFileId(file);
+  const index = images.findIndex((img) => getFileId(img) === targetId);
   if (index !== -1) {
     currentImageIndex.value = index;
     currentImage.value = images[index];
@@ -312,11 +316,11 @@ onMounted(() => { fetchPostData(); });
         <div v-if="postImages.length" class="kg-article__images">
           <div
             v-for="(file, idx) in postImages"
-            :key="file.id"
+            :key="getFileId(file) || `img-${idx}`"
             class="kg-image-thumb"
             @click="openImageModal(file)"
           >
-            <img :src="file.url || file.file_url" :alt="getGenericImageName(file, idx)" @error="handleImageError" @load="handleImageLoad" />
+            <img :src="filePublicUrl(file)" :alt="getGenericImageName(file, idx)" @error="handleImageError" @load="handleImageLoad" />
           </div>
         </div>
 
@@ -324,12 +328,12 @@ onMounted(() => { fetchPostData(); });
           <h3 class="kg-article__files-heading">PDF</h3>
           <div
             v-for="file in postPdfFiles"
-            :key="'pdf-' + file.id"
+            :key="'pdf-' + getFileId(file)"
             class="kg-preview-card"
           >
             <p class="kg-preview-filename">{{ fileDisplayName(file, 'PDF 附件') }}</p>
             <ClientOnly>
-              <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="file.id" />
+              <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="getFileId(file)" />
               <template #fallback>
                 <p class="kg-preview-fallback">预览加载中…</p>
               </template>
@@ -355,7 +359,7 @@ onMounted(() => { fetchPostData(); });
           <h3 class="kg-article__files-heading">Word（.docx）</h3>
           <div
             v-for="file in postDocxFiles"
-            :key="'docx-' + file.id"
+            :key="'docx-' + getFileId(file)"
             class="kg-preview-card"
           >
             <p class="kg-preview-filename">{{ fileDisplayName(file, 'Word 附件') }}</p>
@@ -386,7 +390,7 @@ onMounted(() => { fetchPostData(); });
           <h3 class="kg-article__files-heading">Word（.doc）</h3>
           <div
             v-for="file in postLegacyDocFiles"
-            :key="'doc-' + file.id"
+            :key="'doc-' + getFileId(file)"
             class="kg-preview-card"
           >
             <p class="kg-preview-filename">{{ fileDisplayName(file, 'Word 附件') }}</p>
@@ -419,7 +423,7 @@ onMounted(() => { fetchPostData(); });
         <div v-if="postDownloadOnlyFiles.length" class="kg-article__downloads">
           <h3 class="kg-article__files-heading">附件下载</h3>
           <ul class="kg-download-list">
-            <li v-for="file in postDownloadOnlyFiles" :key="'dl-' + file.id">
+            <li v-for="file in postDownloadOnlyFiles" :key="'dl-' + getFileId(file)">
               <a
                 class="kg-download-link"
                 :href="filePublicUrl(file)"
@@ -471,9 +475,9 @@ onMounted(() => { fetchPostData(); });
 <style lang="scss" scoped>
 .kg-post-detail {
   width: 100%;
-  max-width: 860px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 20px 20px 60px;
+  padding: 20px 24px 60px;
 }
 
 .kg-back-bar {
@@ -497,7 +501,7 @@ onMounted(() => { fetchPostData(); });
 }
 
 .kg-card {
-  background: #F5FBFE;
+  background: #FFFFFF;
   border: 1.5px solid #c8dff8;
   border-radius: 16px;
   box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);

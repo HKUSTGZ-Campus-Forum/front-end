@@ -91,8 +91,8 @@ async function loadDocx() {
 
     body.innerHTML = "";
     style.innerHTML = "";
-    const res = await fetch(props.url);
-    if (!res.ok) throw new Error("fetch failed");
+    const res = await fetch(props.url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP_${res.status}`);
     const blob = await res.blob();
 
     const { renderAsync } = await import("docx-preview");
@@ -120,9 +120,18 @@ async function loadDocx() {
     pageCount.value = Math.max(1, pageElements.length);
     currentPage.value = 0;
     applyPageVisibility();
-  } catch {
-    errorMsg.value =
-      "无法预览该 DOCX（请尝试下载后本地打开，或检查存储跨域设置）。";
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    if (raw.includes("HTTP_403")) {
+      errorMsg.value = "无法预览该 DOCX。附件链接已失效或无权限访问，请刷新页面后重试。";
+    } else if (raw.includes("HTTP_404")) {
+      errorMsg.value = "无法预览该 DOCX。附件不存在或已被删除。";
+    } else if (raw.includes("HTTP_5")) {
+      errorMsg.value = "无法预览该 DOCX。文件服务暂时不可用，请稍后重试。";
+    } else {
+      errorMsg.value =
+        "无法预览该 DOCX。请尝试下载后本地打开。";
+    }
   } finally {
     loading.value = false;
   }

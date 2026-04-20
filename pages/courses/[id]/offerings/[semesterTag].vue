@@ -297,7 +297,7 @@ useHead({
 
 /* ── Shared card base ── */
 .kg-card {
-  background: var(--surface-secondary);
+  background: #FFFFFF;
   border: 1px solid rgba(38, 164, 255, 0.18);
   border-radius: 22px;
   box-shadow: 0 10px 26px rgba(38, 164, 255, 0.08);
@@ -315,10 +315,12 @@ useHead({
   display: grid;
   gap: 22px;
   grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
 }
 
 .kg-pane {
   height: 100%;
+  min-width: 0;
 }
 
 .kg-pane--intro {
@@ -329,8 +331,7 @@ useHead({
 
 .kg-pane--review,
 .kg-pane--discussion {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(4px);
+  background: #FFFFFF;
 }
 
 .kg-intro-top {
@@ -464,16 +465,19 @@ useHead({
 .kg-discussion-list {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .kg-discussion-item {
   display: block;
+  min-width: 0;
   padding: 16px 18px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
+  background: #FFFFFF;
   border: 1px solid rgba(191, 215, 251, 0.75);
   color: inherit;
   text-decoration: none;
+  overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
   &:hover {
     border-color: var(--interactive-primary);
@@ -487,6 +491,7 @@ useHead({
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .kg-discussion-title {
@@ -494,12 +499,17 @@ useHead({
   color: var(--text-primary);
   font-size: 0.98rem;
   font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .kg-discussion-date {
   color: var(--text-secondary);
   font-size: 0.8rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .kg-discussion-excerpt {
@@ -507,6 +517,8 @@ useHead({
   line-height: 1.6;
   color: var(--text-secondary);
   font-size: 0.88rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .kg-discussion-tags {
@@ -514,17 +526,22 @@ useHead({
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+  min-width: 0;
 }
 
 .kg-tag {
   display: inline-flex;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 0.75rem;
   background: rgba(38, 164, 255, 0.1);
   border: 1px solid rgba(38, 164, 255, 0.25);
   color: var(--interactive-active);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kg-discussion-meta {
@@ -534,6 +551,7 @@ useHead({
   font-size: 0.8rem;
   color: var(--text-secondary);
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 /* ── Buttons ── */

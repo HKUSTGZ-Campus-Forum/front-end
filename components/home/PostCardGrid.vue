@@ -41,8 +41,14 @@
         <div class="card-footer">
           <span class="post-date">{{ formatDate(post.created_at) }}</span>
           <div class="post-stats">
-            <span class="stat">💬 {{ post.comment_count ?? 0 }}</span>
-            <span class="stat">👍 {{ post.reaction_count ?? 0 }}</span>
+            <span class="stat" title="评论数">
+              <ForumUiIcon name="comment" class="stat-icon" />
+              {{ post.comment_count ?? 0 }}
+            </span>
+            <span class="stat" title="表情反应总数">
+              <ForumUiIcon name="celebrate" class="stat-icon" />
+              {{ post.reaction_count ?? 0 }}
+            </span>
           </div>
         </div>
       </NuxtLink>
@@ -108,14 +114,14 @@ function formatDate(iso: string): string {
   background: var(--card-bg, #ffffff);
   border: 1px solid var(--border-primary, #bfd7fb);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.92rem 0.92rem 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.42rem;
   text-decoration: none;
   transition: box-shadow 0.2s, transform 0.15s;
   color: var(--text-primary, #1a2a4a);
-  min-height: 140px;
+  min-height: 126px;
 
   &:hover {
     box-shadow: 0 4px 16px rgba(38, 164, 255, 0.15);
@@ -197,14 +203,27 @@ function formatDate(iso: string): string {
 }
 
 .post-date {
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   color: var(--text-muted, #b3b3b3);
 }
 
 .post-stats {
   display: flex;
-  gap: 0.6rem;
-  .stat { font-size: 0.75rem; color: var(--text-muted, #b3b3b3); }
+  gap: 0.75rem;
+
+  .stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    font-size: 0.88rem;
+    color: var(--text-muted, #b3b3b3);
+  }
+
+  .stat-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
 }
 
 // 骨架屏

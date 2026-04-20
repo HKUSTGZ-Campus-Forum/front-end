@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UniKorn 暂时离线</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "SF Pro Display", "PingFang SC", "Noto Sans SC", sans-serif;
+        background: linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%);
+        color: #1f2937;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(100%, 460px);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(99, 102, 241, 0.12);
+        border-radius: 24px;
+        padding: 32px 28px;
+        box-shadow: 0 20px 50px rgba(79, 70, 229, 0.12);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.7;
+        color: #4b5563;
+      }
+
+      .tip {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>当前网络不可用</h1>
+      <p>UniKorn 现在无法连接到服务器。请检查网络后重新打开页面，系统会自动拉取最新前端版本。</p>
+      <div class="tip">如果刚刚完成发布，这里不会缓存旧页面壳，恢复网络后即可看到最新内容。</div>
+    </main>
+  </body>
+</html>

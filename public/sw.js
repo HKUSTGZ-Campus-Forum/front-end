@@ -1,350 +1,382 @@
 // UniKorn Campus Forum Service Worker
-const CACHE_VERSION = 'v1.0.0';
-const CACHE_NAME = `unikorn-forum-${CACHE_VERSION}`;
+const VERSION_PARAM = new URL(self.location.href).searchParams.get("v");
+const CACHE_VERSION = VERSION_PARAM || "dev";
 const STATIC_CACHE = `unikorn-static-${CACHE_VERSION}`;
 const API_CACHE = `unikorn-api-${CACHE_VERSION}`;
-
-// Assets to cache immediately
-const STATIC_ASSETS = [
-  '/',
-  '/login',
-  '/register',
-  '/forum',
-  '/favicon.ico',
-  '/icons/sidebar_logo.svg',
-  '/icons/topbar_logo.svg',
-  '/image/uniKorn.png'
+const CACHE_PREFIXES = ["unikorn-static-", "unikorn-api-"];
+const SW_SCRIPT_PATH = "/sw.js";
+const OFFLINE_URL = "/offline.html";
+const PRECACHE_ASSETS = [
+  OFFLINE_URL,
+  "/favicon.ico",
+  "/manifest.json",
+  "/icons/sidebar_logo.svg",
+  "/icons/topbar_logo.svg",
+  "/image/uniKorn.png",
+];
+const CACHEABLE_API_PATTERNS = [
+  "/api/analytics/hot-posts",
+  "/api/analytics/daily-summary",
+  "/api/courses",
 ];
 
-// API endpoints to cache
-const API_PATTERNS = [
-  '/api/analytics/hot-posts',
-  '/api/analytics/daily-summary',
-  '/api/posts',
-  '/api/courses'
-];
-
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(STATIC_CACHE).then((cache) => {
-        return cache.addAll(STATIC_ASSETS);
-      }),
-      self.skipWaiting()
-    ])
+    (async () => {
+      const cache = await caches.open(STATIC_CACHE);
+      await cache.addAll(PRECACHE_ASSETS);
+
+      const clientList = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      if (clientList.length > 0) {
+        notifyClients({
+          type: "NEW_VERSION_READY",
+          version: CACHE_VERSION,
+        });
+      }
+    })(),
   );
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    Promise.all([
-      // Clean up old caches
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((cacheName) => 
-              cacheName !== CACHE_NAME && 
-              cacheName !== STATIC_CACHE && 
-              cacheName !== API_CACHE
-            )
-            .map((cacheName) => caches.delete(cacheName))
-        );
-      }),
-      self.clients.claim()
-    ])
+    (async () => {
+      const cacheNames = await caches.keys();
+
+      await Promise.all(
+        cacheNames
+          .filter((cacheName) =>
+            CACHE_PREFIXES.some(
+              (prefix) => cacheName.startsWith(prefix) && !cacheName.endsWith(CACHE_VERSION),
+            ),
+          )
+          .map((cacheName) => caches.delete(cacheName)),
+      );
+
+      await self.clients.claim();
+      notifyClients({
+        type: "SW_ACTIVATED",
+        version: CACHE_VERSION,
+      });
+    })(),
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const { request } = event;
+
+  if (request.method !== "GET") {
+    return;
+  }
+
+  if (request.headers.has("range")) {
+    return;
+  }
+
   const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  if (url.origin !== self.location.origin) {
     return;
   }
 
-  // Handle API requests
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(handleApiRequest(request));
+  if (request.mode === "navigate") {
+    event.respondWith(handleNavigationRequest(request));
     return;
   }
 
-  // Handle static assets and pages
-  event.respondWith(handleStaticRequest(request));
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(handleApiRequest(request, url));
+    return;
+  }
+
+  if (shouldHandleStaticAsset(request, url)) {
+    event.respondWith(handleStaticAssetRequest(request));
+  }
 });
 
-async function handleApiRequest(request) {
-  const url = new URL(request.url);
-  
-  // Only cache public read-only endpoints
-  const isCacheable = API_PATTERNS.some(pattern => 
-    url.pathname.includes(pattern)
-  );
-
-  if (!isCacheable) {
-    // For non-cacheable API requests, always go to network
-    return fetch(request);
-  }
-
+async function handleNavigationRequest(request) {
   try {
-    // Try network first for API requests
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      // Cache successful API responses
-      const cache = await caches.open(API_CACHE);
-      cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
+    return await fetch(request);
   } catch (error) {
-    // If network fails, try cache
-    const cachedResponse = await caches.match(request);
-    
-    if (cachedResponse) {
-      return cachedResponse;
+    const cache = await caches.open(STATIC_CACHE);
+    const offlineResponse = await cache.match(OFFLINE_URL);
+
+    if (offlineResponse) {
+      return offlineResponse;
     }
-    
-    // Return offline page for failed API requests
-    return new Response(JSON.stringify({
-      error: 'Offline - please check your connection',
-      offline: true
-    }), {
+
+    return new Response("Offline - please check your connection", {
       status: 503,
-      statusText: 'Service Unavailable',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-      }),
+      statusText: "Service Unavailable",
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
     });
   }
 }
 
-async function handleStaticRequest(request) {
-  // Try cache first for static assets
-  const cachedResponse = await caches.match(request);
-  
+async function handleApiRequest(request, url) {
+  if (url.pathname.startsWith("/api/posts")) {
+    return fetch(request);
+  }
+
+  const isCacheable = CACHEABLE_API_PATTERNS.some((pattern) => url.pathname.includes(pattern));
+
+  if (!isCacheable) {
+    return fetch(request);
+  }
+
+  const cache = await caches.open(API_CACHE);
+
+  try {
+    const networkResponse = await fetch(request);
+
+    if (networkResponse.ok && !shouldBypassCache(networkResponse)) {
+      await cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    const cachedResponse = await cache.match(request);
+
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: "Offline - please check your connection",
+        offline: true,
+      }),
+      {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }
+}
+
+async function handleStaticAssetRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cachedResponse = await cache.match(request);
+
   if (cachedResponse) {
     return cachedResponse;
   }
 
-  try {
-    // Try network
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      // Cache successful responses
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-  } catch (error) {
-    // For navigation requests, return cached home page
-    if (request.mode === 'navigate') {
-      const cachedHome = await caches.match('/');
-      if (cachedHome) {
-        return cachedHome;
-      }
-    }
-    
-    // Return generic offline response
-    return new Response('Offline - please check your connection', {
-      status: 503,
-      statusText: 'Service Unavailable'
-    });
+  const networkResponse = await fetch(request);
+
+  if (networkResponse.ok) {
+    await cache.put(request, networkResponse.clone());
   }
+
+  return networkResponse;
+}
+
+function shouldHandleStaticAsset(request, url) {
+  if (url.pathname === SW_SCRIPT_PATH || url.pathname.startsWith("/_nuxt/")) {
+    return false;
+  }
+
+  if (PRECACHE_ASSETS.includes(url.pathname)) {
+    return true;
+  }
+
+  return ["image", "font"].includes(request.destination);
+}
+
+function shouldBypassCache(response) {
+  const cacheControl = response.headers.get("Cache-Control") || "";
+  return /no-store|private/i.test(cacheControl);
 }
 
 // Handle background sync for when connection is restored
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
+self.addEventListener("sync", (event) => {
+  if (event.tag === "background-sync") {
     event.waitUntil(doBackgroundSync());
-  } else if (event.tag === 'update-badge') {
+  } else if (event.tag === "update-badge") {
     event.waitUntil(updateUnreadBadge());
   }
 });
 
 async function doBackgroundSync() {
-  // Clear old API cache when connection is restored
-  // This ensures fresh data when back online
   const apiCache = await caches.open(API_CACHE);
   const keys = await apiCache.keys();
-  
-  return Promise.all(
-    keys.map(key => apiCache.delete(key))
-  );
+
+  return Promise.all(keys.map((key) => apiCache.delete(key)));
 }
 
 // Handle push notifications
-self.addEventListener('push', (event) => {
+self.addEventListener("push", (event) => {
   let notificationData = {
-    title: 'UniKorn Forum',
-    body: 'You have a new notification',
-    icon: '/image/uniKorn.png',
-    badge: '/image/uniKorn.png',
+    title: "UniKorn Forum",
+    body: "You have a new notification",
+    icon: "/image/uniKorn.png",
+    badge: "/image/uniKorn.png",
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: '1',
-      url: '/notifications'
+      primaryKey: "1",
+      url: "/notifications",
     },
     actions: [
       {
-        action: 'view',
-        title: '查看',
-        icon: '/image/uniKorn.png'
+        action: "view",
+        title: "查看",
+        icon: "/image/uniKorn.png",
       },
       {
-        action: 'dismiss',
-        title: '关闭'
-      }
+        action: "dismiss",
+        title: "关闭",
+      },
     ],
     requireInteraction: false,
-    tag: 'default-notification'
+    tag: "default-notification",
   };
 
-  // Parse push data if available
   if (event.data) {
     try {
       const pushData = event.data.json();
       notificationData = {
         ...notificationData,
-        ...pushData
+        ...pushData,
       };
-      
-      // Update app badge if unread count is provided
+
       if (pushData.unread_count !== undefined) {
         updateAppBadge(pushData.unread_count);
       }
     } catch (error) {
-      console.error('[SW] Error parsing push data:', error);
-      // Fallback to text data
+      console.error("[SW] Error parsing push data:", error);
       notificationData.body = event.data.text() || notificationData.body;
     }
   }
-  
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title, notificationData)
-  );
+
+  event.waitUntil(self.registration.showNotification(notificationData.title, notificationData));
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  
-  // Get the URL to open from notification data
-  let urlToOpen = '/notifications';
-  
+
+  let urlToOpen = "/notifications";
+
   if (event.notification.data && event.notification.data.url) {
     urlToOpen = event.notification.data.url;
   }
-  
-  // Handle action clicks
-  if (event.action === 'view') {
-    // Use the URL from notification data
-  } else if (event.action === 'dismiss') {
-    // Just close the notification (already done above)
+
+  if (event.action === "dismiss") {
     return;
   }
-  
-  // Open or focus the app window
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Try to find an existing window
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          // Navigate to the notification URL and focus the window
+        if (client.url.includes(self.location.origin) && "focus" in client) {
           client.navigate(urlToOpen);
           return client.focus();
         }
       }
-      
-      // If no existing window, open a new one
+
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
-    })
+
+      return undefined;
+    }),
   );
 });
 
 // Handle messages from the main app
-self.addEventListener('message', (event) => {
-  console.log('[SW] Message received:', event.data);
-  
-  if (event.data && event.data.type === 'UPDATE_BADGE') {
+self.addEventListener("message", (event) => {
+  if (!event.data) {
+    return;
+  }
+
+  if (event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+    return;
+  }
+
+  if (event.data.type === "UPDATE_BADGE") {
     updateAppBadge(event.data.count);
-  } else if (event.data && event.data.type === 'CLEAR_BADGE') {
+  } else if (event.data.type === "CLEAR_BADGE") {
     updateAppBadge(0);
-  } else if (event.data && event.data.type === 'REFRESH_BADGE') {
+  } else if (event.data.type === "REFRESH_BADGE") {
     updateUnreadBadge();
-  } else if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
-    // Respond with auth token request (handled by client)
-    event.ports[0].postMessage({ token: null });
+  } else if (event.data.type === "GET_AUTH_TOKEN") {
+    event.ports[0]?.postMessage({ token: null });
   }
 });
 
+function notifyClients(message) {
+  self.clients
+    .matchAll({ type: "window", includeUncontrolled: true })
+    .then((clientList) => {
+      clientList.forEach((client) => client.postMessage(message));
+    })
+    .catch((error) => {
+      console.error("[SW] Failed to notify clients:", error);
+    });
+}
+
 // Helper function to update app badge
 function updateAppBadge(count) {
-  console.log('[SW] Updating app badge to:', count);
-  
-  if ('setAppBadge' in self.navigator) {
+  if ("setAppBadge" in self.navigator) {
     if (count > 0) {
       self.navigator.setAppBadge(count).catch((error) => {
-        console.error('[SW] Error setting app badge:', error);
+        console.error("[SW] Error setting app badge:", error);
       });
     } else {
       self.navigator.clearAppBadge().catch((error) => {
-        console.error('[SW] Error clearing app badge:', error);
+        console.error("[SW] Error clearing app badge:", error);
       });
     }
-  } else {
-    console.log('[SW] Badge API not supported');
   }
 }
 
 // Helper function to fetch and update unread count
 async function updateUnreadBadge() {
   try {
-    // Get auth token from clients
-    const clients = await self.clients.matchAll({ type: 'window' });
-    if (clients.length === 0) {
-      console.log('[SW] No active clients, clearing badge');
+    const windowClients = await self.clients.matchAll({ type: "window" });
+    if (windowClients.length === 0) {
       updateAppBadge(0);
       return;
     }
 
-    // Request auth token from client
     const token = await new Promise((resolve) => {
       const messageChannel = new MessageChannel();
       messageChannel.port1.onmessage = (event) => {
         resolve(event.data.token);
       };
-      clients[0].postMessage({ type: 'GET_AUTH_TOKEN' }, [messageChannel.port2]);
-      
-      // Timeout after 5 seconds
+      windowClients[0].postMessage({ type: "GET_AUTH_TOKEN" }, [messageChannel.port2]);
+
       setTimeout(() => resolve(null), 5000);
     });
 
     if (!token) {
-      console.log('[SW] No auth token available, clearing badge');
       updateAppBadge(0);
       return;
     }
 
     const response = await fetch(`${self.location.origin}/api/notifications/unread-count`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (response.ok) {
       const data = await response.json();
       updateAppBadge(data.unread_count || 0);
     } else {
-      console.error('[SW] Failed to fetch unread count:', response.status);
+      console.error("[SW] Failed to fetch unread count:", response.status);
     }
   } catch (error) {
-    console.error('[SW] Error updating unread badge:', error);
+    console.error("[SW] Error updating unread badge:", error);
   }
 }

@@ -5,21 +5,13 @@
         v-for="(reaction, emojiId) in topReactions"
         :key="emojiId"
         class="reaction-stat"
-        :title="`${reaction.count} 个 ${reaction.emoji.description || getEmojiFromCode(reaction.emoji.emoji_code)} 反应`"
+        :title="`${reaction.count} 个 ${reaction.emoji.description || getReactionLabel(reaction.emoji.emoji_code)} 反应`"
       >
         <span class="emoji">
-          <ForumUiIcon
-            v-if="getEmojiIconName(reaction.emoji.emoji_code)"
-            :name="getEmojiIconName(reaction.emoji.emoji_code)"
+          <iconify-icon
+            :icon="getReactionIconifyName(reaction.emoji.emoji_code)"
             class="emoji-icon"
           />
-          <img 
-            v-else-if="reaction.emoji.image_url" 
-            :src="reaction.emoji.image_url" 
-            :alt="reaction.emoji.description || 'emoji'"
-            class="emoji-image"
-          />
-          <span v-else>{{ getEmojiFromCode(reaction.emoji.emoji_code) || "?" }}</span>
         </span>
         <span class="count">{{ reaction.count }}</span>
       </span>
@@ -35,52 +27,10 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useApi } from "~/composables/useApi";
-
-// Add emoji code mapping function
-const getEmojiFromCode = (emojiCode) => {
-  const emojiMap = {
-    plus_one: "👍",
-    heart: "❤️",
-    party_popper: "🎉",
-    astonished_face: "😨",
-    hot_face: "🥵",
-    thumbs_up: "👍",
-    thumbs_down: "👎",
-    laugh: "😂",
-    cry: "😢",
-    angry: "😠",
-    surprise: "😮",
-    love: "😍",
-    clap: "👏",
-    fire: "🔥",
-    rocket: "🚀",
-  };
-
-  // If emojiCode is already a Unicode emoji, return it directly
-  if (
-    /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(
-      emojiCode
-    )
-  ) {
-    return emojiCode;
-  }
-
-  // Otherwise look up in mapping table
-  return emojiMap[emojiCode] || emojiCode;
-};
-
-const getEmojiIconName = (emojiCode) => {
-  const iconMap = {
-    plus_one: "plus-one",
-    thumbs_up: "plus-one",
-    heart: "heart",
-    love: "heart",
-    party_popper: "celebrate",
-    rocket: "celebrate",
-  };
-
-  return iconMap[emojiCode] || null;
-};
+import {
+  getReactionIconifyName,
+  getReactionLabel,
+} from "~/utils/reactionIcons";
 
 const props = defineProps({
   postId: {
@@ -180,13 +130,6 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
-    .emoji-image {
-      width: 1em;
-      height: 1em;
-      object-fit: contain;
-      vertical-align: middle;
-    }
   }
 
   .count {
@@ -206,5 +149,6 @@ onMounted(() => {
   width: 0.9rem;
   height: 0.9rem;
   display: block;
+  color: currentColor;
 }
 </style>

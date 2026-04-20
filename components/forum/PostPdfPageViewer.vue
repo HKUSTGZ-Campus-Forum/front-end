@@ -53,6 +53,16 @@ const pdfDoc = shallowRef<
 
 let pdfjsModule: typeof import("pdfjs-dist") | null = null;
 
+function isPublicViewUrl(url: string): boolean {
+  if (!import.meta.client || !url?.trim()) return false;
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.origin === window.location.origin && u.pathname.startsWith("/api/files/view/");
+  } catch {
+    return false;
+  }
+}
+
 async function ensurePdfJs() {
   if (!import.meta.client) return null;
   if (pdfjsModule) return pdfjsModule;
@@ -63,6 +73,19 @@ async function ensurePdfJs() {
 }
 
 async function fetchPdfData(): Promise<Uint8Array> {
+  // Prefer the stable same-origin file view endpoint when available.
+  if (isPublicViewUrl(props.url)) {
+    const res = await fetch(props.url, {
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP_${res.status}`);
+    }
+    const buf = await res.arrayBuffer();
+    if (!buf.byteLength) throw new Error("empty");
+    return new Uint8Array(buf);
+  }
+
   // 优先通过后端代理获取（避免 OSS CORS 问题）
   if (props.fileId) {
     const proxyUrl = getApiUrl(`/api/files/proxy/${props.fileId}`);
@@ -70,7 +93,7 @@ async function fetchPdfData(): Promise<Uint8Array> {
       headers: { Accept: "application/pdf" },
     });
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+      throw new Error(`HTTP_${res.status}`);
     }
     const buf = await res.arrayBuffer();
     if (!buf.byteLength) throw new Error("empty");
@@ -84,7 +107,7 @@ async function fetchPdfData(): Promise<Uint8Array> {
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
+    throw new Error(`HTTP_${res.status}`);
   }
   const buf = await res.arrayBuffer();
   if (!buf.byteLength) throw new Error("empty");
@@ -130,11 +153,18 @@ async function loadAndRender() {
     await nextTick();
     await paintPage();
   } catch (err) {
-    const hint =
-      err instanceof TypeError
-        ? "网络或跨域被拦截（请为 OSS 配置 CORS：允许本站 Origin，暴露 ETag / Content-Length 等头）。"
-        : "无法解析或打开该 PDF，请确认文件未损坏，或尝试下载后本地打开。";
-    errorMsg.value = `无法加载 PDF。${hint}`;
+    const raw = err instanceof Error ? err.message : String(err);
+    if (raw.includes("HTTP_403")) {
+      errorMsg.value = "无法加载 PDF。附件链接已失效或无权限访问，请刷新页面后重试。";
+    } else if (raw.includes("HTTP_404")) {
+      errorMsg.value = "无法加载 PDF。附件不存在或已被删除。";
+    } else if (raw.includes("HTTP_5")) {
+      errorMsg.value = "无法加载 PDF。文件服务暂时不可用，请稍后重试。";
+    } else if (err instanceof TypeError) {
+      errorMsg.value = "无法加载 PDF。网络异常或跨域被拦截，请稍后重试。";
+    } else {
+      errorMsg.value = "无法加载 PDF。无法解析或打开该文件，请尝试下载后本地打开。";
+    }
     loading.value = false;
   }
 }
