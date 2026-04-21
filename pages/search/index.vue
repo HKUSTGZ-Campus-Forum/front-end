@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useHead } from '#imports'
+import { useHead, useI18n, useLocalePath } from '#imports'
 import { useSearch } from '~/composables/useSearch'
 import UserAvatar from '~/components/user/UserAvatar.vue'
 import SearchDropdown from '~/components/ui/SearchDropdown.vue'
 
 definePageMeta({ layout: 'keguang' })
 
-useHead({
-  title: '搜索结果',
-  meta: [{ name: 'description', content: '校园论坛搜索结果页面' }],
-})
+const { t } = useI18n()
+const localePath = useLocalePath()
+const { formatRelativeTime } = useDateFormat()
+
+useHead(() => ({
+  title: t('searchPage.pageTitle'),
+  meta: [{ name: 'description', content: t('searchPage.metaDescription') }],
+}))
 
 const route = useRoute()
 const router = useRouter()
@@ -34,18 +38,18 @@ const tagsLoading = ref(false)
 const coursesResults = ref([])
 const coursesLoading = ref(false)
 
-const searchTabs = [
-  { id: 'posts', label: '帖子', icon: '📝' },
-  { id: 'users', label: '用户', icon: '👥' },
-  { id: 'tags', label: '标签', icon: '🏷' },
-  { id: 'courses', label: '课程', icon: '📚' }
-]
+const searchTabs = computed(() => [
+  { id: 'posts', label: t('search.tabs.posts'), icon: '📝' },
+  { id: 'users', label: t('search.tabs.users'), icon: '👥' },
+  { id: 'tags', label: t('search.tabs.tags'), icon: '🏷' },
+  { id: 'courses', label: t('search.tabs.courses'), icon: '📚' }
+])
 
-const sortOptions = [
-  { value: 'relevance', label: '相关性' },
-  { value: 'date', label: '最新发布' },
-  { value: 'popularity', label: '热门程度' }
-]
+const sortOptions = computed(() => [
+  { value: 'relevance', label: t('searchPage.sort.relevance') },
+  { value: 'date', label: t('searchPage.sort.date') },
+  { value: 'popularity', label: t('searchPage.sort.popularity') }
+])
 
 const initializeSearch = () => {
   const query = route.query.q as string
@@ -83,7 +87,7 @@ const performSearch = async (query: string, type: string = activeTab.value, page
 
 const changeTab = (tabId: string) => {
   activeTab.value = tabId
-  router.push({ path: '/search', query: { q: currentQuery.value, type: tabId } })
+  router.push({ path: localePath('/search'), query: { q: currentQuery.value, type: tabId } })
   if (currentQuery.value) performSearch(currentQuery.value, tabId)
 }
 
@@ -99,22 +103,12 @@ const goToPage = (page: number) => {
 const handleNewSearch = (query: string) => {
   currentQuery.value = query
   searchQuery.value = query
-  router.push({ path: '/search', query: { q: query, type: activeTab.value } })
+  router.push({ path: localePath('/search'), query: { q: query, type: activeTab.value } })
   performSearch(query, activeTab.value)
 }
 
 const formatTimeAgo = (dateString: string) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffMins < 1) return '刚刚'
-  if (diffMins < 60) return `${diffMins}分钟前`
-  if (diffHours < 24) return `${diffHours}小时前`
-  if (diffDays < 7) return `${diffDays}天前`
-  return date.toLocaleDateString('zh-CN')
+  return formatRelativeTime(dateString)
 }
 
 const isLoading = computed(() => {
@@ -158,11 +152,11 @@ onMounted(() => {
 <template>
   <div class="kg-search">
     <div class="kg-search-header">
-      <h1 class="kg-page-title">搜索</h1>
+      <h1 class="kg-page-title">{{ t("searchPage.title") }}</h1>
       <div class="kg-search-box">
         <SearchDropdown
           v-model="currentQuery"
-          placeholder="搜索帖子、用户、课程..."
+          :placeholder="t('search.placeholder')"
           @search="handleNewSearch"
         />
       </div>
@@ -171,10 +165,10 @@ onMounted(() => {
     <div v-if="currentQuery" class="kg-search-body">
       <div class="kg-search-meta">
         <span class="kg-result-label">
-          关键词：<strong>{{ currentQuery }}</strong>
+          {{ t("searchPage.keywordLabel") }}<strong>{{ currentQuery }}</strong>
         </span>
         <div v-if="activeTab === 'posts'" class="kg-sort-row">
-          <span class="kg-sort-label">排序：</span>
+          <span class="kg-sort-label">{{ t("searchPage.sort.label") }}</span>
           <button
             v-for="opt in sortOptions"
             :key="opt.value"
@@ -197,39 +191,42 @@ onMounted(() => {
       </div>
 
       <div v-if="isLoading" class="kg-loading">
-        <div class="kg-spinner"></div><span>搜索中...</span>
+        <div class="kg-spinner"></div><span>{{ t("searchPage.loading") }}</span>
+      </div>
+
+      <div v-else-if="searchError" class="kg-empty">
+        <div class="kg-empty-icon">⚠️</div>
+        <p>{{ searchError }}</p>
       </div>
 
       <div v-else-if="!hasResults" class="kg-empty">
         <div class="kg-empty-icon">🔍</div>
-        <p>没有找到相关内容</p>
+        <p>{{ t("searchPage.empty") }}</p>
       </div>
 
       <template v-else>
-        <!-- 帖子结果 -->
         <div v-if="activeTab === 'posts'" class="kg-results-list">
           <NuxtLink
             v-for="post in detailedPosts"
             :key="post.id"
-            :to="`/forum/posts/${post.id}`"
+            :to="localePath(`/forum/posts/${post.id}`)"
             class="kg-result-card"
           >
             <h3 class="kg-result-title">{{ post.title }}</h3>
             <p class="kg-result-excerpt">{{ post.content?.slice(0, 120) }}...</p>
             <div class="kg-result-meta">
-              <span>{{ post.author }}</span>
+              <span>{{ post.author || t("common.unknownAuthor") }}</span>
               <span>{{ formatTimeAgo(post.created_at) }}</span>
               <span><span class="kg-result-meta-icon" aria-hidden="true">💬</span>{{ post.comment_count || 0 }}</span>
             </div>
           </NuxtLink>
         </div>
 
-        <!-- 用户结果 -->
         <div v-else-if="activeTab === 'users'" class="kg-results-list">
           <NuxtLink
             v-for="u in usersResults"
             :key="u.id"
-            :to="`/users/${u.id}`"
+            :to="localePath(`/users/${u.id}`)"
             class="kg-result-card kg-result-card--user"
           >
             <UserAvatar
@@ -240,30 +237,28 @@ onMounted(() => {
             />
             <div class="kg-user-info">
               <p class="kg-user-name">{{ u.username }}</p>
-              <p class="kg-user-bio">{{ u.bio || '暂无简介' }}</p>
+              <p class="kg-user-bio">{{ u.bio || t("searchPage.userFallbackBio") }}</p>
             </div>
           </NuxtLink>
         </div>
 
-        <!-- 标签结果 -->
         <div v-else-if="activeTab === 'tags'" class="kg-tags-grid">
           <NuxtLink
             v-for="tag in tagsResults"
             :key="tag.id"
-            :to="`/forum?tag=${tag.name}`"
+            :to="localePath({ path: '/forum', query: { tag: tag.name } })"
             class="kg-tag-card"
           >
             <span class="kg-tag-name"># {{ tag.name }}</span>
-            <span class="kg-tag-count">{{ tag.post_count || 0 }} 篇</span>
+            <span class="kg-tag-count">{{ t("search.tagPostCount", { count: tag.post_count || 0 }) }}</span>
           </NuxtLink>
         </div>
 
-        <!-- 课程结果 -->
         <div v-else-if="activeTab === 'courses'" class="kg-results-list">
           <NuxtLink
             v-for="course in coursesResults"
             :key="course.id"
-            :to="`/courses/${course.id}`"
+            :to="localePath(`/courses/${course.id}`)"
             class="kg-result-card"
           >
             <div class="kg-result-header">
@@ -274,26 +269,25 @@ onMounted(() => {
           </NuxtLink>
         </div>
 
-        <!-- 分页 -->
         <div v-if="currentPagination && currentPagination.total_pages > 1" class="kg-pagination">
           <button
             class="kg-page-btn"
             :disabled="currentPagination.current_page <= 1"
             @click="goToPage(currentPagination.current_page - 1)"
-          >上一页</button>
+          >{{ t("searchPage.pagination.previous") }}</button>
           <span class="kg-page-info">{{ currentPagination.current_page }} / {{ currentPagination.total_pages }}</span>
           <button
             class="kg-page-btn"
             :disabled="currentPagination.current_page >= currentPagination.total_pages"
             @click="goToPage(currentPagination.current_page + 1)"
-          >下一页</button>
+          >{{ t("searchPage.pagination.next") }}</button>
         </div>
       </template>
     </div>
 
     <div v-else class="kg-search-placeholder">
       <div class="kg-placeholder-icon">🔍</div>
-      <p>输入关键词开始搜索</p>
+      <p>{{ t("searchPage.placeholder") }}</p>
     </div>
   </div>
 </template>

@@ -100,6 +100,34 @@
     },
     "tagPostCount": "{count} 个帖子"
   },
+  "searchPage": {
+    "pageTitle": "搜索结果",
+    "metaDescription": "浏览 UniKorn 校园论坛中的帖子、用户、标签和课程搜索结果。",
+    "title": "搜索",
+    "keywordLabel": "关键词：",
+    "loading": "搜索中...",
+    "empty": "没有找到相关内容",
+    "placeholder": "输入关键词开始搜索",
+    "userFallbackBio": "暂无简介",
+    "sort": {
+      "label": "排序：",
+      "relevance": "相关性",
+      "date": "最新发布",
+      "popularity": "热门程度"
+    },
+    "pagination": {
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "errors": {
+      "global": "搜索失败，请稍后重试",
+      "posts": "获取帖子搜索结果失败",
+      "users": "获取用户搜索结果失败",
+      "tags": "获取标签搜索结果失败",
+      "courses": "获取课程搜索结果失败",
+      "network": "网络异常，请检查连接后重试"
+    }
+  },
   "notifications": {
     "title": "通知",
     "markAllRead": "全部已读",
@@ -473,7 +501,119 @@
   "login": "登录",
   "logout": "退出登录",
   "settings": "设置",
-  "forum": "论坛",
+  "forum": {
+    "label": "论坛",
+    "list": {
+      "pageTitle": "论坛 - UniKorn 科广汇",
+      "metaDescription": "浏览校园论坛中的最新帖子、热门讨论和课程相关分享。",
+      "title": "论坛",
+      "createPost": "发帖",
+      "loading": "加载中...",
+      "loadMore": "加载更多...",
+      "endReached": "已加载全部内容",
+      "empty": "暂时还没有帖子，来发第一篇吧。",
+      "sort": {
+        "latest": "最新",
+        "hot": "最热",
+        "oldest": "最早"
+      },
+      "errors": {
+        "loadFailed": "获取文章列表失败",
+        "retryable": "获取文章列表失败，请稍后重试"
+      }
+    },
+    "detail": {
+      "pageTitle": "帖子详情",
+      "metaDescription": "阅读帖子全文、附件预览和评论内容。",
+      "backToForum": "返回论坛",
+      "share": "分享",
+      "copied": "已复制",
+      "downloadAttachment": "下载附件",
+      "previewLoading": "预览加载中...",
+      "deleteConfirmTitle": "确认删除",
+      "deleteConfirmMessage": "确定要删除这篇帖子吗？此操作无法撤销。",
+      "deleteSuccessMessage": "帖子已成功删除",
+      "fileSections": {
+        "pdf": "PDF",
+        "docx": "Word (.docx)",
+        "doc": "Word (.doc)",
+        "downloads": "附件下载"
+      },
+      "fileFallbacks": {
+        "attachment": "附件",
+        "pdf": "PDF 附件",
+        "word": "Word 附件"
+      },
+      "imageKinds": {
+        "image": "图片",
+        "photo": "照片",
+        "png": "PNG 图片",
+        "gif": "GIF 动图",
+        "webp": "WebP 图片"
+      },
+      "imageSequence": "{type} {index}/{total}",
+      "errors": {
+        "deleteNoPermission": "您没有权限删除此帖子",
+        "deleteFailedStatus": "删除失败 ({status})",
+        "network": "网络连接失败，请检查您的网络设置后重试",
+        "deletePermission": "您没有权限执行此操作，请联系管理员获取相应权限",
+        "deleteFailed": "删除失败，请稍后重试",
+        "copyFailed": "复制失败，请手动复制链接",
+        "fetchFailed": "获取帖子失败 ({status}): {error}",
+        "fetchNetwork": "无法连接到服务器，请稍后重试"
+      }
+    },
+    "create": {
+      "pageTitle": "发布帖子 - UniKorn 科广汇",
+      "metaDescription": "发布新帖子、添加标签和上传附件。",
+      "title": "发布帖子",
+      "backToCourse": "返回课程页面"
+    },
+    "postCard": {
+      "reactions": "点赞",
+      "comments": "评论",
+      "views": "浏览",
+      "readMore": "阅读更多",
+      "noExcerpt": "暂无内容摘要..."
+    },
+    "comments": {
+      "title": "评论 ({count})",
+      "loginPromptPrefix": "请先",
+      "loginPromptSuffix": "后发表评论",
+      "empty": "暂无评论，来发表第一条评论吧！",
+      "fetchFailed": "获取评论失败",
+      "reply": "回复",
+      "delete": "删除",
+      "replyPlaceholder": "回复评论...",
+      "deleteConfirmTitle": "删除评论确认",
+      "deleteConfirmMessage": "确定要删除这条评论吗？此操作无法撤销。",
+      "deleteSuccessTitle": "删除成功",
+      "deleteSuccessMessage": "评论已成功删除！",
+      "deleteErrorTitle": "删除失败",
+      "deleteNoPermission": "您没有权限删除此评论",
+      "deleteFailedStatus": "删除失败: {status}",
+      "deleteRetry": "删除失败，请重试",
+      "userFallback": "用户{id}",
+      "form": {
+        "placeholder": "写下你的评论...",
+        "submit": "提交评论",
+        "submitting": "提交中...",
+        "loginRequired": "请先登录",
+        "emptyContent": "评论内容不能为空",
+        "submitFailed": "提交评论失败",
+        "submitRetry": "提交失败，请重试"
+      }
+    },
+    "reactions": {
+      "statTitle": "{count} 个 {label} 反应",
+      "pickEmoji": "选择表情",
+      "loginToReact": "请先登录后选择表情",
+      "moreEmojis": "更多表情",
+      "availableCount": "可用表情 ({count} 个)",
+      "noAvailable": "暂无可用表情",
+      "retryLoad": "重新获取"
+    }
+  },
   "home": "首页",
   "users": "用户",
   "activity": "活动",

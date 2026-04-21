@@ -1,15 +1,13 @@
 <script setup lang="ts">
-// 导入类型和工具
 import { computed } from "vue";
-// 从正确的地方导入 useRouter
-import { useRouter } from "vue-router"; // 如果使用标准 Vue Router
-import { formatDate } from "~/utils/dateFormat"; // 假设有这个工具函数
+import { useI18n, useLocalePath } from "#imports";
+import { useRouter } from "vue-router";
+import { formatDate } from "~/utils/dateFormat";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import IdentityBadge from "~/components/identity/IdentityBadge.vue";
 import type { UserIdentity } from "~/types/identity";
 import { getVisiblePostTags } from "~/utils/courseOffering";
 
-// 定义帖子属性接口，基于数据库结构
 interface PostProps {
   id: number;
   title: string;
@@ -18,29 +16,27 @@ interface PostProps {
   author_avatar?: string | null;
   content?: string;
   excerpt?: string;
-  publishDate: string; // 实际应该对应数据库中的created_at
+  publishDate: string;
   comment_count?: number;
   reaction_count?: number;
   view_count?: number;
   tags?: Array<{ id?: number; tag_id?: number; name?: string; tag_name?: string }>;
-  display_identity?: UserIdentity | null; // Identity verification badge
-  // 其他可能的属性
+  display_identity?: UserIdentity | null;
 }
 
-// 使用withDefaults为可选属性设置默认值
 const props = withDefaults(defineProps<PostProps>(), {
-  author: "匿名用户",
-  excerpt: "无内容摘要...",
+  author: "",
+  excerpt: "",
   comment_count: 0,
   reaction_count: 0,
   view_count: 0,
   tags: () => [],
 });
 
-// 添加计算属性
-// 从内容生成摘要
+const { t } = useI18n();
+const localePath = useLocalePath();
+
 const displayExcerpt = computed(() => {
-  // 计算摘要：提取前30个字母或15个汉字
   let excerpt = "";
   let count = 0;
   const limit = 30;
@@ -49,36 +45,32 @@ const displayExcerpt = computed(() => {
     const char = props.excerpt[i];
     excerpt += char;
 
-    // 汉字计数为2，其他字符计数为1
     if (/[\u4e00-\u9fa5]/.test(char)) {
-      count += 2; // 汉字算2个字符
+      count += 2;
     } else {
-      count += 1; // 英文字母和其他字符算1个
+      count += 1;
     }
   }
 
-  // 如果内容比摘要长，添加省略号
   if (props.excerpt.length > excerpt.length) {
     excerpt += "...";
   }
 
-  return excerpt;
+  return excerpt || t("forum.postCard.noExcerpt");
 });
 
-// 显示作者ID
 const displayAuthor = computed(() => {
-  return props.author || "匿名用户";
+  return props.author || t("common.unknownAuthor");
 });
 
-// 路由导航
 const router = useRouter();
 const goToPostDetail = () => {
-  router.push(`/forum/posts/${props.id}`);
+  router.push(localePath(`/forum/posts/${props.id}`));
 };
 
 const goToUserProfile = (userId?: string | number) => {
   if (userId !== undefined && userId !== null && userId !== "") {
-    router.push(`/users/${userId}`);
+    router.push(localePath(`/users/${userId}`));
   }
 };
 
@@ -96,7 +88,7 @@ const visibleTags = computed(() => getVisiblePostTags(props.tags));
 <template>
   <div class="post-card" @click="goToPostDetail">
     <h2 class="post-title">
-      <NuxtLink :to="`/forum/posts/${id}`">{{ title }}</NuxtLink>
+      <NuxtLink :to="localePath(`/forum/posts/${id}`)">{{ title }}</NuxtLink>
     </h2>
 
     <div class="post-meta">
@@ -132,22 +124,22 @@ const visibleTags = computed(() => getVisiblePostTags(props.tags));
     <div class="post-stats">
       <span class="reactions" v-if="reaction_count !== undefined">
         <ForumUiIcon name="heart" class="stat-icon" />
-        <span class="stat-label">点赞</span>
+        <span class="stat-label">{{ t("forum.postCard.reactions") }}</span>
         {{ reaction_count }}
       </span>
       <span class="comments">
         <ForumUiIcon name="comment" class="stat-icon" />
-        <span class="stat-label">评论</span>
+        <span class="stat-label">{{ t("forum.postCard.comments") }}</span>
         {{ comment_count }}
       </span>
       <span class="views" v-if="view_count !== undefined">
         <ForumUiIcon name="eye" class="stat-icon" />
-        <span class="stat-label">浏览</span>
+        <span class="stat-label">{{ t("forum.postCard.views") }}</span>
         {{ view_count }}
       </span>
     </div>
 
-    <NuxtLink :to="`/forum/posts/${id}`" class="read-more">阅读更多</NuxtLink>
+    <NuxtLink :to="localePath(`/forum/posts/${id}`)" class="read-more">{{ t("forum.postCard.readMore") }}</NuxtLink>
   </div>
 </template>
 

@@ -5,7 +5,10 @@
         v-for="(reaction, emojiId) in topReactions"
         :key="emojiId"
         class="reaction-stat"
-        :title="`${reaction.count} 个 ${reaction.emoji.description || getReactionLabel(reaction.emoji.emoji_code)} 反应`"
+        :title="t('forum.reactions.statTitle', {
+          count: reaction.count,
+          label: reaction.emoji.description || getReactionLabel(reaction.emoji.emoji_code),
+        })"
       >
         <span class="emoji">
           <iconify-icon
@@ -16,7 +19,6 @@
         <span class="count">{{ reaction.count }}</span>
       </span>
 
-      <!-- 显示总数 -->
       <span class="total-reactions" v-if="totalCount > maxDisplay">
         +{{ totalCount - displayedCount }}
       </span>
@@ -26,6 +28,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "#imports";
 import { useApi } from "~/composables/useApi";
 import {
   getReactionIconifyName,
@@ -39,16 +42,15 @@ const props = defineProps({
   },
   maxDisplay: {
     type: Number,
-    default: 3, // 最多显示3种表情
+    default: 3,
   },
 });
 
+const { t } = useI18n();
 const { fetchWithAuth, getApiUrl } = useApi();
 const reactions = ref({});
 
-// 计算属性
 const topReactions = computed(() => {
-  // 按数量排序，取前N个
   const sorted = Object.entries(reactions.value)
     .sort(([, a], [, b]) => b.count - a.count)
     .slice(0, props.maxDisplay);
@@ -70,7 +72,6 @@ const displayedCount = computed(() => {
   );
 });
 
-// 获取表情统计
 const fetchReactions = async () => {
   try {
     const response = await fetchWithAuth(
@@ -81,7 +82,6 @@ const fetchReactions = async () => {
 
     const data = await response.json();
 
-    // 处理反应数据，只需要统计
     reactions.value = {};
     if (data.reactions) {
       data.reactions.forEach((reaction) => {
@@ -92,7 +92,7 @@ const fetchReactions = async () => {
       });
     }
   } catch (error) {
-    console.error("获取表情反应失败:", error);
+    console.error("Failed to fetch reaction stats:", error);
   }
 };
 
@@ -101,7 +101,6 @@ onMounted(() => {
 });
 </script>
 
-<!-- 样式保持不变 -->
 <style lang="scss" scoped>
 .emoji-stats {
   display: inline-flex;

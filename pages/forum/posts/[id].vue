@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useHead, useI18n, useLocalePath } from "#imports";
 import { formatDate } from "~/utils/dateFormat";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
@@ -23,6 +24,8 @@ import {
 
 definePageMeta({ layout: 'keguang' });
 
+const { t } = useI18n();
+const localePath = useLocalePath();
 const route = useRoute();
 const router = useRouter();
 const { fetchWithAuth, fetchPublic } = useApi();
@@ -44,6 +47,13 @@ const errorMessage = ref("");
 
 const postData = computed(() => post.value);
 const visibleTags = computed(() => getVisiblePostTags(postData.value.tags || []));
+
+useHead(() => ({
+  title: postData.value.title
+    ? `${postData.value.title} - ${t("forum.detail.pageTitle")}`
+    : t("forum.detail.pageTitle"),
+  meta: [{ name: "description", content: t("forum.detail.metaDescription") }],
+}));
 
 const getTagKey = (tag, index) => {
   if (tag && typeof tag === 'object') {
@@ -89,7 +99,7 @@ const getFileId = (file) => file?.id ?? file?.file_id ?? null;
 const filePublicUrl = (file) =>
   file?.view_url ||
   (getFileId(file) ? `/api/files/view/${getFileId(file)}` : file?.url || file?.file_url || "");
-const fileDisplayName = (file, fallback = "附件") =>
+const fileDisplayName = (file, fallback = t("forum.detail.fileFallbacks.attachment")) =>
   file?.original_filename || fallback;
 const formatFileSize = (fileSize) => {
   if (!fileSize || Number.isNaN(Number(fileSize))) return "";
@@ -102,7 +112,7 @@ const formatFileSize = (fileSize) => {
 
 const showDeleteConfirm = () => {
   if (!canDeletePost.value) {
-    errorMsg.value = "您没有权限删除此帖子";
+    errorMsg.value = t("forum.detail.errors.deleteNoPermission");
     showErrorModal.value = true;
     return;
   }
@@ -115,7 +125,7 @@ const handleDeleteConfirm = async () => {
     const response = await fetchWithAuth(getApiUrl(`/api/posts/${postId}`), { method: "DELETE" });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      errorMsg.value = data.message || `删除失败 (${response.status})`;
+      errorMsg.value = data.message || t("forum.detail.errors.deleteFailedStatus", { status: response.status });
       showErrorModal.value = true;
       showConfirmModal.value = false;
       return;
@@ -123,11 +133,11 @@ const handleDeleteConfirm = async () => {
     showSuccessModal.value = true;
   } catch (error) {
     if (error.name === "TypeError" || error.message.includes("fetch") || error.message.includes("network")) {
-      errorMsg.value = "网络连接失败，请检查您的网络设置后重试";
-    } else if (error.message.includes("permission") || error.message.includes("权限") || error.message.includes("403")) {
-      errorMsg.value = "您没有权限执行此操作，请联系管理员获取相应权限";
+      errorMsg.value = t("forum.detail.errors.network");
+    } else if (error.message.includes("permission") || error.message.includes("403")) {
+      errorMsg.value = t("forum.detail.errors.deletePermission");
     } else {
-      errorMsg.value = error.message || "删除失败，请稍后重试";
+      errorMsg.value = error.message || t("forum.detail.errors.deleteFailed");
     }
     showErrorModal.value = true;
   }
@@ -135,17 +145,17 @@ const handleDeleteConfirm = async () => {
 
 const handleSuccessClose = () => {
   showSuccessModal.value = false;
-  router.push("/forum");
+  router.push(localePath("/forum"));
 };
 
 const goToUserProfile = () => {
-  if (postData.value.user_id) router.push(`/users/${postData.value.user_id}`);
+  if (postData.value.user_id) router.push(localePath(`/users/${postData.value.user_id}`));
 };
 
 const sharePost = async () => {
   try {
-    const postUrl = `${window.location.origin}/forum/posts/${postId}`;
-    const shareMessage = `📖 ${postData.value.title}\n🔗 查看详情: ${postUrl}\n - UniKorn 科广汇`;
+    const postUrl = window.location.href;
+    const shareMessage = `${postData.value.title}\n${postUrl}`;
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(shareMessage);
     } else {
@@ -162,7 +172,7 @@ const sharePost = async () => {
     shareSuccess.value = true;
     setTimeout(() => { shareSuccess.value = false; }, 2000);
   } catch (error) {
-    errorMsg.value = '复制失败，请手动复制链接';
+    errorMsg.value = t("forum.detail.errors.copyFailed");
     showErrorModal.value = true;
   }
 };
@@ -175,7 +185,7 @@ const fetchPostData = async () => {
     const response = await fetchPublic(getApiUrl(`/api/posts/${postId}`));
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");
-      errorMessage.value = `获取帖子失败 (${response.status}): ${errorText}`;
+      errorMessage.value = t("forum.detail.errors.fetchFailed", { status: response.status, error: errorText });
       return;
     }
     const data = await response.json();
@@ -183,7 +193,7 @@ const fetchPostData = async () => {
       id: data.id || data.post_id,
       title: data.title,
       content: data.content,
-      author: data.author || "匿名用户",
+      author: data.author || t("common.unknownAuthor"),
       author_avatar: data.author_avatar,
       publishDate: data.created_at || data.time || new Date().toISOString(),
       reaction_count: data.reaction_count || 0,
@@ -195,22 +205,24 @@ const fetchPostData = async () => {
       display_identity: data.display_identity || null,
     };
   } catch (error) {
-    errorMessage.value = "无法连接到服务器，请稍后重试";
+    errorMessage.value = t("forum.detail.errors.fetchNetwork");
   } finally {
     isLoading.value = false;
   }
 };
 
 const getGenericImageName = (file, index) => {
-  let imageType = '图片';
+  let imageType = t("forum.detail.imageKinds.image");
   if (file.mime_type) {
-    if (file.mime_type.includes('jpeg') || file.mime_type.includes('jpg')) imageType = '照片';
-    else if (file.mime_type.includes('png')) imageType = 'PNG图片';
-    else if (file.mime_type.includes('gif')) imageType = 'GIF动图';
-    else if (file.mime_type.includes('webp')) imageType = 'WebP图片';
+    if (file.mime_type.includes('jpeg') || file.mime_type.includes('jpg')) imageType = t("forum.detail.imageKinds.photo");
+    else if (file.mime_type.includes('png')) imageType = t("forum.detail.imageKinds.png");
+    else if (file.mime_type.includes('gif')) imageType = t("forum.detail.imageKinds.gif");
+    else if (file.mime_type.includes('webp')) imageType = t("forum.detail.imageKinds.webp");
   }
   const totalImages = postImages.value.length;
-  return totalImages > 1 ? `${imageType} ${index + 1}/${totalImages}` : imageType;
+  return totalImages > 1
+    ? t("forum.detail.imageSequence", { type: imageType, index: index + 1, total: totalImages })
+    : imageType;
 };
 
 const openImageModal = (file) => {
@@ -255,20 +267,20 @@ onMounted(() => { fetchPostData(); });
 <template>
   <div class="kg-post-detail">
     <div class="kg-back-bar">
-      <NuxtLink to="/forum" class="kg-back-link">
+      <NuxtLink :to="localePath('/forum')" class="kg-back-link">
         <ForumUiIcon name="back" class="kg-back-link__icon" />
-        <span>返回论坛</span>
+        <span>{{ t("forum.detail.backToForum") }}</span>
       </NuxtLink>
     </div>
 
     <div v-if="isLoading" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ t("common.loading") }}</span>
     </div>
 
     <div v-else-if="errorMessage" class="kg-error-box">
       <p>{{ errorMessage }}</p>
-      <button class="kg-btn-ghost" @click="fetchPostData">重试</button>
+      <button class="kg-btn-ghost" @click="fetchPostData">{{ t("common.retry") }}</button>
     </div>
 
     <template v-else>
@@ -294,9 +306,13 @@ onMounted(() => { fetchPostData(); });
                 <ForumUiIcon name="eye" class="kg-meta-icon" />
                 {{ postData.views_count }}
               </span>
-              <button class="kg-icon-btn" @click="sharePost" :title="shareSuccess ? '已复制!' : '分享'">
+              <button
+                class="kg-icon-btn"
+                @click="sharePost"
+                :title="shareSuccess ? t('forum.detail.copied') : t('forum.detail.share')"
+              >
                 <ForumUiIcon :name="shareSuccess ? 'check' : 'share'" class="kg-meta-icon" />
-                <span v-if="shareSuccess">已复制</span>
+                <span v-if="shareSuccess">{{ t("forum.detail.copied") }}</span>
               </button>
               <button v-if="canDeletePost" class="kg-icon-btn kg-icon-btn--danger" @click="showDeleteConfirm">
                 <ForumUiIcon name="delete" class="kg-meta-icon" />
@@ -325,28 +341,28 @@ onMounted(() => { fetchPostData(); });
         </div>
 
         <div v-if="postPdfFiles.length" class="kg-article__file-previews">
-          <h3 class="kg-article__files-heading">PDF</h3>
+          <h3 class="kg-article__files-heading">{{ t("forum.detail.fileSections.pdf") }}</h3>
           <div
             v-for="file in postPdfFiles"
             :key="'pdf-' + getFileId(file)"
             class="kg-preview-card"
           >
-            <p class="kg-preview-filename">{{ fileDisplayName(file, 'PDF 附件') }}</p>
+            <p class="kg-preview-filename">{{ fileDisplayName(file, t("forum.detail.fileFallbacks.pdf")) }}</p>
             <ClientOnly>
               <PostPdfPageViewer :url="filePublicUrl(file)" :file-id="getFileId(file)" />
               <template #fallback>
-                <p class="kg-preview-fallback">预览加载中…</p>
+                <p class="kg-preview-fallback">{{ t("forum.detail.previewLoading") }}</p>
               </template>
             </ClientOnly>
             <div class="kg-preview-actions">
               <a
                 class="kg-download-link"
                 :href="filePublicUrl(file)"
-                :download="fileDisplayName(file, 'PDF 附件')"
+                :download="fileDisplayName(file, t('forum.detail.fileFallbacks.pdf'))"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                下载附件
+                {{ t("forum.detail.downloadAttachment") }}
               </a>
               <span v-if="file.file_size" class="kg-download-meta">
                 {{ formatFileSize(file.file_size) }}
@@ -356,28 +372,28 @@ onMounted(() => { fetchPostData(); });
         </div>
 
         <div v-if="postDocxFiles.length" class="kg-article__file-previews">
-          <h3 class="kg-article__files-heading">Word（.docx）</h3>
+          <h3 class="kg-article__files-heading">{{ t("forum.detail.fileSections.docx") }}</h3>
           <div
             v-for="file in postDocxFiles"
             :key="'docx-' + getFileId(file)"
             class="kg-preview-card"
           >
-            <p class="kg-preview-filename">{{ fileDisplayName(file, 'Word 附件') }}</p>
+            <p class="kg-preview-filename">{{ fileDisplayName(file, t("forum.detail.fileFallbacks.word")) }}</p>
             <ClientOnly>
               <PostDocxPagesViewer :url="filePublicUrl(file)" />
               <template #fallback>
-                <p class="kg-preview-fallback">预览加载中…</p>
+                <p class="kg-preview-fallback">{{ t("forum.detail.previewLoading") }}</p>
               </template>
             </ClientOnly>
             <div class="kg-preview-actions">
               <a
                 class="kg-download-link"
                 :href="filePublicUrl(file)"
-                :download="fileDisplayName(file, 'Word 附件')"
+                :download="fileDisplayName(file, t('forum.detail.fileFallbacks.word'))"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                下载附件
+                {{ t("forum.detail.downloadAttachment") }}
               </a>
               <span v-if="file.file_size" class="kg-download-meta">
                 {{ formatFileSize(file.file_size) }}
@@ -387,31 +403,31 @@ onMounted(() => { fetchPostData(); });
         </div>
 
         <div v-if="postLegacyDocFiles.length" class="kg-article__file-previews">
-          <h3 class="kg-article__files-heading">Word（.doc）</h3>
+          <h3 class="kg-article__files-heading">{{ t("forum.detail.fileSections.doc") }}</h3>
           <div
             v-for="file in postLegacyDocFiles"
             :key="'doc-' + getFileId(file)"
             class="kg-preview-card"
           >
-            <p class="kg-preview-filename">{{ fileDisplayName(file, 'Word 附件') }}</p>
+            <p class="kg-preview-filename">{{ fileDisplayName(file, t("forum.detail.fileFallbacks.word")) }}</p>
             <ClientOnly>
               <PostOfficeDocViewer
                 :url="filePublicUrl(file)"
                 :original-filename="file.original_filename"
               />
               <template #fallback>
-                <p class="kg-preview-fallback">预览加载中…</p>
+                <p class="kg-preview-fallback">{{ t("forum.detail.previewLoading") }}</p>
               </template>
             </ClientOnly>
             <div class="kg-preview-actions">
               <a
                 class="kg-download-link"
                 :href="filePublicUrl(file)"
-                :download="fileDisplayName(file, 'Word 附件')"
+                :download="fileDisplayName(file, t('forum.detail.fileFallbacks.word'))"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                下载附件
+                {{ t("forum.detail.downloadAttachment") }}
               </a>
               <span v-if="file.file_size" class="kg-download-meta">
                 {{ formatFileSize(file.file_size) }}
@@ -421,7 +437,7 @@ onMounted(() => { fetchPostData(); });
         </div>
 
         <div v-if="postDownloadOnlyFiles.length" class="kg-article__downloads">
-          <h3 class="kg-article__files-heading">附件下载</h3>
+          <h3 class="kg-article__files-heading">{{ t("forum.detail.fileSections.downloads") }}</h3>
           <ul class="kg-download-list">
             <li v-for="file in postDownloadOnlyFiles" :key="'dl-' + getFileId(file)">
               <a
@@ -446,19 +462,23 @@ onMounted(() => { fetchPostData(); });
       </article>
 
       <section class="kg-card kg-comments">
-        <h2 class="kg-section-title">评论 ({{ postData.comment_count }})</h2>
+        <h2 class="kg-section-title">{{ t("forum.comments.title", { count: postData.comment_count }) }}</h2>
         <CommentList :post-id="postId" />
       </section>
     </template>
 
     <ConfirmModal
       v-if="showConfirmModal"
-      title="确认删除"
-      message="确定要删除这篇帖子吗？此操作无法撤销。"
+      :title="t('forum.detail.deleteConfirmTitle')"
+      :message="t('forum.detail.deleteConfirmMessage')"
       @confirm="handleDeleteConfirm"
       @cancel="showConfirmModal = false"
     />
-    <SuccessModal v-if="showSuccessModal" message="帖子已成功删除" @close="handleSuccessClose" />
+    <SuccessModal
+      v-if="showSuccessModal"
+      :message="t('forum.detail.deleteSuccessMessage')"
+      @close="handleSuccessClose"
+    />
     <ErrorModal v-if="showErrorModal" :message="errorMsg" @close="showErrorModal = false" />
     <ImageModal
       v-if="showImageModal"

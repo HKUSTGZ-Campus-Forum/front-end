@@ -96,7 +96,7 @@ Rollback:
 
 ### Phase 5. Debt burn-down
 - [ ] Migrate forum pages.
-- [ ] Migrate search pages.
+- [x] Migrate search pages.
 - [ ] Migrate matching pages.
 - [ ] Migrate settings/admin pages.
 - [ ] Tighten the allowlist as debt is removed.
@@ -110,3 +110,5 @@ Rollback:
 - 2026-04-21: Added framework baseline, docs, scripts, locale switch, and first migrated page groups.
 - 2026-04-21: Migrated the home page entry batch, added `homePage.*` dictionaries, and removed the homepage components from the i18n scan allowlist.
 - 2026-04-21: Migrated the matching profile setup entry, localized matching breadcrumbs/contact settings, and removed the SSR i18n crash in `/matching/profile`.
+- 2026-04-21: Migrated the search page and localized search error handling, then removed `pages/search/**` from the i18n scan allowlist.
+- 2026-04-21: Migrated the forum browse/detail shell, including the forum list page, post detail page, comment list/item shell, comment form, and emoji stats; tightened the forum allowlist to only the remaining posting and attachment preview files.

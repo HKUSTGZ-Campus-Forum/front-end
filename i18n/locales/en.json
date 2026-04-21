@@ -100,6 +100,34 @@
     },
     "tagPostCount": "{count} posts"
   },
+  "searchPage": {
+    "pageTitle": "Search Results",
+    "metaDescription": "Browse search results for posts, users, tags, and courses across UniKorn.",
+    "title": "Search",
+    "keywordLabel": "Keyword: ",
+    "loading": "Searching...",
+    "empty": "No matching results were found.",
+    "placeholder": "Enter keywords to start searching",
+    "userFallbackBio": "No bio yet",
+    "sort": {
+      "label": "Sort:",
+      "relevance": "Relevance",
+      "date": "Newest",
+      "popularity": "Most popular"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "errors": {
+      "global": "Search failed. Please try again later.",
+      "posts": "Failed to load post search results.",
+      "users": "Failed to load user search results.",
+      "tags": "Failed to load tag search results.",
+      "courses": "Failed to load course search results.",
+      "network": "A network error occurred. Please try again."
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all as read",
@@ -473,7 +501,119 @@
   "login": "Login",
   "logout": "Logout",
   "settings": "Settings",
-  "forum": "Forum",
+  "forum": {
+    "label": "Forum",
+    "list": {
+      "pageTitle": "Forum - UniKorn",
+      "metaDescription": "Browse the latest posts, trending discussions, and course-related conversations on campus.",
+      "title": "Forum",
+      "createPost": "Create post",
+      "loading": "Loading...",
+      "loadMore": "Loading more...",
+      "endReached": "All posts have been loaded",
+      "empty": "No posts yet. Be the first to start the conversation.",
+      "sort": {
+        "latest": "Latest",
+        "hot": "Hot",
+        "oldest": "Oldest"
+      },
+      "errors": {
+        "loadFailed": "Failed to load the post list.",
+        "retryable": "Failed to load the post list. Please try again later."
+      }
+    },
+    "detail": {
+      "pageTitle": "Post Details",
+      "metaDescription": "Read the full post, preview attachments, and browse comments.",
+      "backToForum": "Back to forum",
+      "share": "Share",
+      "copied": "Copied",
+      "downloadAttachment": "Download attachment",
+      "previewLoading": "Loading preview...",
+      "deleteConfirmTitle": "Confirm deletion",
+      "deleteConfirmMessage": "Are you sure you want to delete this post? This action cannot be undone.",
+      "deleteSuccessMessage": "The post was deleted successfully.",
+      "fileSections": {
+        "pdf": "PDF",
+        "docx": "Word (.docx)",
+        "doc": "Word (.doc)",
+        "downloads": "Attachment downloads"
+      },
+      "fileFallbacks": {
+        "attachment": "Attachment",
+        "pdf": "PDF attachment",
+        "word": "Word attachment"
+      },
+      "imageKinds": {
+        "image": "Image",
+        "photo": "Photo",
+        "png": "PNG image",
+        "gif": "GIF",
+        "webp": "WebP image"
+      },
+      "imageSequence": "{type} {index}/{total}",
+      "errors": {
+        "deleteNoPermission": "You do not have permission to delete this post.",
+        "deleteFailedStatus": "Delete failed ({status})",
+        "network": "The network request failed. Please check your connection and try again.",
+        "deletePermission": "You do not have permission to perform this action.",
+        "deleteFailed": "Failed to delete the post. Please try again later.",
+        "copyFailed": "Copy failed. Please copy the link manually.",
+        "fetchFailed": "Failed to load the post ({status}): {error}",
+        "fetchNetwork": "Unable to reach the server. Please try again later."
+      }
+    },
+    "create": {
+      "pageTitle": "Create Post - UniKorn",
+      "metaDescription": "Create a new post, add tags, and upload attachments.",
+      "title": "Create post",
+      "backToCourse": "Back to course page"
+    },
+    "postCard": {
+      "reactions": "Reactions",
+      "comments": "Comments",
+      "views": "Views",
+      "readMore": "Read more",
+      "noExcerpt": "No excerpt yet..."
+    },
+    "comments": {
+      "title": "Comments ({count})",
+      "loginPromptPrefix": "Please",
+      "loginPromptSuffix": "to join the discussion.",
+      "empty": "No comments yet. Be the first to reply.",
+      "fetchFailed": "Failed to load comments.",
+      "reply": "Reply",
+      "delete": "Delete",
+      "replyPlaceholder": "Reply to this comment...",
+      "deleteConfirmTitle": "Delete comment",
+      "deleteConfirmMessage": "Are you sure you want to delete this comment? This action cannot be undone.",
+      "deleteSuccessTitle": "Deleted",
+      "deleteSuccessMessage": "The comment was deleted successfully.",
+      "deleteErrorTitle": "Delete failed",
+      "deleteNoPermission": "You do not have permission to delete this comment.",
+      "deleteFailedStatus": "Delete failed: {status}",
+      "deleteRetry": "Delete failed. Please try again.",
+      "userFallback": "User {id}",
+      "form": {
+        "placeholder": "Write your comment...",
+        "submit": "Post comment",
+        "submitting": "Posting...",
+        "loginRequired": "Please log in first.",
+        "emptyContent": "Comment content cannot be empty.",
+        "submitFailed": "Failed to submit the comment.",
+        "submitRetry": "Submission failed. Please try again."
+      }
+    },
+    "reactions": {
+      "statTitle": "{count} {label} reactions",
+      "pickEmoji": "Choose an emoji",
+      "loginToReact": "Please log in before reacting",
+      "moreEmojis": "More emojis",
+      "availableCount": "Available emojis ({count})",
+      "noAvailable": "No emojis available",
+      "retryLoad": "Retry"
+    }
+  },
   "home": "Home",
   "users": "Users",
   "activity": "Activity",

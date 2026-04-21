@@ -1,11 +1,20 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
+import { useHead, useI18n, useLocalePath } from "#imports";
 import { formatDate } from "~/utils/dateFormat";
 import { useApi } from "~/composables/useApi";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import { getVisiblePostTags } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
+
+const { t } = useI18n();
+const localePath = useLocalePath();
+
+useHead(() => ({
+  title: t("forum.list.pageTitle"),
+  meta: [{ name: "description", content: t("forum.list.metaDescription") }],
+}));
 
 const posts = ref([]);
 const currentPage = ref(1);
@@ -22,6 +31,12 @@ const loadingTrigger = ref(null);
 const showPagination = computed(() => {
   return typeof IntersectionObserver === 'undefined' || hasReachedEnd.value;
 });
+
+const sortOptions = computed(() => [
+  { value: "latest", label: t("forum.list.sort.latest") },
+  { value: "hot", label: t("forum.list.sort.hot") },
+  { value: "oldest", label: t("forum.list.sort.oldest") },
+]);
 
 const sortMapping = {
   latest: { sort_by: "created_at", sort_order: "desc" },
@@ -87,11 +102,11 @@ async function fetchPosts(reset = false) {
         })
     );
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "获取文章列表失败");
+    if (!response.ok) throw new Error(data.error || t("forum.list.errors.loadFailed"));
     const newPosts = data.posts.map((post) => ({
       ...post,
       author_id: post.user_id,
-      author: post.author || "匿名用户",
+      author: post.author || t("common.unknownAuthor"),
       author_avatar: post.author_avatar,
       comments: post.comment_count || 0,
       view_count: post.view_count || 0,
@@ -106,8 +121,8 @@ async function fetchPosts(reset = false) {
     totalPages.value = data.total_pages;
     hasReachedEnd.value = currentPage.value >= totalPages.value;
   } catch (error) {
-    console.error("获取文章列表失败:", error);
-    loadMoreError.value = error.message || "获取文章列表失败，请稍后重试";
+    console.error("Failed to load forum posts:", error);
+    loadMoreError.value = error.message || t("forum.list.errors.retryable");
   } finally {
     isLoadingMore.value = false;
   }
@@ -146,19 +161,15 @@ onMounted(() => {
 <template>
   <div class="kg-forum">
     <div class="kg-forum-header">
-      <h1 class="kg-forum-title">论坛</h1>
-      <NuxtLink to="/forum/postMessage" class="kg-btn-primary">
-        <span>+</span> 发帖
+      <h1 class="kg-forum-title">{{ t("forum.list.title") }}</h1>
+      <NuxtLink :to="localePath('/forum/postMessage')" class="kg-btn-primary">
+        <span>+</span> {{ t("forum.list.createPost") }}
       </NuxtLink>
     </div>
 
     <div class="kg-sort-bar">
       <button
-        v-for="opt in [
-          { value: 'latest', label: '最新' },
-          { value: 'hot', label: '最热' },
-          { value: 'oldest', label: '最早' },
-        ]"
+        v-for="opt in sortOptions"
         :key="opt.value"
         :class="['kg-sort-btn', { active: sortBy === opt.value }]"
         @click="handleSortChange(opt.value)"
@@ -171,7 +182,7 @@ onMounted(() => {
       <NuxtLink
         v-for="post in posts"
         :key="post.id"
-        :to="`/forum/posts/${post.id}`"
+        :to="localePath(`/forum/posts/${post.id}`)"
         class="kg-post-card"
       >
         <div class="kg-post-card__body">
@@ -211,26 +222,30 @@ onMounted(() => {
 
     <div v-if="isLoadingMore && posts.length === 0" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ t("forum.list.loading") }}</span>
     </div>
 
     <div v-if="loadMoreError" class="kg-error">
       <p>{{ loadMoreError }}</p>
-      <button class="kg-btn-ghost" @click="fetchPosts(true)">重试</button>
+      <button class="kg-btn-ghost" @click="fetchPosts(true)">{{ t("common.retry") }}</button>
+    </div>
+
+    <div v-else-if="!isLoadingMore && posts.length === 0" class="kg-empty">
+      <p>{{ t("forum.list.empty") }}</p>
     </div>
 
     <div ref="loadingTrigger" class="kg-load-trigger">
       <div v-if="isLoadingMore && posts.length > 0" class="kg-loading kg-loading--inline">
         <div class="kg-spinner kg-spinner--sm"></div>
-        <span>加载更多...</span>
+        <span>{{ t("forum.list.loadMore") }}</span>
       </div>
-      <div v-if="hasReachedEnd && posts.length > 0" class="kg-end-label">已加载全部内容</div>
+      <div v-if="hasReachedEnd && posts.length > 0" class="kg-end-label">{{ t("forum.list.endReached") }}</div>
     </div>
 
     <div v-if="showPagination && totalPages > 1" class="kg-pagination">
-      <button class="kg-page-btn" :disabled="currentPage <= 1" @click="prevPage">上一页</button>
+      <button class="kg-page-btn" :disabled="currentPage <= 1" @click="prevPage">{{ t("searchPage.pagination.previous") }}</button>
       <span class="kg-page-info">{{ currentPage }} / {{ totalPages }}</span>
-      <button class="kg-page-btn" :disabled="currentPage >= totalPages" @click="nextPage">下一页</button>
+      <button class="kg-page-btn" :disabled="currentPage >= totalPages" @click="nextPage">{{ t("searchPage.pagination.next") }}</button>
     </div>
   </div>
 </template>

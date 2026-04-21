@@ -1,16 +1,18 @@
 <template>
   <div class="comments-section">
-    <h3>评论 ({{ comments.length }})</h3>
+    <h3>{{ t("forum.comments.title", { count: comments.length }) }}</h3>
 
-    <!-- 新评论表单 -->
     <div v-if="isAuthenticated" class="new-comment-form">
       <CommentForm :post-id="postId" @comment-added="handleCommentAdded" />
     </div>
     <div v-else class="login-prompt">
-      <p>请 <NuxtLink to="/login">登录</NuxtLink> 后发表评论</p>
+      <p>
+        {{ t("forum.comments.loginPromptPrefix") }}
+        <NuxtLink :to="localePath('/login')">{{ t("actions.login") }}</NuxtLink>
+        {{ t("forum.comments.loginPromptSuffix") }}
+      </p>
     </div>
 
-    <!-- 评论列表 -->
     <div v-if="comments.length > 0" class="comments-list">
       <Comment
         v-for="comment in comments"
@@ -22,18 +24,18 @@
       />
     </div>
     <div v-else class="no-comments">
-      <p>暂无评论，来发表第一条评论吧！</p>
+      <p>{{ t("forum.comments.empty") }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n, useLocalePath } from "#imports";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import type { Comment as CommentType } from "~/types/comment";
 
-// 显式导入组件
 import CommentForm from "./CommentForm.vue";
 import Comment from "./Comment.vue";
 
@@ -42,56 +44,48 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
+const localePath = useLocalePath();
 
 const { user } = useAuth();
-const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
+const { fetchPublic, getApiUrl } = useApi();
 
 const comments = ref<CommentType[]>([]);
 const isLoading = ref(false);
 
-// 检查用户是否已认证
 const isAuthenticated = computed(() => {
   return !!user.value;
 });
 
-// 获取评论列表
 const fetchComments = async () => {
   try {
     isLoading.value = true;
-
-    // 🔥 修改：添加参数获取包含回复的顶级评论
     const params = new URLSearchParams({
-      include_replies: "true", // 包含子评论
-      top_level_only: "true", // 只获取顶级评论
+      include_replies: "true",
+      top_level_only: "true",
     });
 
     const response = await fetchPublic(
       getApiUrl(`/api/comments/post/${props.postId}?${params}`)
     );
 
-    if (!response.ok) throw new Error("获取评论失败");
+    if (!response.ok) throw new Error(t("forum.comments.fetchFailed"));
 
     const data = await response.json();
     comments.value = data.comments || [];
   } catch (error) {
-    console.error("获取评论失败:", error);
+    console.error("Failed to fetch comments:", error);
   } finally {
     isLoading.value = false;
   }
 };
 
-// 处理新评论添加
 const handleCommentAdded = (newComment: CommentType) => {
-  console.log("📝 新评论添加:", newComment);
-
-  // 🔥 修改：只有顶级评论才添加到列表开头
   if (!newComment.parent_comment_id) {
     comments.value.unshift(newComment);
   }
-  // 子评论由 Comment.vue 组件内部的 handleReplyAdded 处理
 };
 
-// 处理评论删除
 const handleCommentDeleted = (commentId: number) => {
   const deleteFromList = (list: CommentType[]): CommentType[] => {
     return list.filter((comment) => {
@@ -108,7 +102,6 @@ const handleCommentDeleted = (commentId: number) => {
   comments.value = deleteFromList(comments.value);
 };
 
-// 处理评论更新
 const handleCommentUpdated = (updatedComment: CommentType) => {
   const updateInList = (list: CommentType[]): void => {
     for (let i = 0; i < list.length; i++) {

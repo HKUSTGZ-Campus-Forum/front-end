@@ -2,7 +2,7 @@
   <form @submit.prevent="submitComment" class="comment-form">
     <textarea
       v-model="content"
-      :placeholder="placeholder"
+      :placeholder="placeholder || t('forum.comments.form.placeholder')"
       rows="3"
       required
       :disabled="isLoading"
@@ -25,14 +25,14 @@
         @click="$emit('cancel')"
         class="cancel-btn"
       >
-        取消
+        {{ t("actions.cancel") }}
       </button>
       <button
         type="submit"
         :disabled="isLoading || !content.trim()"
         class="submit-btn"
       >
-        {{ isLoading ? "提交中..." : "提交评论" }}
+        {{ isLoading ? t("forum.comments.form.submitting") : t("forum.comments.form.submit") }}
       </button>
     </div>
 
@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "#imports";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import IdentitySelector from "~/components/identity/IdentitySelector.vue";
@@ -55,10 +56,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: "写下你的评论...",
+  placeholder: undefined,
 });
 
 const emit = defineEmits(["comment-added", "cancel"]);
+const { t } = useI18n();
 
 const { user } = useAuth();
 const { fetchWithAuth, getApiUrl } = useApi();
@@ -75,12 +77,12 @@ const handleIdentityChange = (identity: UserIdentity | null) => {
 
 const submitComment = async () => {
   if (!user.value) {
-    error.value = "请先登录";
+    error.value = t("forum.comments.form.loginRequired");
     return;
   }
 
   if (!content.value.trim()) {
-    error.value = "评论内容不能为空";
+    error.value = t("forum.comments.form.emptyContent");
     return;
   }
 
@@ -110,20 +112,18 @@ const submitComment = async () => {
     );
 
     if (!response.ok) {
-      throw new Error("提交评论失败");
+      throw new Error(t("forum.comments.form.submitFailed"));
     }
 
     const newComment: Comment = await response.json();
 
-    // 清空表单
     content.value = "";
     selectedIdentityId.value = null;
 
-    // 通知父组件
     emit("comment-added", newComment);
   } catch (err) {
-    console.error("提交评论失败:", err);
-    error.value = err instanceof Error ? err.message : "提交失败，请重试";
+    console.error("Failed to submit comment:", err);
+    error.value = err instanceof Error ? err.message : t("forum.comments.form.submitRetry");
   } finally {
     isLoading.value = false;
   }
