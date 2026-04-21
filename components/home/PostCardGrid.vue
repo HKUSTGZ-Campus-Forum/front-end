@@ -1,21 +1,21 @@
 <template>
   <div class="post-card-grid">
     <div class="grid-header">
-      <h2 class="grid-title">热门帖子</h2>
-      <NuxtLink to="/forum" class="view-all">查看全部 →</NuxtLink>
+      <h2 class="grid-title">{{ t("homePage.popularPosts.title") }}</h2>
+      <NuxtLink :to="localePath('/forum')" class="view-all">
+        {{ t("homePage.popularPosts.viewAll") }}
+      </NuxtLink>
     </div>
 
-    <!-- 加载中 -->
     <div v-if="loading" class="grid-loading">
       <div class="skeleton-card" v-for="i in 3" :key="i"></div>
     </div>
 
-    <!-- 帖子卡片 -->
     <div v-else class="grid">
       <NuxtLink
         v-for="post in posts"
         :key="post.id"
-        :to="`/forum/posts/${post.id}`"
+        :to="localePath(`/forum/posts/${post.id}`)"
         class="post-card"
       >
         <div class="card-top">
@@ -31,7 +31,7 @@
                 {{ post.author?.charAt(0)?.toUpperCase() || '?' }}
               </div>
             </div>
-            <span class="username">{{ post.author || '匿名' }}</span>
+            <span class="username">{{ post.author || t("common.unknownAuthor") }}</span>
           </div>
         </div>
 
@@ -39,13 +39,13 @@
         <p class="card-excerpt">{{ stripHtml(post.content) }}</p>
 
         <div class="card-footer">
-          <span class="post-date">{{ formatDate(post.created_at) }}</span>
+          <span class="post-date">{{ formatPostDate(post.created_at) }}</span>
           <div class="post-stats">
-            <span class="stat" title="评论数">
+            <span class="stat" :title="t('homePage.popularPosts.commentCountTitle')">
               <ForumUiIcon name="comment" class="stat-icon" />
               {{ post.comment_count ?? 0 }}
             </span>
-            <span class="stat" title="表情反应总数">
+            <span class="stat" :title="t('homePage.popularPosts.reactionCountTitle')">
               <ForumUiIcon name="celebrate" class="stat-icon" />
               {{ post.reaction_count ?? 0 }}
             </span>
@@ -57,6 +57,10 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n();
+const localePath = useLocalePath();
+const { formatDate } = useDateFormat();
+
 defineProps<{
   posts: any[]
   loading?: boolean
@@ -67,10 +71,11 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').slice(0, 80)
 }
 
-function formatDate(iso: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getMonth() + 1}/${d.getDate()}`
+function formatPostDate(iso: string): string {
+  return formatDate(iso, {
+    month: "numeric",
+    day: "numeric",
+  })
 }
 </script>
 
@@ -226,7 +231,6 @@ function formatDate(iso: string): string {
   }
 }
 
-// 骨架屏
 .grid-loading { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .skeleton-card {
   height: 140px;

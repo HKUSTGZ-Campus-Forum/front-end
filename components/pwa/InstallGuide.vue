@@ -1,40 +1,36 @@
 <template>
   <div v-if="showGuide" class="install-guide-container">
-    <!-- Floating Install Button -->
     <div 
       v-if="!isExpanded && showGuide" 
       class="install-float-btn"
       @click="isExpanded = true"
     >
       <span class="install-icon">📱</span>
-      <span class="install-text">安装应用</span>
+      <span class="install-text">{{ t("pwa.install.floatButton") }}</span>
     </div>
 
-    <!-- Expanded Install Guide -->
     <Transition name="slide-up">
       <div v-if="isExpanded" class="install-guide-card">
         <div class="guide-header">
           <div class="guide-title">
             <span class="guide-icon">🚀</span>
-            <h3>安装 UniKorn 应用</h3>
+            <h3>{{ t("pwa.install.title") }}</h3>
           </div>
-          <button @click="closeGuide" class="close-btn" aria-label="关闭">✕</button>
+          <button @click="closeGuide" class="close-btn" :aria-label="t('common.close')">✕</button>
         </div>
 
         <div class="guide-content">
-          <p class="guide-description">获得更好的使用体验，支持离线访问</p>
+          <p class="guide-description">{{ t("pwa.install.description") }}</p>
           
-          <!-- Install Button for supported browsers -->
           <button 
             v-if="canInstall" 
             @click="installApp" 
             class="install-btn-primary"
           >
             <span class="btn-icon">📲</span>
-            一键安装应用
+            {{ t("pwa.install.primaryAction") }}
           </button>
 
-          <!-- Manual Instructions -->
           <div class="manual-instructions">
             <div class="instruction-tabs">
               <button 
@@ -62,14 +58,13 @@
           <div class="guide-footer">
             <label class="dont-show-again">
               <input v-model="dontShowAgain" type="checkbox">
-              <span>不再显示</span>
+              <span>{{ t("pwa.install.dontShowAgain") }}</span>
             </label>
           </div>
         </div>
       </div>
     </Transition>
 
-    <!-- Backdrop -->
     <div 
       v-if="isExpanded" 
       class="install-guide-backdrop"
@@ -81,6 +76,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
+const { t } = useI18n()
 const isExpanded = ref(false)
 const canInstall = ref(false)
 const selectedPlatform = ref('chrome')
@@ -89,30 +85,22 @@ const deferredPrompt = ref<any>(null)
 
 const showGuide = computed(() => {
   if (process.server) return false
-  
-  // Don't show if user dismissed permanently
   if (localStorage.getItem('pwa-install-dismissed') === 'true') return false
-  
-  // Don't show if already installed
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false
-  
-  // Don't show if dismissed for current session
   if (sessionStorage.getItem('pwa-install-session-dismissed') === 'true') return false
-  
-  // Always show the manual guide (don't wait for install prompt)
   return true
 })
 
-const platforms = [
+const platforms = computed(() => [
   {
     id: 'chrome',
     name: 'Chrome',
     icon: '🌐',
     instructions: [
-      { id: 1, text: '点击地址栏右侧的安装图标', icon: '⬇️' },
-      { id: 2, text: '或点击右上角三个点菜单', icon: '⋮' },
-      { id: 3, text: '选择"安装 UniKorn"', icon: '📲' },
-      { id: 4, text: '确认安装，享受应用体验！', icon: '✨' }
+      { id: 1, text: t('pwa.install.platforms.chrome.step1'), icon: '⬇️' },
+      { id: 2, text: t('pwa.install.platforms.chrome.step2'), icon: '⋮' },
+      { id: 3, text: t('pwa.install.platforms.chrome.step3'), icon: '📲' },
+      { id: 4, text: t('pwa.install.platforms.chrome.step4'), icon: '✨' }
     ]
   },
   {
@@ -120,10 +108,10 @@ const platforms = [
     name: 'Safari',
     icon: '🧭',
     instructions: [
-      { id: 1, text: '点击底部分享按钮', icon: '📤' },
-      { id: 2, text: '滑动找到"添加到主屏幕"', icon: '📱' },
-      { id: 3, text: '点击"添加到主屏幕"', icon: '➕' },
-      { id: 4, text: '确认添加，应用已安装到桌面', icon: '🎉' }
+      { id: 1, text: t('pwa.install.platforms.safari.step1'), icon: '📤' },
+      { id: 2, text: t('pwa.install.platforms.safari.step2'), icon: '📱' },
+      { id: 3, text: t('pwa.install.platforms.safari.step3'), icon: '➕' },
+      { id: 4, text: t('pwa.install.platforms.safari.step4'), icon: '🎉' }
     ]
   },
   {
@@ -131,16 +119,16 @@ const platforms = [
     name: 'Edge',
     icon: '🔷',
     instructions: [
-      { id: 1, text: '点击地址栏右侧的应用图标', icon: '📱' },
-      { id: 2, text: '或点击右上角三个点菜单', icon: '⋯' },
-      { id: 3, text: '选择"将此站点安装为应用"', icon: '🔽' },
-      { id: 4, text: '点击"安装"完成设置', icon: '☑️' }
+      { id: 1, text: t('pwa.install.platforms.edge.step1'), icon: '📱' },
+      { id: 2, text: t('pwa.install.platforms.edge.step2'), icon: '⋯' },
+      { id: 3, text: t('pwa.install.platforms.edge.step3'), icon: '🔽' },
+      { id: 4, text: t('pwa.install.platforms.edge.step4'), icon: '☑️' }
     ]
   }
-]
+])
 
 const currentInstructions = computed(() => {
-  const platform = platforms.find(p => p.id === selectedPlatform.value)
+  const platform = platforms.value.find((item) => item.id === selectedPlatform.value)
   return platform?.instructions || []
 })
 
@@ -150,7 +138,6 @@ const installApp = async () => {
     const { outcome } = await deferredPrompt.value.userChoice
     
     if (outcome === 'accepted') {
-      console.log('User accepted the install prompt')
       closeGuide()
     }
     
@@ -165,7 +152,6 @@ const closeGuide = () => {
   if (dontShowAgain.value) {
     localStorage.setItem('pwa-install-dismissed', 'true')
   } else {
-    // Hide for this session
     sessionStorage.setItem('pwa-install-session-dismissed', 'true')
   }
 }
@@ -177,7 +163,6 @@ const handleBeforeInstallPrompt = (e: Event) => {
 }
 
 const handleAppInstalled = () => {
-  console.log('PWA was installed')
   canInstall.value = false
   deferredPrompt.value = null
   closeGuide()
@@ -199,31 +184,11 @@ const detectPlatform = () => {
 
 onMounted(() => {
   if (process.client) {
-    // Clear any session dismissal for debugging
     sessionStorage.removeItem('pwa-install-session-dismissed')
-    
-    // Debug logging
-    console.log('[PWA] Install Guide Debug:', {
-      showGuide: showGuide.value,
-      isExpanded: isExpanded.value,
-      canInstall: canInstall.value,
-      permanentlyDismissed: localStorage.getItem('pwa-install-dismissed'),
-      sessionDismissed: sessionStorage.getItem('pwa-install-session-dismissed'),
-      isStandalone: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches,
-      userAgent: navigator.userAgent
-    })
-    
     detectPlatform()
     
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
-    
-    // Auto-show after a delay
-    setTimeout(() => {
-      if (!isExpanded.value && showGuide.value) {
-        console.log('[PWA] Auto-showing install guide')
-      }
-    }, 2000)
   }
 })
 

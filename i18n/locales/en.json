@@ -14,6 +14,8 @@
     "clear": "Clear",
     "viewAllResults": "View all {count} results",
     "noResults": "No matching results found",
+    "close": "Close",
+    "user": "User",
     "date": {
       "empty": "",
       "invalid": "Invalid date"
@@ -96,6 +98,121 @@
       "courses": "Courses"
     },
     "tagPostCount": "{count} posts"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "markingAllRead": "Marking...",
+    "viewAll": "View all",
+    "loading": "Loading...",
+    "loadFailed": "Failed to load: {error}",
+    "empty": "No notifications yet."
+  },
+  "imageModal": {
+    "defaultAlt": "Image preview",
+    "loadFailed": "Unable to load the image",
+    "fitToScreen": "Fit to screen"
+  },
+  "avatar": {
+    "user": {
+      "alt": "{username}'s avatar"
+    },
+    "upload": {
+      "title": "Profile avatar",
+      "description": "Recommended size: 200x200 pixels. JPG and PNG are supported.",
+      "uploading": "Uploading...",
+      "prompt": "Click or drag an image here to upload",
+      "restrictions": "Supports JPG and PNG, up to 5 MB",
+      "selectImage": "Choose image",
+      "removeImage": "Remove avatar",
+      "success": "Avatar uploaded successfully.",
+      "errors": {
+        "invalidType": "Please choose a JPG or PNG image.",
+        "invalidSize": "Image size must be 5 MB or smaller.",
+        "validationFailed": "File validation failed.",
+        "missingFileId": "Upload failed: no file ID was returned.",
+        "uploadFailed": "Upload failed. Please try again.",
+        "removeFailed": "Failed to remove avatar. Please try again."
+      }
+    }
+  },
+  "pwa": {
+    "update": {
+      "badge": "New version",
+      "title": "A new frontend version is available",
+      "description": "Update now to switch to the latest page without clearing cache or forcing a refresh.",
+      "versionLabel": "Version: {version}",
+      "apply": "Update now",
+      "updating": "Updating...",
+      "later": "Later"
+    },
+    "install": {
+      "floatButton": "Install app",
+      "title": "Install the UniKorn app",
+      "description": "Get a smoother experience with offline support.",
+      "primaryAction": "Install now",
+      "dontShowAgain": "Don't show again",
+      "platforms": {
+        "chrome": {
+          "step1": "Click the install icon on the right side of the address bar",
+          "step2": "Or open the three-dot menu in the top-right corner",
+          "step3": "Choose “Install UniKorn”",
+          "step4": "Confirm the installation and start using the app"
+        },
+        "safari": {
+          "step1": "Tap the share button at the bottom",
+          "step2": "Scroll to “Add to Home Screen”",
+          "step3": "Tap “Add to Home Screen”",
+          "step4": "Confirm and the app will be added to your home screen"
+        },
+        "edge": {
+          "step1": "Click the app icon on the right side of the address bar",
+          "step2": "Or open the three-dot menu in the top-right corner",
+          "step3": "Choose “Install this site as an app”",
+          "step4": "Click “Install” to finish setup"
+        }
+      }
+    }
+  },
+  "homePage": {
+    "pageTitle": "Home - UniKorn",
+    "metaDescription": "Browse trending posts, campus shortcuts, and the latest gugu messages.",
+    "relatedLinks": {
+      "title": "Related links",
+      "wiki": "HKUST-GZ Wiki",
+      "portal": "myPortal",
+      "canvas": "Canvas"
+    },
+    "carousel": {
+      "previousSlide": "Previous slide",
+      "nextSlide": "Next slide",
+      "slideLabel": "Slide {index}",
+      "slides": {
+        "contestAlt": "Cash prize challenge banner",
+        "welcomeZhAlt": "UniKorn welcome banner in Chinese",
+        "welcomeEnAlt": "UniKorn welcome banner in English"
+      }
+    },
+    "popularPosts": {
+      "title": "Trending posts",
+      "viewAll": "View all →",
+      "commentCountTitle": "Comments",
+      "reactionCountTitle": "Reactions"
+    },
+    "chat": {
+      "title": "What’s fresh? Drop a gugu",
+      "replyingTo": "Replying to {name}",
+      "replyPlaceholder": "Reply to {name}...",
+      "placeholder": "Share what’s on your mind...",
+      "send": "Send a gugu",
+      "loading": "Loading messages...",
+      "empty": "No messages yet. Be the first to post.",
+      "replyAction": "Reply",
+      "quoteReplyTo": "Replying to {name}",
+      "loadMore": "Load more history",
+      "noMore": "All history is loaded",
+      "replyUnavailable": "The original message is no longer available"
+    }
   },
   "auth": {
     "login": {
@@ -187,6 +304,32 @@
     "pageTitle": "Redirecting to your profile",
     "missingAuth": "We could not find your login information. Redirecting to the login page...",
     "redirecting": "Opening your profile..."
+  },
+  "help": {
+    "guide": {
+      "title": "User guide",
+      "summary": "This page will gradually document UniKorn's core features so new users can get started quickly.",
+      "sectionOneTitle": "What you can do here",
+      "sectionOneBody": "Browse the forum, search course reviews, join activities, form teams, and manage your campus identity and profile.",
+      "sectionTwoTitle": "About multilingual support",
+      "sectionTwoBody": "Chinese remains the default language, while English pages are available under the /en prefix. New pages will follow the same approach."
+    },
+    "rules": {
+      "title": "Community rules",
+      "summary": "Please follow these basic rules to keep the community welcoming and useful.",
+      "sectionOneTitle": "Respect others",
+      "sectionOneBody": "Do not post harassment, discrimination, personal attacks, privacy violations, or intentionally inflammatory content.",
+      "sectionTwoTitle": "Stay accurate and clear",
+      "sectionTwoBody": "Course reviews, team-matching posts, and requests for help should be as truthful and clear as possible to avoid misleading others."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "summary": "UniKorn tries to collect only the data needed to run the platform and respects your visibility settings.",
+      "sectionOneTitle": "What we store",
+      "sectionOneBody": "Account details, avatars, posts, comments, notifications, and required identity-verification data are used to provide platform features.",
+      "sectionTwoTitle": "What you can control",
+      "sectionTwoBody": "You can manage your public profile, contact details, and some notification settings. A fuller privacy policy can be added later."
+    }
   },
   "courses": {
     "title": "Course reviews",

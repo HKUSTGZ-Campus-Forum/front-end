@@ -1,11 +1,11 @@
 <template>
   <Transition name="update-toast">
     <aside v-if="isUpdateAvailable" class="update-toast" role="status" aria-live="polite">
-      <div class="update-toast__badge">新版本</div>
+      <div class="update-toast__badge">{{ t("pwa.update.badge") }}</div>
       <div class="update-toast__content">
-        <h2>发现新前端版本</h2>
-        <p>点击更新即可切换到最新页面，不需要手动清缓存或强制刷新。</p>
-        <small v-if="availableVersion">版本标识：{{ availableVersion }}</small>
+        <h2>{{ t("pwa.update.title") }}</h2>
+        <p>{{ t("pwa.update.description") }}</p>
+        <small v-if="availableVersion">{{ t("pwa.update.versionLabel", { version: availableVersion }) }}</small>
       </div>
       <div class="update-toast__actions">
         <button
@@ -13,14 +13,14 @@
           :disabled="isApplyingUpdate"
           @click="applyUpdate"
         >
-          {{ isApplyingUpdate ? "更新中..." : "立即更新" }}
+          {{ isApplyingUpdate ? t("pwa.update.updating") : t("pwa.update.apply") }}
         </button>
         <button
           class="update-toast__button update-toast__button--secondary"
           :disabled="isApplyingUpdate"
           @click="dismissUpdate"
         >
-          稍后
+          {{ t("pwa.update.later") }}
         </button>
       </div>
     </aside>
@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n();
 const { isUpdateAvailable, isApplyingUpdate, availableVersion, dismissUpdate, applyUpdate } =
   useServiceWorkerUpdate();
 </script>

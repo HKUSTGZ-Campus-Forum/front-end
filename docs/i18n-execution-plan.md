@@ -65,6 +65,8 @@ Rollback:
 - [x] Register page
 - [x] Forgot password page
 - [x] Registration form copy and validation copy
+- [x] Home page head metadata
+- [x] Home carousel, hot posts card, and gugu preview module
 
 #### 3B. Courses
 - [x] Course list page
@@ -106,3 +108,4 @@ Rollback:
 
 ## Progress Log
 - 2026-04-21: Added framework baseline, docs, scripts, locale switch, and first migrated page groups.
+- 2026-04-21: Migrated the home page entry batch, added `homePage.*` dictionaries, and removed the homepage components from the i18n scan allowlist.

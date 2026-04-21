@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { useHead } from "#imports";
-import { hkustgz } from "~/config/hkustgz";
+import { useHead, useI18n } from "#imports";
 import HomeKeguangPage from "~/components/home/KeguangPage.vue";
 
 definePageMeta({ layout: 'keguang' });
 
-useHead({
-  title: "主页 - UniKorn 科广汇",
-  meta: [{ name: "description", content: hkustgz.description }],
-});
+const { t } = useI18n();
+
+useHead(() => ({
+  title: t("homePage.pageTitle"),
+  meta: [{ name: "description", content: t("homePage.metaDescription") }],
+}));
 </script>
 
 <template>

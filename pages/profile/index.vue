@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 definePageMeta({
@@ -12,6 +12,7 @@ const { user } = useAuth()
 const route = useRoute()
 const { t } = useI18n()
 const redirectError = ref('')
+const redirectMessage = computed(() => redirectError.value || t('profileRedirect.redirecting'))
 
 useHead(() => ({
   title: `${t('profileRedirect.pageTitle')} - UniKorn Campus`,
@@ -74,7 +75,7 @@ onMounted(async () => {
   <div class="profile-redirect-page">
     <div class="redirect-card">
       <div class="spinner" aria-hidden="true"></div>
-      <p>{{ redirectError || t('profileRedirect.redirecting') }}</p>
+      <p>{{ redirectMessage }}</p>
     </div>
   </div>
 </template>

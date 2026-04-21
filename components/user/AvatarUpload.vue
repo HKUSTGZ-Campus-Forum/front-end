@@ -6,7 +6,7 @@
         <img 
           v-if="currentAvatarUrl" 
           :src="currentAvatarUrl" 
-          :alt="`${username}的头像`"
+          :alt="t('avatar.user.alt', { username })"
           class="avatar-image"
           @error="handleImageError"
         />
@@ -15,12 +15,11 @@
         </div>
       </div>
       <div class="avatar-info">
-        <h4>个人头像</h4>
-        <p class="avatar-description">建议尺寸: 200x200像素，支持 JPG、PNG 格式</p>
+        <h4>{{ t("avatar.upload.title") }}</h4>
+        <p class="avatar-description">{{ t("avatar.upload.description") }}</p>
       </div>
     </div>
 
-    <!-- Upload Area -->
     <div class="upload-section">
       <div 
         class="upload-dropzone"
@@ -44,7 +43,7 @@
         
         <div v-if="isUploading" class="upload-progress">
           <i class="fas fa-spinner fa-spin"></i>
-          <p>正在上传...</p>
+          <p>{{ t("avatar.upload.uploading") }}</p>
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
           </div>
@@ -53,17 +52,16 @@
         <div v-else-if="hasError" class="upload-error">
           <i class="fas fa-exclamation-triangle"></i>
           <p>{{ errorMessage }}</p>
-          <button @click="resetUpload" class="retry-btn">重试</button>
+          <button @click="resetUpload" class="retry-btn">{{ t("common.retry") }}</button>
         </div>
         
         <div v-else class="upload-prompt">
           <i class="fas fa-cloud-upload-alt"></i>
-          <p>点击或拖拽图片到此处上传</p>
-          <span class="file-restrictions">支持 JPG、PNG 格式，最大 5MB</span>
+          <p>{{ t("avatar.upload.prompt") }}</p>
+          <span class="file-restrictions">{{ t("avatar.upload.restrictions") }}</span>
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="upload-actions">
         <button 
           @click="triggerFileInput" 
@@ -71,7 +69,7 @@
           :disabled="isUploading"
         >
           <i class="fas fa-upload"></i>
-          选择图片
+          {{ t("avatar.upload.selectImage") }}
         </button>
         
         <button 
@@ -81,15 +79,14 @@
           :disabled="isUploading"
         >
           <i class="fas fa-trash"></i>
-          移除头像
+          {{ t("avatar.upload.removeImage") }}
         </button>
       </div>
     </div>
 
-    <!-- Success/Error Messages -->
     <div v-if="showSuccess" class="success-message">
       <i class="fas fa-check-circle"></i>
-      头像上传成功！
+      {{ t("avatar.upload.success") }}
     </div>
   </div>
 </template>
@@ -97,7 +94,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '~/composables/useAuth';
-import { useApi } from '~/composables/useApi';
 import { useCustomFileUpload } from '~/composables/useFileUpload';
 
 interface Props {
@@ -111,11 +107,10 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const { t } = useI18n();
 const { user, updateUserProfile } = useAuth();
-const { fetchWithAuth } = useApi();
 const { uploadFile } = useCustomFileUpload();
 
-// Reactive data
 const fileInput = ref<HTMLInputElement>();
 const isDragOver = ref(false);
 const isUploading = ref(false);
@@ -125,26 +120,21 @@ const errorMessage = ref('');
 const showSuccess = ref(false);
 const currentAvatarUrl = ref<string>('');
 
-// Computed properties
-const username = computed(() => user.value?.username || '用户');
+const username = computed(() => user.value?.username || t('common.user'));
 const targetUserId = computed(() => props.userId || user.value?.id);
 
-// File validation
 const validateFile = (file: File): { valid: boolean; error?: string } => {
-  // Check file type
   if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
-    return { valid: false, error: '请选择 JPG 或 PNG 格式的图片' };
+    return { valid: false, error: t('avatar.upload.errors.invalidType') };
   }
   
-  // Check file size (5MB limit)
   if (file.size > 5 * 1024 * 1024) {
-    return { valid: false, error: '图片大小不能超过 5MB' };
+    return { valid: false, error: t('avatar.upload.errors.invalidSize') };
   }
   
   return { valid: true };
 };
 
-// Handle file selection
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -153,7 +143,6 @@ const handleFileSelect = (event: Event) => {
   }
 };
 
-// Handle drag and drop
 const handleDrop = (event: DragEvent) => {
   event.preventDefault();
   isDragOver.value = false;
@@ -164,33 +153,28 @@ const handleDrop = (event: DragEvent) => {
   }
 };
 
-// Trigger file input
 const triggerFileInput = () => {
   if (!isUploading.value) {
     fileInput.value?.click();
   }
 };
 
-// Reset upload state
 const resetUpload = () => {
   hasError.value = false;
   errorMessage.value = '';
   uploadProgress.value = 0;
 };
 
-// Handle image load error
 const handleImageError = () => {
   console.warn('Avatar image failed to load');
   currentAvatarUrl.value = '';
 };
 
-// Upload avatar
 const uploadAvatar = async (file: File) => {
-  // Validate file
   const validation = validateFile(file);
   if (!validation.valid) {
     hasError.value = true;
-    errorMessage.value = validation.error || '文件验证失败';
+    errorMessage.value = validation.error || t('avatar.upload.errors.validationFailed');
     return;
   }
 
@@ -198,7 +182,6 @@ const uploadAvatar = async (file: File) => {
   isUploading.value = true;
 
   try {
-    // Upload file using existing file upload system
     const uploadResult = await uploadFile({
       file: file,
       fileType: 'avatar',
@@ -210,43 +193,36 @@ const uploadAvatar = async (file: File) => {
     });
 
     if (uploadResult?.id) {
-      // Update user profile with new avatar file ID
       await updateUserProfile({
         profile_picture_file_id: uploadResult.id
       });
 
-      // Update local display with the URL
       currentAvatarUrl.value = uploadResult.url;
       showSuccess.value = true;
-      
-      // Emit event to parent to refresh user data
       emit('avatar-updated', uploadResult.url);
-      
-      // Hide success message after 3 seconds
+
       setTimeout(() => {
         showSuccess.value = false;
       }, 3000);
     } else {
-      throw new Error('上传失败：未收到文件ID');
+      throw new Error(t('avatar.upload.errors.missingFileId'));
     }
   } catch (error) {
     console.error('Avatar upload error:', error);
     hasError.value = true;
-    errorMessage.value = error instanceof Error ? error.message : '上传失败，请重试';
+    errorMessage.value = error instanceof Error ? error.message : t('avatar.upload.errors.uploadFailed');
   } finally {
     isUploading.value = false;
     uploadProgress.value = 0;
   }
 };
 
-// Remove avatar
 const removeAvatar = async () => {
   if (!currentAvatarUrl.value) return;
 
   try {
     isUploading.value = true;
-    
-    // Update user profile to remove avatar
+
     await updateUserProfile({
       profile_picture_file_id: null
     });
@@ -260,13 +236,12 @@ const removeAvatar = async () => {
   } catch (error) {
     console.error('Remove avatar error:', error);
     hasError.value = true;
-    errorMessage.value = '移除头像失败，请重试';
+    errorMessage.value = t('avatar.upload.errors.removeFailed');
   } finally {
     isUploading.value = false;
   }
 };
 
-// Initialize avatar URL
 onMounted(() => {
   if (user.value?.profile_picture_file_id) {
     currentAvatarUrl.value = user.value.profile_picture_url;

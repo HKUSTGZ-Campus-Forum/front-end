@@ -45,7 +45,7 @@
       @mouseleave="handleDropdownMouseLeave"
     >
       <div class="dropdown-header">
-        <h3>通知</h3>
+        <h3>{{ t("notifications.title") }}</h3>
         <div class="header-actions">
           <button 
             v-if="hasUnread" 
@@ -53,33 +53,29 @@
             class="mark-all-read-btn"
             :disabled="markingAllRead"
           >
-            {{ markingAllRead ? '标记中...' : '全部已读' }}
+            {{ markingAllRead ? t("notifications.markingAllRead") : t("notifications.markAllRead") }}
           </button>
-          <NuxtLink to="/notifications" class="view-all-btn" @click="closeDropdown">
-            查看全部
+          <NuxtLink :to="getLocalePath('/notifications')" class="view-all-btn" @click="closeDropdown">
+            {{ t("notifications.viewAll") }}
           </NuxtLink>
         </div>
       </div>
       
       <div class="dropdown-content">
-        <!-- Loading state -->
         <div v-if="loading" class="loading-state">
           <div class="loading-spinner"></div>
-          <p>加载中...</p>
+          <p>{{ t("notifications.loading") }}</p>
         </div>
         
-        <!-- Error state -->
         <div v-else-if="error" class="error-state">
-          <p>加载失败：{{ error }}</p>
-          <button @click="loadNotifications" class="retry-btn">重试</button>
+          <p>{{ t("notifications.loadFailed", { error }) }}</p>
+          <button @click="loadNotifications" class="retry-btn">{{ t("common.retry") }}</button>
         </div>
         
-        <!-- Empty state -->
         <div v-else-if="notifications.length === 0" class="empty-state">
-          <p>暂无通知</p>
+          <p>{{ t("notifications.empty") }}</p>
         </div>
         
-        <!-- Notifications list -->
         <div v-else class="notifications-list">
           <div
             v-for="notification in notifications.slice(0, 5)"
@@ -88,24 +84,21 @@
             :class="{ 'unread': !notification.read }"
             @click="handleNotificationClick(notification)"
           >
-            <!-- Avatar -->
             <div class="notification-avatar">
               <UserAvatar 
                 :avatar-url="notification.sender?.avatar_url"
-                :username="notification.sender?.username || '用户'"
+                :username="notification.sender?.username || t('common.user')"
                 :user-id="notification.sender?.id"
                 :size="'sm'"
               />
             </div>
             
-            <!-- Content -->
             <div class="notification-content">
               <div class="notification-title">{{ notification.title }}</div>
               <div class="notification-message">{{ notification.message }}</div>
               <div class="notification-time">{{ formatNotificationTime(notification.created_at) }}</div>
             </div>
             
-            <!-- Unread indicator -->
             <div v-if="!notification.read" class="unread-indicator"></div>
           </div>
         </div>
@@ -120,6 +113,8 @@ import { useNotifications } from '~/composables/useNotifications'
 import { usePushNotifications } from '~/composables/usePushNotifications'
 import { useRouter } from 'vue-router'
 
+const { t } = useI18n()
+const { getLocalePath } = useAppLocale()
 const { 
   notifications, 
   unreadCount, 
@@ -146,7 +141,6 @@ const {
 
 const router = useRouter()
 
-// Component state
 const showDropdown = ref(false)
 const markingAllRead = ref(false)
 const bellRef = ref<HTMLElement>()
@@ -154,12 +148,10 @@ const refreshInterval = ref<NodeJS.Timeout>()
 const isMobile = ref(false)
 const hoverTimeout = ref<NodeJS.Timeout>()
 
-// Watch unread count and update badge
 watch(unreadCount, (newCount) => {
   updateBadge(newCount)
 }, { immediate: false })
 
-// Methods
 const toggleDropdown = async () => {
   showDropdown.value = !showDropdown.value
   if (showDropdown.value) {
@@ -169,15 +161,12 @@ const toggleDropdown = async () => {
 
 const handleClick = async (event: Event) => {
   if (isMobile.value) {
-    // Mobile: use click behavior
     await toggleDropdown()
   }
-  // Desktop: ignore click, use hover behavior instead
 }
 
 const handleMouseEnter = async () => {
   if (!isMobile.value) {
-    // Desktop: show dropdown on hover
     if (hoverTimeout.value) {
       clearTimeout(hoverTimeout.value)
     }
@@ -190,23 +179,20 @@ const handleMouseEnter = async () => {
 
 const handleMouseLeave = () => {
   if (!isMobile.value) {
-    // Desktop: hide dropdown after a short delay
     hoverTimeout.value = setTimeout(() => {
       showDropdown.value = false
-    }, 200) // Small delay to allow moving to dropdown
+    }, 200)
   }
 }
 
 const handleDropdownMouseEnter = () => {
   if (!isMobile.value && hoverTimeout.value) {
-    // Cancel hide timeout when mouse enters dropdown
     clearTimeout(hoverTimeout.value)
   }
 }
 
 const handleDropdownMouseLeave = () => {
   if (!isMobile.value) {
-    // Hide dropdown when mouse leaves
     showDropdown.value = false
   }
 }
@@ -217,7 +203,7 @@ const closeDropdown = () => {
 
 const loadNotifications = async () => {
   try {
-    await fetchNotifications(1, 5) // Load first 5 notifications for dropdown
+    await fetchNotifications(1, 5)
   } catch (err) {
     console.error('Failed to load notifications:', err)
   }
@@ -229,7 +215,6 @@ const handleMarkAllRead = async () => {
   markingAllRead.value = true
   try {
     await markAllAsRead()
-    // Update app badge to 0
     clearBadge()
   } catch (err) {
     console.error('Failed to mark all as read:', err)
@@ -241,77 +226,61 @@ const handleMarkAllRead = async () => {
 const handleNotificationClick = async (notification: any) => {
   closeDropdown()
   
-  // Mark as read if not already read
   if (!notification.read) {
     try {
       await markAsRead(notification.id)
-      // Update badge count after marking as read
       refreshBadge()
     } catch (err) {
       console.error('Failed to mark notification as read:', err)
     }
   }
   
-  // Navigate to related content
   const url = getNotificationUrl(notification)
   router.push(url)
 }
 
-// Click outside to close dropdown (mobile only)
 const handleClickOutside = (event: Event) => {
   if (isMobile.value && bellRef.value && !bellRef.value.contains(event.target as Node)) {
     closeDropdown()
   }
 }
 
-// Start refresh interval for unread count
 const startRefreshInterval = () => {
   if (refreshInterval.value) clearInterval(refreshInterval.value)
   
-  // Refresh unread count every 30 seconds
   refreshInterval.value = setInterval(() => {
     fetchUnreadCount().then(() => {
-      // Update badge with current unread count
       updateBadge(unreadCount.value)
     })
   }, 30000)
 }
 
-// Lifecycle
 onMounted(async () => {
-  // Detect if device is mobile
   const checkIsMobile = () => {
     isMobile.value = window.innerWidth <= 768 || 'ontouchstart' in window
   }
   checkIsMobile()
   window.addEventListener('resize', checkIsMobile)
   
-  // Initial load
   fetchUnreadCount().then(() => {
-    // Set initial badge count
     updateBadge(unreadCount.value)
   })
   startRefreshInterval()
   
-  // Initialize push notifications
   try {
     await initPush()
     
-    // Auto-subscribe to push notifications if supported and not subscribed
     if (canSubscribeToPush.value) {
       try {
         await subscribeToPush()
-        console.log('Successfully subscribed to push notifications')
       } catch (err) {
         console.warn('Failed to auto-subscribe to push notifications:', err)
-        // Don't show error to user for auto-subscription failure
       }
     }
   } catch (err) {
     console.warn('Failed to initialize push notifications:', err)
   }
   
-  // Add click outside listener for mobile
   document.addEventListener('click', handleClickOutside)
 })
 
