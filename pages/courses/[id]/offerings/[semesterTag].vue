@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useApi } from "~/composables/useApi";
 import {
   buildCourseListBackQuery,
@@ -9,6 +10,9 @@ import {
 } from "~/utils/courseOffering";
 
 definePageMeta({ layout: "keguang" });
+const { t } = useI18n();
+const { locale, getLocalePath } = useAppLocale();
+const { formatDate } = useDateFormat();
 
 interface Course {
   id: number
@@ -59,15 +63,15 @@ const error = ref("");
 const courseId = computed(() => String(route.params.id || ""));
 const semesterTag = computed(() => String(route.params.semesterTag || ""));
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>));
-const listBackTo = computed(() => ({ path: "/courses", query: listBackQuery.value }));
+const listBackTo = computed(() => getLocalePath({ path: "/courses", query: listBackQuery.value }));
 const selectedOffering = computed(() => (
   offerings.value.find((offering) => offering.offering_tag === semesterTag.value) || null
 ));
-const reviewPageTo = computed(() => ({
+const reviewPageTo = computed(() => getLocalePath({
   path: `/courses/${courseId.value}/reviews/${semesterTag.value}`,
   query: listBackQuery.value,
 }));
-const discussionCreateTo = computed(() => ({
+const discussionCreateTo = computed(() => getLocalePath({
   path: "/forum/postMessage",
   query: {
     ...listBackQuery.value,
@@ -75,20 +79,6 @@ const discussionCreateTo = computed(() => ({
     returnTo: route.fullPath,
   },
 }));
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "未知";
-  try {
-    return new Date(dateString).toLocaleDateString("zh-CN", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "日期格式错误";
-  }
-};
 
 const truncateContent = (content: string, limit = 140) => {
   if (!content) return "";
@@ -98,16 +88,16 @@ const truncateContent = (content: string, limit = 140) => {
 const fetchCourseDetail = async () => {
   const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}`));
   if (!response.ok) {
-    if (response.status === 404) throw new Error("课程不存在或已被删除");
-    throw new Error(`获取课程详情失败: ${response.status}`);
+    if (response.status === 404) throw new Error(t("courses.detailMissing"));
+    throw new Error(`${t("courses.errors.loadCourse")}: ${response.status}`);
   }
   courseDetail.value = await response.json();
 };
 
 const fetchOfferings = async () => {
-  const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}/semesters?lang=zh`));
+  const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}/semesters?lang=${locale.value}`));
   if (!response.ok) {
-    throw new Error(`获取开课学期失败: ${response.status}`);
+    throw new Error(`${t("courses.errors.loadSemesters")}: ${response.status}`);
   }
   const data = await response.json();
   offerings.value = data.semesters || [];
@@ -126,14 +116,14 @@ const fetchDiscussions = async () => {
       getApiUrl(`/api/courses/${courseId.value}/discussions?${params.toString()}`)
     );
     if (!response.ok) {
-      throw new Error(`获取讨论区失败: ${response.status}`);
+      throw new Error(`${t("courses.errors.loadDiscussions")}: ${response.status}`);
     }
     const data = await response.json();
     discussions.value = (data.posts || []).map((post: any) => ({
       id: post.id,
       title: post.title,
       content: post.content,
-      author: post.author || "匿名用户",
+      author: post.author || t("common.unknownAuthor"),
       created_at: post.created_at,
       comment_count: post.comment_count || 0,
       view_count: post.view_count || 0,
@@ -151,11 +141,11 @@ const fetchPage = async () => {
     await fetchCourseDetail();
     await fetchOfferings();
     if (!selectedOffering.value) {
-      throw new Error("当前学期不存在或未开设这门课");
+      throw new Error(t("courses.offeringMissing"));
     }
     await fetchDiscussions();
   } catch (err: any) {
-    error.value = err.message || "加载失败";
+    error.value = err.message || t("courses.loading");
   } finally {
     isLoading.value = false;
   }
@@ -164,10 +154,13 @@ const fetchPage = async () => {
 onMounted(fetchPage);
 
 useHead({
-  title: computed(() => `${semesterTag.value} ${courseDetail.value.name || "课程"} - 课程主页`),
+  title: computed(() => `${selectedOffering.value?.display_name || semesterTag.value} ${courseDetail.value.name || ""} - ${t("courses.homeTitle")}`),
   meta: [{
     name: "description",
-    content: computed(() => `查看 ${semesterTag.value} ${courseDetail.value.name} 的课程简介、评价入口和讨论区`),
+    content: computed(() => t("courses.homeDescription", {
+      offering: selectedOffering.value?.display_name || semesterTag.value,
+      course: courseDetail.value.name || courseDetail.code,
+    })),
   }],
 });
 </script>
@@ -175,19 +168,19 @@ useHead({
 <template>
   <div class="kg-course-offering">
     <div class="kg-back-bar">
-      <NuxtLink :to="listBackTo" class="kg-back-link">← 返回课程列表</NuxtLink>
+      <NuxtLink :to="listBackTo" class="kg-back-link">← {{ t("courses.backToCourses") }}</NuxtLink>
     </div>
 
     <div v-if="isLoading" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ t("courses.loading") }}</span>
     </div>
 
     <div v-else-if="error" class="kg-error-box">
       <p>{{ error }}</p>
       <div class="kg-error-actions">
-        <button class="kg-btn-ghost" @click="fetchPage">重试</button>
-        <NuxtLink :to="listBackTo" class="kg-btn-primary-outline">返回列表</NuxtLink>
+        <button class="kg-btn-ghost" @click="fetchPage">{{ t("common.retry") }}</button>
+        <NuxtLink :to="listBackTo" class="kg-btn-primary-outline">{{ t("common.backToList") }}</NuxtLink>
       </div>
     </div>
 
@@ -197,21 +190,21 @@ useHead({
           <div class="kg-intro-top">
             <div class="kg-intro-row kg-intro-row--main">
               <h1 class="kg-course-name">{{ courseDetail.code }} {{ courseDetail.name }}</h1>
-              <span class="kg-meta-chip">{{ courseDetail.credits }} 学分</span>
-              <span v-if="courseDetail.capacity" class="kg-meta-chip">容量 {{ courseDetail.capacity }}</span>
+              <span class="kg-meta-chip">{{ t("courses.credits", { count: courseDetail.credits }) }}</span>
+              <span v-if="courseDetail.capacity" class="kg-meta-chip">{{ t("courses.capacity", { count: courseDetail.capacity }) }}</span>
             </div>
 
             <div class="kg-intro-row kg-intro-row--top">
               <span class="kg-offering-chip">{{ selectedOffering?.display_name }}</span>
               <span :class="['kg-status-badge', courseDetail.is_active ? 'active' : 'inactive']">
-                {{ courseDetail.is_active ? '开放中' : '已结束' }}
+                {{ courseDetail.is_active ? t('courses.statusActive') : t('courses.statusInactive') }}
               </span>
             </div>
           </div>
 
           <div class="kg-course-desc">
-            <h3 class="kg-pane-title">课程简介</h3>
-            <p>{{ courseDetail.description || "暂无课程描述" }}</p>
+            <h3 class="kg-pane-title">{{ t("courses.overview") }}</h3>
+            <p>{{ courseDetail.description || t("courses.overviewEmpty") }}</p>
           </div>
         </div>
 
@@ -219,30 +212,30 @@ useHead({
           <div class="kg-card kg-pane kg-pane--review">
             <div class="kg-pane-head">
               <div>
-                <p class="kg-pane-eyebrow">课程评价</p>
-                <h2 class="kg-pane-title">查看这个学期的课程评价</h2>
+                <p class="kg-pane-eyebrow">{{ t("courses.reviewsEyebrow") }}</p>
+                <h2 class="kg-pane-title">{{ t("courses.reviewsTitle") }}</h2>
               </div>
             </div>
-            <p class="kg-pane-copy">{{ selectedOffering?.display_name || semesterTag }} 的评价和打分都在这里。</p>
-            <NuxtLink :to="reviewPageTo" class="kg-btn-primary kg-btn-primary--block">进入课程评价</NuxtLink>
+            <p class="kg-pane-copy">{{ t("courses.reviewsCopy", { offering: selectedOffering?.display_name || semesterTag }) }}</p>
+            <NuxtLink :to="reviewPageTo" class="kg-btn-primary kg-btn-primary--block">{{ t("courses.reviewsEntry") }}</NuxtLink>
           </div>
 
           <div class="kg-card kg-pane kg-pane--discussion">
             <div class="kg-pane-head kg-pane-head--discussion">
               <div>
-                <p class="kg-pane-eyebrow">课程讨论区</p>
-                <h2 class="kg-pane-title">最近讨论</h2>
+                <p class="kg-pane-eyebrow">{{ t("courses.discussionEyebrow") }}</p>
+                <h2 class="kg-pane-title">{{ t("courses.discussionTitle") }}</h2>
               </div>
-              <NuxtLink :to="discussionCreateTo" class="kg-btn-primary">去发帖</NuxtLink>
+              <NuxtLink :to="discussionCreateTo" class="kg-btn-primary">{{ t("actions.goToPost") }}</NuxtLink>
             </div>
 
             <div v-if="isLoadingDiscussions" class="kg-loading kg-loading--sm">
               <div class="kg-spinner kg-spinner--sm"></div>
-              <span>加载讨论中...</span>
+              <span>{{ t("courses.discussionLoading") }}</span>
             </div>
 
             <div v-else-if="discussions.length === 0" class="kg-empty-state">
-              <p>还没有讨论，来发第一条吧。</p>
+              <p>{{ t("courses.discussionEmpty") }}</p>
             </div>
 
             <div v-else class="kg-discussion-list">
@@ -264,8 +257,8 @@ useHead({
                 </div>
                 <div class="kg-discussion-meta">
                   <span>{{ post.author }}</span>
-                  <span>评论 {{ post.comment_count }}</span>
-                  <span>浏览 {{ post.view_count }}</span>
+                  <span>{{ t("courses.comments", { count: post.comment_count }) }}</span>
+                  <span>{{ t("courses.views", { count: post.view_count }) }}</span>
                 </div>
               </NuxtLink>
             </div>

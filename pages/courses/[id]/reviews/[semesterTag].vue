@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import FileUpload from "~/components/FileUpload.vue";
@@ -14,6 +15,9 @@ import {
 } from "~/utils/courseOffering";
 
 definePageMeta({ layout: "keguang" });
+const { t } = useI18n();
+const { locale, getLocalePath } = useAppLocale();
+const { formatDate } = useDateFormat();
 
 interface Course {
   id: number
@@ -79,8 +83,8 @@ const showErrorModal = ref(false);
 const courseId = computed(() => String(route.params.id || ""));
 const semesterTag = computed(() => String(route.params.semesterTag || ""));
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>));
-const listBackTo = computed(() => ({ path: "/courses", query: listBackQuery.value }));
-const offeringHomeTo = computed(() => ({
+const listBackTo = computed(() => getLocalePath({ path: "/courses", query: listBackQuery.value }));
+const offeringHomeTo = computed(() => getLocalePath({
   path: `/courses/${courseId.value}/offerings/${semesterTag.value}`,
   query: listBackQuery.value,
 }));
@@ -94,37 +98,23 @@ const fixedReviewTags = computed(() => [
 ].filter(Boolean));
 
 const extractRating = (content: string) => {
-  const match = content.match(/⭐ 评分：(\d)/);
+  const match = content.match(/⭐[^\d]*(\d)/);
   return match ? parseInt(match[1], 10) : null;
-};
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "未知";
-  try {
-    return new Date(dateString).toLocaleDateString("zh-CN", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "日期格式错误";
-  }
 };
 
 const fetchCourseDetail = async () => {
   const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}`));
   if (!response.ok) {
-    if (response.status === 404) throw new Error("课程不存在或已被删除");
-    throw new Error(`获取课程详情失败: ${response.status}`);
+    if (response.status === 404) throw new Error(t("courses.detailMissing"));
+    throw new Error(`${t("courses.errors.loadCourse")}: ${response.status}`);
   }
   courseDetail.value = await response.json();
 };
 
 const fetchOfferings = async () => {
-  const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}/semesters?lang=zh`));
+  const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}/semesters?lang=${locale.value}`));
   if (!response.ok) {
-    throw new Error(`获取开课学期失败: ${response.status}`);
+    throw new Error(`${t("courses.errors.loadSemesters")}: ${response.status}`);
   }
   const data = await response.json();
   offerings.value = data.semesters || [];
@@ -144,7 +134,7 @@ const fetchReviews = async () => {
     });
     const response = await fetchPublic(getApiUrl(`/api/posts?${params.toString()}`));
     if (!response.ok) {
-      throw new Error(`获取评价失败: ${response.status}`);
+      throw new Error(`${t("courses.errors.loadReviews")}: ${response.status}`);
     }
     const data = await response.json();
     reviews.value = (data.posts || []).map((post: any) => ({
@@ -152,11 +142,11 @@ const fetchReviews = async () => {
       title: post.title,
       content: post.content,
       rating: extractRating(post.content),
-      author: post.author || "匿名用户",
+      author: post.author || t("common.unknownAuthor"),
       created_at: post.created_at,
     }));
   } catch (err: any) {
-    errorMsg.value = err.message || "获取评价失败";
+    errorMsg.value = err.message || t("courses.errors.loadReviews");
     showErrorModal.value = true;
   } finally {
     isLoadingReviews.value = false;
@@ -165,7 +155,7 @@ const fetchReviews = async () => {
 
 const submitReview = async () => {
   if (!reviewForm.value.content.trim()) {
-    errorMsg.value = "请输入评价内容";
+    errorMsg.value = t("courses.reviewInputRequired");
     showErrorModal.value = true;
     return;
   }
@@ -174,11 +164,15 @@ const submitReview = async () => {
     isSubmittingReview.value = true;
     let content = reviewForm.value.content.trim();
     if (reviewForm.value.rating) {
-      content += `\n\n⭐ 评分：${reviewForm.value.rating}/5 星`;
+      const ratingLabel = t("courses.ratingWord");
+      content += `\n\n⭐ ${ratingLabel}：${reviewForm.value.rating}/5`;
     }
 
     const payload = {
-      title: reviewForm.value.title.trim() || `${selectedOffering.value?.display_name || semesterTag.value} ${courseDetail.value.name} 课程评价`,
+      title: reviewForm.value.title.trim() || t("courses.reviewTitlePlaceholder", {
+        offering: selectedOffering.value?.display_name || semesterTag.value,
+        course: courseDetail.value.name,
+      }),
       content,
       tags: [courseDetail.value.code, semesterTag.value, COURSE_REVIEW_TAG, COURSE_REVIEW_LABEL],
       file_ids: uploadedFileIds.value,
@@ -192,7 +186,7 @@ const submitReview = async () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || errorData.error || "发布失败，请稍后重试");
+      throw new Error(errorData.message || errorData.error || t("courses.errors.submitReview"));
     }
 
     reviewForm.value = { title: "", content: "", rating: null };
@@ -202,7 +196,7 @@ const submitReview = async () => {
     await fetchReviews();
     showSuccessModal.value = true;
   } catch (err: any) {
-    errorMsg.value = err.message || "发布失败，请稍后重试";
+    errorMsg.value = err.message || t("courses.errors.submitReview");
     showErrorModal.value = true;
   } finally {
     isSubmittingReview.value = false;
@@ -222,7 +216,7 @@ const onFileUploadSuccess = (file: any) => {
 };
 
 const onUploadError = (uploadError: Error) => {
-  errorMsg.value = `图片上传失败: ${uploadError.message}`;
+  errorMsg.value = t("courses.imageUploadFailed", { message: uploadError.message });
   showErrorModal.value = true;
 };
 
@@ -233,13 +227,13 @@ const removeUploadedImage = async (index: number) => {
     uploadedImages.value.splice(index, 1);
     uploadedFileIds.value.splice(uploadedFileIds.value.indexOf(image.id), 1);
   } catch (removeError: any) {
-    errorMsg.value = removeError.message || "图片删除失败";
+    errorMsg.value = removeError.message || t("courses.imageRemoveFailed");
     showErrorModal.value = true;
   }
 };
 
 const goToPostDetail = (postId: number) => {
-  router.push(`/forum/posts/${postId}`);
+  router.push(getLocalePath(`/forum/posts/${postId}`));
 };
 
 const fetchPage = async () => {
@@ -249,11 +243,11 @@ const fetchPage = async () => {
     await fetchCourseDetail();
     await fetchOfferings();
     if (!selectedOffering.value) {
-      throw new Error("当前学期不存在或未开设这门课");
+      throw new Error(t("courses.offeringMissing"));
     }
     await fetchReviews();
   } catch (err: any) {
-    error.value = err.message || "加载失败";
+    error.value = err.message || t("courses.loading");
   } finally {
     isLoading.value = false;
   }
@@ -262,10 +256,12 @@ const fetchPage = async () => {
 onMounted(fetchPage);
 
 useHead({
-  title: computed(() => `${selectedOffering.value?.display_name || semesterTag.value} ${courseDetail.value.name || "课程"} - 课程评价`),
+  title: computed(() => `${selectedOffering.value?.display_name || semesterTag.value} ${courseDetail.value.name || ""} - ${t("courses.reviewsEyebrow")}`),
   meta: [{
     name: "description",
-    content: computed(() => `查看 ${selectedOffering.value?.display_name || semesterTag.value} ${courseDetail.value.name} 的课程评价`),
+    content: computed(() => t("courses.reviewsCopy", {
+      offering: selectedOffering.value?.display_name || semesterTag.value,
+    })),
   }],
 });
 </script>
@@ -273,20 +269,20 @@ useHead({
 <template>
   <div class="kg-course-detail">
     <div class="kg-back-bar">
-      <NuxtLink :to="offeringHomeTo" class="kg-back-link">← 返回课程主页</NuxtLink>
-      <NuxtLink :to="listBackTo" class="kg-back-link kg-back-link--muted">返回课程列表</NuxtLink>
+      <NuxtLink :to="offeringHomeTo" class="kg-back-link">← {{ t("courses.homeTitle") }}</NuxtLink>
+      <NuxtLink :to="listBackTo" class="kg-back-link kg-back-link--muted">{{ t("courses.backToCourses") }}</NuxtLink>
     </div>
 
     <div v-if="isLoading" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ t("courses.loading") }}</span>
     </div>
 
     <div v-else-if="error" class="kg-error-box">
       <p>{{ error }}</p>
       <div class="kg-error-actions">
-        <button class="kg-btn-ghost" @click="fetchPage">重试</button>
-        <NuxtLink :to="listBackTo" class="kg-btn-primary-outline">返回列表</NuxtLink>
+        <button class="kg-btn-ghost" @click="fetchPage">{{ t("common.retry") }}</button>
+        <NuxtLink :to="listBackTo" class="kg-btn-primary-outline">{{ t("common.backToList") }}</NuxtLink>
       </div>
     </div>
 
@@ -297,38 +293,38 @@ useHead({
             <span class="kg-course-name__code">{{ courseDetail.code }}</span>
             <span class="kg-course-name__title">{{ courseDetail.name }}</span>
           </h1>
-          <span v-if="courseDetail.credits" class="kg-meta-chip">{{ courseDetail.credits }} 学分</span>
+          <span v-if="courseDetail.credits" class="kg-meta-chip">{{ t("courses.credits", { count: courseDetail.credits }) }}</span>
         </div>
 
         <div class="kg-course-header-tags">
           <span class="kg-offering-chip">{{ selectedOffering?.display_name }}</span>
           <span :class="['kg-status-badge', courseDetail.is_active ? 'active' : 'inactive']">
-            {{ courseDetail.is_active ? '开放中' : '已结束' }}
+            {{ courseDetail.is_active ? t('courses.statusActive') : t('courses.statusInactive') }}
           </span>
         </div>
 
-        <p class="kg-page-intro">这里展示的是{{ selectedOffering?.display_name || semesterTag }}学期{{ courseDetail.code }}的课程评价</p>
+        <p class="kg-page-intro">{{ t("courses.pageIntro", { offering: selectedOffering?.display_name || semesterTag, courseCode: courseDetail.code }) }}</p>
       </div>
 
       <div class="kg-card kg-reviews">
         <div class="kg-reviews-header">
-          <h2 class="kg-section-title">课程评价 ({{ reviews.length }})</h2>
+          <h2 class="kg-section-title">{{ t("courses.reviewListTitle", { count: reviews.length }) }}</h2>
           <button v-if="isLoggedIn && !showReviewForm" class="kg-btn-primary" @click="showReviewForm = true">
-            + 写评价
+            + {{ t("courses.writeReview") }}
           </button>
         </div>
 
         <div v-if="isLoggedIn && showReviewForm" class="kg-review-form">
-          <h3 class="kg-form-title">发表 {{ selectedOffering?.display_name || semesterTag }} 的课程评价</h3>
+          <h3 class="kg-form-title">{{ t("courses.publishReviewFor", { offering: selectedOffering?.display_name || semesterTag }) }}</h3>
           <div class="kg-fixed-tags">
-            <span class="kg-fixed-tags__label">固定标签</span>
+            <span class="kg-fixed-tags__label">{{ t("courses.fixedTags") }}</span>
             <div class="kg-fixed-tags__list">
               <span v-for="tag in fixedReviewTags" :key="tag" class="kg-fixed-tag">{{ tag }}</span>
             </div>
           </div>
           <form @submit.prevent="submitReview">
             <div class="kg-form-group">
-              <label>评分（可选）</label>
+              <label>{{ t("courses.ratingOptional") }}</label>
               <div class="kg-star-row">
                 <button
                   v-for="star in 5"
@@ -340,30 +336,30 @@ useHead({
               </div>
             </div>
             <div class="kg-form-group">
-              <label>评价标题</label>
+              <label>{{ t("courses.reviewTitleLabel") }}</label>
               <input
                 v-model="reviewForm.title"
                 class="kg-input"
                 type="text"
-                :placeholder="`${selectedOffering?.display_name || semesterTag} ${courseDetail.name} 课程评价`"
+                :placeholder="t('courses.reviewTitlePlaceholder', { offering: selectedOffering?.display_name || semesterTag, course: courseDetail.name })"
                 maxlength="100"
               />
               <span class="kg-char-count">{{ reviewForm.title.length }}/100</span>
             </div>
             <div class="kg-form-group">
-              <label>评价内容 *</label>
+              <label>{{ t("courses.reviewContentLabel") }}</label>
               <textarea
                 v-model="reviewForm.content"
                 class="kg-textarea"
                 rows="4"
-                placeholder="分享这门课在这个学期的学习体验、作业负担、考试感受等..."
+                :placeholder="t('courses.reviewContentPlaceholder')"
                 required
                 maxlength="500"
               ></textarea>
               <span class="kg-char-count">{{ reviewForm.content.length }}/500</span>
             </div>
             <div class="kg-form-group">
-              <label>上传图片（最多3张）</label>
+              <label>{{ t("courses.uploadImages") }}</label>
               <FileUpload
                 v-if="uploadedImages.length < 3"
                 :file-type="'post_image'"
@@ -372,7 +368,7 @@ useHead({
                 :max-size="5 * 1024 * 1024"
                 :show-preview="false"
                 :allow-delete="false"
-                :drag-text="'点击或拖拽图片到此处上传'"
+                :drag-text="t('courses.uploadDragText')"
                 @upload-success="onFileUploadSuccess"
                 @upload-error="onUploadError"
               />
@@ -384,25 +380,26 @@ useHead({
               </div>
             </div>
             <div class="kg-form-actions">
-              <button type="button" class="kg-btn-ghost" @click="cancelReview">取消</button>
+              <button type="button" class="kg-btn-ghost" @click="cancelReview">{{ t("actions.cancel") }}</button>
               <button type="submit" class="kg-btn-primary" :disabled="isSubmittingReview">
-                {{ isSubmittingReview ? "发布中..." : "发布评价" }}
+                {{ isSubmittingReview ? t("actions.publishing") : t("actions.publish") }}
               </button>
             </div>
           </form>
         </div>
 
         <div v-if="!isLoggedIn" class="kg-login-hint">
-          请 <NuxtLink to="/login" class="kg-link">登录</NuxtLink> 后发表评价
+          {{ t("courses.loginHint") }}
+          <NuxtLink :to="getLocalePath('/login')" class="kg-link">{{ t("actions.login") }}</NuxtLink>
         </div>
 
         <div v-if="isLoadingReviews" class="kg-loading kg-loading--sm">
           <div class="kg-spinner kg-spinner--sm"></div>
-          <span>加载评价...</span>
+          <span>{{ t("courses.reviewLoading") }}</span>
         </div>
 
         <div v-else-if="reviews.length === 0" class="kg-empty-state">
-          <p>这个 offering 还没有课程评价，欢迎成为第一个分享体验的人。</p>
+          <p>{{ t("courses.reviewEmpty") }}</p>
         </div>
 
         <div v-else class="kg-review-list">
@@ -418,7 +415,7 @@ useHead({
             </div>
             <h3 class="kg-review-title">{{ review.title }}</h3>
             <p class="kg-review-content">{{ review.content }}</p>
-            <button class="kg-action-btn kg-action-btn--link" @click.stop="goToPostDetail(review.id)">查看详情 →</button>
+            <button class="kg-action-btn kg-action-btn--link" @click.stop="goToPostDetail(review.id)">{{ t("courses.reviewDetail") }} →</button>
           </div>
         </div>
       </div>
@@ -426,14 +423,14 @@ useHead({
 
     <SuccessModal
       :show="showSuccessModal"
-      title="发布成功"
-      message="评价发布成功！"
+      :title="t('actions.publish')"
+      :message="t('courses.reviewPublishSuccess')"
       :auto-close="true"
       :auto-close-delay="2000"
       :show-button="false"
       @close="showSuccessModal = false"
     />
-    <ErrorModal :show="showErrorModal" title="发布失败" :message="errorMsg" @close="showErrorModal = false" />
+    <ErrorModal :show="showErrorModal" :title="t('courses.reviewPublishFailed')" :message="errorMsg" @close="showErrorModal = false" />
   </div>
 </template>
 

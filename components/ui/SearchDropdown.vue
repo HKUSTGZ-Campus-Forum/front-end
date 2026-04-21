@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSearch } from '~/composables/useSearch'
 import { useDebounceFn } from '@vueuse/core'
 import UserAvatar from '~/components/user/UserAvatar.vue'
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 // Search composable
+const { t } = useI18n()
 const {
   isSearching,
   searchResults,
@@ -173,7 +175,7 @@ const stripHtml = (html: string) => {
         v-model="inputValue"
         type="text"
         class="search-input"
-        :placeholder="placeholder || '搜索帖子、用户、课程...'"
+        :placeholder="placeholder || t('search.placeholder')"
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown="handleKeydown"
@@ -207,7 +209,7 @@ const stripHtml = (html: string) => {
       <div v-if="isSearching" class="dropdown-section">
         <div class="loading-item">
           <span class="spin-icon" aria-hidden="true">↻</span>
-          <span>搜索中...</span>
+          <span>{{ t('common.searching') }}</span>
         </div>
       </div>
       
@@ -222,10 +224,10 @@ const stripHtml = (html: string) => {
       <!-- Search history (when no query) -->
       <div v-else-if="inputValue.trim().length === 0 && searchHistory.length > 0 && showHistory" class="dropdown-section">
         <div class="section-header">
-          <span>最近搜索</span>
+          <span>{{ t('common.history') }}</span>
           <button @click="clearSearchHistory" class="clear-history-btn">
             <span aria-hidden="true">🗑</span>
-            清除
+            {{ t('common.clear') }}
           </button>
         </div>
         <div class="history-list">
@@ -247,7 +249,7 @@ const stripHtml = (html: string) => {
         <div v-if="searchResults.posts.length > 0" class="dropdown-section">
           <div class="section-header">
             <span class="section-icon" aria-hidden="true">📝</span>
-            <span>帖子 ({{ searchResults.posts.length }})</span>
+            <span>{{ t('search.tabs.posts') }} ({{ searchResults.posts.length }})</span>
           </div>
           <div class="results-list">
             <div
@@ -282,7 +284,7 @@ const stripHtml = (html: string) => {
         <div v-if="searchResults.users.length > 0" class="dropdown-section">
           <div class="section-header">
             <span class="section-icon" aria-hidden="true">👥</span>
-            <span>用户 ({{ searchResults.users.length }})</span>
+            <span>{{ t('search.tabs.users') }} ({{ searchResults.users.length }})</span>
           </div>
           <div class="results-list">
             <div
@@ -309,7 +311,7 @@ const stripHtml = (html: string) => {
         <div v-if="searchResults.tags.length > 0" class="dropdown-section">
           <div class="section-header">
             <span class="section-icon" aria-hidden="true">🏷</span>
-            <span>标签 ({{ searchResults.tags.length }})</span>
+            <span>{{ t('search.tabs.tags') }} ({{ searchResults.tags.length }})</span>
           </div>
           <div class="results-list">
             <div
@@ -321,7 +323,7 @@ const stripHtml = (html: string) => {
               <span class="section-icon" aria-hidden="true">#</span>
               <div class="tag-info">
                 <h4 class="tag-name" v-html="tag.name_highlighted"></h4>
-                <span class="tag-count">{{ tag.post_count }} 个帖子</span>
+                <span class="tag-count">{{ t('search.tagPostCount', { count: tag.post_count }) }}</span>
               </div>
             </div>
           </div>
@@ -331,7 +333,7 @@ const stripHtml = (html: string) => {
         <div v-if="searchResults.courses.length > 0" class="dropdown-section">
           <div class="section-header">
             <span class="section-icon" aria-hidden="true">📚</span>
-            <span>课程 ({{ searchResults.courses.length }})</span>
+            <span>{{ t('search.tabs.courses') }} ({{ searchResults.courses.length }})</span>
           </div>
           <div class="results-list">
             <div
@@ -353,7 +355,7 @@ const stripHtml = (html: string) => {
         <div class="dropdown-footer">
           <button class="view-all-btn" @click="handleSearch">
             <span aria-hidden="true">🔎</span>
-            查看全部 {{ totalResults }} 个结果
+            {{ t('common.viewAllResults', { count: totalResults }) }}
           </button>
         </div>
       </div>
@@ -362,7 +364,7 @@ const stripHtml = (html: string) => {
       <div v-else-if="inputValue.trim().length >= 2" class="dropdown-section">
         <div class="no-results">
           <span aria-hidden="true">🔍</span>
-          <span>没有找到相关结果</span>
+          <span>{{ t('common.noResults') }}</span>
         </div>
       </div>
     </div>

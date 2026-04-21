@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 definePageMeta({
   layout: 'keguang',
@@ -7,12 +8,14 @@ definePageMeta({
   requiresAuth: true,
 })
 
-useHead({
-  title: '个人主页跳转中 - UniKorn Campus',
-})
-
 const { user } = useAuth()
+const route = useRoute()
+const { t } = useI18n()
 const redirectError = ref('')
+
+useHead(() => ({
+  title: `${t('profileRedirect.pageTitle')} - UniKorn Campus`,
+}))
 
 const decodeJwtUserId = (token: string): string | null => {
   try {
@@ -52,16 +55,17 @@ const resolveCurrentUserId = (): string | null => {
 
 onMounted(async () => {
   const uid = resolveCurrentUserId()
+  const prefix = route.path.startsWith('/en') ? '/en' : ''
 
   if (uid) {
-    await navigateTo(`/users/${uid}`, { replace: true })
+    await navigateTo(`${prefix}/users/${uid}`, { replace: true })
     return
   }
 
-  redirectError.value = '未获取到登录信息，正在跳转到登录页...'
+  redirectError.value = t('profileRedirect.missingAuth')
   await navigateTo({
-    path: '/login',
-    query: { redirect: '/profile' },
+    path: `${prefix}/login`,
+    query: { redirect: `${prefix}/profile` },
   }, { replace: true })
 })
 </script>
@@ -70,7 +74,7 @@ onMounted(async () => {
   <div class="profile-redirect-page">
     <div class="redirect-card">
       <div class="spinner" aria-hidden="true"></div>
-      <p>{{ redirectError || '正在进入你的个人主页...' }}</p>
+      <p>{{ redirectError || t('profileRedirect.redirecting') }}</p>
     </div>
   </div>
 </template>

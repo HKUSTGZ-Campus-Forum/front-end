@@ -6,6 +6,7 @@ import { useRoute } from '#app'
 const { t } = useI18n()
 const route = useRoute()
 const { user, isLoggedIn } = useAuth()
+const { getLocalePath } = useAppLocale()
 
 const emit = defineEmits<{ (e: 'update:expanded', value: boolean): void }>()
 
@@ -19,6 +20,12 @@ function onMouseEnter() {
 function onMouseLeave() {
   isExpanded.value = false
   emit('update:expanded', false)
+}
+
+function isActive(path: string) {
+  const localizedPath = getLocalePath(path)
+  if (path === '/') return route.path === localizedPath
+  return route.path.startsWith(localizedPath)
 }
 </script>
 
@@ -38,47 +45,47 @@ function onMouseLeave() {
 
       <ul class="kg-sidebar__nav">
         <li>
-          <NuxtLink to="/" :class="{ active: route.path === '/' }">
+          <NuxtLink :to="getLocalePath('/')" :class="{ active: isActive('/') }">
             <img src="/icons/sidebar_homelogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('home') }}</span>
+            <span class="kg-label">{{ t('nav.home') }}</span>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/forum" :class="{ active: route.path.startsWith('/forum') }">
+          <NuxtLink :to="getLocalePath('/forum')" :class="{ active: isActive('/forum') }">
             <img src="/icons/sidebar_forumlogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('forum') }}</span>
+            <span class="kg-label">{{ t('nav.forum') }}</span>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/courses" :class="{ active: route.path.startsWith('/courses') }">
+          <NuxtLink :to="getLocalePath('/courses')" :class="{ active: isActive('/courses') }">
             <img src="/icons/sidebar_courselogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('courses') }}</span>
+            <span class="kg-label">{{ t('nav.courses') }}</span>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/club" :class="{ active: route.path.startsWith('/club') }">
+          <NuxtLink :to="getLocalePath('/club')" :class="{ active: isActive('/club') }">
             <img src="/icons/sidebar_club.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('activity') }}</span>
+            <span class="kg-label">{{ t('nav.activity') }}</span>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/matching" :class="{ active: route.path.startsWith('/matching') }">
+          <NuxtLink :to="getLocalePath('/matching')" :class="{ active: isActive('/matching') }">
             <img src="/icons/sidebar_matching.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('Form a team') }}</span>
+            <span class="kg-label">{{ t('nav.teamMatching') }}</span>
           </NuxtLink>
         </li>
         <li>
           <NuxtLink
             v-if="isLoggedIn && user?.id"
-            :to="`/users/${user.id}`"
-            :class="{ active: route.path.startsWith('/users/') }"
+            :to="getLocalePath(`/users/${user.id}`)"
+            :class="{ active: isActive('/users') }"
           >
             <img src="/icons/sidebar_userlogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('users') }}</span>
+            <span class="kg-label">{{ t('nav.users') }}</span>
           </NuxtLink>
-          <NuxtLink v-else to="/login" :class="{ active: route.path === '/login' }">
+          <NuxtLink v-else :to="getLocalePath('/login')" :class="{ active: isActive('/login') }">
             <img src="/icons/sidebar_userlogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('login') }}</span>
+            <span class="kg-label">{{ t('actions.login') }}</span>
           </NuxtLink>
         </li>
 
@@ -93,19 +100,19 @@ function onMouseLeave() {
             rel="noopener noreferrer"
           >
             <img src="/icons/sidebar_schedulerlogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('Scheduler') }}</span>
+            <span class="kg-label">{{ t('nav.scheduler') }}</span>
           </NuxtLink>
         </li>
         <li>
           <NuxtLink to="https://wiki.hkust-gz.top" target="_blank" rel="noopener noreferrer">
             <img src="/icons/wiki-pure.svg" alt="" class="kg-icon" />
-            <span class="kg-label">HKUST-GZ Wiki</span>
+            <span class="kg-label">{{ t('nav.wiki') }}</span>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/contest" :class="{ active: route.path.startsWith('/contest') }">
+          <NuxtLink :to="getLocalePath('/contest')" :class="{ active: isActive('/contest') }">
             <img src="/icons/sidebar_trophy.svg" alt="" class="kg-icon" />
-            <span class="kg-label">百块奖金大赛</span>
+            <span class="kg-label">{{ t('nav.contest') }}</span>
           </NuxtLink>
         </li>
       </ul>

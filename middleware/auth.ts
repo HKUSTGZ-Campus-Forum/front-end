@@ -5,8 +5,9 @@ export default defineNuxtRouteMiddleware((to, from) => {
   
   // 挂载了 auth 中间件的页面都应要求登录
   if (!isLoggedIn.value) {
+    const loginPath = to.path.startsWith('/en') ? '/en/login' : '/login';
     return navigateTo({
-      path: '/login',
+      path: loginPath,
       query: { redirect: to.fullPath }
     });
   }

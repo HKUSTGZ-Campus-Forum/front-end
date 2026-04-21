@@ -1,324 +1,295 @@
 <template>
-    <div class="register-setting">
-      
-      <div v-if="successMessage" class="success-message">
-        {{ successMessage }}
-      </div>
-      
-      <!-- Show email verification component if registration succeeded and email verification is needed -->
-      <AuthEmailVerification
-        v-if="showEmailVerification"
-        :user-id="registeredUserId"
-        :user-email="registeredEmail"
-        :username="registeredUsername"
-        @verification-success="handleVerificationSuccess"
-        @back-to-register="resetRegistration"
-      />
-      
-      <form v-else @submit.prevent="handleRegister" class="register-form">
-        <!-- 用户名字段 -->
-        <div class="form-group">
-          <label for="settingUsername">用户名</label>
-          <input
-            id="settingUsername"
-            v-model="username"
-            type="text"
-            placeholder="请设置用户名"
-            required
-            @blur="validateUsername"
-          />
-          <span v-if="errors.username" class="error-text">{{ errors.username }}</span>
-        </div>
-        
-        <!-- 邮箱字段 - 现在是必填的 -->
-        <div class="form-group">
-          <label for="settingEmail">邮箱 <span class="required">*</span></label>
-          <input
-            id="settingEmail"
-            v-model="email"
-            type="email"
-            placeholder="请输入HKUST-GZ邮箱"
-            required
-            @blur="validateEmail"
-          />
-          <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
-          <div class="email-hint">
-            <p>只允许使用 HKUST-GZ 邮箱注册：</p>
-            <ul>
-              <li>@connect.hkust-gz.edu.cn</li>
-              <li>@hkust-gz.edu.cn</li>
-            </ul>
-          </div>
-        </div>
-        
-        <!-- 密码字段 -->
-        <div class="form-group">
-          <label for="settingPassword">密码</label>
-          <div class="password-field">
-            <input
-              id="settingPassword"
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="请设置密码"
-              required
-              @blur="validatePassword"
-            />
-            <button
-              type="button"
-              class="toggle-password"
-              @click="showPassword = !showPassword"
-            >
-              {{ showPassword ? "隐藏" : "显示" }}
-            </button>
-          </div>
-          <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
-        </div>
-        
-        <!-- 确认密码字段 -->
-        <div class="form-group">
-          <label for="settingConfirmPassword">确认密码</label>
-          <div class="password-field">
-            <input
-              id="settingConfirmPassword"
-              v-model="confirmPassword"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              placeholder="请再次输入密码"
-              required
-              @blur="validateConfirmPassword"
-            />
-            <button
-              type="button"
-              class="toggle-password"
-              @click="showConfirmPassword = !showConfirmPassword"
-            >
-              {{ showConfirmPassword ? "隐藏" : "显示" }}
-            </button>
-          </div>
-          <span v-if="errors.confirmPassword" class="error-text">{{ errors.confirmPassword }}</span>
-        </div>
-        
-        <!-- 错误提示 -->
-        <div v-if="registerError" class="global-error">
-          {{ registerError }}
-        </div>
-        
-        <!-- 提交按钮 -->
-        <button type="submit" class="register-btn" :disabled="isLoading || !formValid">
-          {{ isLoading ? '注册中...' : '注册' }}
-        </button>
-
-        <!-- 邮箱验证说明 -->
-        <div class="verification-notice">
-          <p>注册后我们将向您的邮箱发送验证码，请确保邮箱地址正确</p>
-          <div class="trash-mail-reminder">
-            <strong>⚠️ 重要提醒：</strong>
-            <p>如果没有收到验证邮件，请检查您的垃圾邮件箱（垃圾邮件/废纸篓/杂件箱）</p>
-          </div>
-        </div>
-      </form>
+  <div class="register-setting">
+    <div v-if="successMessage" class="success-message">
+      {{ successMessage }}
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed } from 'vue';
-  import { useAuth } from '~/composables/useAuth';
-  
-  // 表单数据
-  const username = ref('');
-  const email = ref('');
-  const password = ref('');
-  const confirmPassword = ref('');
-  const showPassword = ref(false);
-  const showConfirmPassword = ref(false);
-  
-  // 错误和状态管理
-  const errors = ref({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const registerError = ref('');
-  const isLoading = ref(false);
-  const successMessage = ref('');
-  
-  // Email verification state
-  const showEmailVerification = ref(false);
-  const registeredUserId = ref(null);
-  const registeredEmail = ref('');
-  const registeredUsername = ref('');
-  
-  // 获取auth组合式函数
-  const { register } = useAuth();
-  
-  // 表单验证函数
-  const validateUsername = () => {
-    if (!username.value) {
-      errors.value.username = '请输入用户名';
-    } else if (username.value.length < 2) {
-      errors.value.username = '用户名至少需要2个字符';
-    } else if (username.value.length > 50) {
-      errors.value.username = '用户名不能超过50个字符';
-    } else {
-      // Check for forbidden characters
-      const forbiddenChars = /[<>"'&/\\|?*:;]/;
-      if (forbiddenChars.test(username.value)) {
-        errors.value.username = '用户名不能包含特殊符号如 < > " \' & / \\ | ? * : ;';
-      } else {
-        errors.value.username = '';
-      }
-    }
-  };
-  
-  const validateEmail = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const hkustDomains = ['connect.hkust-gz.edu.cn', 'hkust-gz.edu.cn'];
-    
-    if (!email.value) {
-      errors.value.email = '请输入邮箱地址';
-    } else if (!emailRegex.test(email.value)) {
-      errors.value.email = '请输入有效的邮箱地址';
-    } else {
-      const emailLower = email.value.toLowerCase().trim();
-      
-      // Check if it's exactly one of the allowed domains
-      const emailParts = emailLower.split('@');
-      const isHkustEmail = emailParts.length === 2 && 
-                          hkustDomains.includes(emailParts[1]);
-      
-      if (!isHkustEmail) {
-        errors.value.email = '只允许使用 HKUST-GZ 邮箱注册 (@connect.hkust-gz.edu.cn 或 @hkust-gz.edu.cn)';
-      } else {
-        errors.value.email = '';
-      }
-    }
-  };
-  
-  const validatePassword = () => {
-    if (!password.value) {
-      errors.value.password = '请设置密码';
-    } else if (password.value.length < 6) {
-      errors.value.password = '密码至少需要6个字符';
-    } else {
-      errors.value.password = '';
-    }
-  };
-  
-  const validateConfirmPassword = () => {
-    if (!confirmPassword.value) {
-      errors.value.confirmPassword = '请确认密码';
-    } else if (password.value !== confirmPassword.value) {
-      errors.value.confirmPassword = '两次输入的密码不一致';
-    } else {
-      errors.value.confirmPassword = '';
-    }
-  };
-  
-  // 计算属性：表单是否有效
-  const formValid = computed(() => {
-    return (
-      username.value &&
-      email.value && // Email is now required
-      password.value &&
-      confirmPassword.value &&
-      !errors.value.username &&
-      !errors.value.email &&
-      !errors.value.password &&
-      !errors.value.confirmPassword
-    );
-  });
-  
-  // 提交处理
-  const handleRegister = async () => {
-    // 验证所有字段
-    validateUsername();
-    validateEmail();
-    validatePassword();
-    validateConfirmPassword();
-    
-    // 检查是否有错误
-    if (
-      errors.value.username ||
-      errors.value.email ||
-      errors.value.password ||
-      errors.value.confirmPassword
-    ) {
-      return;
-    }
-    
-    try {
-      isLoading.value = true;
-      registerError.value = '';
-      
-      const result = await register(username.value, email.value, password.value);
-      
-      // 注册成功，显示邮箱验证界面
-      if (result.success) {
-        registeredUserId.value = result.userId;
-        registeredEmail.value = email.value;
-        registeredUsername.value = username.value;
-        showEmailVerification.value = true;
-        
-        // Clear form data for security
-        password.value = '';
-        confirmPassword.value = '';
-      }
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '注册失败，请稍后再试';
-      registerError.value = errorMessage;
-      
-      // 如果是用户名已存在的错误，将错误信息显示在用户名输入框下方
-      if (errorMessage.includes('用户名') && errorMessage.includes('已被使用')) {
-        errors.value.username = errorMessage;
-        registerError.value = ''; // 清除全局错误信息
-      }
-      // 如果是邮箱已存在的错误，显示在邮箱输入框下方
-      else if (errorMessage.includes('邮箱') && errorMessage.includes('已被注册')) {
-        errors.value.email = errorMessage;
-        registerError.value = ''; // 清除全局错误信息
-      }
-    } finally {
-      isLoading.value = false;
-    }
-  };
 
-  // Handle successful email verification
-  const handleVerificationSuccess = (data) => {
-    showEmailVerification.value = false;
-    successMessage.value = '邮箱验证成功！您现在可以正常使用论坛了。';
-    
-    // Clear all form data
-    resetForm();
-    
-    // 触发事件
-    emit('register-success', data);
-  };
+    <AuthEmailVerification
+      v-if="showEmailVerification"
+      :user-id="registeredUserId"
+      :user-email="registeredEmail"
+      :username="registeredUsername"
+      @verification-success="handleVerificationSuccess"
+      @back-to-register="resetRegistration"
+    />
 
-  // Reset registration to go back to form
-  const resetRegistration = () => {
-    showEmailVerification.value = false;
-    registeredUserId.value = null;
-    registeredEmail.value = '';
-    registeredUsername.value = '';
-    // Keep form data so user can try again
-  };
+    <form v-else @submit.prevent="handleRegister" class="register-form">
+      <div class="form-group">
+        <label for="settingUsername">{{ t("auth.register.username") }}</label>
+        <input
+          id="settingUsername"
+          v-model="username"
+          type="text"
+          :placeholder="t('auth.register.usernamePlaceholder')"
+          required
+          @blur="validateUsername"
+        />
+        <span v-if="errors.username" class="error-text">{{ errors.username }}</span>
+      </div>
 
-  // Reset form completely
-  const resetForm = () => {
-    username.value = '';
-    email.value = '';
-    password.value = '';
-    confirmPassword.value = '';
-    Object.keys(errors.value).forEach(key => {
-      errors.value[key] = '';
-    });
+      <div class="form-group">
+        <label for="settingEmail">{{ t("auth.register.email") }} <span class="required">*</span></label>
+        <input
+          id="settingEmail"
+          v-model="email"
+          type="email"
+          :placeholder="t('auth.register.emailPlaceholder')"
+          required
+          @blur="validateEmail"
+        />
+        <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
+        <div class="email-hint">
+          <p>{{ t("auth.register.emailHintTitle") }}</p>
+          <ul>
+            <li>@connect.hkust-gz.edu.cn</li>
+            <li>@hkust-gz.edu.cn</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="settingPassword">{{ t("auth.register.password") }}</label>
+        <div class="password-field">
+          <input
+            id="settingPassword"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="t('auth.register.passwordPlaceholder')"
+            required
+            @blur="validatePassword"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            @click="showPassword = !showPassword"
+          >
+            {{ showPassword ? t("common.hide") : t("common.show") }}
+          </button>
+        </div>
+        <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
+      </div>
+
+      <div class="form-group">
+        <label for="settingConfirmPassword">{{ t("auth.register.confirmPassword") }}</label>
+        <div class="password-field">
+          <input
+            id="settingConfirmPassword"
+            v-model="confirmPassword"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            :placeholder="t('auth.register.confirmPasswordPlaceholder')"
+            required
+            @blur="validateConfirmPassword"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            @click="showConfirmPassword = !showConfirmPassword"
+          >
+            {{ showConfirmPassword ? t("common.hide") : t("common.show") }}
+          </button>
+        </div>
+        <span v-if="errors.confirmPassword" class="error-text">{{ errors.confirmPassword }}</span>
+      </div>
+
+      <div v-if="registerError" class="global-error">
+        {{ registerError }}
+      </div>
+
+      <button type="submit" class="register-btn" :disabled="isLoading || !formValid">
+        {{ isLoading ? t("auth.register.submitting") : t("auth.register.submit") }}
+      </button>
+
+      <div class="verification-notice">
+        <p>{{ t("auth.register.verificationNotice") }}</p>
+        <div class="trash-mail-reminder">
+          <strong>⚠️ {{ t("auth.register.verificationWarningTitle") }}</strong>
+          <p>{{ t("auth.register.verificationWarningBody") }}</p>
+        </div>
+      </div>
+    </form>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useAuth } from '~/composables/useAuth';
+
+const { t } = useI18n();
+const username = ref('');
+const email = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+
+const errors = ref({
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
+});
+const registerError = ref('');
+const isLoading = ref(false);
+const successMessage = ref('');
+
+const showEmailVerification = ref(false);
+const registeredUserId = ref(null);
+const registeredEmail = ref('');
+const registeredUsername = ref('');
+
+const { register } = useAuth();
+
+const validateUsername = () => {
+  if (!username.value) {
+    errors.value.username = t('auth.register.errors.usernameRequired');
+  } else if (username.value.length < 2) {
+    errors.value.username = t('auth.register.errors.usernameMin');
+  } else if (username.value.length > 50) {
+    errors.value.username = t('auth.register.errors.usernameMax');
+  } else {
+    const forbiddenChars = /[<>"'&/\\|?*:;]/;
+    if (forbiddenChars.test(username.value)) {
+      errors.value.username = t('auth.register.errors.usernameForbidden');
+    } else {
+      errors.value.username = '';
+    }
+  }
+};
+
+const validateEmail = () => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const hkustDomains = ['connect.hkust-gz.edu.cn', 'hkust-gz.edu.cn'];
+
+  if (!email.value) {
+    errors.value.email = t('auth.register.errors.emailRequired');
+  } else if (!emailRegex.test(email.value)) {
+    errors.value.email = t('auth.register.errors.emailInvalid');
+  } else {
+    const emailLower = email.value.toLowerCase().trim();
+    const emailParts = emailLower.split('@');
+    const isHkustEmail = emailParts.length === 2 && hkustDomains.includes(emailParts[1]);
+
+    if (!isHkustEmail) {
+      errors.value.email = t('auth.register.errors.emailDomain');
+    } else {
+      errors.value.email = '';
+    }
+  }
+};
+
+const validatePassword = () => {
+  if (!password.value) {
+    errors.value.password = t('auth.register.errors.passwordRequired');
+  } else if (password.value.length < 6) {
+    errors.value.password = t('auth.register.errors.passwordMin');
+  } else {
+    errors.value.password = '';
+  }
+};
+
+const validateConfirmPassword = () => {
+  if (!confirmPassword.value) {
+    errors.value.confirmPassword = t('auth.register.errors.confirmRequired');
+  } else if (password.value !== confirmPassword.value) {
+    errors.value.confirmPassword = t('auth.register.errors.confirmMismatch');
+  } else {
+    errors.value.confirmPassword = '';
+  }
+};
+
+const formValid = computed(() => {
+  return (
+    username.value &&
+    email.value &&
+    password.value &&
+    confirmPassword.value &&
+    !errors.value.username &&
+    !errors.value.email &&
+    !errors.value.password &&
+    !errors.value.confirmPassword
+  );
+});
+
+const handleRegister = async () => {
+  validateUsername();
+  validateEmail();
+  validatePassword();
+  validateConfirmPassword();
+
+  if (
+    errors.value.username ||
+    errors.value.email ||
+    errors.value.password ||
+    errors.value.confirmPassword
+  ) {
+    return;
+  }
+
+  try {
+    isLoading.value = true;
     registerError.value = '';
-  };
-  
-  // 定义事件
-  const emit = defineEmits(['register-success']);
-  </script>
+
+    const result = await register(username.value, email.value, password.value);
+
+    if (result.success) {
+      registeredUserId.value = result.userId;
+      registeredEmail.value = email.value;
+      registeredUsername.value = username.value;
+      showEmailVerification.value = true;
+      password.value = '';
+      confirmPassword.value = '';
+    }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : t('auth.register.errors.registerFailed');
+    const normalizedError = errorMessage.toLowerCase();
+    registerError.value = errorMessage;
+
+    if (
+      normalizedError.includes('username already exists') ||
+      normalizedError.includes('username_taken')
+    ) {
+      errors.value.username = t('auth.register.errors.usernameTaken');
+      registerError.value = '';
+    } else if (
+      normalizedError.includes('email already registered') ||
+      normalizedError.includes('email_taken')
+    ) {
+      errors.value.email = t('auth.register.errors.emailTaken');
+      registerError.value = '';
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleVerificationSuccess = (data) => {
+  showEmailVerification.value = false;
+  successMessage.value = t('auth.register.success');
+  resetForm();
+  emit('register-success', data);
+};
+
+const resetRegistration = () => {
+  showEmailVerification.value = false;
+  registeredUserId.value = null;
+  registeredEmail.value = '';
+  registeredUsername.value = '';
+};
+
+const resetForm = () => {
+  username.value = '';
+  email.value = '';
+  password.value = '';
+  confirmPassword.value = '';
+  Object.keys(errors.value).forEach((key) => {
+    errors.value[key] = '';
+  });
+  registerError.value = '';
+};
+
+const emit = defineEmits(['register-success']);
+</script>
   
   <style lang="scss" scoped>
   .register-setting {
@@ -485,7 +456,7 @@
     }
     
     &:hover:not(:disabled) {
-      background-color: #7ba8d6; // 手动指定的较深蓝色
+      background-color: #7ba8d6; // Manually tuned darker blue shade
       transform: translateY(-1px);
     }
 

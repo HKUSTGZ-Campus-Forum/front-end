@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import type { CourseOffering } from "~/utils/courseOffering";
@@ -10,6 +11,8 @@ definePageMeta({ layout: 'keguang' });
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
+const { locale, getLocalePath } = useAppLocale();
 
 interface Course {
   id: number;
@@ -69,7 +72,6 @@ const debounce = (fn: Function, delay: number) => {
   };
 };
 
-/** 供列表页与进入详情页链接使用，返回后恢复筛选 */
 const buildListQuery = (): Record<string, string> => {
   const q: Record<string, string> = {};
   if (selectedCourseType.value) q.course_type = selectedCourseType.value;
@@ -121,7 +123,7 @@ const fetchCourses = async () => {
     );
     courses.value = coursesWithInstructors;
   } catch (error) {
-    console.error("获取课程列表失败:", error);
+    console.error("Failed to fetch courses:", error);
   } finally {
     isLoading.value = false;
   }
@@ -129,7 +131,7 @@ const fetchCourses = async () => {
 
 const fetchFiltersData = async () => {
   try {
-    const response = await fetchPublic(getApiUrl('/api/courses/filters'));
+    const response = await fetchPublic(getApiUrl(`/api/courses/filters?lang=${locale.value}`));
     if (response.ok) {
       const data = await response.json();
       availableSemesters.value = data.semesters || [];
@@ -173,7 +175,7 @@ const fetchFiltersData = async () => {
       return;
     }
   } catch (error) {
-    console.error('获取筛选数据失败:', error);
+    console.error('Failed to fetch course filters:', error);
   }
   fetchCourses();
 };
@@ -199,8 +201,8 @@ onMounted(() => { fetchFiltersData(); });
 <template>
   <div class="kg-courses">
     <div class="kg-courses-header">
-      <h1 class="kg-page-title">课程评价</h1>
-      <p class="kg-page-subtitle">查看并分享课程体验</p>
+      <h1 class="kg-page-title">{{ t("courses.title") }}</h1>
+      <p class="kg-page-subtitle">{{ t("courses.subtitle") }}</p>
     </div>
 
     <div class="kg-card kg-filters">
@@ -208,12 +210,12 @@ onMounted(() => { fetchFiltersData(); });
         v-model="searchQuery"
         class="kg-search-input"
         type="text"
-        placeholder="搜索课程名称或代码..."
+        :placeholder="t('courses.searchPlaceholder')"
         @input="handleSearch"
       />
       <div class="kg-filter-row">
         <div class="kg-filter-group">
-          <label class="kg-filter-label">学期</label>
+          <label class="kg-filter-label">{{ t("courses.semesterLabel") }}</label>
           <div class="kg-filter-options">
             <button
               v-for="sem in availableSemesters"
@@ -226,32 +228,32 @@ onMounted(() => { fetchFiltersData(); });
           </div>
         </div>
         <div class="kg-filter-group">
-          <label class="kg-filter-label">阶段</label>
+          <label class="kg-filter-label">{{ t("courses.stage") }}</label>
           <div class="kg-filter-options">
             <button
               :class="['kg-filter-btn', { active: selectedStage === '' }]"
               @click="selectedStage = ''; handleFilterChange()"
             >
-              全部
+              {{ t("courses.stageAll") }}
             </button>
             <button
               :class="['kg-filter-btn', { active: selectedStage === 'UG' }]"
               @click="selectedStage = 'UG'; handleFilterChange()"
             >
-              本科 (UG)
+              {{ t("courses.stageUg") }}
             </button>
             <button
               :class="['kg-filter-btn', { active: selectedStage === 'PG' }]"
               @click="selectedStage = 'PG'; handleFilterChange()"
             >
-              研究生 (PG)
-            </button>
+              {{ t("courses.stagePg") }}
+          </button>
           </div>
         </div>
       </div>
 
       <div class="kg-course-types">
-        <div class="kg-course-types-label">课程类型:</div>
+        <div class="kg-course-types-label">{{ t("courses.courseType") }}:</div>
         <div class="kg-course-types-list">
           <button
             v-for="type in availableCourseTypes"
@@ -267,27 +269,27 @@ onMounted(() => { fetchFiltersData(); });
 
     <div v-if="isLoading" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ t("courses.loading") }}</span>
     </div>
 
     <div v-else-if="filteredCourses.length === 0" class="kg-empty">
       <div class="kg-empty-icon">📚</div>
-      <p>暂无课程数据</p>
+      <p>{{ t("courses.empty") }}</p>
     </div>
 
     <div v-else class="kg-course-grid">
       <NuxtLink
         v-for="course in filteredCourses"
         :key="course.id"
-        :to="{
+        :to="getLocalePath({
           path: selectedOfferingTag ? `/courses/${course.id}/offerings/${selectedOfferingTag}` : `/courses/${course.id}`,
           query: courseListReturnQuery,
-        }"
+        })"
         class="kg-course-card"
       >
         <div class="kg-course-card__top">
           <span class="kg-course-code">{{ course.code }}</span>
-          <span class="kg-course-credits">{{ course.credits }} 学分</span>
+          <span class="kg-course-credits">{{ t("courses.credits", { count: course.credits }) }}</span>
         </div>
         <h3 class="kg-course-name">{{ course.name }}</h3>
         <p class="kg-course-desc">{{ course.description?.slice(0, 80) }}{{ course.description?.length > 80 ? '...' : '' }}</p>
@@ -296,7 +298,7 @@ onMounted(() => { fetchFiltersData(); });
             <i class="fas fa-chalkboard-teacher"></i> {{ course.instructor.username }}
           </span>
           <span :class="['kg-course-status', course.is_active ? 'active' : 'inactive']">
-            {{ course.is_active ? '进行中' : '已结束' }}
+            {{ course.is_active ? t('courses.statusActive') : t('courses.statusInactive') }}
           </span>
         </div>
       </NuxtLink>

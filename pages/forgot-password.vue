@@ -1,25 +1,24 @@
 <template>
   <div class="forgot-password-container">
-      <h1 class="page-title">忘记密码</h1>
-      <p class="page-subtitle">输入您的邮箱地址，我们将向您发送重置密码的链接</p>
+      <h1 class="page-title">{{ t("auth.forgotPassword.title") }}</h1>
+      <p class="page-subtitle">{{ t("auth.forgotPassword.subtitle") }}</p>
 
-      <!-- Step 1: Email Input -->
       <div v-if="step === 1" class="email-step">
         <form class="forgot-password-form" @submit.prevent="handleSendResetEmail">
           <div class="form-group">
-            <label for="email">邮箱地址</label>
+            <label for="email">{{ t("auth.forgotPassword.emailLabel") }}</label>
             <input
               id="email"
               v-model="email"
               type="email"
-              placeholder="请输入您的HKUST-GZ邮箱"
+              :placeholder="t('auth.forgotPassword.emailPlaceholder')"
               autocomplete="email"
               required
               :disabled="isLoading"
               class="email-input"
             />
             <div class="email-hint">
-              <p>请使用注册时填写的HKUST-GZ邮箱地址</p>
+              <p>{{ t("auth.forgotPassword.emailHint") }}</p>
             </div>
           </div>
 
@@ -36,48 +35,46 @@
             class="send-reset-btn"
             :disabled="isLoading || !isValidEmail"
           >
-            <span v-if="!isLoading">发送重置链接</span>
-            <span v-else class="loading-spinner">⟳ 发送中...</span>
+            <span v-if="!isLoading">{{ t("auth.forgotPassword.sendLink") }}</span>
+            <span v-else class="loading-spinner">⟳ {{ t("actions.sending") }}</span>
           </button>
         </form>
       </div>
 
-      <!-- Step 2: Success Message -->
       <div v-if="step === 2" class="success-step">
         <div class="success-icon">📧</div>
-        <h2>重置链接已发送</h2>
+        <h2>{{ t("auth.forgotPassword.sentTitle") }}</h2>
         <p class="success-description">
-          我们已向 <strong>{{ email }}</strong> 发送了密码重置链接
+          {{ t("auth.forgotPassword.sentDescription", { email }) }}
         </p>
         <div class="instructions">
-          <h3>接下来的步骤：</h3>
+          <h3>{{ t("auth.forgotPassword.nextSteps") }}</h3>
           <ol>
-            <li>检查您的邮箱（包括垃圾邮件箱）</li>
-            <li>点击邮件中的重置链接</li>
-            <li>设置新的密码</li>
+            <li>{{ t("auth.forgotPassword.stepOne") }}</li>
+            <li>{{ t("auth.forgotPassword.stepTwo") }}</li>
+            <li>{{ t("auth.forgotPassword.stepThree") }}</li>
           </ol>
         </div>
         <div class="resend-section">
-          <p>没有收到邮件？</p>
+          <p>{{ t("auth.forgotPassword.noMail") }}</p>
           <button 
             @click="handleResendEmail" 
             class="resend-btn"
             :disabled="resendCooldown > 0 || isLoading"
           >
-            <span v-if="resendCooldown === 0 && !isLoading">重新发送</span>
-            <span v-else-if="isLoading">发送中...</span>
-            <span v-else>{{ resendCooldown }}秒后可重新发送</span>
+            <span v-if="resendCooldown === 0 && !isLoading">{{ t("actions.resend") }}</span>
+            <span v-else-if="isLoading">{{ t("actions.sending") }}</span>
+            <span v-else>{{ t("auth.forgotPassword.resendAvailableIn", { seconds: resendCooldown }) }}</span>
           </button>
         </div>
       </div>
 
-      <!-- Navigation Links -->
       <div class="navigation-links">
-        <NuxtLink to="/login" class="back-to-login">
-          ← 返回登录
+        <NuxtLink :to="getLocalePath('/login')" class="back-to-login">
+          ← {{ t("auth.forgotPassword.backToLogin") }}
         </NuxtLink>
-        <NuxtLink to="/register" class="go-to-register">
-          还没有账号？立即注册
+        <NuxtLink :to="getLocalePath('/register')" class="go-to-register">
+          {{ t("auth.forgotPassword.goToRegister") }}
         </NuxtLink>
       </div>
     </div>
@@ -85,12 +82,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '~/composables/useAuth'
 
 const { forgotPassword } = useAuth()
+const { t } = useI18n()
+const { getLocalePath } = useAppLocale()
 
-// Reactive state
-const step = ref(1) // 1: email input, 2: success message
+const step = ref(1)
 const email = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -99,7 +98,6 @@ const resendCooldown = ref(0)
 
 let cooldownTimer: NodeJS.Timeout | null = null
 
-// Email validation
 const isValidEmail = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const hkustDomains = ['connect.hkust-gz.edu.cn', 'hkust-gz.edu.cn']
@@ -113,10 +111,9 @@ const isValidEmail = computed(() => {
   return emailParts.length === 2 && hkustDomains.includes(emailParts[1])
 })
 
-// Send reset email
 const handleSendResetEmail = async () => {
   if (!isValidEmail.value) {
-    errorMessage.value = '请输入有效的HKUST-GZ邮箱地址'
+    errorMessage.value = t('auth.forgotPassword.errors.emailInvalid')
     return
   }
 
@@ -133,13 +130,12 @@ const handleSendResetEmail = async () => {
     }
   } catch (err) {
     console.error('Forgot password error:', err)
-    errorMessage.value = err instanceof Error ? err.message : '发送重置邮件失败，请重试'
+    errorMessage.value = err instanceof Error ? err.message : t('auth.forgotPassword.errors.sendFailed')
   } finally {
     isLoading.value = false
   }
 }
 
-// Resend email
 const handleResendEmail = async () => {
   if (resendCooldown.value > 0) return
   
@@ -150,18 +146,17 @@ const handleResendEmail = async () => {
     const result = await forgotPassword(email.value.trim().toLowerCase())
     
     if (result.success) {
-      successMessage.value = '重置链接已重新发送，请查收邮件'
+      successMessage.value = t('auth.forgotPassword.success.resent')
       startCooldown()
     }
   } catch (err) {
     console.error('Resend reset email error:', err)
-    errorMessage.value = err instanceof Error ? err.message : '重新发送失败，请重试'
+    errorMessage.value = err instanceof Error ? err.message : t('auth.forgotPassword.errors.resendFailed')
   } finally {
     isLoading.value = false
   }
 }
 
-// Start resend cooldown (60 seconds)
 const startCooldown = () => {
   resendCooldown.value = 60
   
@@ -174,25 +169,22 @@ const startCooldown = () => {
   }, 1000)
 }
 
-// Cleanup timer on unmount
 onUnmounted(() => {
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
   }
 })
 
-// SEO and meta
 definePageMeta({
-  title: '忘记密码',
   layout: 'keguang'
 })
 
-useHead({
-  title: '忘记密码 - UniKorn Campus',
+useHead(() => ({
+  title: `${t('auth.forgotPassword.title')} - ${t('common.appName')}`,
   meta: [
-    { name: 'description', content: '重置您的UniKorn Campus论坛密码，通过邮箱验证快速找回账号' }
+    { name: 'description', content: t('auth.forgotPassword.subtitle') }
   ]
-})
+}))
 </script>
 
 <style lang="scss" scoped>

@@ -41,9 +41,16 @@ export default defineNuxtConfig({
       },
     ],
     defaultLocale: "zh",
-    strategy: "no_prefix",
-    langDir: "locales/",
+    strategy: "prefix_except_default",
     lazy: true,
+    langDir: "locales",
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: "unikorn_locale",
+      redirectOn: "root",
+      alwaysRedirect: false,
+      fallbackLocale: "zh",
+    },
     bundle: {
       optimizeTranslationDirective: false
     }

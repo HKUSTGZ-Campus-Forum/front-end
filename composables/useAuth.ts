@@ -144,7 +144,9 @@ async function logout() {
     safeLocalStorage("remove", "user_info");
 
     console.log("✅ Logout complete, redirecting to home");
-    navigateTo("/");
+    const isEnglishRoute =
+      typeof window !== "undefined" && window.location.pathname.startsWith("/en");
+    navigateTo(isEnglishRoute ? "/en" : "/");
     return true;
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Logout failed";
@@ -401,33 +403,31 @@ async function register(username: string, email: string, password: string) {
     console.log("收到响应状态:", response.status);
 
     if (!response.ok) {
-      let errorMessage = "注册失败";
+      let errorMessage = "register_failed";
       try {
         const errorData = await response.json();
         console.error("服务器错误详情:", errorData);
 
         if (errorData.msg === "Username already exists") {
-          errorMessage = "该用户名已被使用，请选择其他用户名";
+          errorMessage = "username_taken";
         } else if (errorData.msg === "Email already registered") {
-          errorMessage = "该邮箱已被注册，请使用其他邮箱";
+          errorMessage = "email_taken";
         } else if (errorData.msg === "Username is required") {
-          errorMessage = "请输入用户名";
+          errorMessage = "username_required";
         } else if (errorData.msg === "Password is required") {
-          errorMessage = "请输入密码";
+          errorMessage = "password_required";
         } else if (errorData.msg === "Invalid email format") {
-          errorMessage = "邮箱格式不正确";
-        } else if (errorData.msg && errorData.msg.includes("email")) {
           errorMessage = errorData.msg;
         } else {
           errorMessage =
             errorData.msg ||
             errorData.error ||
-            `服务器错误(${response.status})`;
+            `server_error_${response.status}`;
         }
       } catch {
         const errorText = await response.text();
         console.error("服务器返回非JSON错误:", errorText);
-        errorMessage = `服务器错误(${response.status}): ${errorText.substring(0, 100)}`;
+        errorMessage = `server_error_${response.status}: ${errorText.substring(0, 100)}`;
       }
 
       throw new Error(errorMessage);

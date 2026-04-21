@@ -10,7 +10,8 @@ export function formatDate(
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  }
+  },
+  locale?: string
 ): string {
   if (!dateString) return '';
   
@@ -21,13 +22,18 @@ export function formatDate(
       
     // 检查日期是否有效
     if (isNaN(date.getTime())) {
-      return '无效日期';
+      return 'Invalid date';
     }
-    
-    return date.toLocaleDateString('zh-CN', options);
+
+    const resolvedLocale =
+      locale ||
+      (typeof navigator !== 'undefined' && navigator.language) ||
+      'zh-CN';
+
+    return date.toLocaleDateString(resolvedLocale, options);
   } catch (error) {
     console.error('日期格式化错误:', error);
-    return '无效日期';
+    return 'Invalid date';
   }
 }
 
@@ -36,7 +42,7 @@ export function formatDate(
  * @param dateString 日期字符串或日期对象
  * @returns 相对时间字符串
  */
-export function formatRelativeTime(dateString: string | Date): string {
+export function formatRelativeTime(dateString: string | Date, locale?: string): string {
   if (!dateString) return '';
   
   try {
@@ -46,36 +52,36 @@ export function formatRelativeTime(dateString: string | Date): string {
     
     // 检查日期是否有效
     if (isNaN(date.getTime())) {
-      return '无效日期';
+      return 'Invalid date';
     }
     
     const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    // 小于1分钟
-    if (diffInSeconds < 60) {
-      return '刚刚';
+    const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000);
+    const resolvedLocale =
+      locale ||
+      (typeof navigator !== 'undefined' && navigator.language) ||
+      'zh-CN';
+    const formatter = new Intl.RelativeTimeFormat(resolvedLocale, { numeric: 'auto' });
+
+    if (Math.abs(diffInSeconds) < 60) {
+      return formatter.format(Math.round(diffInSeconds), 'second');
     }
-    
-    // 小于1小时
-    if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)}分钟前`;
+
+    if (Math.abs(diffInSeconds) < 3600) {
+      return formatter.format(Math.round(diffInSeconds / 60), 'minute');
     }
-    
-    // 小于1天
-    if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)}小时前`;
+
+    if (Math.abs(diffInSeconds) < 86400) {
+      return formatter.format(Math.round(diffInSeconds / 3600), 'hour');
     }
-    
-    // 小于30天
-    if (diffInSeconds < 2592000) {
-      return `${Math.floor(diffInSeconds / 86400)}天前`;
+
+    if (Math.abs(diffInSeconds) < 2592000) {
+      return formatter.format(Math.round(diffInSeconds / 86400), 'day');
     }
-    
-    // 超过30天显示具体日期
-    return formatDate(date);
+
+    return formatDate(date, undefined, resolvedLocale);
   } catch (error) {
     console.error('相对时间格式化错误:', error);
-    return '无效日期';
+    return 'Invalid date';
   }
 }

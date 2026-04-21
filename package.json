@@ -12,7 +12,10 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "release": "standard-version"
+    "release": "standard-version",
+    "i18n:check-keys": "node ./scripts/check-i18n-keys.mjs",
+    "i18n:scan-hardcoded": "node ./scripts/scan-hardcoded-i18n.mjs",
+    "i18n:check": "npm run i18n:check-keys && npm run i18n:scan-hardcoded"
   },
   "dependencies": {
     "@intlify/message-compiler": "^11.1.3",

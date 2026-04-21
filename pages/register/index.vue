@@ -1,30 +1,36 @@
 <script setup>
-import { useRouter, useRoute } from 'vue-router';
-import RegisterComponent from '~/components/setting/Register.vue';
+import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import RegisterComponent from "~/components/setting/Register.vue";
 
-definePageMeta({ layout: 'keguang-auth' });
+definePageMeta({ layout: "keguang-auth" });
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
+const { getLocalePath } = useAppLocale();
 
 const handleRegisterSuccess = () => {
   setTimeout(() => {
-    const redirectParam = route.query.redirect ? `&redirect=${encodeURIComponent(route.query.redirect)}` : '';
-    router.push(`/login?registered=true${redirectParam}`);
+    const redirectParam =
+      typeof route.query.redirect === "string"
+        ? `&redirect=${encodeURIComponent(route.query.redirect)}`
+        : "";
+    router.push(`${getLocalePath("/login")}?registered=true${redirectParam}`);
   }, 1500);
 };
 </script>
 
 <template>
   <div class="kg-register-card">
-    <h1 class="kg-register-title">加入我们</h1>
-    <p class="kg-register-subtitle">创建您的 UniKorn 科广汇账号</p>
+    <h1 class="kg-register-title">{{ t("auth.register.title") }}</h1>
+    <p class="kg-register-subtitle">{{ t("auth.register.subtitle") }}</p>
 
     <RegisterComponent @register-success="handleRegisterSuccess" />
 
     <div class="kg-form-footer">
-      已有账号？
-      <NuxtLink to="/login" class="kg-link">立即登录</NuxtLink>
+      {{ t("auth.register.hasAccount") }}
+      <NuxtLink :to="getLocalePath('/login')" class="kg-link">{{ t("auth.register.loginNow") }}</NuxtLink>
     </div>
   </div>
 </template>

@@ -1,11 +1,14 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useAuth } from "~/composables/useAuth";
 
-definePageMeta({ layout: 'keguang-auth' });
+definePageMeta({ layout: "keguang-auth" });
 
 const { login } = useAuth();
+const { t } = useI18n();
+const { getLocalePath } = useAppLocale();
 const username = ref("");
 const password = ref("");
 const showPassword = ref(false);
@@ -18,21 +21,26 @@ const route = useRoute();
 
 async function handleLogin() {
   if (!username.value || !password.value) {
-    errorMessage.value = "请输入用户名和密码";
+    errorMessage.value = t("auth.login.errors.required");
     return;
   }
+
   try {
     isLoading.value = true;
     errorMessage.value = "";
     const user = await login(username.value, password.value, rememberMe.value);
     if (user?.isFirstLogin) {
-      router.push("/setting/theme");
+      router.push(getLocalePath("/setting/theme"));
     } else {
-      const redirectPath = route.query.redirect || "/";
+      const redirectPath =
+        typeof route.query.redirect === "string"
+          ? route.query.redirect
+          : getLocalePath("/");
       router.push(redirectPath);
     }
   } catch (error) {
-    errorMessage.value = error.message || "用户名或密码错误，请重试";
+    errorMessage.value =
+      error instanceof Error ? error.message : t("auth.login.errors.invalid");
   } finally {
     isLoading.value = false;
   }
@@ -41,37 +49,37 @@ async function handleLogin() {
 
 <template>
   <div class="kg-login-card">
-    <h1 class="kg-login-title">欢迎回来</h1>
-    <p class="kg-login-subtitle">登录到 UniKorn 科广汇</p>
+    <h1 class="kg-login-title">{{ t("auth.login.title") }}</h1>
+    <p class="kg-login-subtitle">{{ t("auth.login.subtitle") }}</p>
 
     <form class="kg-form" @submit.prevent="handleLogin">
       <div class="kg-form-group">
-        <label for="username">用户名或邮箱</label>
+        <label for="username">{{ t("auth.login.usernameLabel") }}</label>
         <input
           id="username"
           v-model="username"
           class="kg-input"
           type="text"
-          placeholder="请输入用户名或邮箱"
+          :placeholder="t('auth.login.usernamePlaceholder')"
           autocomplete="username"
           required
         />
       </div>
 
       <div class="kg-form-group">
-        <label for="password">密码</label>
+        <label for="password">{{ t("auth.login.passwordLabel") }}</label>
         <div class="kg-password-field">
           <input
             id="password"
             v-model="password"
             class="kg-input"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="请输入密码"
+            :placeholder="t('auth.login.passwordPlaceholder')"
             autocomplete="current-password"
             required
           />
           <button type="button" class="kg-toggle-pwd" @click="showPassword = !showPassword">
-            {{ showPassword ? "隐藏" : "显示" }}
+            {{ showPassword ? t("common.hide") : t("common.show") }}
           </button>
         </div>
       </div>
@@ -79,21 +87,21 @@ async function handleLogin() {
       <div class="kg-form-options">
         <label class="kg-checkbox-label">
           <input type="checkbox" v-model="rememberMe" />
-          记住我
+          {{ t("auth.login.rememberMe") }}
         </label>
-        <NuxtLink to="/forgot-password" class="kg-forgot-link">忘记密码?</NuxtLink>
+        <NuxtLink :to="getLocalePath('/forgot-password')" class="kg-forgot-link">{{ t("auth.login.forgotPassword") }}</NuxtLink>
       </div>
 
       <div v-if="errorMessage" class="kg-error-msg">{{ errorMessage }}</div>
 
       <button type="submit" class="kg-submit-btn" :disabled="isLoading">
-        {{ isLoading ? "登录中..." : "登录" }}
+        {{ isLoading ? t("auth.login.submitting") : t("auth.login.submit") }}
       </button>
     </form>
 
     <div class="kg-form-footer">
-      还没有账号？
-      <NuxtLink to="/register" class="kg-link">立即注册</NuxtLink>
+      {{ t("auth.login.noAccount") }}
+      <NuxtLink :to="getLocalePath('/register')" class="kg-link">{{ t("auth.login.registerNow") }}</NuxtLink>
     </div>
   </div>
 </template>

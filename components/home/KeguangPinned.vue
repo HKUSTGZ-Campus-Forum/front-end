@@ -8,6 +8,7 @@ import UserAvatar from '~/components/user/UserAvatar.vue'
 const { t } = useI18n()
 const router = useRouter()
 const { isLoggedIn, logout, user } = useAuth()
+const { locale, availableLocales, getLocalePath, switchToLocale } = useAppLocale()
 
 const props = defineProps<{
   sidebarExpanded?: boolean
@@ -23,12 +24,12 @@ const isLoggingOut = ref(false)
 
 const handleSearch = (query: string) => {
   if (query.trim()) {
-    router.push({ path: '/search', query: { q: query.trim() } })
+    router.push({ path: getLocalePath('/search'), query: { q: query.trim() } })
   }
 }
 
 const handleLoginOrLogout = () => {
-  navigateTo('/login')
+  navigateTo(getLocalePath('/login'))
 }
 
 const handleMenuLogout = async () => {
@@ -37,7 +38,7 @@ const handleMenuLogout = async () => {
   try {
     await logout()
   } catch {
-    // logout 内部已处理清理与跳转
+    // logout already handles cleanup and redirect
   } finally {
     isLoggingOut.value = false
   }
@@ -46,25 +47,37 @@ const handleMenuLogout = async () => {
 
 <template>
   <nav class="kg-topnav" :style="navStyle">
-    <a class="kg-topnav__brand" href="/">
+    <NuxtLink class="kg-topnav__brand" :to="getLocalePath('/')">
       <div class="kg-topnav__brand-logo">
         <img src="/icons/topbar_logo.svg" alt="uniKorn" />
       </div>
-    </a>
+    </NuxtLink>
 
     <div class="kg-topnav__right">
       <div class="kg-topnav__search">
         <SearchDropdown
           v-model="searchQuery"
-          :placeholder="t('Search for posts, users, courses...')"
+          :placeholder="t('search.placeholder')"
           :show-history="true"
           @search="handleSearch"
         />
       </div>
 
+      <div class="kg-topnav__locale-switch">
+        <button
+          v-for="item in availableLocales"
+          :key="item.code"
+          type="button"
+          :class="['kg-topnav__locale-btn', { active: locale === item.code }]"
+          @click="switchToLocale(item.code)"
+        >
+          {{ item.code === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}
+        </button>
+      </div>
+
       <div class="kg-topnav__user">
         <div v-if="isLoggedIn && user" class="kg-topnav__user-menu">
-          <NuxtLink :to="`/users/${user.id}`" class="kg-topnav__avatar-link">
+          <NuxtLink :to="getLocalePath(`/users/${user.id}`)" class="kg-topnav__avatar-link">
             <UserAvatar
               :avatar-url="user.profile_picture_url"
               :username="user.username"
@@ -77,21 +90,21 @@ const handleMenuLogout = async () => {
           <div class="kg-topnav__menu-panel">
             <div class="kg-topnav__menu-header">
               <span class="kg-topnav__menu-name">{{ user.username }}</span>
-              <span class="kg-topnav__menu-subtitle">账号管理</span>
+              <span class="kg-topnav__menu-subtitle">{{ t('layout.accountCenter') }}</span>
             </div>
 
             <div class="kg-topnav__menu-list">
-              <NuxtLink to="/setting/account" class="kg-topnav__menu-item">
+              <NuxtLink :to="getLocalePath('/setting/account')" class="kg-topnav__menu-item">
                 <span class="kg-topnav__menu-icon">⚙️</span>
-                <span>账号设置</span>
+                <span>{{ t('layout.accountSettings') }}</span>
               </NuxtLink>
-              <NuxtLink to="/setting/identity" class="kg-topnav__menu-item">
+              <NuxtLink :to="getLocalePath('/setting/identity')" class="kg-topnav__menu-item">
                 <span class="kg-topnav__menu-icon">🎓</span>
-                <span>身份认证</span>
+                <span>{{ t('layout.identityVerification') }}</span>
               </NuxtLink>
-              <NuxtLink to="/setting/theme" class="kg-topnav__menu-item">
+              <NuxtLink :to="getLocalePath('/setting/theme')" class="kg-topnav__menu-item">
                 <span class="kg-topnav__menu-icon">🎨</span>
-                <span>主题设置</span>
+                <span>{{ t('layout.themeSettings') }}</span>
               </NuxtLink>
               <button
                 type="button"
@@ -100,13 +113,13 @@ const handleMenuLogout = async () => {
                 @click="handleMenuLogout"
               >
                 <span class="kg-topnav__menu-icon">🚪</span>
-                <span>{{ isLoggingOut ? '正在退出…' : '退出登录' }}</span>
+                <span>{{ isLoggingOut ? t('layout.loggingOut') : t('actions.logout') }}</span>
               </button>
             </div>
           </div>
         </div>
         <button type="button" v-else class="login-btn-text" @click="handleLoginOrLogout">
-          {{ t('login') }}
+          {{ t('actions.login') }}
         </button>
       </div>
     </div>
@@ -151,6 +164,32 @@ const handleMenuLogout = async () => {
   align-items: center;
   gap: 1.5rem;
   margin-left: auto;
+}
+
+.kg-topnav__locale-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kg-topnav__locale-btn {
+  min-width: 48px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d7e7fb;
+  background: #f5fbfe;
+  color: #4a6080;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active,
+  &:hover {
+    color: #1178c8;
+    border-color: #90cfff;
+    background: #e6f4ff;
+  }
 }
 
 .kg-topnav__search {

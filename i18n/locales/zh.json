@@ -1,5 +1,266 @@
-
 {
+  "common": {
+    "appName": "UniKorn 科广汇",
+    "appTitle": "UniKorn 科广汇",
+    "description": "一个支持多语言的校园社区，帮助学生交流课程、论坛和协作机会。",
+    "loading": "加载中...",
+    "retry": "重试",
+    "back": "返回",
+    "backToList": "返回列表",
+    "unknownAuthor": "匿名用户",
+    "emptyState": "暂时还没有内容。",
+    "searching": "搜索中...",
+    "history": "最近搜索",
+    "clear": "清除",
+    "viewAllResults": "查看全部 {count} 个结果",
+    "noResults": "没有找到相关结果",
+    "date": {
+      "empty": "",
+      "invalid": "日期格式错误"
+    },
+    "locale": {
+      "label": "语言",
+      "zh": "中文",
+      "en": "EN"
+    },
+    "show": "显示",
+    "hide": "隐藏"
+  },
+  "actions": {
+    "login": "登录",
+    "logout": "退出登录",
+    "register": "注册",
+    "submit": "提交",
+    "cancel": "取消",
+    "publish": "发布",
+    "publishing": "发布中...",
+    "send": "发送",
+    "sending": "发送中...",
+    "resend": "重新发送",
+    "save": "保存",
+    "goToPost": "去发帖"
+  },
+  "nav": {
+    "home": "首页",
+    "forum": "论坛",
+    "courses": "课程",
+    "activity": "活动",
+    "teamMatching": "组队",
+    "users": "用户",
+    "scheduler": "排课助手",
+    "wiki": "HKUST-GZ Wiki",
+    "contest": "百块奖金大赛"
+  },
+  "layout": {
+    "accountCenter": "账号管理",
+    "accountSettings": "账号设置",
+    "identityVerification": "身份认证",
+    "themeSettings": "主题设置",
+    "loggingOut": "正在退出…"
+  },
+  "footer": {
+    "title": "UniKorn 科广汇",
+    "tagline": "让学习更有温度",
+    "wechatAlt": "UniKorn 官方公众号二维码",
+    "wechatLabel": "微信公众号",
+    "navigation": "导航",
+    "help": "帮助",
+    "guide": "使用指南",
+    "rules": "社区规则",
+    "privacy": "隐私政策",
+    "contact": "联系",
+    "feedback": "意见反馈",
+    "campusCollab": "校园合作",
+    "icpRecord": "京ICP备2023006922号-1"
+  },
+  "modals": {
+    "confirm": {
+      "title": "确认操作",
+      "message": "您确定要执行此操作吗？"
+    },
+    "error": {
+      "title": "操作失败",
+      "message": "操作执行失败，请重试。"
+    },
+    "success": {
+      "title": "操作成功",
+      "message": "操作已成功完成！"
+    }
+  },
+  "search": {
+    "placeholder": "搜索帖子、用户、课程...",
+    "tabs": {
+      "posts": "帖子",
+      "users": "用户",
+      "tags": "标签",
+      "courses": "课程"
+    },
+    "tagPostCount": "{count} 个帖子"
+  },
+  "auth": {
+    "login": {
+      "title": "欢迎回来",
+      "subtitle": "登录到 UniKorn 科广汇",
+      "usernameLabel": "用户名或邮箱",
+      "usernamePlaceholder": "请输入用户名或邮箱",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "rememberMe": "记住我",
+      "forgotPassword": "忘记密码?",
+      "submit": "登录",
+      "submitting": "登录中...",
+      "noAccount": "还没有账号？",
+      "registerNow": "立即注册",
+      "errors": {
+        "required": "请输入用户名和密码",
+        "invalid": "用户名或密码错误，请重试"
+      }
+    },
+    "register": {
+      "title": "加入我们",
+      "subtitle": "创建您的 UniKorn 科广汇账号",
+      "hasAccount": "已有账号？",
+      "loginNow": "立即登录",
+      "username": "用户名",
+      "usernamePlaceholder": "请设置用户名",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入HKUST-GZ邮箱",
+      "emailHintTitle": "只允许使用 HKUST-GZ 邮箱注册：",
+      "password": "密码",
+      "passwordPlaceholder": "请设置密码",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "请再次输入密码",
+      "submit": "注册",
+      "submitting": "注册中...",
+      "verificationNotice": "注册后我们将向您的邮箱发送验证码，请确保邮箱地址正确",
+      "verificationWarningTitle": "重要提醒：",
+      "verificationWarningBody": "如果没有收到验证邮件，请检查您的垃圾邮件箱（垃圾邮件/废纸篓/杂件箱）",
+      "success": "邮箱验证成功！您现在可以正常使用论坛了。",
+      "errors": {
+        "usernameRequired": "请输入用户名",
+        "usernameMin": "用户名至少需要2个字符",
+        "usernameMax": "用户名不能超过50个字符",
+        "usernameForbidden": "用户名不能包含保留特殊符号，请使用字母、数字、下划线或常规字符",
+        "usernameTaken": "该用户名已被使用，请选择其他用户名",
+        "emailRequired": "请输入邮箱地址",
+        "emailInvalid": "请输入有效的邮箱地址",
+        "emailDomain": "只允许使用 HKUST-GZ 邮箱注册，邮箱域名需为 connect.hkust-gz.edu.cn 或 hkust-gz.edu.cn",
+        "emailTaken": "该邮箱已被注册，请使用其他邮箱",
+        "passwordRequired": "请设置密码",
+        "passwordMin": "密码至少需要6个字符",
+        "confirmRequired": "请确认密码",
+        "confirmMismatch": "两次输入的密码不一致",
+        "registerFailed": "注册失败，请稍后再试"
+      }
+    },
+    "forgotPassword": {
+      "title": "忘记密码",
+      "subtitle": "输入您的邮箱地址，我们将向您发送重置密码的链接",
+      "emailLabel": "邮箱地址",
+      "emailPlaceholder": "请输入您的HKUST-GZ邮箱",
+      "emailHint": "请使用注册时填写的HKUST-GZ邮箱地址",
+      "sendLink": "发送重置链接",
+      "sentTitle": "重置链接已发送",
+      "sentDescription": "我们已向 {email} 发送了密码重置链接",
+      "nextSteps": "接下来的步骤：",
+      "stepOne": "检查您的邮箱（包括垃圾邮件箱）",
+      "stepTwo": "点击邮件中的重置链接",
+      "stepThree": "设置新的密码",
+      "noMail": "没有收到邮件？",
+      "resendAvailableIn": "{seconds}秒后可重新发送",
+      "backToLogin": "返回登录",
+      "goToRegister": "还没有账号？立即注册",
+      "errors": {
+        "emailInvalid": "请输入有效的HKUST-GZ邮箱地址",
+        "sendFailed": "发送重置邮件失败，请重试",
+        "resendFailed": "重新发送失败，请重试"
+      },
+      "success": {
+        "resent": "重置链接已重新发送，请查收邮件"
+      }
+    },
+    "resetPassword": {
+      "pageTitle": "重置密码"
+    }
+  },
+  "profileRedirect": {
+    "pageTitle": "个人主页跳转中",
+    "missingAuth": "未获取到登录信息，正在跳转到登录页...",
+    "redirecting": "正在进入你的个人主页..."
+  },
+  "courses": {
+    "title": "课程评价",
+    "subtitle": "查看并分享课程体验",
+    "searchPlaceholder": "搜索课程名称或代码...",
+    "semesterLabel": "学期",
+    "stage": "阶段",
+    "stageAll": "全部",
+    "stageUg": "本科 (UG)",
+    "stagePg": "研究生 (PG)",
+    "courseType": "课程类型",
+    "loading": "加载中...",
+    "empty": "暂无课程数据",
+    "credits": "{count} 学分",
+    "capacity": "容量 {count}",
+    "statusActive": "开放中",
+    "statusInactive": "已结束",
+    "redirecting": "正在跳转到课程主页...",
+    "redirectFailed": "跳转失败",
+    "backToCourses": "返回课程列表",
+    "detailMissing": "课程不存在或已被删除",
+    "overview": "课程简介",
+    "overviewEmpty": "暂无课程描述",
+    "reviewsEyebrow": "课程评价",
+    "reviewsTitle": "查看这个学期的课程评价",
+    "reviewsEntry": "进入课程评价",
+    "reviewsCopy": "{offering} 的评价和打分都在这里。",
+    "discussionEyebrow": "课程讨论区",
+    "discussionTitle": "最近讨论",
+    "discussionEmpty": "还没有讨论，来发第一条吧。",
+    "discussionLoading": "加载讨论中...",
+    "comments": "评论 {count}",
+    "views": "浏览 {count}",
+    "homeTitle": "课程主页",
+    "homeDescription": "查看 {offering} {course} 的课程简介、评价入口和讨论区。",
+    "offeringMissing": "当前学期不存在或未开设这门课",
+    "pageIntro": "这里展示的是 {offering} 学期 {courseCode} 的课程评价",
+    "writeReview": "写评价",
+    "reviewListTitle": "课程评价 ({count})",
+    "publishReviewFor": "发表 {offering} 的课程评价",
+    "fixedTags": "固定标签",
+    "ratingOptional": "评分（可选）",
+    "ratingWord": "评分",
+    "reviewTitleLabel": "评价标题",
+    "reviewTitlePlaceholder": "{offering} {course} 课程评价",
+    "reviewContentLabel": "评价内容 *",
+    "reviewContentPlaceholder": "分享这门课在这个学期的学习体验、作业负担、考试感受等...",
+    "uploadImages": "上传图片（最多3张）",
+    "uploadDragText": "点击或拖拽图片到此处上传",
+    "loginHint": "请先登录后发表评价",
+    "reviewLoading": "加载评价...",
+    "reviewEmpty": "这个 offering 还没有课程评价，欢迎成为第一个分享体验的人。",
+    "reviewDetail": "查看详情",
+    "reviewPublishSuccess": "评价发布成功！",
+    "reviewPublishFailed": "发布失败",
+    "reviewInputRequired": "请输入评价内容",
+    "imageUploadFailed": "图片上传失败: {message}",
+    "imageRemoveFailed": "图片删除失败",
+    "errors": {
+      "loadCourses": "获取课程列表失败",
+      "loadFilters": "获取筛选数据失败",
+      "loadSemesters": "获取课程学期失败",
+      "loadCourse": "获取课程详情失败",
+      "loadDiscussions": "获取讨论区失败",
+      "loadReviews": "获取评价失败",
+      "submitReview": "发布失败，请稍后重试"
+    },
+    "semester": {
+      "spring": "春",
+      "summer": "夏",
+      "fall": "秋",
+      "winter": "冬"
+    }
+  },
   "welcome": "欢迎",
   "login": "登录",
   "logout": "退出登录",
@@ -8,10 +269,9 @@
   "home": "首页",
   "users": "用户",
   "activity": "活动",
-  "Search for posts, users, courses..." : "搜索帖子、用户、课程...",
-  "Visitor user" : "访客用户",
-  "register" : "注册",
-  "courses": "课程",
+  "Search for posts, users, courses...": "搜索帖子、用户、课程...",
+  "Visitor user": "访客用户",
+  "register": "注册",
   "gugu": "咕咕",
   "Form a team": "组队",
   "Scheduler": "排课助手",
@@ -30,7 +290,7 @@
   "Phone": "电话",
   "Contact via Phone": "通过电话联系",
   "Privacy Notice": "隐私提醒",
-  "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.": "您填写的联系方式将在您的个人资料中公开显示，所有查看您资料的用户都能看到。请谨慎填写个人信息。",
+  "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.": "您填写的联系方式将在您的个人资料和帖子中公开显示，请谨慎分享。",
   "Team Matching": "团队匹配",
   "Profile Settings": "个人资料设置",
   "Discover Projects": "发现项目",
@@ -50,5 +310,4 @@
   "Add your skills": "添加你的技能",
   "Setup complete! Start matching": "设置完成！开始匹配",
   "Find partners and interesting projects": "找到合作伙伴和有趣的项目"
-  
 }

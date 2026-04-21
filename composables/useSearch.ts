@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useApi } from './useApi'
 import { useRouter } from 'vue-router'
+import { useLocalePath } from '#imports'
 
 // Types for search results
 export interface SearchPost {
@@ -68,6 +69,7 @@ export interface SearchPagination {
 export function useSearch() {
   const { fetchPublic, getApiUrl } = useApi()
   const router = useRouter()
+  const localePath = useLocalePath()
   
   // Search state
   const isSearching = ref(false)
@@ -317,20 +319,20 @@ export function useSearch() {
   
   // Navigation helpers
   const goToPost = (postId: number) => {
-    router.push(`/forum/posts/${postId}`)
+    router.push(localePath(`/forum/posts/${postId}`))
   }
   
   const goToUser = (userId: number) => {
-    router.push(`/users/${userId}`)
+    router.push(localePath(`/users/${userId}`))
   }
   
   const goToCourse = (courseId: number) => {
-    router.push(`/courses/${courseId}`)
+    router.push(localePath(`/courses/${courseId}`))
   }
   
   const goToSearchResults = (query: string, type = 'posts') => {
     router.push({
-      path: '/search',
+      path: localePath('/search'),
       query: { q: query, type }
     })
   }

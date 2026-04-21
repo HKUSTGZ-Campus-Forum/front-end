@@ -6,49 +6,49 @@
         <!-- Brand and WeChat -->
         <div class="footer-section brand-section">
           <div class="brand-info">
-            <h3 class="footer-title">UniKorn 科广汇</h3>
-            <p class="footer-tagline">让学习更有温度</p>
+            <h3 class="footer-title">{{ t("footer.title") }}</h3>
+            <p class="footer-tagline">{{ t("footer.tagline") }}</p>
           </div>
           <div class="wechat-qr">
             <img 
               src="/image/qrcode_unikorn_official_account.jpeg" 
-              alt="UniKorn微信公众号"
+              :alt="t('footer.wechatAlt')"
               class="qr-code"
             />
-            <span class="qr-label">微信公众号</span>
+            <span class="qr-label">{{ t("footer.wechatLabel") }}</span>
           </div>
         </div>
 
         <!-- Navigation and Links -->
         <div class="footer-section links-section">
           <div class="link-group">
-            <h4 class="section-title">导航</h4>
+            <h4 class="section-title">{{ t("footer.navigation") }}</h4>
             <div class="link-row">
-              <NuxtLink to="/">首页</NuxtLink>
-              <NuxtLink to="/forum">论坛</NuxtLink>
-              <NuxtLink to="/club">社团</NuxtLink>
-              <NuxtLink to="/courses">课程</NuxtLink>
+              <NuxtLink :to="getLocalePath('/')">{{ t("nav.home") }}</NuxtLink>
+              <NuxtLink :to="getLocalePath('/forum')">{{ t("nav.forum") }}</NuxtLink>
+              <NuxtLink :to="getLocalePath('/club')">{{ t("nav.activity") }}</NuxtLink>
+              <NuxtLink :to="getLocalePath('/courses')">{{ t("nav.courses") }}</NuxtLink>
             </div>
           </div>
           <div class="link-group">
-            <h4 class="section-title">帮助</h4>
+            <h4 class="section-title">{{ t("footer.help") }}</h4>
             <div class="link-row">
-              <NuxtLink to="/help/guide">使用指南</NuxtLink>
-              <NuxtLink to="/help/rules">社区规则</NuxtLink>
-              <NuxtLink to="/help/privacy">隐私政策</NuxtLink>
+              <NuxtLink :to="getLocalePath('/help/guide')">{{ t("footer.guide") }}</NuxtLink>
+              <NuxtLink :to="getLocalePath('/help/rules')">{{ t("footer.rules") }}</NuxtLink>
+              <NuxtLink :to="getLocalePath('/help/privacy')">{{ t("footer.privacy") }}</NuxtLink>
             </div>
           </div>
         </div>
 
         <!-- Contact -->
         <div class="footer-section contact-section">
-          <h4 class="section-title">联系</h4>
+          <h4 class="section-title">{{ t("footer.contact") }}</h4>
           <a href="mailto:unikorn-connect@outlook.com" class="email-link">
             📧 unikorn-connect@outlook.com
           </a>
           <div class="contact-tags">
-            <span class="tag">意见反馈</span>
-            <span class="tag">校园合作</span>
+            <span class="tag">{{ t("footer.feedback") }}</span>
+            <span class="tag">{{ t("footer.campusCollab") }}</span>
           </div>
         </div>
       </div>
@@ -57,9 +57,9 @@
       <div class="footer-bottom">
         <div class="footer-bottom-content">
           <div class="left-info">
-            <span class="copyright">© {{ currentYear }} UniKorn 科广汇</span>
+            <span class="copyright">© {{ currentYear }} {{ t("footer.title") }}</span>
             <a href="https://beian.miit.gov.cn/" target="_blank" class="icp-link">
-              京ICP备2023006922号-1
+              {{ t("footer.icpRecord") }}
             </a>
           </div>
           <div class="right-info">
@@ -75,8 +75,9 @@
 </template>
 
 <script setup lang="ts">
-// Get current year for copyright
 const currentYear = new Date().getFullYear();
+const { t } = useI18n();
+const { getLocalePath } = useAppLocale();
 </script>
 
 <style lang="scss" scoped>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useApi } from "~/composables/useApi";
 import { buildCourseListBackQuery } from "~/utils/courseOffering";
 
@@ -9,6 +10,8 @@ definePageMeta({ layout: "keguang" });
 const route = useRoute();
 const router = useRouter();
 const { fetchPublic, getApiUrl } = useApi();
+const { t } = useI18n();
+const { locale, getLocalePath } = useAppLocale();
 
 const isLoading = ref(true);
 const error = ref("");
@@ -17,9 +20,9 @@ const redirectToDefaultOffering = async () => {
   try {
     const courseId = String(route.params.id || "");
     const listBackQuery = buildCourseListBackQuery(route.query as Record<string, unknown>);
-    const response = await fetchPublic(getApiUrl(`/api/courses/${courseId}/semesters?lang=zh`));
+    const response = await fetchPublic(getApiUrl(`/api/courses/${courseId}/semesters?lang=${locale.value}`));
     if (!response.ok) {
-      throw new Error(`获取课程学期失败: ${response.status}`);
+      throw new Error(`${t("courses.errors.loadSemesters")}: ${response.status}`);
     }
 
     const data = await response.json();
@@ -27,15 +30,15 @@ const redirectToDefaultOffering = async () => {
 
     if (firstOfferingTag) {
       await router.replace({
-        path: `/courses/${courseId}/offerings/${firstOfferingTag}`,
+        path: getLocalePath(`/courses/${courseId}/offerings/${firstOfferingTag}`),
         query: listBackQuery,
       });
       return;
     }
 
-    await router.replace({ path: "/courses", query: listBackQuery });
+    await router.replace({ path: getLocalePath("/courses"), query: listBackQuery });
   } catch (err: any) {
-    error.value = err.message || "跳转失败";
+    error.value = err.message || t("courses.redirectFailed");
   } finally {
     isLoading.value = false;
   }
@@ -48,11 +51,11 @@ onMounted(redirectToDefaultOffering);
   <div class="kg-redirect-page">
     <div v-if="isLoading" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>正在跳转到课程主页...</span>
+      <span>{{ t("courses.redirecting") }}</span>
     </div>
     <div v-else-if="error" class="kg-error-box">
       <p>{{ error }}</p>
-      <NuxtLink to="/courses" class="kg-back-link">返回课程列表</NuxtLink>
+      <NuxtLink :to="getLocalePath('/courses')" class="kg-back-link">{{ t("courses.backToCourses") }}</NuxtLink>
     </div>
   </div>
 </template>

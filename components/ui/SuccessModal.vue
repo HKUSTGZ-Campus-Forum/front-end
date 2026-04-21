@@ -6,12 +6,12 @@
           <div class="loader"></div>
         </div>
 
-        <h3 class="success-title">{{ title }}</h3>
-        <p class="success-message">{{ message }}</p>
+        <h3 class="success-title">{{ resolvedTitle }}</h3>
+        <p class="success-message">{{ resolvedMessage }}</p>
 
         <div class="success-footer" v-if="showButton">
           <button class="btn btn-success" @click="handleClose">
-            {{ buttonText }}
+            {{ resolvedButtonText }}
           </button>
         </div>
       </div>
@@ -20,7 +20,9 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, onMounted } from "vue";
+import { computed, watch } from "vue";
+
+const { t } = useI18n();
 
 const props = defineProps({
   show: {
@@ -29,15 +31,15 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: "操作成功",
+    default: "",
   },
   message: {
     type: String,
-    default: "操作已成功完成！",
+    default: "",
   },
   buttonText: {
     type: String,
-    default: "确定",
+    default: "",
   },
   showButton: {
     type: Boolean,
@@ -54,6 +56,9 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close"]);
+const resolvedTitle = computed(() => props.title || t("modals.success.title"));
+const resolvedMessage = computed(() => props.message || t("modals.success.message"));
+const resolvedButtonText = computed(() => props.buttonText || t("actions.submit"));
 
 const handleClose = () => {
   emit("close");
@@ -101,7 +106,7 @@ watch(
 .success-icon-wrapper {
   margin-bottom: 1.5rem;
   display: flex;
-  justify-content: center; /* 确保居中 */
+  justify-content: center;
   align-items: center;
 }
 
@@ -194,7 +199,6 @@ watch(
   animation: animation_collect 1s linear 1 both;
 }
 
-// 圆圈旋转动画
 @keyframes animation_collect {
   0% {
     transform: rotate(270deg);
@@ -215,7 +219,6 @@ watch(
   }
 }
 
-// 对号动画
 .loader::before {
   position: absolute;
   content: "";
@@ -226,13 +229,10 @@ watch(
   border-bottom-width: 0;
   transform: scaleX(-1) rotate(135deg);
   transform-origin: left top;
-  // 延迟1s执行，先执行外层圆圈动画结束后执行该动画
   animation: animation_true 0.5s 1s linear 1 both;
-  // 外层执行动画时，里面不显示
   opacity: 0;
 }
 
-// 对号绘制动画
 @keyframes animation_true {
   0% {
     opacity: 0;
@@ -289,7 +289,6 @@ watch(
   }
 }
 
-// 弹窗进入动画
 @keyframes fadeIn {
   from {
     opacity: 0;
