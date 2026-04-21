@@ -38,6 +38,7 @@
     "publishing": "发布中...",
     "send": "发送",
     "sending": "发送中...",
+    "saving": "保存中...",
     "resend": "重新发送",
     "save": "保存",
     "goToPost": "去发帖"
@@ -402,6 +403,70 @@
       "summer": "夏",
       "fall": "秋",
       "winter": "冬"
+    }
+  },
+  "matching": {
+    "breadcrumbs": {
+      "ariaLabel": "团队匹配导航路径",
+      "root": "团队匹配",
+      "profile": "个人资料设置",
+      "discover": "发现项目",
+      "projects": "项目",
+      "createProject": "创建项目",
+      "editProject": "编辑项目",
+      "projectDetails": "项目详情",
+      "applications": "我的申请"
+    },
+    "profileSetup": {
+      "pageTitle": "个人资料设置",
+      "title": "设置个人资料",
+      "subtitle": "简单介绍你感兴趣的问题领域并设置联系方式，以便队友能够联系到你。",
+      "problemSectionTitle": "你感兴趣解决什么问题？",
+      "problemInterestLabel": "描述你感兴趣的问题领域 *",
+      "problemInterestPlaceholder": "例如：想改善校园生活的某个方面，或对某个技术领域很好奇，或想解决一个具体的社会问题...",
+      "helpText": "不用担心描述得不够专业，系统会通过 AI 理解你的兴趣并匹配合适的项目和队友。",
+      "save": "保存资料",
+      "update": "更新资料",
+      "saveAndContinue": "保存并继续到项目发现",
+      "saveFailed": "保存资料失败，请稍后重试"
+    },
+    "contact": {
+      "title": "联系信息设置",
+      "description": "设置你的公开联系方式，其他用户可以通过这些方式联系你。",
+      "privacyTitle": "隐私提醒",
+      "privacyBody": "你的联系方式会显示在个人资料和帖子中，请仅填写你愿意公开分享的信息。",
+      "methods": {
+        "email": {
+          "name": "邮箱",
+          "description": "通过邮箱联系",
+          "placeholder": "请输入邮箱地址"
+        },
+        "wechat": {
+          "name": "微信",
+          "description": "通过微信联系",
+          "placeholder": "微信号或昵称"
+        },
+        "qq": {
+          "name": "QQ",
+          "description": "通过 QQ 联系",
+          "placeholder": "QQ 号码"
+        },
+        "telegram": {
+          "name": "Telegram",
+          "description": "通过 Telegram 联系",
+          "placeholder": "用户名或 Telegram handle"
+        },
+        "discord": {
+          "name": "Discord",
+          "description": "通过 Discord 联系",
+          "placeholder": "username#1234"
+        },
+        "phone": {
+          "name": "电话",
+          "description": "通过电话联系",
+          "placeholder": "+86 138 0000 0000"
+        }
+      }
     }
   },
   "welcome": "欢迎",

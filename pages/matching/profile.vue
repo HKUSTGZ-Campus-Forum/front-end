@@ -5,45 +5,42 @@
       <div class="setup-header">
         <h1>
           <Icon name="user-circle" class="title-icon" />
-          设置个人资料
+          {{ t("matching.profileSetup.title") }}
         </h1>
-        <p>简单介绍你感兴趣的问题领域并设置联系方式，以便队友能够联系到你</p>
+        <p>{{ t("matching.profileSetup.subtitle") }}</p>
       </div>
 
     <form @submit.prevent="saveProfile" class="profile-form">
-      <!-- Problem of Interest Section -->
       <div class="form-section">
-        <h2>你感兴趣解决什么问题？</h2>
+        <h2>{{ t("matching.profileSetup.problemSectionTitle") }}</h2>
         <div class="form-group">
-          <label for="problem_interest">描述你感兴趣的问题领域 *</label>
+          <label for="problem_interest">{{ t("matching.profileSetup.problemInterestLabel") }}</label>
           <textarea
             id="problem_interest"
             v-model="form.problem_interest"
-            placeholder="例如：想改善校园生活的某个方面，或者对某个技术领域很好奇想深入研究，或者想解决某个社会问题..."
+            :placeholder="t('matching.profileSetup.problemInterestPlaceholder')"
             rows="6"
             required
             maxlength="500"
           />
           <div class="char-count">{{ form.problem_interest?.length || 0 }}/500</div>
-          <p class="help-text">不用担心描述得不够专业，系统会通过AI理解你的兴趣并匹配合适的项目和队友</p>
+          <p class="help-text">{{ t("matching.profileSetup.helpText") }}</p>
         </div>
       </div>
 
-      <!-- Contact Methods Section -->
       <div class="form-section">
         <ContactMethodSelector
           v-model="form.contact_methods"
         />
       </div>
 
-      <!-- Form Actions -->
       <div class="form-actions">
         <button type="button" @click="$router.go(-1)" class="btn btn-secondary">
-          取消
+          {{ t("actions.cancel") }}
         </button>
         <button type="submit" :disabled="!isFormValid || saving" class="btn btn-primary">
           <Icon v-if="saving" name="spinner" class="spinning" />
-          {{ profile?.id ? '更新资料' : '保存资料' }}
+          {{ saving ? t("actions.saving") : profile?.id ? t("matching.profileSetup.update") : t("matching.profileSetup.save") }}
         </button>
         <button
           v-if="isFormValid && !saving"
@@ -51,7 +48,7 @@
           @click="saveAndContinue"
           class="btn btn-success"
         >
-          保存并继续到项目发现
+          {{ t("matching.profileSetup.saveAndContinue") }}
           <Icon name="arrow-right" />
         </button>
       </div>
@@ -64,17 +61,20 @@ import { ref, computed, onMounted } from 'vue'
 import MatchingBreadcrumbs from '~/components/matching/MatchingBreadcrumbs.vue'
 import ContactMethodSelector from '~/components/matching/ContactMethodSelector.vue'
 
-// Composables
+const { t } = useI18n()
+const { getLocalePath } = useAppLocale()
 const { fetchWithAuth } = useApi()
 
-// Page meta
 definePageMeta({
-  title: 'Profile Setup',
   requiresAuth: true,
   layout: 'keguang',
 })
 
-// Reactive data
+useHead(() => ({
+  title: `${t("matching.profileSetup.pageTitle")} - ${t("common.appName")}`,
+  meta: [{ name: "description", content: t("matching.profileSetup.subtitle") }],
+}))
+
 const form = ref({
   problem_interest: '',
   contact_methods: [],
@@ -83,12 +83,10 @@ const form = ref({
 const profile = ref(null)
 const saving = ref(false)
 
-// Computed properties
 const isFormValid = computed(() => {
   return form.value.problem_interest?.trim() && form.value.contact_methods?.length > 0
 })
 
-// Methods
 const loadProfile = async () => {
   try {
     const response = await fetchWithAuth('/api/profiles')
@@ -99,12 +97,12 @@ const loadProfile = async () => {
       profile.value = p
 
       form.value = {
-        problem_interest: p.problem_interest || p.bio || '',  // fallback to bio if problem_interest doesn't exist yet
+        problem_interest: p.problem_interest || p.bio || '',
         contact_methods: p.contact_methods || [],
       }
     }
   } catch (error) {
-    console.error('Error loading profile:', error)
+    console.error('Failed to load profile setup:', error)
   }
 }
 
@@ -127,17 +125,12 @@ const saveProfile = async () => {
     const data = await response.json()
 
     if (data.success) {
-      // Show success message
-      // Add toast notification here if available
-
-      // Redirect to dashboard
-      await navigateTo('/matching')
+      await navigateTo(getLocalePath('/matching'))
     } else {
-      throw new Error(data.message || 'Failed to save profile')
+      throw new Error(data.message || t('matching.profileSetup.saveFailed'))
     }
   } catch (error) {
-    console.error('Error saving profile:', error)
-    // Show error message
+    console.error('Failed to save profile setup:', error)
   } finally {
     saving.value = false
   }
@@ -162,20 +155,17 @@ const saveAndContinue = async () => {
     const data = await response.json()
 
     if (data.success) {
-      // Redirect to project discovery
-      await navigateTo('/matching/discover')
+      await navigateTo(getLocalePath('/matching/discover'))
     } else {
-      throw new Error(data.message || 'Failed to save profile')
+      throw new Error(data.message || t('matching.profileSetup.saveFailed'))
     }
   } catch (error) {
-    console.error('Error saving profile:', error)
-    // Show error message
+    console.error('Failed to save profile setup:', error)
   } finally {
     saving.value = false
   }
 }
 
-// Lifecycle
 onMounted(async () => {
   await loadProfile()
 })

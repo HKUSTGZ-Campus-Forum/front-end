@@ -38,6 +38,7 @@
     "publishing": "Publishing...",
     "send": "Send",
     "sending": "Sending...",
+    "saving": "Saving...",
     "resend": "Resend",
     "save": "Save",
     "goToPost": "Create post"
@@ -402,6 +403,70 @@
       "summer": "Summer",
       "fall": "Fall",
       "winter": "Winter"
+    }
+  },
+  "matching": {
+    "breadcrumbs": {
+      "ariaLabel": "Team matching breadcrumbs",
+      "root": "Team matching",
+      "profile": "Profile settings",
+      "discover": "Discover projects",
+      "projects": "Projects",
+      "createProject": "Create project",
+      "editProject": "Edit project",
+      "projectDetails": "Project details",
+      "applications": "My applications"
+    },
+    "profileSetup": {
+      "pageTitle": "Profile settings",
+      "title": "Set up your profile",
+      "subtitle": "Introduce the problems you want to work on and add contact details so teammates can reach you.",
+      "problemSectionTitle": "What kind of problems do you want to solve?",
+      "problemInterestLabel": "Describe the problem space you care about *",
+      "problemInterestPlaceholder": "For example: improving some part of campus life, exploring a technical field in depth, or solving a specific social problem...",
+      "helpText": "It does not need to sound overly formal. The system will use AI to understand your interests and match suitable projects and teammates.",
+      "save": "Save profile",
+      "update": "Update profile",
+      "saveAndContinue": "Save and continue to project discovery",
+      "saveFailed": "Failed to save your profile. Please try again."
+    },
+    "contact": {
+      "title": "Contact settings",
+      "description": "Choose the contact methods you want to share so other users can reach you.",
+      "privacyTitle": "Privacy notice",
+      "privacyBody": "Your contact details may appear on your profile and posts. Only share information you are comfortable making public.",
+      "methods": {
+        "email": {
+          "name": "Email",
+          "description": "Reach out by email",
+          "placeholder": "Enter an email address"
+        },
+        "wechat": {
+          "name": "WeChat",
+          "description": "Reach out on WeChat",
+          "placeholder": "WeChat ID or nickname"
+        },
+        "qq": {
+          "name": "QQ",
+          "description": "Reach out on QQ",
+          "placeholder": "QQ number"
+        },
+        "telegram": {
+          "name": "Telegram",
+          "description": "Reach out on Telegram",
+          "placeholder": "Telegram username or handle"
+        },
+        "discord": {
+          "name": "Discord",
+          "description": "Reach out on Discord",
+          "placeholder": "username#1234"
+        },
+        "phone": {
+          "name": "Phone",
+          "description": "Reach out by phone",
+          "placeholder": "+86 138 0000 0000"
+        }
+      }
     }
   },
   "welcome": "Welcome",

@@ -145,10 +145,14 @@ export default defineNuxtConfig({
         "/users/**", // 排除动态用户主页
         "/admin/**", // 排除管理员路径
         "/en/admin/**",
+        "/admin/identity-management",
+        "/en/admin/identity-management",
         "/notifications",
         "/en/notifications",
         "/contest/admin",
         "/en/contest/admin",
+        "/setting/identity",
+        "/en/setting/identity",
         "/setting/**", // 排除设置页面
       ],
     },

@@ -1,10 +1,10 @@
 <template>
-  <nav class="breadcrumbs" aria-label="导航路径">
+  <nav class="breadcrumbs" :aria-label="t('matching.breadcrumbs.ariaLabel')">
     <ol class="breadcrumb-list">
       <li class="breadcrumb-item">
-        <NuxtLink to="/matching" class="breadcrumb-link">
+        <NuxtLink :to="getLocalePath('/matching')" class="breadcrumb-link">
           <Icon name="users" class="breadcrumb-icon" />
-          {{ t('Team Matching') }}
+          {{ t("matching.breadcrumbs.root") }}
         </NuxtLink>
       </li>
       <li v-for="(item, index) in breadcrumbItems" :key="index" class="breadcrumb-item">
@@ -21,32 +21,32 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const route = useRoute()
+const { getLocalePath } = useAppLocale()
 
 const breadcrumbItems = computed(() => {
   const path = route.path
   const items = []
 
   if (path.startsWith('/matching/profile')) {
-    items.push({ title: t('Profile Settings'), current: true })
+    items.push({ title: t('matching.breadcrumbs.profile'), current: true })
   } else if (path.startsWith('/matching/discover')) {
-    items.push({ title: t('Discover Projects'), current: true })
+    items.push({ title: t('matching.breadcrumbs.discover'), current: true })
   } else if (path.startsWith('/matching/projects/create')) {
-    items.push({ title: t('Projects'), href: '/matching/projects' })
-    items.push({ title: t('Create Project'), current: true })
+    items.push({ title: t('matching.breadcrumbs.projects'), href: getLocalePath('/matching/projects') })
+    items.push({ title: t('matching.breadcrumbs.createProject'), current: true })
   } else if (path.startsWith('/matching/projects/') && path.includes('/edit')) {
-    items.push({ title: t('Projects'), href: '/matching/projects' })
-    items.push({ title: t('Edit Project'), current: true })
+    items.push({ title: t('matching.breadcrumbs.projects'), href: getLocalePath('/matching/projects') })
+    items.push({ title: t('matching.breadcrumbs.editProject'), current: true })
   } else if (path.startsWith('/matching/projects/') && route.params.id) {
-    items.push({ title: t('Projects'), href: '/matching/projects' })
-    items.push({ title: t('Project Details'), current: true })
+    items.push({ title: t('matching.breadcrumbs.projects'), href: getLocalePath('/matching/projects') })
+    items.push({ title: t('matching.breadcrumbs.projectDetails'), current: true })
   } else if (path.startsWith('/matching/projects')) {
-    items.push({ title: t('My Projects'), current: true })
+    items.push({ title: t('matching.breadcrumbs.projects'), current: true })
   } else if (path.startsWith('/matching/applications')) {
-    items.push({ title: t('My Applications'), current: true })
+    items.push({ title: t('matching.breadcrumbs.applications'), current: true })
   }
 
   return items
