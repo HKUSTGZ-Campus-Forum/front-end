@@ -27,7 +27,19 @@ function resolveAuthApiUrl(path: string): string {
   const apiBaseUrl = useRuntimeConfig().public.apiBaseUrl;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const clean = path.startsWith("/") ? path : `/${path}`;
-  if (import.meta.client) return clean;
+  if (import.meta.client) {
+    if (typeof window !== "undefined" && apiBaseUrl) {
+      try {
+        const base = new URL(String(apiBaseUrl));
+        if (base.origin !== window.location.origin) {
+          return `${String(apiBaseUrl).replace(/\/$/, "")}${clean}`;
+        }
+      } catch {
+        /* ignore malformed base url */
+      }
+    }
+    return clean;
+  }
   const base = String(apiBaseUrl || "").replace(/\/$/, "");
   return base ? `${base}${clean}` : clean;
 }

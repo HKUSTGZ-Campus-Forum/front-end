@@ -6,13 +6,26 @@ export interface Notification {
   id: number
   recipient_id: number
   sender_id: number | null
-  type: 'post_reaction' | 'comment_reaction' | 'post_comment' | 'comment_reply'
+  type:
+    | 'post_reaction'
+    | 'comment_reaction'
+    | 'post_comment'
+    | 'comment_reply'
+    | 'feedback_published'
+    | 'feedback_rejected'
+    | 'feedback_merge_request_created'
+    | 'feedback_merge_request_changes_requested'
+    | 'feedback_merge_request_rejected_by_author'
+    | 'feedback_merge_request_ready_for_admin'
+    | 'feedback_merge_request_merged'
+    | 'feedback_merge_request_rejected_by_admin'
   title: string
   message: string
   read: boolean
   post_id: number | null
   comment_id: number | null
   reaction_id: number | null
+  link_url?: string | null
   created_at: string
   updated_at: string
   sender?: {
@@ -200,6 +213,9 @@ export const useNotifications = () => {
   
   // Get navigation URL for a notification
   const getNotificationUrl = (notification: Notification): string => {
+    if (notification.link_url) {
+      return notification.link_url
+    }
     if (notification.post_id) {
       // Navigate to post
       return `/forum/posts/${notification.post_id}`

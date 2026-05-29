@@ -117,6 +117,12 @@ export default defineNuxtConfig({
       ],
     },
   },
+  routeRules: {
+    "/admin": { ssr: false, prerender: false },
+    "/admin/**": { ssr: false, prerender: false },
+    "/en/admin": { ssr: false, prerender: false },
+    "/en/admin/**": { ssr: false, prerender: false },
+  },
   css: [
     "~/assets/css/variables.scss",
     "~/assets/css/global.scss",
@@ -162,7 +168,11 @@ export default defineNuxtConfig({
     public: {
       appVersion: pkg.version,
       appBuildVersion,
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? "http://127.0.0.1:3000" : "https://unikorn.axfff.com"),
+      apiBaseUrl:
+        process.env.NUXT_PUBLIC_API_BASE_URL ||
+        (process.env.NODE_ENV === "development"
+          ? "http://localhost:3000"
+          : "https://unikorn.axfff.com"),
     },
   },
   ssr: true,

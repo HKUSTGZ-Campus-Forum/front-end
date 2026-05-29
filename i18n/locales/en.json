@@ -46,6 +46,9 @@
   "nav": {
     "home": "Home",
     "forum": "Forum",
+    "community": "Community",
+    "feedback": "Feedback",
+    "admin": "Admin",
     "courses": "Courses",
     "activity": "Activities",
     "teamMatching": "Form a team",
@@ -60,6 +63,245 @@
     "identityVerification": "Identity verification",
     "themeSettings": "Theme settings",
     "loggingOut": "Logging out..."
+  },
+  "community": {
+    "title": "Community",
+    "metaDescription": "Browse forum posts, feedback collaboration, and activities from one unified community entry.",
+    "sections": {
+      "forum": "Forum Posts",
+      "feedback": "Feedback",
+      "activity": "Activities"
+    },
+    "activity": {
+      "cta": "Post activity",
+      "badge": "Club activity",
+      "empty": "No club activities are public yet. Be the first to share one.",
+      "errors": {
+        "loadFailed": "Failed to load club activities.",
+        "retryable": "Failed to load club activities. Please try again later."
+      }
+    }
+  },
+  "adminShell": {
+    "title": "Site Administration",
+    "description": "Manage feedback reviews, identity verification, and future moderation tools from one shared admin surface.",
+    "nav": {
+      "overview": "Overview",
+      "feedback": "Feedback review",
+      "identity": "Identity"
+    }
+  },
+  "adminOverview": {
+    "title": "Admin overview",
+    "description": "Track the moderation queues that need attention and jump into each admin workspace.",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing..."
+    },
+    "metrics": {
+      "pendingFeedback": "Pending feedback",
+      "pendingMerge": "Pending merge reviews",
+      "pendingIdentity": "Pending identity",
+      "feedbackTotal": "Published feedback"
+    },
+    "status": {
+      "loadFailed": "Some admin counts could not be loaded.",
+      "moduleError": "Count unavailable"
+    },
+    "modulesTitle": "Admin modules",
+    "cards": {
+      "feedback": {
+        "title": "Feedback review",
+        "description": "Review pending feedback, finalize accepted merge proposals, and manage published feedback discussion state.",
+        "action": "Open feedback review"
+      },
+      "identity": {
+        "title": "Identity verification",
+        "description": "Review pending verification requests and inspect approved, rejected, or revoked identity records.",
+        "action": "Open identity review"
+      }
+    }
+  },
+  "adminIdentity": {
+    "title": "Identity Verification",
+    "description": "Review identity verification requests, inspect historical statuses, and handle records that need revocation or another decision.",
+    "metrics": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "total": "Total"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Identity type",
+      "sort": "Sort",
+      "allStatuses": "All statuses",
+      "allTypes": "All types"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "priority": "Review priority"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "revoked": "Revoked"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "selectPage": "Select page",
+      "clearPage": "Clear page",
+      "selectOne": "Select request",
+      "approve": "Approve",
+      "reject": "Reject",
+      "revoke": "Revoke",
+      "bulkApprove": "Approve {count}",
+      "bulkReject": "Reject {count}"
+    },
+    "user": {
+      "noEmail": "No email provided"
+    },
+    "requestedAt": "Requested {date}",
+    "processed": "Processed",
+    "processedAt": "Processed {date}",
+    "documents": {
+      "title": "Documents",
+      "unnamed": "Untitled document",
+      "noDate": "No upload date"
+    },
+    "notes": "Notes:",
+    "rejectionReason": "Rejection reason:",
+    "approve": {
+      "title": "Approve identity",
+      "message": "Approve {user}'s {type} verification request?"
+    },
+    "reject": {
+      "title": "Reject request",
+      "message": "Add a clear rejection reason for {user}'s request.",
+      "reason": "Rejection reason",
+      "notes": "Admin notes (optional)"
+    },
+    "revoke": {
+      "title": "Revoke identity",
+      "message": "Revoke {user}'s {type} verification?",
+      "defaultReason": "Revoked by admin"
+    },
+    "bulkApprove": {
+      "title": "Approve selected requests",
+      "message": "Approve the selected {count} verification requests?"
+    },
+    "bulkReject": {
+      "title": "Reject selected requests",
+      "message": "Add one shared reason for rejecting the selected {count} requests."
+    },
+    "messages": {
+      "approved": "Request approved.",
+      "rejected": "Request rejected.",
+      "revoked": "Identity revoked.",
+      "bulkApproved": "Approved {count} requests.",
+      "bulkRejected": "Rejected {count} requests."
+    },
+    "errors": {
+      "title": "Load failed",
+      "loadFailed": "Failed to load identity verification requests.",
+      "approveFailed": "Failed to approve request.",
+      "rejectFailed": "Failed to reject request.",
+      "revokeFailed": "Failed to revoke identity.",
+      "bulkFailed": "Bulk action failed."
+    },
+    "empty": {
+      "title": "No requests",
+      "description": "No identity verification requests match the current filters."
+    },
+    "pagination": {
+      "label": "Identity request pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    }
+  },
+  "adminFeedback": {
+    "title": "Feedback Review",
+    "description": "Handle pending feedback publication, accepted merge proposals, and discussion controls for published feedback.",
+    "metrics": {
+      "pendingFeedback": "Pending feedback",
+      "pendingMerge": "Pending merge reviews",
+      "feedbackTotal": "Feedback total",
+      "mergeTotal": "Merge total"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "publish": "Publish",
+      "reject": "Reject",
+      "merge": "Approve and merge",
+      "view": "View details",
+      "closeFeedback": "Close feedback",
+      "reopenFeedback": "Reopen",
+      "endComments": "End comments",
+      "resumeComments": "Resume comments"
+    },
+    "filters": {
+      "feedbackStatus": "Feedback status",
+      "mergeStatus": "Merge status",
+      "allFeedback": "All feedback",
+      "allMerge": "All merge proposals"
+    },
+    "pendingFeedback": {
+      "title": "Pending feedback",
+      "emptyTitle": "No pending feedback",
+      "emptyDescription": "New user feedback submissions will appear here."
+    },
+    "pendingMerge": {
+      "title": "Pending merge reviews",
+      "emptyTitle": "No pending merge reviews",
+      "emptyDescription": "Author-accepted edit proposals will appear here."
+    },
+    "feedbackHistory": {
+      "title": "Feedback records"
+    },
+    "mergeHistory": {
+      "title": "Merge records"
+    },
+    "approveFeedback": {
+      "title": "Publish feedback",
+      "message": "Publish this feedback so it becomes visible to everyone?"
+    },
+    "rejectFeedback": {
+      "title": "Reject feedback",
+      "message": "Add a clear review note before rejecting this feedback."
+    },
+    "approveMerge": {
+      "title": "Approve merge proposal",
+      "message": "Apply this proposal to the published feedback body?"
+    },
+    "rejectMerge": {
+      "title": "Reject merge proposal",
+      "message": "Add a review note before rejecting this proposal."
+    },
+    "messages": {
+      "feedbackApproved": "Feedback published.",
+      "feedbackRejected": "Feedback rejected.",
+      "mergeApproved": "Merge proposal approved.",
+      "mergeRejected": "Merge proposal rejected.",
+      "feedbackClosed": "Feedback closed.",
+      "feedbackReopened": "Feedback reopened.",
+      "commentsEnded": "Comments ended.",
+      "commentsResumed": "Comments resumed."
+    },
+    "errors": {
+      "title": "Load failed",
+      "loadFailed": "Failed to load feedback admin data.",
+      "actionFailed": "Action failed."
+    },
+    "author": "Author: {name}",
+    "feedbackId": "Feedback #{id}",
+    "commentsEnded": "Comments ended",
+    "emptyExcerpt": "No content preview available.",
+    "notePlaceholder": "Admin review note"
   },
   "footer": {
     "title": "UniKorn",
@@ -163,6 +405,56 @@
         "uploadFailed": "Upload failed. Please try again.",
         "removeFailed": "Failed to remove avatar. Please try again."
       }
+    }
+  },
+  "userProfile": {
+    "pageTitle": "{username} - Profile",
+    "metaDescription": "View {username}'s profile and activity statistics.",
+    "uid": "UID: {uid}",
+    "joinDate": "Joined: {date}",
+    "actions": {
+      "edit": "Edit",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "states": {
+      "loading": "Loading...",
+      "retry": "Retry",
+      "unknownDate": "Unknown",
+      "invalidDate": "Invalid date",
+      "invalidUserId": "Invalid user ID"
+    },
+    "errors": {
+      "userNotFound": "User not found",
+      "loginRequired": "Please log in to view this profile.",
+      "forbidden": "You do not have permission to view this profile.",
+      "loadUserFailed": "Failed to load user profile.",
+      "loadUserFailedWithStatus": "Failed to load user profile ({status}).",
+      "loadPostsFailed": "Failed to load posts.",
+      "loadPostsFailedWithStatus": "Failed to load posts ({status}).",
+      "updateUsernameFailed": "Failed to update username. Please try again later.",
+      "updateUsernameFailedWithStatus": "Failed to update username ({status})."
+    },
+    "validation": {
+      "usernameRequired": "Username is required.",
+      "usernameTooShort": "Username must be at least 2 characters.",
+      "usernameTooLong": "Username cannot exceed 50 characters.",
+      "usernameInvalidCharacters": "Username cannot contain special symbols."
+    },
+    "stats": {
+      "title": "Statistics",
+      "posts": "Posts",
+      "comments": "Comments",
+      "likes": "Likes",
+      "views": "Views",
+      "score": "Score"
+    },
+    "recentPosts": {
+      "title": "Recent Posts",
+      "loading": "Loading posts...",
+      "empty": "This user has not published any posts yet.",
+      "noContent": "No content yet",
+      "untitled": "Untitled"
     }
   },
   "pwa": {
@@ -612,6 +904,189 @@
       "availableCount": "Available emojis ({count})",
       "noAvailable": "No emojis available",
       "retryLoad": "Retry"
+    }
+  },
+  "feedbackModule": {
+    "index": {
+      "pageTitle": "Feedback - UniKorn",
+      "metaDescription": "Browse published feedback, submit new suggestions, and keep improving public entries together.",
+      "title": "Feedback",
+      "cta": "Submit feedback",
+      "filters": {
+        "public": "Published {count}",
+        "mine": "My feedback {count}"
+      },
+      "errors": {
+        "publicLoadFailed": "Failed to load published feedback.",
+        "myLoadFailed": "Failed to load your feedback."
+      },
+      "emptyStates": {
+        "public": "No published feedback yet.",
+        "mineTitle": "You have not submitted any feedback yet",
+        "mineHint": "If something on the site felt unclear or frustrating, this is the right place to record it and suggest a better direction."
+      }
+    },
+    "card": {
+      "emptyExcerpt": "This feedback does not have a body yet.",
+      "authorFallback": "User #{id}",
+      "author": "Author: {author}",
+      "version": "Version {count}",
+      "comments": "{count} comments",
+      "mergeRequests": "{count} proposals"
+    },
+    "create": {
+      "pageTitle": "Submit Feedback - UniKorn",
+      "metaDescription": "Submit new feedback and help UniKorn improve the site experience.",
+      "back": "Back to feedback",
+      "title": "Submit feedback",
+      "subtitle": "A clearer description makes review faster and gives later collaborators a stronger starting point.",
+      "noteTitle": "Before you submit",
+      "noteBody": "Your feedback first enters a review queue. After admins confirm it is ready for public discussion, it will appear in the feedback hub with comments and version history preserved.",
+      "tips": {
+        "context": "Explain where the issue happened, what page or flow it came from, and what you expected instead.",
+        "impact": "If it affected the experience, mention who it impacts or how often it happens.",
+        "followUp": "After publication, other students can comment or propose collaborative edits to improve the write-up together."
+      }
+    },
+    "form": {
+      "titleLabel": "Feedback title",
+      "titlePlaceholder": "Summarize the issue in one sentence",
+      "contentLabel": "Feedback body (Markdown)",
+      "contentHint": "Include the context, what happened, what you expected, and any possible fix ideas if you have them.",
+      "submit": "Submit feedback",
+      "submitting": "Submitting...",
+      "titleRequired": "Please enter a feedback title.",
+      "contentRequired": "Please enter the feedback body.",
+      "submitFailed": "Submission failed. Please try again later."
+    },
+    "status": {
+      "published": "Published",
+      "closed": "Closed",
+      "pending_review": "Pending review",
+      "rejected": "Rejected"
+    },
+    "api": {
+      "listFailed": "Failed to load feedback.",
+      "listMineFailed": "Failed to load your feedback.",
+      "detailFailed": "Failed to load feedback details.",
+      "versionsFailed": "Failed to load version history.",
+      "createFailed": "Failed to submit feedback.",
+      "commentCreateFailed": "Failed to post the comment.",
+      "mergeRequestCreateFailed": "Failed to create the merge proposal.",
+      "mergeRequestDetailFailed": "Failed to load the merge proposal.",
+      "mergeRequestUpdateFailed": "Failed to update the merge proposal body.",
+      "mergeCommentCreateFailed": "Failed to post the merge discussion comment.",
+      "authorRequestChangesFailed": "Failed to request changes.",
+      "authorRejectFailed": "Failed to reject the merge proposal.",
+      "authorAcceptFailed": "Failed to submit the proposal for admin review."
+    },
+    "adminApi": {
+      "listFeedbacksFailed": "Failed to load feedback records.",
+      "listPendingFeedbackFailed": "Failed to load pending feedback.",
+      "listMergeRequestsFailed": "Failed to load merge proposal records.",
+      "listPendingMergeRequestsFailed": "Failed to load pending merge proposals.",
+      "approveFeedbackFailed": "Failed to publish the feedback.",
+      "rejectFeedbackFailed": "Failed to reject the feedback.",
+      "closeFeedbackFailed": "Failed to close the feedback.",
+      "reopenFeedbackFailed": "Failed to reopen the feedback.",
+      "endCommentsFailed": "Failed to end comments.",
+      "resumeCommentsFailed": "Failed to resume comments.",
+      "approveMergeRequestFailed": "Failed to approve the merge proposal.",
+      "rejectMergeRequestFailed": "Failed to reject the merge proposal.",
+      "hideCommentFailed": "Failed to hide the comment."
+    },
+    "comments": {
+      "title": "Discussion",
+      "closed": "Comments are closed for this feedback.",
+      "placeholder": "Share your thoughts on this feedback...",
+      "disabledPlaceholder": "Comments are closed",
+      "submit": "Post comment",
+      "login": "Log in to join the discussion on this feedback.",
+      "empty": "No comments yet. Start the conversation.",
+      "hidden": "This comment has been hidden by moderation.",
+      "hiddenNote": "This comment was handled by an admin.",
+      "userFallback": "User #{id}"
+    },
+    "versionHistory": {
+      "title": "Version history",
+      "version": "V{count}",
+      "empty": "No historical versions yet."
+    },
+    "detail": {
+      "pageTitle": "Feedback Details - UniKorn",
+      "metaDescription": "Review the current feedback body, version history, merge proposals, and discussion.",
+      "back": "Back to feedback",
+      "subtitle": "This page keeps the current body, collaborative proposals, and discussion in one place so the same feedback can keep evolving.",
+      "updatedAt": "Last updated {date}",
+      "currentBodyTitle": "Current body",
+      "currentBodyHint": "This is the version currently shown to everyone. Accepted proposals will continue to roll into this body.",
+      "mergeTitle": "Public merge proposals",
+      "mergeHint": "After submission, proposals stay public so the feedback author can revise them further and decide whether to send them to admin review.",
+      "noMerges": "No merge proposals yet.",
+      "mergeSummaryLabel": "Change summary",
+      "mergeSummaryPlaceholder": "Summarize what you want to improve in one sentence",
+      "mergeBodyLabel": "Proposal body (pre-filled with the current Markdown)",
+      "mergeSubmit": "Create proposal",
+      "mergeSubmitting": "Submitting...",
+      "mergeSuccess": "The proposal has been submitted and the feedback author will be notified.",
+      "mergeLogin": "Log in to create a merge proposal.",
+      "sidebarTitle": "Feedback overview",
+      "feedbackId": "Feedback ID",
+      "statusLabel": "Status",
+      "versionCountLabel": "Versions",
+      "commentCountLabel": "Comments",
+      "errors": {
+        "loadFailed": "Failed to load feedback details.",
+        "commentFailed": "Failed to post the comment.",
+        "mergeBodyRequired": "Please enter the proposal body.",
+        "mergeSubmitFailed": "Failed to create the proposal."
+      }
+    },
+    "mergeRequest": {
+      "pageTitle": "Proposal Details - UniKorn",
+      "metaDescription": "Review a merge proposal, author decisions, and discussion history.",
+      "back": "Back to feedback details",
+      "feedbackLinkLabel": "From feedback #{id}",
+      "summaryFallback": "This proposal does not include an additional summary.",
+      "proposer": "Proposer: User #{id}",
+      "baseVersion": "Base version: V{version}",
+      "bodyTitle": "Proposal body",
+      "bodyHint": "Every change remains attached to this proposal. If the author accepts it, it moves on to admin review.",
+      "reviewTitle": "Author review area",
+      "reviewHint": "You can revise the proposal body first, then request changes, reject it, or send it to admin review.",
+      "notePlaceholder": "Leave a note for the proposer or admins (optional)",
+      "saveDraft": "Save body first",
+      "saving": "Processing...",
+      "requestChanges": "Request changes",
+      "reject": "Reject",
+      "submitForAdmin": "Submit for admin review",
+      "sidebarTitle": "Proposal status",
+      "statusLabel": "Current status",
+      "createdAt": "Created on: {date}",
+      "authorNote": "Author note: {note}",
+      "adminNote": "Admin note: {note}",
+      "backToHub": "Back to feedback hub",
+      "status": {
+        "open": "Open",
+        "author_changes_requested": "Changes requested by author",
+        "author_rejected": "Rejected by author",
+        "author_accepted_pending_admin": "Pending admin review",
+        "admin_rejected": "Rejected by admin",
+        "merged": "Merged",
+        "withdrawn": "Withdrawn"
+      },
+      "success": {
+        "draftSaved": "The proposal body has been updated.",
+        "requestChanges": "Changes have been requested for this proposal.",
+        "rejected": "You rejected this proposal.",
+        "submittedForAdmin": "This proposal has been sent for admin review."
+      },
+      "errors": {
+        "loadFailed": "Failed to load the proposal details.",
+        "saveFailed": "Failed to save the proposal body.",
+        "actionFailed": "Failed to process the proposal.",
+        "commentFailed": "Failed to post the discussion comment."
+      }
     }
   },
   "home": "Home",

@@ -1,6 +1,5 @@
 {
   "allowedPaths": [
-    "pages/admin/**",
     "pages/contest/**",
     "pages/gugu/**",
     "pages/setting/**",

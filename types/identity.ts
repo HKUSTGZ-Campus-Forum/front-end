@@ -11,13 +11,24 @@ export interface IdentityType {
   created_at: string
 }
 
+export type IdentityAdminStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
+
+export interface IdentityVerificationDocument {
+  file_id?: number | null
+  filename?: string | null
+  uploaded_at?: string | null
+  size?: number | null
+  mime_type?: string | null
+  view_url?: string | null
+}
+
 export interface UserIdentity {
   id: number
   user_id: number
   identity_type_id: number
   identity_type: IdentityType
-  status: 'pending' | 'approved' | 'rejected' | 'revoked'
-  verification_documents?: Record<string, any> | null
+  status: IdentityAdminStatus
+  verification_documents?: IdentityVerificationDocument[] | Record<string, any> | null
   verified_by?: number | null
   rejection_reason?: string | null
   notes?: string | null
@@ -44,12 +55,40 @@ export interface UserWithIdentity {
 
 // For admin identity management
 export interface IdentityManagementItem extends UserIdentity {
+  verification_documents?: IdentityVerificationDocument[] | null
   user: {
     id: number
     username: string
     email?: string
     profile_picture_url?: string
+    created_at?: string
   }
+}
+
+export interface IdentityAdminCounts {
+  pending: number
+  approved: number
+  rejected: number
+  revoked: number
+  total: number
+}
+
+export interface IdentityAdminListQuery {
+  status?: IdentityAdminStatus | ''
+  identity_type_id?: number | string | ''
+  page?: number
+  per_page?: number
+  sort?: 'newest' | 'oldest' | 'priority'
+}
+
+export interface IdentityAdminListResponse {
+  success: boolean
+  requests: IdentityManagementItem[]
+  total: number
+  page: number
+  pages: number
+  per_page: number
+  counts: IdentityAdminCounts
 }
 
 // Constants matching backend

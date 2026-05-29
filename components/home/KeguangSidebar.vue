@@ -51,21 +51,18 @@ function isActive(path: string) {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink :to="getLocalePath('/forum')" :class="{ active: isActive('/forum') }">
+          <NuxtLink
+            :to="getLocalePath('/forum')"
+            :class="{ active: isActive('/forum') || isActive('/feedback') || isActive('/club') }"
+          >
             <img src="/icons/sidebar_forumlogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('nav.forum') }}</span>
+            <span class="kg-label">{{ t('nav.community') }}</span>
           </NuxtLink>
         </li>
         <li>
           <NuxtLink :to="getLocalePath('/courses')" :class="{ active: isActive('/courses') }">
             <img src="/icons/sidebar_courselogo.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.courses') }}</span>
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink :to="getLocalePath('/club')" :class="{ active: isActive('/club') }">
-            <img src="/icons/sidebar_club.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('nav.activity') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -86,6 +83,12 @@ function isActive(path: string) {
           <NuxtLink v-else :to="getLocalePath('/login')" :class="{ active: isActive('/login') }">
             <img src="/icons/sidebar_userlogo.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('actions.login') }}</span>
+          </NuxtLink>
+        </li>
+        <li v-if="isLoggedIn && user?.role_name === 'admin'">
+          <NuxtLink :to="getLocalePath('/admin')" :class="{ active: isActive('/admin') }">
+            <img src="/icons/sidebar_userlogo.svg" alt="" class="kg-icon" />
+            <span class="kg-label">{{ t('nav.admin') }}</span>
           </NuxtLink>
         </li>
 

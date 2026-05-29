@@ -46,6 +46,9 @@
   "nav": {
     "home": "首页",
     "forum": "论坛",
+    "community": "社区",
+    "feedback": "反馈",
+    "admin": "管理员",
     "courses": "课程",
     "activity": "活动",
     "teamMatching": "组队",
@@ -60,6 +63,245 @@
     "identityVerification": "身份认证",
     "themeSettings": "主题设置",
     "loggingOut": "正在退出…"
+  },
+  "community": {
+    "title": "社区",
+    "metaDescription": "浏览论坛帖子、反馈协作与社团活动，并在一个统一社区入口中切换。",
+    "sections": {
+      "forum": "论坛帖子",
+      "feedback": "反馈协作",
+      "activity": "社团活动"
+    },
+    "activity": {
+      "cta": "发布活动",
+      "badge": "社团活动",
+      "empty": "还没有公开的社团活动，先来发布第一条吧。",
+      "errors": {
+        "loadFailed": "获取社团活动失败",
+        "retryable": "获取社团活动失败，请稍后重试。"
+      }
+    }
+  },
+  "adminShell": {
+    "title": "站点管理后台",
+    "description": "统一处理反馈审核、身份认证和后续站务工具，先把入口和导航搭稳，后面的反馈审核页就能直接接进来。",
+    "nav": {
+      "overview": "概览",
+      "feedback": "反馈审核",
+      "identity": "身份认证"
+    }
+  },
+  "adminOverview": {
+    "title": "管理概览",
+    "description": "汇总当前需要处理的后台队列，并快速进入对应管理工作台。",
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中..."
+    },
+    "metrics": {
+      "pendingFeedback": "待公开反馈",
+      "pendingMerge": "待终审 Merge",
+      "pendingIdentity": "待审核身份",
+      "feedbackTotal": "已公开反馈"
+    },
+    "status": {
+      "loadFailed": "部分后台统计加载失败。",
+      "moduleError": "统计暂不可用"
+    },
+    "modulesTitle": "后台模块",
+    "cards": {
+      "feedback": {
+        "title": "反馈审核",
+        "description": "审核待公开反馈，终审作者已接受的修改提案，并管理已发布反馈的讨论状态。",
+        "action": "打开反馈审核"
+      },
+      "identity": {
+        "title": "身份认证",
+        "description": "审核待处理认证申请，并查看已认证、已拒绝或已撤销的身份记录。",
+        "action": "打开身份认证"
+      }
+    }
+  },
+  "adminIdentity": {
+    "title": "身份认证管理",
+    "description": "审核用户身份认证申请，查看历史状态，并处理需要撤销或重新判断的记录。",
+    "metrics": {
+      "pending": "待审核",
+      "approved": "已认证",
+      "rejected": "已拒绝",
+      "total": "总申请"
+    },
+    "filters": {
+      "status": "状态",
+      "type": "身份类型",
+      "sort": "排序",
+      "allStatuses": "全部状态",
+      "allTypes": "全部类型"
+    },
+    "sort": {
+      "newest": "最新申请",
+      "oldest": "最早申请",
+      "priority": "优先审核"
+    },
+    "status": {
+      "pending": "待审核",
+      "approved": "已认证",
+      "rejected": "已拒绝",
+      "revoked": "已撤销"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "selectPage": "选择本页",
+      "clearPage": "清除本页",
+      "selectOne": "选择申请",
+      "approve": "通过",
+      "reject": "拒绝",
+      "revoke": "撤销认证",
+      "bulkApprove": "批量通过 {count}",
+      "bulkReject": "批量拒绝 {count}"
+    },
+    "user": {
+      "noEmail": "未提供邮箱"
+    },
+    "requestedAt": "申请于 {date}",
+    "processed": "已处理",
+    "processedAt": "处理于 {date}",
+    "documents": {
+      "title": "证明材料",
+      "unnamed": "未命名材料",
+      "noDate": "无上传日期"
+    },
+    "notes": "申请说明：",
+    "rejectionReason": "拒绝原因：",
+    "approve": {
+      "title": "通过身份认证",
+      "message": "确定通过 {user} 的 {type} 认证申请吗？"
+    },
+    "reject": {
+      "title": "拒绝认证申请",
+      "message": "请为 {user} 的申请填写明确的拒绝原因。",
+      "reason": "拒绝原因",
+      "notes": "管理员备注（可选）"
+    },
+    "revoke": {
+      "title": "撤销身份认证",
+      "message": "确定撤销 {user} 的 {type} 认证吗？",
+      "defaultReason": "管理员撤销"
+    },
+    "bulkApprove": {
+      "title": "批量通过申请",
+      "message": "确定通过已选择的 {count} 个认证申请吗？"
+    },
+    "bulkReject": {
+      "title": "批量拒绝申请",
+      "message": "请填写拒绝已选择 {count} 个申请的统一原因。"
+    },
+    "messages": {
+      "approved": "申请已通过。",
+      "rejected": "申请已拒绝。",
+      "revoked": "认证已撤销。",
+      "bulkApproved": "已通过 {count} 个申请。",
+      "bulkRejected": "已拒绝 {count} 个申请。"
+    },
+    "errors": {
+      "title": "加载失败",
+      "loadFailed": "加载身份认证申请失败。",
+      "approveFailed": "通过申请失败。",
+      "rejectFailed": "拒绝申请失败。",
+      "revokeFailed": "撤销认证失败。",
+      "bulkFailed": "批量操作失败。"
+    },
+    "empty": {
+      "title": "暂无申请",
+      "description": "当前筛选条件下没有身份认证申请。"
+    },
+    "pagination": {
+      "label": "身份认证申请分页",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {page} / {pages} 页，共 {total} 条"
+    }
+  },
+  "adminFeedback": {
+    "title": "反馈审核工作台",
+    "description": "处理待公开反馈、作者已接受的 merge 提案，并管理已发布反馈的讨论状态。",
+    "metrics": {
+      "pendingFeedback": "待公开反馈",
+      "pendingMerge": "待终审 Merge",
+      "feedbackTotal": "反馈总数",
+      "mergeTotal": "Merge 总数"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "publish": "公开反馈",
+      "reject": "驳回",
+      "merge": "通过并合并",
+      "view": "查看详情",
+      "closeFeedback": "关闭反馈",
+      "reopenFeedback": "重新打开",
+      "endComments": "结束评论",
+      "resumeComments": "恢复评论"
+    },
+    "filters": {
+      "feedbackStatus": "反馈状态",
+      "mergeStatus": "Merge 状态",
+      "allFeedback": "全部反馈",
+      "allMerge": "全部 Merge"
+    },
+    "pendingFeedback": {
+      "title": "待公开反馈",
+      "emptyTitle": "没有待公开反馈",
+      "emptyDescription": "新的用户反馈提交后会出现在这里。"
+    },
+    "pendingMerge": {
+      "title": "待终审 Merge",
+      "emptyTitle": "没有待终审 Merge",
+      "emptyDescription": "作者接受后的修改提案会进入这里。"
+    },
+    "feedbackHistory": {
+      "title": "反馈记录"
+    },
+    "mergeHistory": {
+      "title": "Merge 记录"
+    },
+    "approveFeedback": {
+      "title": "公开反馈",
+      "message": "确定公开“{title}”吗？"
+    },
+    "rejectFeedback": {
+      "title": "驳回反馈",
+      "message": "确定驳回“{title}”吗？可在卡片备注中填写说明。"
+    },
+    "approveMerge": {
+      "title": "合并提案",
+      "message": "确定通过并合并“{title}”吗？"
+    },
+    "rejectMerge": {
+      "title": "驳回 Merge",
+      "message": "确定驳回“{title}”吗？可在卡片备注中填写说明。"
+    },
+    "messages": {
+      "feedbackApproved": "反馈已公开。",
+      "feedbackRejected": "反馈已驳回。",
+      "mergeApproved": "Merge 已合并。",
+      "mergeRejected": "Merge 已驳回。",
+      "feedbackClosed": "反馈已关闭。",
+      "feedbackReopened": "反馈已重新打开。",
+      "commentsEnded": "评论已结束。",
+      "commentsResumed": "评论已恢复。"
+    },
+    "errors": {
+      "title": "加载失败",
+      "loadFailed": "加载反馈审核工作台失败。",
+      "actionFailed": "处理反馈审核操作失败。"
+    },
+    "author": "用户 #{id}",
+    "feedbackId": "反馈 #{id}",
+    "commentsEnded": "评论已结束",
+    "emptyExcerpt": "暂无正文",
+    "notePlaceholder": "给用户或内部审核留下说明（可选）"
   },
   "footer": {
     "title": "UniKorn 科广汇",
@@ -163,6 +405,56 @@
         "uploadFailed": "上传失败，请重试",
         "removeFailed": "移除头像失败，请重试"
       }
+    }
+  },
+  "userProfile": {
+    "pageTitle": "{username} - 个人信息",
+    "metaDescription": "查看 {username} 的个人信息和统计数据",
+    "uid": "UID: {uid}",
+    "joinDate": "加入时间：{date}",
+    "actions": {
+      "edit": "编辑",
+      "save": "保存",
+      "saving": "保存..."
+    },
+    "states": {
+      "loading": "加载中...",
+      "retry": "重试",
+      "unknownDate": "未知",
+      "invalidDate": "日期格式错误",
+      "invalidUserId": "无效的用户ID"
+    },
+    "errors": {
+      "userNotFound": "用户不存在",
+      "loginRequired": "需要登录才能查看此用户信息",
+      "forbidden": "没有权限查看此用户信息",
+      "loadUserFailed": "获取用户信息失败",
+      "loadUserFailedWithStatus": "获取用户信息失败 ({status})",
+      "loadPostsFailed": "加载帖子失败",
+      "loadPostsFailedWithStatus": "加载帖子失败 ({status})",
+      "updateUsernameFailed": "更新用户名失败，请稍后重试",
+      "updateUsernameFailedWithStatus": "更新失败 ({status})"
+    },
+    "validation": {
+      "usernameRequired": "用户名不能为空",
+      "usernameTooShort": "用户名至少需要2个字符",
+      "usernameTooLong": "用户名不能超过50个字符",
+      "usernameInvalidCharacters": "用户名不能包含特殊符号"
+    },
+    "stats": {
+      "title": "数据统计",
+      "posts": "发帖数",
+      "comments": "评论数",
+      "likes": "获赞数",
+      "views": "被浏览数",
+      "score": "积分"
+    },
+    "recentPosts": {
+      "title": "最近帖子",
+      "loading": "正在加载帖子...",
+      "empty": "该用户暂时还没有发布帖子",
+      "noContent": "暂无内容",
+      "untitled": "无标题"
     }
   },
   "pwa": {
@@ -612,6 +904,189 @@
       "availableCount": "可用表情 ({count} 个)",
       "noAvailable": "暂无可用表情",
       "retryLoad": "重新获取"
+    }
+  },
+  "feedbackModule": {
+    "index": {
+      "pageTitle": "意见反馈 - UniKorn 科广汇",
+      "metaDescription": "查看公开反馈、提交新建议，并围绕已公开的反馈继续讨论与协作修改。",
+      "title": "反馈",
+      "cta": "提交反馈",
+      "filters": {
+        "public": "公开反馈 {count}",
+        "mine": "我的反馈 {count}"
+      },
+      "errors": {
+        "publicLoadFailed": "加载公开反馈失败。",
+        "myLoadFailed": "加载我的反馈失败。"
+      },
+      "emptyStates": {
+        "public": "暂时还没有公开反馈。",
+        "mineTitle": "你还没有提交过反馈",
+        "mineHint": "如果最近在站内遇到体验问题，或者有想补充的新功能，现在就可以直接提交。"
+      }
+    },
+    "card": {
+      "emptyExcerpt": "这条反馈还没有正文。",
+      "authorFallback": "用户 #{id}",
+      "author": "反馈人：{author}",
+      "version": "版本 {count}",
+      "comments": "{count} 条评论",
+      "mergeRequests": "{count} 个协作提案"
+    },
+    "create": {
+      "pageTitle": "提交反馈 - UniKorn 科广汇",
+      "metaDescription": "提交新的意见反馈，帮助 UniKorn 持续改进站内体验。",
+      "back": "返回反馈列表",
+      "title": "提交建议反馈",
+      "subtitle": "把问题描述清楚、把背景写完整，会让后续审核和协作修改都更顺畅。",
+      "noteTitle": "提交前提醒",
+      "noteBody": "你的反馈会先进入待审核队列。管理员确认内容适合公开后，它才会出现在反馈列表中，后续也会保留评论和版本记录。",
+      "tips": {
+        "context": "尽量写清楚问题出现的场景、入口和预期行为。",
+        "impact": "如果影响了使用体验，可以补充受影响的人群或频率。",
+        "followUp": "公开后其他同学可以评论或发起协作提案，一起把正文补充完整。"
+      }
+    },
+    "form": {
+      "titleLabel": "反馈标题",
+      "titlePlaceholder": "一句话概括你想反馈的问题",
+      "contentLabel": "反馈正文（Markdown）",
+      "contentHint": "建议补充背景、问题现象、理想结果和可选方案，方便后续审核与讨论。",
+      "submit": "提交反馈",
+      "submitting": "提交中...",
+      "titleRequired": "请输入反馈标题。",
+      "contentRequired": "请输入反馈正文。",
+      "submitFailed": "提交失败，请稍后重试。"
+    },
+    "status": {
+      "published": "公开中",
+      "closed": "已关闭",
+      "pending_review": "待审核",
+      "rejected": "未通过"
+    },
+    "api": {
+      "listFailed": "获取反馈列表失败。",
+      "listMineFailed": "获取我的反馈失败。",
+      "detailFailed": "获取反馈详情失败。",
+      "versionsFailed": "获取版本历史失败。",
+      "createFailed": "提交反馈失败。",
+      "commentCreateFailed": "发布评论失败。",
+      "mergeRequestCreateFailed": "发起协作提案失败。",
+      "mergeRequestDetailFailed": "获取协作提案详情失败。",
+      "mergeRequestUpdateFailed": "更新协作提案正文失败。",
+      "mergeCommentCreateFailed": "发布协作讨论评论失败。",
+      "authorRequestChangesFailed": "要求继续修改失败。",
+      "authorRejectFailed": "拒绝协作提案失败。",
+      "authorAcceptFailed": "提交管理员终审失败。"
+    },
+    "adminApi": {
+      "listFeedbacksFailed": "获取反馈记录失败。",
+      "listPendingFeedbackFailed": "获取待审核反馈失败。",
+      "listMergeRequestsFailed": "获取协作提案记录失败。",
+      "listPendingMergeRequestsFailed": "获取待终审协作提案失败。",
+      "approveFeedbackFailed": "公开反馈失败。",
+      "rejectFeedbackFailed": "驳回反馈失败。",
+      "closeFeedbackFailed": "关闭反馈失败。",
+      "reopenFeedbackFailed": "重新打开反馈失败。",
+      "endCommentsFailed": "结束评论失败。",
+      "resumeCommentsFailed": "恢复评论失败。",
+      "approveMergeRequestFailed": "通过协作提案失败。",
+      "rejectMergeRequestFailed": "驳回协作提案失败。",
+      "hideCommentFailed": "隐藏评论失败。"
+    },
+    "comments": {
+      "title": "评论区",
+      "closed": "该反馈评论已结束",
+      "placeholder": "写下你对这条反馈的想法...",
+      "disabledPlaceholder": "评论功能已关闭",
+      "submit": "发表评论",
+      "login": "登录后可以参与这条反馈的讨论。",
+      "empty": "还没有评论，来发第一条吧。",
+      "hidden": "该评论因管理原因已被隐藏。",
+      "hiddenNote": "该评论已被管理员处理。",
+      "userFallback": "用户 #{id}"
+    },
+    "versionHistory": {
+      "title": "版本历史",
+      "version": "V{count}",
+      "empty": "还没有历史版本。"
+    },
+    "detail": {
+      "pageTitle": "反馈详情 - UniKorn 科广汇",
+      "metaDescription": "查看反馈正文、版本历史、协作提案与评论讨论。",
+      "back": "返回反馈分区",
+      "subtitle": "这里收录当前正文、协作提案和评论讨论，方便大家围绕同一条反馈持续补充和修改。",
+      "updatedAt": "最后更新于 {date}",
+      "currentBodyTitle": "当前正文",
+      "currentBodyHint": "这是当前对外展示的反馈正文版本，后续接受的协作提案会继续沉淀到这里。",
+      "mergeTitle": "公开协作提案",
+      "mergeHint": "发起后会公开展示，反馈作者可在此基础上继续修改，并决定是否提交管理员终审。",
+      "noMerges": "还没有协作提案。",
+      "mergeSummaryLabel": "变更摘要",
+      "mergeSummaryPlaceholder": "一句话概括你想改什么",
+      "mergeBodyLabel": "协作提案正文（默认带出原文 Markdown）",
+      "mergeSubmit": "发起协作提案",
+      "mergeSubmitting": "提交中...",
+      "mergeSuccess": "协作提案已经发出，反馈作者后续会收到通知。",
+      "mergeLogin": "登录后可以发起协作提案。",
+      "sidebarTitle": "反馈概览",
+      "feedbackId": "反馈编号",
+      "statusLabel": "当前状态",
+      "versionCountLabel": "版本数",
+      "commentCountLabel": "评论数",
+      "errors": {
+        "loadFailed": "加载反馈详情失败。",
+        "commentFailed": "发表评论失败。",
+        "mergeBodyRequired": "请输入协作提案正文。",
+        "mergeSubmitFailed": "发起协作提案失败。"
+      }
+    },
+    "mergeRequest": {
+      "pageTitle": "协作提案详情 - UniKorn 科广汇",
+      "metaDescription": "查看协作提案正文、作者处理状态和讨论记录。",
+      "back": "返回反馈详情",
+      "feedbackLinkLabel": "来自反馈 #{id}",
+      "summaryFallback": "这条协作提案没有额外摘要。",
+      "proposer": "提案人：用户 #{id}",
+      "baseVersion": "基于版本：V{version}",
+      "bodyTitle": "提案正文",
+      "bodyHint": "所有更改都会以这条协作提案为单位留痕，作者接受后再进入管理员终审。",
+      "reviewTitle": "作者处理区",
+      "reviewHint": "你可以先继续修改这条提案正文，再决定要求修改、拒绝，或提交管理员终审。",
+      "notePlaceholder": "给提案人或管理员留下一句说明（可选）",
+      "saveDraft": "先保存正文",
+      "saving": "处理中...",
+      "requestChanges": "要求修改",
+      "reject": "拒绝",
+      "submitForAdmin": "提交管理员终审",
+      "sidebarTitle": "提案状态",
+      "statusLabel": "当前状态",
+      "createdAt": "创建于：{date}",
+      "authorNote": "作者说明：{note}",
+      "adminNote": "管理员说明：{note}",
+      "backToHub": "返回反馈分区",
+      "status": {
+        "open": "讨论中",
+        "author_changes_requested": "作者要求修改",
+        "author_rejected": "作者已拒绝",
+        "author_accepted_pending_admin": "待管理员终审",
+        "admin_rejected": "管理员已拒绝",
+        "merged": "已合并",
+        "withdrawn": "已撤回"
+      },
+      "success": {
+        "draftSaved": "提案正文已更新。",
+        "requestChanges": "已要求继续修改这条协作提案。",
+        "rejected": "你已经拒绝这条协作提案。",
+        "submittedForAdmin": "这条协作提案已提交给管理员终审。"
+      },
+      "errors": {
+        "loadFailed": "加载协作提案详情失败。",
+        "saveFailed": "保存提案正文失败。",
+        "actionFailed": "处理协作提案失败。",
+        "commentFailed": "发布讨论评论失败。"
+      }
     }
   },
   "home": "首页",

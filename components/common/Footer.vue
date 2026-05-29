@@ -25,8 +25,13 @@
             <h4 class="section-title">{{ t("footer.navigation") }}</h4>
             <div class="link-row">
               <NuxtLink :to="getLocalePath('/')">{{ t("nav.home") }}</NuxtLink>
-              <NuxtLink :to="getLocalePath('/forum')">{{ t("nav.forum") }}</NuxtLink>
-              <NuxtLink :to="getLocalePath('/club')">{{ t("nav.activity") }}</NuxtLink>
+              <NuxtLink :to="getLocalePath('/forum')">{{ t("nav.community") }}</NuxtLink>
+              <NuxtLink :to="{ path: getLocalePath('/forum'), query: { section: 'feedback' } }">
+                {{ t("nav.feedback") }}
+              </NuxtLink>
+              <NuxtLink :to="{ path: getLocalePath('/forum'), query: { section: 'activity' } }">
+                {{ t("nav.activity") }}
+              </NuxtLink>
               <NuxtLink :to="getLocalePath('/courses')">{{ t("nav.courses") }}</NuxtLink>
             </div>
           </div>
