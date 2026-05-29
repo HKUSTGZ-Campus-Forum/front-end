@@ -50,6 +50,7 @@
     "feedback": "反馈",
     "admin": "管理员",
     "courses": "课程",
+    "academicMap": "学业地图",
     "activity": "活动",
     "teamMatching": "组队",
     "users": "用户",
@@ -723,6 +724,111 @@
       "summer": "夏",
       "fall": "秋",
       "winter": "冬"
+    }
+  },
+  "academicMap": {
+    "metaTitle": "学业地图 - UniKorn",
+    "eyebrow": "Academic Map",
+    "title": "学业地图",
+    "subtitle": "先把已修课程、在修/计划课程、目标专业和隐私成绩整理成一张清晰的状态图，为之后的个性化课程规划推荐准备可靠数据。",
+    "openCourses": "去课程评价",
+    "loading": "正在加载学业状态...",
+    "cohort": "入学年份",
+    "units": "学分",
+    "login": {
+      "title": "登录后维护你的学业地图",
+      "copy": "这些信息只属于你。课程记录和成绩不会公开展示，后续会用于更精准的学业规划建议。"
+    },
+    "targetMajors": {
+      "title": "目标专业",
+      "copy": "你可以随时调整想预选或正在比较的专业，这会帮助之后的规划系统理解你的方向变化。",
+      "label": "想选的专业",
+      "limit": "最多同时保留 3 个方向，之后可随时改。"
+    },
+    "metrics": {
+      "totalCredits": "总学分要求",
+      "minimum": "最低 {count}",
+      "activeCredits": "已修、在修、计划共 {count} 学分",
+      "mapCompleteness": "地图完整度",
+      "mapCompletenessCopy": "用于判断后续规划建议是否有足够上下文",
+      "importedCourses": "已维护课程",
+      "importedCoursesCopy": "来自粘贴导入或手动确认的课程记录",
+      "unmetRequirements": "需要确认",
+      "unmetRequirementsCopy": "缺少成绩、未匹配课程库或状态待确认"
+    },
+    "import": {
+      "title": "导入 Course History",
+      "copy": "从学校系统复制课程表格文字粘贴到这里，先预览确认，再保存到你的私密学业地图。",
+      "placeholder": "粘贴类似：AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
+      "parse": "解析",
+      "parsing": "解析中...",
+      "save": "保存课程",
+      "saving": "保存中...",
+      "keepGrades": "保留私密成绩",
+      "keepGradesCopy": "成绩只有你自己可见，也可以随时一键删除。保留它能帮助之后判断课程难度、补强方向和个性化规划。",
+      "previewTitle": "预览 {count} 门课程",
+      "courseTitle": "课程名称",
+      "noTerm": "未填写学期",
+      "remove": "移除课程",
+      "needsReview": "这门课需要你确认状态或匹配结果。"
+    },
+    "status": {
+      "completed": "已修",
+      "in_progress": "在修",
+      "planned": "计划",
+      "interested": "感兴趣",
+      "not_interested": "不考虑"
+    },
+    "privacy": {
+      "title": "成绩隐私",
+      "copy": "成绩默认不会公开展示。你可以保留用于后续推荐，也可以现在或之后删除。",
+      "deleteGrades": "删除所有成绩",
+      "deleting": "删除中..."
+    },
+    "future": {
+      "title": "为未来规划系统收集的信号",
+      "copy": "当前版本不做推荐，重点是低负担地建立状态图。",
+      "signals": {
+        "courseHistory": "已修/在修记录",
+        "targetMajors": "目标专业变化",
+        "statusIntent": "计划与兴趣",
+        "privateGrades": "私密成绩"
+      }
+    },
+    "records": {
+      "title": "课程状态库",
+      "copy": "把每门课标成已修、在修、计划或感兴趣，之后系统才能理解你真正的学业路径。",
+      "empty": "还没有课程记录。先从 Course History 粘贴导入一批课程吧。",
+      "noTerm": "未分配学期",
+      "untitled": "未填写课程名称",
+      "privateGrade": "私密成绩 {grade}",
+      "delete": "删除课程"
+    },
+    "messages": {
+      "profileSaved": "目标专业已更新。",
+      "parsed": "已解析 {count} 条课程记录，请确认后保存。",
+      "importSaved": "课程记录已保存。",
+      "recordDeleted": "课程记录已删除。",
+      "gradesDeleted": "已删除 {count} 条成绩记录。"
+    },
+    "errors": {
+      "load": "学业地图加载失败，请稍后重试。",
+      "profile": "保存目标专业失败，请稍后重试。",
+      "parse": "解析失败，请检查粘贴内容。",
+      "importSave": "保存课程记录失败，请稍后重试。",
+      "record": "更新课程记录失败，请稍后重试。",
+      "grades": "删除成绩失败，请稍后重试。"
+    },
+    "coursesCta": {
+      "title": "把课程评价和学业地图连起来",
+      "copy": "查课时可以顺手打开学业地图，把想修、在修、已修的状态维护起来。",
+      "action": "打开学业地图"
+    },
+    "courseDetail": {
+      "title": "加入我的学业地图",
+      "copy": "把这门课标成计划或感兴趣，之后会成为规划推荐的上下文。",
+      "saved": "已更新到学业地图。",
+      "saveFailed": "更新学业地图失败，请稍后重试。"
     }
   },
   "matching": {

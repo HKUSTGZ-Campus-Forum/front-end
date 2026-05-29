@@ -66,6 +66,12 @@ function isActive(path: string) {
           </NuxtLink>
         </li>
         <li>
+          <NuxtLink :to="getLocalePath('/academic-map')" :class="{ active: isActive('/academic-map') }">
+            <img src="/icons/sidebar_courselogo.svg" alt="" class="kg-icon" />
+            <span class="kg-label">{{ t('nav.academicMap') }}</span>
+          </NuxtLink>
+        </li>
+        <li>
           <NuxtLink :to="getLocalePath('/matching')" :class="{ active: isActive('/matching') }">
             <img src="/icons/sidebar_matching.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.teamMatching') }}</span>

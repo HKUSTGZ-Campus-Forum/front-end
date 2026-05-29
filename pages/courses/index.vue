@@ -205,6 +205,16 @@ onMounted(() => { fetchFiltersData(); });
       <p class="kg-page-subtitle">{{ t("courses.subtitle") }}</p>
     </div>
 
+    <div class="kg-card kg-academic-map-cta">
+      <div>
+        <h2>{{ t("academicMap.coursesCta.title") }}</h2>
+        <p>{{ t("academicMap.coursesCta.copy") }}</p>
+      </div>
+      <NuxtLink :to="getLocalePath('/academic-map')" class="kg-cta-btn">
+        {{ t("academicMap.coursesCta.action") }}
+      </NuxtLink>
+    </div>
+
     <div class="kg-card kg-filters">
       <input
         v-model="searchQuery"
@@ -341,6 +351,47 @@ onMounted(() => { fetchFiltersData(); });
 .kg-filters {
   padding: 16px 20px 18px;
   margin-bottom: 20px;
+}
+
+.kg-academic-map-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+
+  h2 {
+    color: #1a2a4a;
+    font-size: 1rem;
+    margin: 0 0 4px;
+  }
+
+  p {
+    color: #4a6080;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+}
+
+.kg-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #26a4ff;
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #1178c8;
+  }
 }
 
 .kg-search-input {
@@ -570,5 +621,12 @@ onMounted(() => { fetchFiltersData(); });
   border-radius: 10px;
   &.active { background: rgba(38, 220, 120, 0.12); color: #1a9a55; }
   &.inactive { background: rgba(160, 160, 160, 0.12); color: #888; }
+}
+
+@media (max-width: 720px) {
+  .kg-academic-map-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>

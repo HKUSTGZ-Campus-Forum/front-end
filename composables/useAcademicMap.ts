@@ -49,6 +49,13 @@ export function useAcademicMap() {
     return await response.json() as { record: AcademicCourseRecord }
   }
 
+  const deleteRecord = async (recordId: number) => {
+    const response = await fetchWithAuth(getApiUrl(`/api/academic-map/records/${recordId}`), {
+      method: 'DELETE',
+    })
+    if (!response.ok) throw new Error('Failed to delete course record')
+  }
+
   const deleteGrades = async () => {
     const response = await fetchWithAuth(getApiUrl('/api/academic-map/grades'), {
       method: 'DELETE',
@@ -63,6 +70,7 @@ export function useAcademicMap() {
     updateProfile,
     saveImportedRecords,
     updateRecord,
+    deleteRecord,
     deleteGrades,
   }
 }

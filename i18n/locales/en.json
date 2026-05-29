@@ -50,6 +50,7 @@
     "feedback": "Feedback",
     "admin": "Admin",
     "courses": "Courses",
+    "academicMap": "Academic Map",
     "activity": "Activities",
     "teamMatching": "Form a team",
     "users": "Users",
@@ -723,6 +724,111 @@
       "summer": "Summer",
       "fall": "Fall",
       "winter": "Winter"
+    }
+  },
+  "academicMap": {
+    "metaTitle": "Academic Map - UniKorn",
+    "eyebrow": "Academic Map",
+    "title": "Academic Map",
+    "subtitle": "Turn completed courses, in-progress or planned courses, target majors, and optional private grades into a clear academic state map for future personalized planning.",
+    "openCourses": "Go to course reviews",
+    "loading": "Loading academic state...",
+    "cohort": "Cohort",
+    "units": "credits",
+    "login": {
+      "title": "Log in to maintain your Academic Map",
+      "copy": "This information belongs to you. Course records and grades are not public, and they will help future planning suggestions become more precise."
+    },
+    "targetMajors": {
+      "title": "Target majors",
+      "copy": "You can adjust the majors you are considering at any time so the future planning system understands how your direction changes.",
+      "label": "Majors to compare",
+      "limit": "Keep up to 3 directions at once. You can change them anytime."
+    },
+    "metrics": {
+      "totalCredits": "Total credit requirement",
+      "minimum": "min. {count}",
+      "activeCredits": "{count} credits completed, in progress, or planned",
+      "mapCompleteness": "Map completeness",
+      "mapCompletenessCopy": "Shows whether future planning has enough context",
+      "importedCourses": "Maintained courses",
+      "importedCoursesCopy": "Course records from paste import or manual confirmation",
+      "unmetRequirements": "Needs review",
+      "unmetRequirementsCopy": "Missing grades, unmatched courses, or statuses to confirm"
+    },
+    "import": {
+      "title": "Import Course History",
+      "copy": "Paste the copied text from your school course history, preview the parsed rows, then save them to your private Academic Map.",
+      "placeholder": "Paste something like: AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
+      "parse": "Parse",
+      "parsing": "Parsing...",
+      "save": "Save courses",
+      "saving": "Saving...",
+      "keepGrades": "Keep private grades",
+      "keepGradesCopy": "Grades are visible only to you and can be deleted anytime. Keeping them helps future planning reason about difficulty, strengths, and gaps.",
+      "previewTitle": "Preview {count} courses",
+      "courseTitle": "Course title",
+      "noTerm": "No term",
+      "remove": "Remove course",
+      "needsReview": "This course needs your confirmation."
+    },
+    "status": {
+      "completed": "Completed",
+      "in_progress": "In progress",
+      "planned": "Planned",
+      "interested": "Interested",
+      "not_interested": "Not interested"
+    },
+    "privacy": {
+      "title": "Grade privacy",
+      "copy": "Grades are never shown publicly. You can keep them for future recommendations or delete them now or later.",
+      "deleteGrades": "Delete all grades",
+      "deleting": "Deleting..."
+    },
+    "future": {
+      "title": "Signals for future planning",
+      "copy": "This version does not recommend courses yet. It focuses on building the state map with low effort.",
+      "signals": {
+        "courseHistory": "Course history",
+        "targetMajors": "Target major changes",
+        "statusIntent": "Plans and interest",
+        "privateGrades": "Private grades"
+      }
+    },
+    "records": {
+      "title": "Course status library",
+      "copy": "Mark each course as completed, in progress, planned, or interested so the system can understand your real academic path later.",
+      "empty": "No course records yet. Paste your Course History to import a first batch.",
+      "noTerm": "No term",
+      "untitled": "Untitled course",
+      "privateGrade": "Private grade {grade}",
+      "delete": "Delete course"
+    },
+    "messages": {
+      "profileSaved": "Target majors updated.",
+      "parsed": "Parsed {count} course records. Review and save them when ready.",
+      "importSaved": "Course records saved.",
+      "recordDeleted": "Course record deleted.",
+      "gradesDeleted": "Deleted grades from {count} records."
+    },
+    "errors": {
+      "load": "Failed to load Academic Map. Please try again later.",
+      "profile": "Failed to save target majors. Please try again later.",
+      "parse": "Failed to parse the pasted content.",
+      "importSave": "Failed to save course records. Please try again later.",
+      "record": "Failed to update the course record. Please try again later.",
+      "grades": "Failed to delete grades. Please try again later."
+    },
+    "coursesCta": {
+      "title": "Connect course reviews with your Academic Map",
+      "copy": "While browsing courses, open Academic Map to keep completed, in-progress, planned, and interested courses organized.",
+      "action": "Open Academic Map"
+    },
+    "courseDetail": {
+      "title": "Add to my Academic Map",
+      "copy": "Mark this course as planned or interested so it becomes planning context later.",
+      "saved": "Updated in Academic Map.",
+      "saveFailed": "Failed to update Academic Map. Please try again later."
     }
   },
   "matching": {
