@@ -239,7 +239,7 @@ const cellTitle = (cell: AcademicRequirementCell) => cell.title || t('academicMa
 }
 
 .am-cell-cloud {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
 .am-mini-cell,

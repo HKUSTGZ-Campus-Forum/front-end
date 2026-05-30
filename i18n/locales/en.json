@@ -730,7 +730,6 @@
     "metaTitle": "Academic Map - UniKorn",
     "eyebrow": "Academic Map",
     "title": "Academic Map",
-    "subtitle": "Turn completed courses, in-progress or planned courses, target majors, and optional private grades into a clear academic state map for future personalized planning.",
     "openCourses": "Go to course reviews",
     "loading": "Loading academic state...",
     "cohort": "Cohort",
@@ -741,27 +740,28 @@
     },
     "targetMajors": {
       "title": "Target majors",
-      "copy": "You can adjust the majors you are considering at any time so the future planning system understands how your direction changes.",
-      "label": "Majors to compare",
-      "limit": "Keep up to 3 directions at once. You can change them anytime."
+      "label": "Intended majors (multi-select)"
     },
     "metrics": {
       "totalCredits": "Total credit requirement",
-      "minimum": "min. {count}",
+      "minimum": "{count}",
       "activeCredits": "{count} credits completed, in progress, or planned",
-      "completedCredits": "{count} credits completed; minimums may be exceeded",
+      "completedCredits": "{completed} completed, {inProgress} in progress this term",
       "mapCompleteness": "Map completeness",
       "mapCompletenessCopy": "Shows whether future planning has enough context",
       "importedCourses": "Maintained courses",
       "importedCoursesCopy": "Course records from paste import or manual confirmation",
       "unmetRequirements": "Needs review",
       "unmetRequirementsCopy": "Missing grades, unmatched courses, or statuses to confirm",
-      "prerequisites": "Prerequisite unlocks / blockers",
-      "prerequisitesCopy": "{unlocked} downstream courses unlocked, {blocked} target courses blocked",
+      "prerequisites": "Prerequisite blockers",
+      "prerequisitesCopy": "{blocked} target courses have prerequisite blockers",
+      "prerequisitesNeedsTarget": "Choose a cohort and target major before checking prerequisite blockers",
       "ocga": "OCGA",
       "ocgaCopy": "Calculated after grades are uploaded; visible only to you",
       "mcga": "MCGA · {major}",
-      "mcgaCopy": "Estimated from courses counted toward the active major",
+      "mcgaCopy": "Calculated after grades are uploaded; visible only to you",
+      "mcgaNeedsTarget": "Choose a target major before calculating Major CGA",
+      "selectTarget": "Choose target",
       "notUploaded": "Not uploaded"
     },
     "import": {
@@ -808,7 +808,6 @@
     },
     "requirements": {
       "title": "Requirement Matrix",
-      "copy": "Review what is covered, in motion, and still missing for the active major.",
       "empty": "Choose a cohort and target major to show the requirement matrix here.",
       "emptyMissingProfile": "Choose a cohort and target major to generate the requirement matrix.",
       "emptyMissingCatalog": "The backend does not have requirement data for this cohort/major yet. Sync the curriculum requirement materials first.",
@@ -816,10 +815,21 @@
       "more": "+{count} more",
       "unknownTitle": "Course title to confirm",
       "noProgress": "To confirm",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "drawerCopy": "Current progress: {progress}.",
+      "sectionProgress": "Progress {progress}",
+      "sectionProgressWithCredits": "Progress {progress} / at least {credits} credits",
+      "sectionKinds": {
+        "required": "Required",
+        "choice": "Choice",
+        "elective": "Elective"
+      },
       "status": {
         "now": "In progress / planned",
         "done": "Completed",
         "need": "Not covered",
+        "choice": "Candidate",
         "more": "Show more"
       }
     },
@@ -831,8 +841,8 @@
       "ocgaRule": "Overall CGA: equally weighted average of all grade-point courses.",
       "mcgaRule": "Major CGA: equally weighted estimate from courses counted toward the active major.",
       "gradePrivacy": "Grades are not shown publicly and can be deleted anytime. Without uploaded grades, these cards show Not uploaded.",
-      "prerequisitesTitle": "Prerequisite unlocks / blockers",
-      "prerequisitesCopy": "{unlocked} downstream courses are unlocked and {blocked} target courses still have blockers.",
+      "prerequisitesTitle": "Prerequisite blockers",
+      "prerequisitesCopy": "{blocked} target courses have prerequisite blockers.",
       "noBlockers": "No priority prerequisite blockers right now.",
       "missing": "Missing prerequisites:",
       "rowCopy": "Current progress: {progress}. This panel shows the full course pool for the row.",

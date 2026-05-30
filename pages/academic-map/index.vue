@@ -3,7 +3,6 @@ import type {
   AcademicCourseRecord,
   AcademicMapSummary,
   AcademicProfile,
-  AcademicRequirementRow,
 } from '~/types/academic-map'
 
 definePageMeta({ layout: 'keguang' })
@@ -30,11 +29,8 @@ const isSavingImport = ref(false)
 const isClearingGrades = ref(false)
 const isClearingMap = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
 const importRef = ref<InstanceType<typeof AcademicMapCourseHistoryImport> | null>(null)
 const activeMajor = ref<string | null>(null)
-const selectedRequirementRow = ref<AcademicRequirementRow | null>(null)
-const selectedDetail = ref<'prerequisites' | 'grades' | null>(null)
 
 const records = computed(() => summary.value?.records || [])
 const profile = computed<AcademicProfile>(() => summary.value?.profile || {
@@ -53,27 +49,26 @@ const groupedRecords = computed(() => {
 })
 
 watch(summary, value => {
-  const firstMajor = value?.requirement_matrix?.[0]?.program_code || null
+  const targetMajors = value?.profile?.target_majors || []
+  if (!targetMajors.length) {
+    activeMajor.value = value?.requirement_matrix?.[0]?.program_code || null
+    return
+  }
+  const firstMajor = targetMajors[0] || value?.requirement_matrix?.[0]?.program_code || null
   if (!activeMajor.value && firstMajor) {
     activeMajor.value = firstMajor
   }
-  if (
-    activeMajor.value
-    && value?.requirement_matrix?.length
-    && !value.requirement_matrix.some(matrix => matrix.program_code === activeMajor.value)
-  ) {
+  if (activeMajor.value && targetMajors.length && !targetMajors.includes(activeMajor.value)) {
     activeMajor.value = firstMajor
   }
 })
 
-const setMessage = (message = '') => {
-  successMessage.value = message
+const setMessage = (_message = '') => {
   errorMessage.value = ''
 }
 
 const setError = (message: string) => {
   errorMessage.value = message
-  successMessage.value = ''
 }
 
 const loadSummary = async () => {
@@ -88,12 +83,16 @@ const loadSummary = async () => {
   }
 }
 
-const handleProfileSave = async (payload: Partial<AcademicProfile>) => {
+const handleProfileSave = async (payload: Partial<AcademicProfile> & { focus_major?: string | null }) => {
   try {
     isSavingProfile.value = true
-    await updateProfile(payload)
+    const { focus_major: focusMajor, ...profilePayload } = payload
+    await updateProfile(profilePayload)
     await loadSummary()
-    setMessage(t('academicMap.messages.profileSaved'))
+    if (focusMajor !== undefined) {
+      activeMajor.value = focusMajor
+    }
+    setMessage()
   } catch (error) {
     setError(t('academicMap.errors.profile'))
   } finally {
@@ -175,20 +174,8 @@ const handleClearRecords = async () => {
   }
 }
 
-const handleSelectRow = (row: AcademicRequirementRow) => {
-  selectedRequirementRow.value = row
-  selectedDetail.value = null
-}
-
-const handleSelectDetail = (detail: 'prerequisites' | 'grades') => {
-  selectedDetail.value = detail
-  selectedRequirementRow.value = null
-}
-
 const handleSelectMajor = (major: string) => {
   activeMajor.value = major
-  selectedRequirementRow.value = null
-  selectedDetail.value = null
 }
 
 onMounted(loadSummary)
@@ -202,9 +189,7 @@ useHead({
   <div class="am-page">
     <header class="am-hero">
       <div>
-        <p class="am-eyebrow">{{ t('academicMap.eyebrow') }}</p>
         <h1>{{ t('academicMap.title') }}</h1>
-        <p>{{ t('academicMap.subtitle') }}</p>
       </div>
       <NuxtLink :to="getLocalePath('/courses')" class="am-ghost-link">
         {{ t('academicMap.openCourses') }}
@@ -220,8 +205,8 @@ useHead({
     </div>
 
     <template v-else>
-      <div v-if="errorMessage || successMessage" class="am-message" :class="{ 'am-message--error': errorMessage }">
-        {{ errorMessage || successMessage }}
+      <div v-if="errorMessage" class="am-message am-message--error">
+        {{ errorMessage }}
       </div>
 
       <div v-if="isLoading && !summary" class="am-loading">
@@ -230,71 +215,30 @@ useHead({
       </div>
 
       <template v-else>
-        <AcademicMapAcademicProgressCards :summary="summary" @select-detail="handleSelectDetail" />
+        <AcademicMapTargetMajorEditor
+          :cohort="profile.cohort"
+          :target-majors="profile.target_majors"
+          :saving="isSavingProfile"
+          @save="handleProfileSave"
+        />
 
-        <div class="am-main-grid">
-          <div class="am-stack">
-            <AcademicMapRequirementMatrix
-              :matrices="summary?.requirement_matrix || []"
-              :active-major="activeMajor"
-              :profile="profile"
-              @select-major="handleSelectMajor"
-              @select-row="handleSelectRow"
-            />
+        <AcademicMapAcademicProgressCards :summary="summary" :active-major="activeMajor" />
 
-            <AcademicMapCourseHistoryImport
-              ref="importRef"
-              :parsing="isParsing"
-              :saving="isSavingImport"
-              @parse="handleParse"
-              @save="handleImportSave"
-            />
-          </div>
+        <div class="am-stack am-content-flow">
+          <AcademicMapRequirementMatrix
+            :matrices="summary?.requirement_matrix || []"
+            :active-major="activeMajor"
+            :profile="profile"
+            @select-major="handleSelectMajor"
+          />
 
-          <aside class="am-stack">
-            <AcademicMapRequirementDetailPanel
-              :summary="summary"
-              :selected-row="selectedRequirementRow"
-              :selected-detail="selectedDetail"
-            />
-
-            <AcademicMapTargetMajorEditor
-              :cohort="profile.cohort"
-              :target-majors="profile.target_majors"
-              :saving="isSavingProfile"
-              @save="handleProfileSave"
-            />
-
-            <section class="am-card">
-              <div class="am-section-head">
-                <div>
-                  <h2>{{ t('academicMap.privacy.title') }}</h2>
-                  <p>{{ t('academicMap.privacy.copy') }}</p>
-                </div>
-              </div>
-              <button class="am-outline-btn" :disabled="isClearingGrades" type="button" @click="handleDeleteGrades">
-                {{ isClearingGrades ? t('academicMap.privacy.deleting') : t('academicMap.privacy.deleteGrades') }}
-              </button>
-              <button class="am-outline-btn am-outline-btn--danger" :disabled="isClearingMap" type="button" @click="handleClearRecords">
-                {{ isClearingMap ? t('academicMap.privacy.clearingMap') : t('academicMap.privacy.clearMap') }}
-              </button>
-            </section>
-
-            <section class="am-card">
-              <div class="am-section-head">
-                <div>
-                  <h2>{{ t('academicMap.future.title') }}</h2>
-                  <p>{{ t('academicMap.future.copy') }}</p>
-                </div>
-              </div>
-              <div class="am-signal-list">
-                <span>{{ t('academicMap.future.signals.courseHistory') }}</span>
-                <span>{{ t('academicMap.future.signals.targetMajors') }}</span>
-                <span>{{ t('academicMap.future.signals.statusIntent') }}</span>
-                <span>{{ t('academicMap.future.signals.privateGrades') }}</span>
-              </div>
-            </section>
-          </aside>
+          <AcademicMapCourseHistoryImport
+            ref="importRef"
+            :parsing="isParsing"
+            :saving="isSavingImport"
+            @parse="handleParse"
+            @save="handleImportSave"
+          />
         </div>
 
         <section class="am-card am-records">
@@ -302,6 +246,14 @@ useHead({
             <div>
               <h2>{{ t('academicMap.records.title') }}</h2>
               <p>{{ t('academicMap.records.copy') }}</p>
+            </div>
+            <div class="am-records-tools">
+              <button class="am-outline-btn" :disabled="isClearingGrades" type="button" @click="handleDeleteGrades">
+                {{ isClearingGrades ? t('academicMap.privacy.deleting') : t('academicMap.privacy.deleteGrades') }}
+              </button>
+              <button class="am-outline-btn am-outline-btn--danger" :disabled="isClearingMap" type="button" @click="handleClearRecords">
+                {{ isClearingMap ? t('academicMap.privacy.clearingMap') : t('academicMap.privacy.clearMap') }}
+              </button>
             </div>
           </div>
 
@@ -369,13 +321,6 @@ useHead({
   }
 }
 
-.am-eyebrow {
-  color: var(--interactive-active);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
 .am-card {
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
@@ -384,17 +329,14 @@ useHead({
   padding: 18px;
 }
 
-.am-main-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.7fr);
-  gap: 16px;
-  margin-top: 16px;
-}
-
 .am-stack {
   display: grid;
   gap: 16px;
   align-content: start;
+}
+
+.am-content-flow {
+  margin-top: 16px;
 }
 
 .am-section-head {
@@ -514,23 +456,16 @@ useHead({
   }
 }
 
-.am-signal-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  span {
-    border: 1px solid var(--border-primary);
-    border-radius: 999px;
-    color: var(--text-secondary);
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 6px 10px;
-  }
-}
-
 .am-records {
   margin-top: 16px;
+}
+
+.am-records-tools {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .am-term-list {
@@ -599,7 +534,6 @@ useHead({
 
 @media (max-width: 900px) {
   .am-hero,
-  .am-main-grid,
   .am-record-row {
     grid-template-columns: 1fr;
   }
@@ -610,6 +544,10 @@ useHead({
   }
 
   .am-record-actions {
+    justify-content: flex-start;
+  }
+
+  .am-records-tools {
     justify-content: flex-start;
   }
 }

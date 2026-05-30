@@ -4,7 +4,9 @@ import type {
   AcademicRequirementCell,
   AcademicRequirementMatrix,
   AcademicRequirementRow,
+  AcademicRequirementSection,
 } from '~/types/academic-map'
+import { academicMajors } from '~/constants/academicMajors'
 
 const props = defineProps<{
   matrices: AcademicRequirementMatrix[]
@@ -14,13 +16,47 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select-major', value: string): void
-  (e: 'select-row', value: AcademicRequirementRow): void
 }>()
 
 const { locale, t } = useI18n()
+const expandedRowKey = ref<string | null>(null)
 
 const activeMatrix = computed(() => {
-  return props.matrices.find(matrix => matrix.program_code === props.activeMajor) || props.matrices[0] || null
+  if (props.activeMajor) {
+    return props.matrices.find(matrix => matrix.program_code === props.activeMajor) || null
+  }
+  return props.matrices[0] || null
+})
+
+const activeMajorCode = computed(() => {
+  return props.activeMajor || activeMatrix.value?.program_code || props.profile?.target_majors[0] || null
+})
+
+const majorTabs = computed(() => {
+  const tabs = new Map<string, { code: string; label: string; hasMatrix: boolean }>()
+  for (const major of props.profile?.target_majors || []) {
+    const matrix = props.matrices.find(item => item.program_code === major)
+    const catalogMajor = academicMajors.find(item => item.code === major)
+    tabs.set(major, {
+      code: major,
+      label: matrix
+        ? matrixTitle(matrix).replace(`${matrix.program_code} `, '')
+        : locale.value === 'zh'
+          ? catalogMajor?.nameZh || major
+          : catalogMajor?.nameEn || major,
+      hasMatrix: Boolean(matrix),
+    })
+  }
+  for (const matrix of props.matrices) {
+    if (!tabs.has(matrix.program_code)) {
+      tabs.set(matrix.program_code, {
+        code: matrix.program_code,
+        label: matrixTitle(matrix).replace(`${matrix.program_code} `, ''),
+        hasMatrix: true,
+      })
+    }
+  }
+  return Array.from(tabs.values())
 })
 
 const matrixTitle = (matrix: AcademicRequirementMatrix) => {
@@ -45,11 +81,56 @@ const cellTitle = (cell: AcademicRequirementCell) => {
   return cell.title || t('academicMap.requirements.unknownTitle')
 }
 
+const sectionLabel = (section: AcademicRequirementSection) => {
+  return locale.value === 'zh' ? section.label_zh || section.label_en : section.label_en
+}
+
+const sectionKindLabel = (section: AcademicRequirementSection) => {
+  return t(`academicMap.requirements.sectionKinds.${section.kind}`)
+}
+
+const sectionProgress = (section: AcademicRequirementSection) => {
+  const progress = section.progress_label || t('academicMap.requirements.noProgress')
+  if (section.min_credits) {
+    return t('academicMap.requirements.sectionProgressWithCredits', {
+      progress,
+      credits: section.min_credits,
+    })
+  }
+  return t('academicMap.requirements.sectionProgress', { progress })
+}
+
+const rowSections = (row: AcademicRequirementRow): AcademicRequirementSection[] => {
+  if (row.sections?.length) return row.sections
+  return [{
+    key: `${row.key}:all`,
+    kind: 'required',
+    label_en: rowTitle(row),
+    label_zh: row.name_zh,
+    required_count: row.detail.min_courses,
+    total_count: row.all_cells.length,
+    completed_count: row.all_cells.filter(cell => cell.status === 'now' || cell.status === 'done').length,
+    min_credits: row.detail.min_credits,
+    progress_label: row.progress_label,
+    cells: row.all_cells,
+  }]
+}
+
+const visibleSectionSummaries = (row: AcademicRequirementRow) => rowSections(row).slice(0, 3)
+
+const toggleRow = (row: AcademicRequirementRow) => {
+  expandedRowKey.value = expandedRowKey.value === row.key ? null : row.key
+}
+
 const emptyMessage = computed(() => {
   if (!props.profile?.cohort || !props.profile.target_majors.length) {
     return t('academicMap.requirements.emptyMissingProfile')
   }
   return t('academicMap.requirements.emptyMissingCatalog')
+})
+
+watch(activeMajorCode, () => {
+  expandedRowKey.value = null
 })
 </script>
 
@@ -58,20 +139,19 @@ const emptyMessage = computed(() => {
     <div class="am-section-head">
       <div>
         <h2>{{ t('academicMap.requirements.title') }}</h2>
-        <p>{{ t('academicMap.requirements.copy') }}</p>
       </div>
     </div>
 
-    <div v-if="matrices.length > 0" class="am-major-tabs">
+    <div v-if="majorTabs.length > 0" class="am-major-tabs">
       <button
-        v-for="matrix in matrices"
-        :key="matrix.program_code"
-        :class="['am-major-tab', { active: activeMatrix?.program_code === matrix.program_code }]"
+        v-for="tab in majorTabs"
+        :key="tab.code"
+        :class="['am-major-tab', { active: activeMajorCode === tab.code, 'is-missing': !tab.hasMatrix }]"
         type="button"
-        @click="emit('select-major', matrix.program_code)"
+        @click="emit('select-major', tab.code)"
       >
-        <strong>{{ matrix.program_code }}</strong>
-        <span>{{ matrixTitle(matrix).replace(`${matrix.program_code} `, '') }}</span>
+        <strong>{{ tab.code }}</strong>
+        <span>{{ tab.label }}</span>
       </button>
     </div>
 
@@ -83,36 +163,94 @@ const emptyMessage = computed(() => {
       <article
         v-for="row in activeMatrix.rows"
         :key="row.key"
-        class="am-requirement-row"
-        role="button"
-        tabindex="0"
-        @click="emit('select-row', row)"
-        @keydown.enter.prevent="emit('select-row', row)"
+        :class="['am-requirement-block', { 'is-expanded': expandedRowKey === row.key }]"
       >
-        <div class="am-row-copy">
-          <span class="am-category">{{ row.category }}</span>
-          <h3>{{ rowTitle(row) }}</h3>
-          <small>{{ t('academicMap.requirements.minimums', { courses: row.detail.min_courses || '-', credits: row.detail.min_credits || '-' }) }}</small>
+        <div
+          class="am-requirement-row"
+          role="button"
+          tabindex="0"
+          :aria-expanded="expandedRowKey === row.key"
+          @click="toggleRow(row)"
+          @keydown.enter.prevent="toggleRow(row)"
+        >
+          <div class="am-row-copy">
+            <span class="am-category">{{ row.category }}</span>
+            <h3>{{ rowTitle(row) }}</h3>
+            <small>{{ t('academicMap.requirements.minimums', { courses: row.detail.min_courses || '-', credits: row.detail.min_credits || '-' }) }}</small>
+          </div>
+
+          <div class="am-row-main">
+            <div class="am-section-strip">
+              <span
+                v-for="section in visibleSectionSummaries(row)"
+                :key="section.key"
+                :class="['am-section-chip', `is-${section.kind}`]"
+              >
+                <strong>{{ sectionLabel(section) }}</strong>
+                <small>{{ section.progress_label || t('academicMap.requirements.noProgress') }}</small>
+              </span>
+            </div>
+
+            <div class="am-cell-lane">
+              <button
+                v-for="(cell, index) in row.visible_cells"
+                :key="`${cell.kind}-${cell.course_code || cell.label || index}`"
+                :class="['am-course-cell', `is-${cell.status}`]"
+                type="button"
+                @click.stop="toggleRow(row)"
+              >
+                <span class="am-cell-code">{{ cellLabel(cell) }}</span>
+                <span v-if="cell.kind === 'course'" class="am-cell-title">{{ cellTitle(cell) }}</span>
+                <span v-if="cell.shared_majors && cell.shared_majors.length > 1" class="am-shared-tag">
+                  {{ cell.shared_majors.join('+') }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div class="am-progress-group">
+            <div class="am-progress-pill">
+              {{ row.progress_label || t('academicMap.requirements.noProgress') }}
+            </div>
+            <span class="am-expand-indicator">{{ expandedRowKey === row.key ? t('academicMap.requirements.collapse') : t('academicMap.requirements.expand') }}</span>
+          </div>
         </div>
 
-        <div class="am-cell-lane">
-          <button
-            v-for="(cell, index) in row.visible_cells"
-            :key="`${cell.kind}-${cell.course_code || cell.label || index}`"
-            :class="['am-course-cell', `is-${cell.status}`]"
-            type="button"
-            @click.stop="emit('select-row', row)"
-          >
-            <span class="am-cell-code">{{ cellLabel(cell) }}</span>
-            <span v-if="cell.kind === 'course'" class="am-cell-title">{{ cellTitle(cell) }}</span>
-            <span v-if="cell.shared_majors && cell.shared_majors.length > 1" class="am-shared-tag">
-              {{ cell.shared_majors.join('+') }}
-            </span>
-          </button>
-        </div>
+        <div v-if="expandedRowKey === row.key" class="am-row-drawer">
+          <div class="am-drawer-head">
+            <div>
+              <strong>{{ rowTitle(row) }}</strong>
+              <span>{{ t('academicMap.requirements.drawerCopy', { progress: row.progress_label || '-' }) }}</span>
+            </div>
+          </div>
 
-        <div class="am-progress-pill">
-          {{ row.progress_label || t('academicMap.requirements.noProgress') }}
+          <div class="am-section-list">
+            <section
+              v-for="section in rowSections(row)"
+              :key="section.key"
+              class="am-expanded-section"
+            >
+              <div class="am-expanded-section-head">
+                <div>
+                  <strong>{{ sectionLabel(section) }}</strong>
+                  <small>{{ sectionProgress(section) }}</small>
+                </div>
+                <span :class="['am-kind-badge', `is-${section.kind}`]">{{ sectionKindLabel(section) }}</span>
+              </div>
+
+              <div class="am-expanded-cell-grid">
+                <span
+                  v-for="cell in section.cells"
+                  :key="`${section.key}-${cell.course_code || cell.label}`"
+                  :class="['am-expanded-cell', `is-${cell.status}`]"
+                >
+                  <strong>{{ cellLabel(cell) }}</strong>
+                  <small>{{ cellTitle(cell) }}</small>
+                  <em v-if="cell.shared_majors && cell.shared_majors.length > 1">{{ cell.shared_majors.join('+') }}</em>
+                </span>
+              </div>
+            </section>
+          </div>
         </div>
       </article>
     </div>
@@ -189,6 +327,10 @@ const emptyMessage = computed(() => {
     border-color: var(--border-focus);
     color: var(--interactive-active);
   }
+
+  &.is-missing:not(.active) {
+    border-style: dashed;
+  }
 }
 
 .am-empty {
@@ -205,26 +347,39 @@ const emptyMessage = computed(() => {
   gap: 10px;
 }
 
-.am-requirement-row {
-  align-items: center;
+.am-requirement-block {
   border: 1px solid var(--border-primary);
   border-radius: 14px;
-  cursor: pointer;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(150px, 0.85fr) minmax(260px, 1.8fr) auto;
-  padding: 12px;
+  overflow: hidden;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease;
 
   &:hover,
-  &:focus-visible {
+  &:focus-within,
+  &.is-expanded {
     border-color: var(--interactive-primary);
     box-shadow: var(--shadow-small);
-    outline: none;
+  }
+
+  &:hover {
     transform: translateY(-1px);
+  }
+}
+
+.am-requirement-row {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(150px, 0.85fr) minmax(260px, 1.8fr) auto;
+  padding: 12px;
+  transition: background 0.2s ease;
+
+  &:focus-visible {
+    background: var(--bg-secondary);
+    outline: none;
   }
 }
 
@@ -250,6 +405,46 @@ const emptyMessage = computed(() => {
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.am-row-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.am-section-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.am-section-chip {
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 8px;
+
+  strong {
+    color: var(--text-primary);
+    font-size: 0.68rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--interactive-active);
+    font-size: 0.66rem;
+    font-weight: 850;
+    white-space: nowrap;
+  }
 }
 
 .am-cell-lane {
@@ -339,6 +534,13 @@ const emptyMessage = computed(() => {
   text-align: center;
 }
 
+.am-progress-group {
+  align-items: flex-end;
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
 .am-progress-pill {
   border: 1px solid var(--border-secondary);
   border-radius: 999px;
@@ -350,13 +552,134 @@ const emptyMessage = computed(() => {
   white-space: nowrap;
 }
 
+.am-expand-indicator {
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.am-row-drawer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.am-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  div {
+    display: grid;
+    gap: 3px;
+  }
+
+  strong {
+    color: var(--text-primary);
+    font-size: 0.92rem;
+  }
+
+  span {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+  }
+}
+
+.am-section-list {
+  display: grid;
+  gap: 10px;
+}
+
+.am-expanded-section {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.am-expanded-section-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+
+  div {
+    display: grid;
+    gap: 3px;
+  }
+
+  strong {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+  }
+
+  small {
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+  }
+}
+
+.am-kind-badge {
+  border: 1px solid var(--border-secondary);
+  border-radius: 999px;
+  color: var(--interactive-active);
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 850;
+  padding: 4px 8px;
+}
+
+.am-expanded-cell-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.am-expanded-cell {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 10px;
+
+  strong {
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    line-height: 1.28;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  em {
+    color: var(--interactive-active);
+    font-size: 0.66rem;
+    font-style: normal;
+    font-weight: 850;
+  }
+}
+
 @media (max-width: 1100px) {
   .am-requirement-row {
     grid-template-columns: 1fr;
   }
 
-  .am-progress-pill {
-    justify-self: start;
+  .am-progress-group {
+    align-items: start;
+    justify-items: start;
   }
 }
 

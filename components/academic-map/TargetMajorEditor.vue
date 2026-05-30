@@ -8,7 +8,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'save', value: { cohort: string | null; target_majors: string[] }): void
+  (e: 'save', value: { cohort: string | null; target_majors: string[]; focus_major?: string | null }): void
 }>()
 
 const { locale, t } = useI18n()
@@ -32,17 +32,31 @@ const majorLabel = (major: typeof academicMajors[number]) => {
 }
 
 const toggleMajor = (major: string) => {
-  if (draftMajors.value.includes(major)) {
-    draftMajors.value = draftMajors.value.filter(item => item !== major)
+  if (props.saving) return
+  const wasSelected = draftMajors.value.includes(major)
+  let nextMajors: string[]
+  if (wasSelected) {
+    nextMajors = draftMajors.value.filter(item => item !== major)
+  } else if (draftMajors.value.length < 3) {
+    nextMajors = [...draftMajors.value, major]
+  } else {
     return
   }
-  if (draftMajors.value.length < 3) draftMajors.value = [...draftMajors.value, major]
-}
-
-const save = () => {
+  draftMajors.value = nextMajors
   emit('save', {
     cohort: draftCohort.value,
+    target_majors: nextMajors,
+    focus_major: wasSelected ? nextMajors[0] || null : major,
+  })
+}
+
+const selectCohort = (cohort: string) => {
+  if (props.saving || draftCohort.value === cohort) return
+  draftCohort.value = cohort
+  emit('save', {
+    cohort,
     target_majors: draftMajors.value,
+    focus_major: draftMajors.value[0] || null,
   })
 }
 </script>
@@ -52,11 +66,7 @@ const save = () => {
     <div class="am-section-head">
       <div>
         <h2>{{ t('academicMap.targetMajors.title') }}</h2>
-        <p>{{ t('academicMap.targetMajors.copy') }}</p>
       </div>
-      <button class="am-primary-btn" :disabled="saving" type="button" @click="save">
-        {{ saving ? t('actions.saving') : t('actions.save') }}
-      </button>
     </div>
 
     <div class="am-field-row">
@@ -67,7 +77,8 @@ const save = () => {
           :key="cohortItem"
           type="button"
           :class="['am-chip', { active: draftCohort === cohortItem }]"
-          @click="draftCohort = cohortItem"
+          :disabled="saving"
+          @click="selectCohort(cohortItem)"
         >
           {{ cohortItem }}
         </button>
@@ -83,13 +94,13 @@ const save = () => {
           type="button"
           :class="['am-chip', 'am-chip--major', { active: draftMajors.includes(major.code) }]"
           :title="majorLabel(major)"
+          :disabled="saving"
           @click="toggleMajor(major.code)"
         >
           <span class="am-major-code">{{ major.code }}</span>
           <small>{{ locale === 'zh' ? major.nameZh : major.nameEn }}</small>
         </button>
       </div>
-      <p class="am-help">{{ t('academicMap.targetMajors.limit') }}</p>
     </div>
   </section>
 </template>
@@ -101,6 +112,10 @@ const save = () => {
   border-radius: 16px;
   box-shadow: var(--shadow-small);
   padding: 18px;
+}
+
+.am-target {
+  margin-bottom: 16px;
 }
 
 .am-section-head {
@@ -141,8 +156,7 @@ const save = () => {
   gap: 8px;
 }
 
-.am-chip,
-.am-primary-btn {
+.am-chip {
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
@@ -160,6 +174,11 @@ const save = () => {
     background: var(--bg-secondary);
     border-color: var(--border-focus);
     color: var(--interactive-active);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.65;
   }
 }
 
@@ -179,21 +198,4 @@ const save = () => {
   font-weight: 800;
 }
 
-.am-primary-btn {
-  border: 0;
-  background: var(--interactive-primary);
-  color: var(--text-inverse);
-  padding: 8px 18px;
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.65;
-  }
-}
-
-.am-help {
-  color: var(--text-tertiary);
-  font-size: 0.78rem;
-  margin: 0;
-}
 </style>

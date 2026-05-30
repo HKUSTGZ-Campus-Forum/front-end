@@ -75,6 +75,21 @@ export interface AcademicRequirementCell {
   hidden_count?: number
 }
 
+export type AcademicRequirementSectionKind = 'required' | 'choice' | 'elective'
+
+export interface AcademicRequirementSection {
+  key: string
+  kind: AcademicRequirementSectionKind
+  label_en: string
+  label_zh?: string | null
+  required_count?: number | null
+  total_count: number
+  completed_count: number
+  min_credits?: number | null
+  progress_label: string
+  cells: AcademicRequirementCell[]
+}
+
 export interface AcademicRequirementRow {
   key: string
   name_en: string
@@ -83,6 +98,7 @@ export interface AcademicRequirementRow {
   progress_label: string
   visible_cells: AcademicRequirementCell[]
   all_cells: AcademicRequirementCell[]
+  sections?: AcademicRequirementSection[]
   detail: {
     min_courses?: number | null
     min_credits?: number | null

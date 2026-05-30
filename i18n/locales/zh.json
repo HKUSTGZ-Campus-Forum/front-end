@@ -730,7 +730,6 @@
     "metaTitle": "学业地图 - UniKorn",
     "eyebrow": "Academic Map",
     "title": "学业地图",
-    "subtitle": "先把已修课程、在修/计划课程、目标专业和隐私成绩整理成一张清晰的状态图，为之后的个性化课程规划推荐准备可靠数据。",
     "openCourses": "去课程评价",
     "loading": "正在加载学业状态...",
     "cohort": "入学年份",
@@ -741,27 +740,28 @@
     },
     "targetMajors": {
       "title": "目标专业",
-      "copy": "你可以随时调整想预选或正在比较的专业，这会帮助之后的规划系统理解你的方向变化。",
-      "label": "想选的专业",
-      "limit": "最多同时保留 3 个方向，之后可随时改。"
+      "label": "意向专业（可多选）"
     },
     "metrics": {
       "totalCredits": "总学分要求",
-      "minimum": "最低 {count}",
+      "minimum": "{count}",
       "activeCredits": "已修、在修、计划共 {count} 学分",
-      "completedCredits": "其中已修 {count} 学分；最低要求可超过",
+      "completedCredits": "已修{completed}，本学期正在修{inProgress}",
       "mapCompleteness": "地图完整度",
       "mapCompletenessCopy": "用于判断后续规划建议是否有足够上下文",
       "importedCourses": "已维护课程",
       "importedCoursesCopy": "来自粘贴导入或手动确认的课程记录",
       "unmetRequirements": "需要确认",
       "unmetRequirementsCopy": "缺少成绩、未匹配课程库或状态待确认",
-      "prerequisites": "先修解锁 / 卡点",
-      "prerequisitesCopy": "{unlocked} 门后续课已解锁，{blocked} 门目标课有先修卡点",
+      "prerequisites": "先修卡点",
+      "prerequisitesCopy": "{blocked} 门目标课有先修卡点",
+      "prerequisitesNeedsTarget": "先选择入学年份和目标专业后再判断先修卡点",
       "ocga": "OCGA",
-      "ocgaCopy": "上传成绩后计算；仅自己可见，可随时删除",
+      "ocgaCopy": "上传成绩后计算；仅自己可见",
       "mcga": "MCGA · {major}",
-      "mcgaCopy": "按当前专业要求课程估算 Major CGA",
+      "mcgaCopy": "上传成绩后计算；仅自己可见",
+      "mcgaNeedsTarget": "先选择目标专业后再计算 Major CGA",
+      "selectTarget": "待选择",
       "notUploaded": "未上传"
     },
     "import": {
@@ -808,7 +808,6 @@
     },
     "requirements": {
       "title": "Requirement Matrix",
-      "copy": "按当前专业逐行查看已经覆盖、正在推进和还未覆盖的课程要求。",
       "empty": "选择入学年份和目标专业后，这里会显示专业要求矩阵。",
       "emptyMissingProfile": "请选择入学年份和目标专业后生成专业要求矩阵。",
       "emptyMissingCatalog": "当前后端还没有这个入学年份/专业的要求数据，请先同步专业要求材料。",
@@ -816,10 +815,21 @@
       "more": "+{count} 更多",
       "unknownTitle": "课程名称待确认",
       "noProgress": "待确认",
+      "expand": "展开",
+      "collapse": "收起",
+      "drawerCopy": "当前进度：{progress}。",
+      "sectionProgress": "进度 {progress}",
+      "sectionProgressWithCredits": "进度 {progress} / 至少 {credits} 学分",
+      "sectionKinds": {
+        "required": "必修",
+        "choice": "选项",
+        "elective": "选修"
+      },
       "status": {
         "now": "在修 / 计划",
         "done": "已修",
         "need": "未覆盖",
+        "choice": "候选",
         "more": "展开更多"
       }
     },
@@ -831,8 +841,8 @@
       "ocgaRule": "Overall CGA：所有计 grade point 的课程等权平均。",
       "mcgaRule": "Major CGA：按当前专业要求中计入的课程估算，等权平均。",
       "gradePrivacy": "成绩默认不公开展示，也可以随时删除；没有上传成绩时显示未上传。",
-      "prerequisitesTitle": "先修解锁 / 卡点",
-      "prerequisitesCopy": "{unlocked} 门后续课已解锁，{blocked} 门目标课仍有先修卡点。",
+      "prerequisitesTitle": "先修卡点",
+      "prerequisitesCopy": "{blocked} 门目标课有先修卡点。",
       "noBlockers": "暂时没有需要优先处理的先修卡点。",
       "missing": "缺少先修：",
       "rowCopy": "当前进度 {progress}。这里展示这一行的完整课程池。",
