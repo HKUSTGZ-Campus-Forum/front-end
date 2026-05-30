@@ -30,19 +30,75 @@ export interface AcademicCourseRecord {
   raw?: string
 }
 
+export interface AcademicProgramSummary {
+  id: number
+  code: string
+  name_en: string
+  name_zh?: string | null
+  cohort: string
+  total_min_credits: number
+  common_core_min_credits: number
+  major_min_credits?: number | null
+  home_areas: string[]
+}
+
+export interface AcademicGradeMetric {
+  status: 'available' | 'not_uploaded'
+  value: number | null
+  included_courses: number
+  excluded_courses: number
+  program_code?: string | null
+}
+
+export interface AcademicPrerequisiteBlocker {
+  course_code: string
+  course_title?: string | null
+  missing: string[]
+}
+
+export interface AcademicPrerequisiteMetrics {
+  unlocked_count: number
+  blocked_count: number
+  blockers: AcademicPrerequisiteBlocker[]
+}
+
+export type AcademicRequirementCellStatus = 'now' | 'done' | 'need' | 'choice' | 'more'
+
+export interface AcademicRequirementCell {
+  kind: 'course' | 'more'
+  course_code?: string
+  title?: string | null
+  label?: string
+  status: AcademicRequirementCellStatus
+  raw_status?: AcademicCourseStatus | null
+  shared_majors?: string[]
+  hidden_count?: number
+}
+
+export interface AcademicRequirementRow {
+  key: string
+  name_en: string
+  name_zh?: string | null
+  category: string
+  progress_label: string
+  visible_cells: AcademicRequirementCell[]
+  all_cells: AcademicRequirementCell[]
+  detail: {
+    min_courses?: number | null
+    min_credits?: number | null
+    rule: Record<string, unknown>
+  }
+}
+
+export interface AcademicRequirementMatrix {
+  program_code: string
+  program: AcademicProgramSummary
+  rows: AcademicRequirementRow[]
+}
+
 export interface AcademicMapSummary {
   profile: AcademicProfile
-  programs: Array<{
-    id: number
-    code: string
-    name_en: string
-    name_zh?: string | null
-    cohort: string
-    total_min_credits: number
-    common_core_min_credits: number
-    major_min_credits?: number | null
-    home_areas: string[]
-  }>
+  programs: AcademicProgramSummary[]
   credits: {
     total_completed: number
     total_active: number
@@ -63,4 +119,10 @@ export interface AcademicMapSummary {
     score: number
     items: Array<{ key: string; complete: boolean }>
   }
+  grade_metrics?: {
+    ocga: AcademicGradeMetric
+    mcga: AcademicGradeMetric
+  }
+  prerequisite_metrics?: AcademicPrerequisiteMetrics
+  requirement_matrix?: AcademicRequirementMatrix[]
 }

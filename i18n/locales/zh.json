@@ -749,12 +749,20 @@
       "totalCredits": "总学分要求",
       "minimum": "最低 {count}",
       "activeCredits": "已修、在修、计划共 {count} 学分",
+      "completedCredits": "其中已修 {count} 学分；最低要求可超过",
       "mapCompleteness": "地图完整度",
       "mapCompletenessCopy": "用于判断后续规划建议是否有足够上下文",
       "importedCourses": "已维护课程",
       "importedCoursesCopy": "来自粘贴导入或手动确认的课程记录",
       "unmetRequirements": "需要确认",
-      "unmetRequirementsCopy": "缺少成绩、未匹配课程库或状态待确认"
+      "unmetRequirementsCopy": "缺少成绩、未匹配课程库或状态待确认",
+      "prerequisites": "先修解锁 / 卡点",
+      "prerequisitesCopy": "{unlocked} 门后续课已解锁，{blocked} 门目标课有先修卡点",
+      "ocga": "OCGA",
+      "ocgaCopy": "上传成绩后计算；仅自己可见，可随时删除",
+      "mcga": "MCGA · {major}",
+      "mcgaCopy": "按当前专业要求课程估算 Major CGA",
+      "notUploaded": "未上传"
     },
     "import": {
       "title": "导入 Course History",

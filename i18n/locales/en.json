@@ -749,12 +749,20 @@
       "totalCredits": "Total credit requirement",
       "minimum": "min. {count}",
       "activeCredits": "{count} credits completed, in progress, or planned",
+      "completedCredits": "{count} credits completed; minimums may be exceeded",
       "mapCompleteness": "Map completeness",
       "mapCompletenessCopy": "Shows whether future planning has enough context",
       "importedCourses": "Maintained courses",
       "importedCoursesCopy": "Course records from paste import or manual confirmation",
       "unmetRequirements": "Needs review",
-      "unmetRequirementsCopy": "Missing grades, unmatched courses, or statuses to confirm"
+      "unmetRequirementsCopy": "Missing grades, unmatched courses, or statuses to confirm",
+      "prerequisites": "Prerequisite unlocks / blockers",
+      "prerequisitesCopy": "{unlocked} downstream courses unlocked, {blocked} target courses blocked",
+      "ocga": "OCGA",
+      "ocgaCopy": "Calculated after grades are uploaded; visible only to you",
+      "mcga": "MCGA · {major}",
+      "mcgaCopy": "Estimated from courses counted toward the active major",
+      "notUploaded": "Not uploaded"
     },
     "import": {
       "title": "Import Course History",
