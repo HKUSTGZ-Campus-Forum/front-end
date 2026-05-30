@@ -13,6 +13,7 @@ const { isLoggedIn } = useAuth()
 const { getLocalePath } = useAppLocale()
 const {
   deleteGrades,
+  clearRecords,
   deleteRecord,
   fetchSummary,
   parseCourseHistory,
@@ -27,6 +28,7 @@ const isSavingProfile = ref(false)
 const isParsing = ref(false)
 const isSavingImport = ref(false)
 const isClearingGrades = ref(false)
+const isClearingMap = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const importRef = ref<InstanceType<typeof AcademicMapCourseHistoryImport> | null>(null)
@@ -159,6 +161,20 @@ const handleDeleteGrades = async () => {
   }
 }
 
+const handleClearRecords = async () => {
+  if (!window.confirm(t('academicMap.privacy.clearMapConfirm'))) return
+  try {
+    isClearingMap.value = true
+    const result = await clearRecords()
+    await loadSummary()
+    setMessage(t('academicMap.messages.recordsCleared', { count: result.deleted_records }))
+  } catch (error) {
+    setError(t('academicMap.errors.clearRecords'))
+  } finally {
+    isClearingMap.value = false
+  }
+}
+
 const handleSelectRow = (row: AcademicRequirementRow) => {
   selectedRequirementRow.value = row
   selectedDetail.value = null
@@ -257,6 +273,9 @@ useHead({
               </div>
               <button class="am-outline-btn" :disabled="isClearingGrades" type="button" @click="handleDeleteGrades">
                 {{ isClearingGrades ? t('academicMap.privacy.deleting') : t('academicMap.privacy.deleteGrades') }}
+              </button>
+              <button class="am-outline-btn am-outline-btn--danger" :disabled="isClearingMap" type="button" @click="handleClearRecords">
+                {{ isClearingMap ? t('academicMap.privacy.clearingMap') : t('academicMap.privacy.clearMap') }}
               </button>
             </section>
 
@@ -424,6 +443,16 @@ useHead({
   background: var(--surface-primary);
   border: 1px solid var(--border-focus);
   color: var(--interactive-active);
+
+  & + .am-outline-btn {
+    margin-left: 8px;
+    margin-top: 8px;
+  }
+
+  &--danger {
+    border-color: rgba(255, 90, 90, 0.35);
+    color: #b13434;
+  }
 
   &:disabled {
     cursor: not-allowed;

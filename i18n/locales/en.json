@@ -791,7 +791,10 @@
       "title": "Grade privacy",
       "copy": "Grades are never shown publicly. You can keep them for future recommendations or delete them now or later.",
       "deleteGrades": "Delete all grades",
-      "deleting": "Deleting..."
+      "deleting": "Deleting...",
+      "clearMap": "Clear Academic Map",
+      "clearingMap": "Clearing...",
+      "clearMapConfirm": "Clear course records, cohort, and target majors for the current account? This will not affect other users."
     },
     "future": {
       "title": "Signals for future planning",
@@ -848,7 +851,8 @@
       "parsed": "Parsed {count} course records. Review and save them when ready.",
       "importSaved": "Course records saved.",
       "recordDeleted": "Course record deleted.",
-      "gradesDeleted": "Deleted grades from {count} records."
+      "gradesDeleted": "Deleted grades from {count} records.",
+      "recordsCleared": "Cleared {count} course records."
     },
     "errors": {
       "load": "Failed to load Academic Map. Please try again later.",
@@ -856,7 +860,8 @@
       "parse": "Failed to parse the pasted content.",
       "importSave": "Failed to save course records. Please try again later.",
       "record": "Failed to update the course record. Please try again later.",
-      "grades": "Failed to delete grades. Please try again later."
+      "grades": "Failed to delete grades. Please try again later.",
+      "clearRecords": "Failed to clear Academic Map. Please try again later."
     },
     "coursesCta": {
       "title": "Connect course reviews with your Academic Map",

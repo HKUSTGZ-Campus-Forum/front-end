@@ -791,7 +791,10 @@
       "title": "成绩隐私",
       "copy": "成绩默认不会公开展示。你可以保留用于后续推荐，也可以现在或之后删除。",
       "deleteGrades": "删除所有成绩",
-      "deleting": "删除中..."
+      "deleting": "删除中...",
+      "clearMap": "清空学业地图",
+      "clearingMap": "清空中...",
+      "clearMapConfirm": "确定要清空当前账号的课程记录、入学年份和目标专业吗？这个操作不会影响其他用户。"
     },
     "future": {
       "title": "为未来规划系统收集的信号",
@@ -848,7 +851,8 @@
       "parsed": "已解析 {count} 条课程记录，请确认后保存。",
       "importSaved": "课程记录已保存。",
       "recordDeleted": "课程记录已删除。",
-      "gradesDeleted": "已删除 {count} 条成绩记录。"
+      "gradesDeleted": "已删除 {count} 条成绩记录。",
+      "recordsCleared": "已清空 {count} 条课程记录。"
     },
     "errors": {
       "load": "学业地图加载失败，请稍后重试。",
@@ -856,7 +860,8 @@
       "parse": "解析失败，请检查粘贴内容。",
       "importSave": "保存课程记录失败，请稍后重试。",
       "record": "更新课程记录失败，请稍后重试。",
-      "grades": "删除成绩失败，请稍后重试。"
+      "grades": "删除成绩失败，请稍后重试。",
+      "clearRecords": "清空学业地图失败，请稍后重试。"
     },
     "coursesCta": {
       "title": "把课程评价和学业地图连起来",
