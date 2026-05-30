@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { academicMajors, normalizeAcademicMajorCode } from '~/constants/academicMajors'
+
 const props = defineProps<{
   cohort: string | null
   targetMajors: string[]
@@ -9,15 +11,25 @@ const emit = defineEmits<{
   (e: 'save', value: { cohort: string | null; target_majors: string[] }): void
 }>()
 
-const { t } = useI18n()
+const { locale, t } = useI18n()
 
-const availableMajors = ['AI', 'DSBD', 'FTEC', 'AMAT', 'ROAS', 'MICS', 'SMMG', 'SEEN']
+const availableMajors = academicMajors
 const availableCohorts = ['2023', '2024', '2025', '2026']
 const draftCohort = ref<string | null>(props.cohort)
-const draftMajors = ref<string[]>([...props.targetMajors])
+const normalizeMajors = (values: string[]) => values
+  .map(value => normalizeAcademicMajorCode(value))
+  .filter((value): value is NonNullable<typeof value> => Boolean(value))
+
+const draftMajors = ref<string[]>(normalizeMajors(props.targetMajors))
 
 watch(() => props.cohort, value => { draftCohort.value = value })
-watch(() => props.targetMajors, value => { draftMajors.value = [...value] })
+watch(() => props.targetMajors, value => { draftMajors.value = normalizeMajors(value) })
+
+const majorLabel = (major: typeof academicMajors[number]) => {
+  return locale.value === 'zh'
+    ? `${major.code} ${major.nameZh}`
+    : `${major.code} ${major.nameEn}`
+}
 
 const toggleMajor = (major: string) => {
   if (draftMajors.value.includes(major)) {
@@ -67,12 +79,14 @@ const save = () => {
       <div class="am-chip-row">
         <button
           v-for="major in availableMajors"
-          :key="major"
+          :key="major.code"
           type="button"
-          :class="['am-chip', { active: draftMajors.includes(major) }]"
-          @click="toggleMajor(major)"
+          :class="['am-chip', 'am-chip--major', { active: draftMajors.includes(major.code) }]"
+          :title="majorLabel(major)"
+          @click="toggleMajor(major.code)"
         >
-          {{ major }}
+          <span class="am-major-code">{{ major.code }}</span>
+          <small>{{ locale === 'zh' ? major.nameZh : major.nameEn }}</small>
         </button>
       </div>
       <p class="am-help">{{ t('academicMap.targetMajors.limit') }}</p>
@@ -147,6 +161,22 @@ const save = () => {
     border-color: var(--border-focus);
     color: var(--interactive-active);
   }
+}
+
+.am-chip--major {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+
+  small {
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+}
+
+.am-major-code {
+  color: inherit;
+  font-weight: 800;
 }
 
 .am-primary-btn {
