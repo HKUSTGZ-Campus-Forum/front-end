@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  AcademicProfile,
   AcademicRequirementCell,
   AcademicRequirementMatrix,
   AcademicRequirementRow,
@@ -8,6 +9,7 @@ import type {
 const props = defineProps<{
   matrices: AcademicRequirementMatrix[]
   activeMajor: string | null
+  profile?: AcademicProfile | null
 }>()
 
 const emit = defineEmits<{
@@ -42,6 +44,13 @@ const cellLabel = (cell: AcademicRequirementCell) => {
 const cellTitle = (cell: AcademicRequirementCell) => {
   return cell.title || t('academicMap.requirements.unknownTitle')
 }
+
+const emptyMessage = computed(() => {
+  if (!props.profile?.cohort || !props.profile.target_majors.length) {
+    return t('academicMap.requirements.emptyMissingProfile')
+  }
+  return t('academicMap.requirements.emptyMissingCatalog')
+})
 </script>
 
 <template>
@@ -67,7 +76,7 @@ const cellTitle = (cell: AcademicRequirementCell) => {
     </div>
 
     <div v-if="!activeMatrix" class="am-empty">
-      {{ t('academicMap.requirements.empty') }}
+      {{ emptyMessage }}
     </div>
 
     <div v-else class="am-matrix">

@@ -237,6 +237,7 @@ useHead({
             <AcademicMapRequirementMatrix
               :matrices="summary?.requirement_matrix || []"
               :active-major="activeMajor"
+              :profile="profile"
               @select-major="handleSelectMajor"
               @select-row="handleSelectRow"
             />

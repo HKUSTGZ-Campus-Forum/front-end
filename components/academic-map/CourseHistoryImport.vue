@@ -15,7 +15,7 @@ const { t } = useI18n()
 
 const pasteText = ref('')
 const previewRows = ref<AcademicCourseRecord[]>([])
-const keepGrades = ref(false)
+const keepGrades = ref(true)
 
 const hasRows = computed(() => previewRows.value.length > 0)
 
