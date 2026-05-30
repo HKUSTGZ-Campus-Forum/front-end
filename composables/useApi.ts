@@ -27,6 +27,13 @@ export function useApi() {
         if (typeof window !== 'undefined' && baseUrl) {
           try {
             const base = new URL(baseUrl);
+            const loc = window.location;
+            const isLocalDevOrigin =
+              import.meta.dev &&
+              (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1');
+            if (isLocalDevOrigin && cleanUrl.startsWith('/api')) {
+              return cleanUrl;
+            }
             if (base.origin !== window.location.origin) {
               return `${baseUrl}${cleanUrl}`;
             }
