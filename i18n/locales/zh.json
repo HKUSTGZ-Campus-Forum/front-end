@@ -803,6 +803,37 @@
         "privateGrades": "私密成绩"
       }
     },
+    "requirements": {
+      "title": "Requirement Matrix",
+      "copy": "按当前专业逐行查看已经覆盖、正在推进和还未覆盖的课程要求。",
+      "empty": "选择入学年份和目标专业后，这里会显示专业要求矩阵。",
+      "minimums": "最低 {courses} 门 / {credits} 学分",
+      "more": "+{count} 更多",
+      "unknownTitle": "课程名称待确认",
+      "noProgress": "待确认",
+      "status": {
+        "now": "在修 / 计划",
+        "done": "已修",
+        "need": "未覆盖",
+        "more": "展开更多"
+      }
+    },
+    "detail": {
+      "overviewTitle": "怎么看这张矩阵",
+      "overviewCopy": "点击任意要求行可以查看完整课程列表；点击顶部先修或成绩卡片可以看对应解释。",
+      "gradesTitle": "OCGA / MCGA",
+      "gradesCopy": "成绩只用于你的私密学业地图，上传后才会计算。",
+      "ocgaRule": "Overall CGA：所有计 grade point 的课程等权平均。",
+      "mcgaRule": "Major CGA：按当前专业要求中计入的课程估算，等权平均。",
+      "gradePrivacy": "成绩默认不公开展示，也可以随时删除；没有上传成绩时显示未上传。",
+      "prerequisitesTitle": "先修解锁 / 卡点",
+      "prerequisitesCopy": "{unlocked} 门后续课已解锁，{blocked} 门目标课仍有先修卡点。",
+      "noBlockers": "暂时没有需要优先处理的先修卡点。",
+      "missing": "缺少先修：",
+      "rowCopy": "当前进度 {progress}。这里展示这一行的完整课程池。",
+      "minCourses": "最低 {count} 门",
+      "minCredits": "最低 {count} 学分"
+    },
     "records": {
       "title": "课程状态库",
       "copy": "把每门课标成已修、在修、计划或感兴趣，之后系统才能理解你真正的学业路径。",

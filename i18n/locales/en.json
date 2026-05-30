@@ -803,6 +803,37 @@
         "privateGrades": "Private grades"
       }
     },
+    "requirements": {
+      "title": "Requirement Matrix",
+      "copy": "Review what is covered, in motion, and still missing for the active major.",
+      "empty": "Choose a cohort and target major to show the requirement matrix here.",
+      "minimums": "Minimum {courses} courses / {credits} credits",
+      "more": "+{count} more",
+      "unknownTitle": "Course title to confirm",
+      "noProgress": "To confirm",
+      "status": {
+        "now": "In progress / planned",
+        "done": "Completed",
+        "need": "Not covered",
+        "more": "Show more"
+      }
+    },
+    "detail": {
+      "overviewTitle": "Reading the matrix",
+      "overviewCopy": "Click any requirement row to inspect its full course pool; click a top metric card for prerequisite or grade details.",
+      "gradesTitle": "OCGA / MCGA",
+      "gradesCopy": "Grades stay inside your private Academic Map and are calculated only after upload.",
+      "ocgaRule": "Overall CGA: equally weighted average of all grade-point courses.",
+      "mcgaRule": "Major CGA: equally weighted estimate from courses counted toward the active major.",
+      "gradePrivacy": "Grades are not shown publicly and can be deleted anytime. Without uploaded grades, these cards show Not uploaded.",
+      "prerequisitesTitle": "Prerequisite unlocks / blockers",
+      "prerequisitesCopy": "{unlocked} downstream courses are unlocked and {blocked} target courses still have blockers.",
+      "noBlockers": "No priority prerequisite blockers right now.",
+      "missing": "Missing prerequisites:",
+      "rowCopy": "Current progress: {progress}. This panel shows the full course pool for the row.",
+      "minCourses": "Min. {count} courses",
+      "minCredits": "Min. {count} credits"
+    },
     "records": {
       "title": "Course status library",
       "copy": "Mark each course as completed, in progress, planned, or interested so the system can understand your real academic path later.",

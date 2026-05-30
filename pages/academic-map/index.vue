@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { AcademicCourseRecord, AcademicMapSummary, AcademicProfile } from '~/types/academic-map'
+import type {
+  AcademicCourseRecord,
+  AcademicMapSummary,
+  AcademicProfile,
+  AcademicRequirementRow,
+} from '~/types/academic-map'
 
 definePageMeta({ layout: 'keguang' })
 
@@ -25,6 +30,9 @@ const isClearingGrades = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const importRef = ref<InstanceType<typeof AcademicMapCourseHistoryImport> | null>(null)
+const activeMajor = ref<string | null>(null)
+const selectedRequirementRow = ref<AcademicRequirementRow | null>(null)
+const selectedDetail = ref<'prerequisites' | 'grades' | null>(null)
 
 const records = computed(() => summary.value?.records || [])
 const profile = computed<AcademicProfile>(() => summary.value?.profile || {
@@ -40,6 +48,20 @@ const groupedRecords = computed(() => {
     groups.set(term, [...(groups.get(term) || []), record])
   }
   return Array.from(groups.entries()).map(([term, items]) => ({ term, items }))
+})
+
+watch(summary, value => {
+  const firstMajor = value?.requirement_matrix?.[0]?.program_code || null
+  if (!activeMajor.value && firstMajor) {
+    activeMajor.value = firstMajor
+  }
+  if (
+    activeMajor.value
+    && value?.requirement_matrix?.length
+    && !value.requirement_matrix.some(matrix => matrix.program_code === activeMajor.value)
+  ) {
+    activeMajor.value = firstMajor
+  }
 })
 
 const setMessage = (message = '') => {
@@ -137,6 +159,22 @@ const handleDeleteGrades = async () => {
   }
 }
 
+const handleSelectRow = (row: AcademicRequirementRow) => {
+  selectedRequirementRow.value = row
+  selectedDetail.value = null
+}
+
+const handleSelectDetail = (detail: 'prerequisites' | 'grades') => {
+  selectedDetail.value = detail
+  selectedRequirementRow.value = null
+}
+
+const handleSelectMajor = (major: string) => {
+  activeMajor.value = major
+  selectedRequirementRow.value = null
+  selectedDetail.value = null
+}
+
 onMounted(loadSummary)
 
 useHead({
@@ -176,15 +214,15 @@ useHead({
       </div>
 
       <template v-else>
-        <AcademicMapAcademicProgressCards :summary="summary" />
+        <AcademicMapAcademicProgressCards :summary="summary" @select-detail="handleSelectDetail" />
 
         <div class="am-main-grid">
           <div class="am-stack">
-            <AcademicMapTargetMajorEditor
-              :cohort="profile.cohort"
-              :target-majors="profile.target_majors"
-              :saving="isSavingProfile"
-              @save="handleProfileSave"
+            <AcademicMapRequirementMatrix
+              :matrices="summary?.requirement_matrix || []"
+              :active-major="activeMajor"
+              @select-major="handleSelectMajor"
+              @select-row="handleSelectRow"
             />
 
             <AcademicMapCourseHistoryImport
@@ -197,6 +235,19 @@ useHead({
           </div>
 
           <aside class="am-stack">
+            <AcademicMapRequirementDetailPanel
+              :summary="summary"
+              :selected-row="selectedRequirementRow"
+              :selected-detail="selectedDetail"
+            />
+
+            <AcademicMapTargetMajorEditor
+              :cohort="profile.cohort"
+              :target-majors="profile.target_majors"
+              :saving="isSavingProfile"
+              @save="handleProfileSave"
+            />
+
             <section class="am-card">
               <div class="am-section-head">
                 <div>
