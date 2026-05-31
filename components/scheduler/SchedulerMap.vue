@@ -68,10 +68,28 @@ const highlightedIds = computed(() => {
   return visited
 })
 
+const componentMap = computed(() => {
+  const map: Record<string, MapComponent> = {}
+  for (const comp of components.value) {
+    map[comp.id] = comp
+  }
+  return map
+})
+
 const filteredComponents = computed(() => {
   if (!searchQuery.value) return components.value
   const q = searchQuery.value.toLowerCase()
   return components.value.filter(c => c.id.toLowerCase().includes(q))
+})
+
+const filteredIds = computed(() => {
+  if (!searchQuery.value) return null
+  return new Set(filteredComponents.value.map(c => c.id))
+})
+
+const filteredLines = computed(() => {
+  if (!filteredIds.value) return lines.value
+  return lines.value.filter(l => filteredIds.value!.has(l.start_id) && filteredIds.value!.has(l.end_id))
 })
 
 function isHighlighted(id: string): boolean {
@@ -125,12 +143,12 @@ function getNodeColor(comp: MapComponent): string {
           <!-- Lines -->
           <g>
             <line
-              v-for="line in lines"
+              v-for="line in filteredLines"
               :key="line.id"
-              :x1="components.find(c => c.id === line.start_id)?.x_coordinate || 0"
-              :y1="components.find(c => c.id === line.start_id)?.y_coordinate || 0"
-              :x2="components.find(c => c.id === line.end_id)?.x_coordinate || 0"
-              :y2="components.find(c => c.id === line.end_id)?.y_coordinate || 0"
+              :x1="componentMap[line.start_id]?.x_coordinate || 0"
+              :y1="componentMap[line.start_id]?.y_coordinate || 0"
+              :x2="componentMap[line.end_id]?.x_coordinate || 0"
+              :y2="componentMap[line.end_id]?.y_coordinate || 0"
               :stroke="getLineColor(line)"
               :stroke-width="isLineHighlighted(line) ? 3 : 1.5"
               :stroke-dasharray="getLineDash(line)"
@@ -140,7 +158,7 @@ function getNodeColor(comp: MapComponent): string {
 
           <!-- Components -->
           <g>
-            <template v-for="comp in components" :key="comp.id">
+            <template v-for="comp in filteredComponents" :key="comp.id">
               <!-- Junction point -->
               <circle
                 v-if="comp.category !== 0"
