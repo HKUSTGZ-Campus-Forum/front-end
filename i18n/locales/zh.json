@@ -1331,5 +1331,21 @@
   "Let's get to know you": "让我们了解一下你",
   "Add your skills": "添加你的技能",
   "Setup complete! Start matching": "设置完成！开始匹配",
-  "Find partners and interesting projects": "找到合作伙伴和有趣的项目"
+  "Find partners and interesting projects": "找到合作伙伴和有趣的项目",
+  "scheduler": {
+    "title": "排课助手",
+    "dashboard": "排课面板",
+    "map": "课程地图",
+    "cart": "课程购物车",
+    "search": "搜索课程",
+    "add": "添加",
+    "remove": "移除",
+    "noResults": "未找到课程",
+    "emptyCart": "购物车为空",
+    "noSolution": "未找到可行方案",
+    "plan": "方案",
+    "filter": "筛选",
+    "display": "显示",
+    "loginHint": "登录后可保存你的课程选择"
+  }
 }

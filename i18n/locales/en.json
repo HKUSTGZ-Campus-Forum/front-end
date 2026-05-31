@@ -1331,5 +1331,21 @@
   "Let's get to know you": "Let's get to know you",
   "Add your skills": "Add your skills",
   "Setup complete! Start matching": "Setup complete! Start matching",
-  "Find partners and interesting projects": "Find partners and interesting projects"
+  "Find partners and interesting projects": "Find partners and interesting projects",
+  "scheduler": {
+    "title": "Scheduling Assistant",
+    "dashboard": "Dashboard",
+    "map": "Course Map",
+    "cart": "Course Cart",
+    "search": "Search courses",
+    "add": "Add",
+    "remove": "Remove",
+    "noResults": "No courses found",
+    "emptyCart": "Your cart is empty",
+    "noSolution": "No valid solution found",
+    "plan": "Plan",
+    "filter": "Filter",
+    "display": "Display",
+    "loginHint": "Log in to save your course selections"
+  }
 }

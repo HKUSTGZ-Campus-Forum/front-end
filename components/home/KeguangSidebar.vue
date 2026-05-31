@@ -104,9 +104,8 @@ function isActive(path: string) {
 
         <li>
           <NuxtLink
-            to="https://scheduler.unikorn.axfff.com/dashboard/2510"
-            target="_blank"
-            rel="noopener noreferrer"
+            :to="getLocalePath('/scheduler')"
+            :class="{ active: isActive('/scheduler') }"
           >
             <img src="/icons/sidebar_schedulerlogo.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.scheduler') }}</span>
