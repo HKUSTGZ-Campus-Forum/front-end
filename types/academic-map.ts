@@ -62,16 +62,42 @@ export interface AcademicPrerequisiteMetrics {
   blockers: AcademicPrerequisiteBlocker[]
 }
 
+export type AcademicAllocationStatus =
+  | 'counted'
+  | 'candidate'
+  | 'planned'
+  | 'excluded_duplicate'
+  | 'missing_credit'
+
 export type AcademicRequirementCellStatus = 'now' | 'done' | 'need' | 'choice' | 'more'
 
+export interface AcademicRequirementProgress {
+  satisfied: boolean
+  counted_courses: number
+  required_courses?: number | null
+  counted_credits: number
+  required_credits?: number | null
+}
+
 export interface AcademicRequirementCell {
-  kind: 'course' | 'more'
-  course_code?: string
+  kind: 'course'
+  course_code: string
   title?: string | null
   label?: string
-  status: AcademicRequirementCellStatus
+  record_status?: AcademicCourseStatus | null
+  allocation_status: AcademicAllocationStatus
+  counted_toward?: string | null
+  credits?: number | null
+  credit_source?: 'catalog' | 'record' | null
+  status?: AcademicRequirementCellStatus
   raw_status?: AcademicCourseStatus | null
   shared_majors?: string[]
+}
+
+export interface AcademicRequirementMoreCell {
+  kind: 'more'
+  label: string
+  status: 'more'
   hidden_count?: number
 }
 
@@ -82,12 +108,14 @@ export interface AcademicRequirementSection {
   kind: AcademicRequirementSectionKind
   label_en: string
   label_zh?: string | null
-  required_count?: number | null
-  total_count: number
-  completed_count: number
-  min_credits?: number | null
-  progress_label: string
+  current: AcademicRequirementProgress
+  projected: AcademicRequirementProgress
   cells: AcademicRequirementCell[]
+  required_count?: number | null
+  total_count?: number
+  completed_count?: number
+  min_credits?: number | null
+  progress_label?: string
 }
 
 export interface AcademicRequirementRow {
@@ -95,10 +123,13 @@ export interface AcademicRequirementRow {
   name_en: string
   name_zh?: string | null
   category: string
+  current: AcademicRequirementProgress
+  projected: AcademicRequirementProgress
+  sections: AcademicRequirementSection[]
+  warnings: string[]
   progress_label: string
-  visible_cells: AcademicRequirementCell[]
+  visible_cells: Array<AcademicRequirementCell | AcademicRequirementMoreCell>
   all_cells: AcademicRequirementCell[]
-  sections?: AcademicRequirementSection[]
   detail: {
     min_courses?: number | null
     min_credits?: number | null

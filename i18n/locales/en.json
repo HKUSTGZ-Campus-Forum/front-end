@@ -813,13 +813,23 @@
       "emptyMissingCatalog": "The backend does not have requirement data for this cohort/major yet. Sync the curriculum requirement materials first.",
       "minimums": "Minimum {courses} courses / {credits} credits",
       "more": "+{count} more",
+      "moreSections": "+{count} more groups",
       "unknownTitle": "Course title to confirm",
       "noProgress": "To confirm",
+      "satisfied": "Satisfied",
       "expand": "Expand",
       "collapse": "Collapse",
       "drawerCopy": "Current progress: {progress}.",
       "sectionProgress": "Progress {progress}",
       "sectionProgressWithCredits": "Progress {progress} / at least {credits} credits",
+      "currentProgress": "Current {courses} / {requiredCourses} courses · {credits} / {requiredCredits} credits",
+      "currentCourseProgress": "Current {courses} / {requiredCourses} courses",
+      "projectedProgress": "With plan {courses} / {requiredCourses} courses · {credits} / {requiredCredits} credits",
+      "projectedCourseProgress": "With plan {courses} / {requiredCourses} courses",
+      "creditProgress": "Current {credits} / {requiredCredits} credits",
+      "projectedCreditProgress": "With plan {credits} / {requiredCredits} credits",
+      "creditToConfirm": "Credit to confirm",
+      "countedToward": "Counted toward: {section}",
       "sectionKinds": {
         "required": "Required",
         "choice": "Choice",
@@ -830,7 +840,13 @@
         "done": "Completed",
         "need": "Not covered",
         "choice": "Candidate",
-        "more": "Show more"
+        "more": "Show more",
+        "completed": "Completed",
+        "in_progress": "In progress",
+        "planned": "Planned",
+        "candidate": "Candidate",
+        "excluded_duplicate": "Counted elsewhere",
+        "missing_credit": "Credit to confirm"
       }
     },
     "detail": {

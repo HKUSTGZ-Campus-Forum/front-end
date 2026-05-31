@@ -813,13 +813,23 @@
       "emptyMissingCatalog": "当前后端还没有这个入学年份/专业的要求数据，请先同步专业要求材料。",
       "minimums": "最低 {courses} 门 / {credits} 学分",
       "more": "+{count} 更多",
+      "moreSections": "+{count} 更多分组",
       "unknownTitle": "课程名称待确认",
       "noProgress": "待确认",
+      "satisfied": "已满足",
       "expand": "展开",
       "collapse": "收起",
       "drawerCopy": "当前进度：{progress}。",
       "sectionProgress": "进度 {progress}",
       "sectionProgressWithCredits": "进度 {progress} / 至少 {credits} 学分",
+      "currentProgress": "当前 {courses} / {requiredCourses} 门 · {credits} / {requiredCredits} 学分",
+      "currentCourseProgress": "当前 {courses} / {requiredCourses} 门",
+      "projectedProgress": "计划后 {courses} / {requiredCourses} 门 · {credits} / {requiredCredits} 学分",
+      "projectedCourseProgress": "计划后 {courses} / {requiredCourses} 门",
+      "creditProgress": "当前 {credits} / {requiredCredits} 学分",
+      "projectedCreditProgress": "计划后 {credits} / {requiredCredits} 学分",
+      "creditToConfirm": "学分待核对",
+      "countedToward": "已计入：{section}",
       "sectionKinds": {
         "required": "必修",
         "choice": "选项",
@@ -830,7 +840,13 @@
         "done": "已修",
         "need": "未覆盖",
         "choice": "候选",
-        "more": "展开更多"
+        "more": "展开更多",
+        "completed": "已修",
+        "in_progress": "在修",
+        "planned": "计划",
+        "candidate": "候选",
+        "excluded_duplicate": "已计入其他要求",
+        "missing_credit": "学分待核对"
       }
     },
     "detail": {
