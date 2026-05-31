@@ -16,6 +16,7 @@ const { t } = useI18n()
 const pasteText = ref('')
 const previewRows = ref<AcademicCourseRecord[]>([])
 const keepGrades = ref(true)
+const exampleImageUrl = '/image/academic-map/sis-course-history-example.png'
 
 const hasRows = computed(() => previewRows.value.length > 0)
 
@@ -55,7 +56,12 @@ defineExpose({ setRows })
     <div class="am-section-head">
       <div>
         <h2>{{ t('academicMap.import.title') }}</h2>
-        <p>{{ t('academicMap.import.copy') }}</p>
+        <p>
+          {{ t('academicMap.import.copyPrefix') }}
+          <a class="am-example-link" :href="exampleImageUrl" target="_blank" rel="noopener noreferrer">
+            {{ t('academicMap.import.exampleLink') }}
+          </a>
+        </p>
       </div>
       <button class="am-primary-btn" :disabled="props.parsing || !pasteText.trim()" type="button" @click="parse">
         {{ props.parsing ? t('academicMap.import.parsing') : t('academicMap.import.parse') }}
@@ -122,6 +128,7 @@ defineExpose({ setRows })
         </article>
       </div>
     </div>
+
   </section>
 </template>
 
@@ -154,6 +161,20 @@ defineExpose({ setRows })
     color: var(--text-secondary);
     font-size: 0.86rem;
     line-height: 1.55;
+  }
+}
+
+.am-example-link {
+  border-bottom: 1px solid currentColor;
+  color: var(--interactive-active);
+  font-weight: 850;
+  text-decoration: none;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--interactive-primary);
   }
 }
 

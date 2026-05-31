@@ -91,6 +91,51 @@ const visibleSectionSummaries = (row: AcademicRequirementRow) => rowSections(row
 
 const hiddenSectionCount = (row: AcademicRequirementRow) => Math.max(rowSections(row).length - 3, 0)
 
+const isCourseCell = (cell: AcademicRequirementRow['visible_cells'][number]): cell is AcademicRequirementCell => {
+  return cell.kind === 'course'
+}
+
+const courseRank = (cell: AcademicRequirementCell) => {
+  const status = cellState(cell)
+  if (status === 'completed') return 0
+  if (status === 'in_progress') return 1
+  if (status === 'planned') return 2
+  if (cell.allocation_status === 'counted') return 3
+  if (status === 'candidate') return 4
+  if (status === 'missing_credit') return 5
+  if (status === 'excluded_duplicate') return 6
+  return 7
+}
+
+const uniqueCourseCells = (row: AcademicRequirementRow) => {
+  const seen = new Set<string>()
+  const cells: AcademicRequirementCell[] = []
+  const sources = [
+    ...row.visible_cells.filter(isCourseCell),
+    ...(row.all_cells || []),
+  ]
+
+  for (const cell of sources) {
+    if (!cell.course_code || seen.has(cell.course_code)) continue
+    seen.add(cell.course_code)
+    cells.push(cell)
+  }
+
+  return cells
+}
+
+const summaryCourseCells = (row: AcademicRequirementRow) => {
+  return uniqueCourseCells(row)
+    .map((cell, index) => ({ cell, index }))
+    .sort((a, b) => courseRank(a.cell) - courseRank(b.cell) || a.index - b.index)
+    .slice(0, 4)
+    .map(item => item.cell)
+}
+
+const hiddenCourseCount = (row: AcademicRequirementRow) => {
+  return Math.max(uniqueCourseCells(row).length - summaryCourseCells(row).length, 0)
+}
+
 const hasProjectedChange = (current: AcademicRequirementProgress, projected: AcademicRequirementProgress) => {
   return current.satisfied !== projected.satisfied
     || current.counted_courses !== projected.counted_courses
@@ -204,11 +249,29 @@ watch(activeMajorCode, () => {
                 <strong>{{ t('academicMap.requirements.moreSections', { count: hiddenSectionCount(row) }) }}</strong>
               </span>
             </div>
+
+            <div class="am-course-lane">
+              <span
+                v-for="cell in summaryCourseCells(row)"
+                :key="`${row.key}-summary-${cell.course_code}`"
+                :class="['am-course-card', `is-${cellState(cell)}`]"
+              >
+                <strong>{{ cellLabel(cell) }}</strong>
+                <small>{{ cellTitle(cell) }}</small>
+                <em v-if="cell.shared_majors?.length">{{ cell.shared_majors.join('+') }}</em>
+              </span>
+              <span
+                v-if="hiddenCourseCount(row)"
+                class="am-more-course-card"
+              >
+                {{ t('academicMap.requirements.moreCourses', { count: hiddenCourseCount(row) }) }}
+              </span>
+            </div>
           </div>
 
           <div class="am-progress-group">
-            <div class="am-progress-pill">
-              {{ row.current.satisfied ? t('academicMap.requirements.satisfied') : progressLabel(row.current) }}
+            <div :class="['am-progress-ring', { 'is-satisfied': row.current.satisfied }]">
+              {{ row.current.counted_courses }} / {{ row.current.required_courses || '-' }}
             </div>
             <span class="am-expand-indicator">{{ expandedRowKey === row.key ? t('academicMap.requirements.collapse') : t('academicMap.requirements.expand') }}</span>
           </div>
@@ -384,7 +447,7 @@ watch(activeMajorCode, () => {
   cursor: pointer;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(150px, 0.85fr) minmax(260px, 1.8fr) auto;
+  grid-template-columns: minmax(160px, 0.75fr) minmax(360px, 2.1fr) auto;
   padding: 12px;
   transition: background 0.2s ease;
 
@@ -420,7 +483,7 @@ watch(activeMajorCode, () => {
 
 .am-row-main {
   display: grid;
-  gap: 8px;
+  gap: 9px;
   min-width: 0;
 }
 
@@ -464,6 +527,74 @@ watch(activeMajorCode, () => {
   }
 }
 
+.am-course-lane {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  min-width: 0;
+}
+
+.am-course-card,
+.am-more-course-card {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  display: grid;
+  min-width: 0;
+  min-height: 78px;
+  padding: 9px 10px;
+}
+
+.am-course-card {
+  gap: 3px;
+
+  strong {
+    color: var(--text-primary);
+    font-size: 0.86rem;
+    font-weight: 900;
+    line-height: 1.12;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    line-height: 1.24;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  em {
+    align-self: end;
+    background: color-mix(in srgb, var(--interactive-primary) 11%, var(--surface-primary));
+    border-radius: 999px;
+    color: var(--interactive-active);
+    font-size: 0.68rem;
+    font-style: normal;
+    font-weight: 900;
+    justify-self: start;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 2px 7px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.am-more-course-card {
+  align-items: center;
+  background: var(--surface-primary);
+  border-color: var(--border-focus);
+  border-style: dashed;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 900;
+  justify-items: center;
+  text-align: center;
+}
+
 .is-more {
   background: var(--bg-secondary);
   border-color: var(--border-focus);
@@ -479,15 +610,30 @@ watch(activeMajorCode, () => {
   justify-items: end;
 }
 
-.am-progress-pill {
-  border: 1px solid var(--border-secondary);
+.am-progress-ring {
+  align-items: center;
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle, var(--surface-primary) 58%, transparent 60%),
+    conic-gradient(var(--interactive-primary) 0 100%, var(--bg-secondary) 0);
   border-radius: 999px;
   color: var(--interactive-active);
-  font-size: 0.78rem;
-  font-weight: 850;
-  justify-self: end;
-  padding: 6px 10px;
+  display: grid;
+  font-size: 0.86rem;
+  font-weight: 950;
+  justify-items: center;
+  min-width: 58px;
+  padding: 9px;
+  place-items: center;
+  text-align: center;
   white-space: nowrap;
+
+  &.is-satisfied {
+    background:
+      radial-gradient(circle, var(--surface-primary) 58%, transparent 60%),
+      conic-gradient(var(--semantic-success) 0 100%, var(--bg-secondary) 0);
+    color: var(--interactive-active);
+  }
 }
 
 .am-expand-indicator {
@@ -656,9 +802,19 @@ watch(activeMajorCode, () => {
     grid-template-columns: 1fr;
   }
 
+  .am-course-lane {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
   .am-progress-group {
     align-items: start;
     justify-items: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .am-course-lane {
+    grid-template-columns: 1fr;
   }
 }
 
