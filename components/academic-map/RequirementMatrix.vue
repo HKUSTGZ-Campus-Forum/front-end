@@ -3,6 +3,7 @@ import type {
   AcademicProfile,
   AcademicRequirementCell,
   AcademicRequirementMatrix,
+  AcademicRequirementProgress,
   AcademicRequirementRow,
   AcademicRequirementSection,
 } from '~/types/academic-map'
@@ -70,12 +71,7 @@ const rowTitle = (row: AcademicRequirementRow) => {
   return locale.value === 'zh' ? row.name_zh || row.name_en : row.name_en
 }
 
-const cellLabel = (cell: AcademicRequirementCell) => {
-  if (cell.kind === 'more') {
-    return t('academicMap.requirements.more', { count: cell.hidden_count || 0 })
-  }
-  return cell.course_code || cell.label || ''
-}
+const cellLabel = (cell: AcademicRequirementCell) => cell.course_code
 
 const cellTitle = (cell: AcademicRequirementCell) => {
   return cell.title || t('academicMap.requirements.unknownTitle')
@@ -89,34 +85,43 @@ const sectionKindLabel = (section: AcademicRequirementSection) => {
   return t(`academicMap.requirements.sectionKinds.${section.kind}`)
 }
 
-const sectionProgress = (section: AcademicRequirementSection) => {
-  const progress = section.progress_label || t('academicMap.requirements.noProgress')
-  if (section.min_credits) {
-    return t('academicMap.requirements.sectionProgressWithCredits', {
-      progress,
-      credits: section.min_credits,
-    })
-  }
-  return t('academicMap.requirements.sectionProgress', { progress })
-}
-
-const rowSections = (row: AcademicRequirementRow): AcademicRequirementSection[] => {
-  if (row.sections?.length) return row.sections
-  return [{
-    key: `${row.key}:all`,
-    kind: 'required',
-    label_en: rowTitle(row),
-    label_zh: row.name_zh,
-    required_count: row.detail.min_courses,
-    total_count: row.all_cells.length,
-    completed_count: row.all_cells.filter(cell => cell.status === 'now' || cell.status === 'done').length,
-    min_credits: row.detail.min_credits,
-    progress_label: row.progress_label,
-    cells: row.all_cells,
-  }]
-}
+const rowSections = (row: AcademicRequirementRow) => row.sections || []
 
 const visibleSectionSummaries = (row: AcademicRequirementRow) => rowSections(row).slice(0, 3)
+
+const hiddenSectionCount = (row: AcademicRequirementRow) => Math.max(rowSections(row).length - 3, 0)
+
+const hasProjectedChange = (current: AcademicRequirementProgress, projected: AcademicRequirementProgress) => {
+  return current.satisfied !== projected.satisfied
+    || current.counted_courses !== projected.counted_courses
+    || current.counted_credits !== projected.counted_credits
+}
+
+const progressLabel = (progress: AcademicRequirementProgress, projected = false) => {
+  if (progress.required_courses && progress.required_credits) {
+    return t(projected ? 'academicMap.requirements.projectedProgress' : 'academicMap.requirements.currentProgress', {
+      courses: progress.counted_courses,
+      requiredCourses: progress.required_courses,
+      credits: progress.counted_credits,
+      requiredCredits: progress.required_credits,
+    })
+  }
+  if (progress.required_courses) {
+    return t(projected ? 'academicMap.requirements.projectedCourseProgress' : 'academicMap.requirements.currentCourseProgress', {
+      courses: progress.counted_courses,
+      requiredCourses: progress.required_courses,
+    })
+  }
+  return t(projected ? 'academicMap.requirements.projectedCreditProgress' : 'academicMap.requirements.creditProgress', {
+    credits: progress.counted_credits,
+    requiredCredits: progress.required_credits || '-',
+  })
+}
+
+const cellState = (cell: AcademicRequirementCell) => {
+  if (cell.allocation_status === 'counted' && cell.record_status) return cell.record_status
+  return cell.allocation_status
+}
 
 const toggleRow = (row: AcademicRequirementRow) => {
   expandedRowKey.value = expandedRowKey.value === row.key ? null : row.key
@@ -176,7 +181,10 @@ watch(activeMajorCode, () => {
           <div class="am-row-copy">
             <span class="am-category">{{ row.category }}</span>
             <h3>{{ rowTitle(row) }}</h3>
-            <small>{{ t('academicMap.requirements.minimums', { courses: row.detail.min_courses || '-', credits: row.detail.min_credits || '-' }) }}</small>
+            <small>{{ progressLabel(row.current) }}</small>
+            <small v-if="hasProjectedChange(row.current, row.projected)" class="am-projected-copy">
+              {{ progressLabel(row.projected, true) }}
+            </small>
           </div>
 
           <div class="am-row-main">
@@ -187,30 +195,20 @@ watch(activeMajorCode, () => {
                 :class="['am-section-chip', `is-${section.kind}`]"
               >
                 <strong>{{ sectionLabel(section) }}</strong>
-                <small>{{ section.progress_label || t('academicMap.requirements.noProgress') }}</small>
+                <small>{{ section.current.counted_courses }} / {{ section.current.required_courses || '-' }}</small>
               </span>
-            </div>
-
-            <div class="am-cell-lane">
-              <button
-                v-for="(cell, index) in row.visible_cells"
-                :key="`${cell.kind}-${cell.course_code || cell.label || index}`"
-                :class="['am-course-cell', `is-${cell.status}`]"
-                type="button"
-                @click.stop="toggleRow(row)"
+              <span
+                v-if="hiddenSectionCount(row)"
+                class="am-section-chip is-more"
               >
-                <span class="am-cell-code">{{ cellLabel(cell) }}</span>
-                <span v-if="cell.kind === 'course'" class="am-cell-title">{{ cellTitle(cell) }}</span>
-                <span v-if="cell.shared_majors && cell.shared_majors.length > 1" class="am-shared-tag">
-                  {{ cell.shared_majors.join('+') }}
-                </span>
-              </button>
+                <strong>{{ t('academicMap.requirements.moreSections', { count: hiddenSectionCount(row) }) }}</strong>
+              </span>
             </div>
           </div>
 
           <div class="am-progress-group">
             <div class="am-progress-pill">
-              {{ row.progress_label || t('academicMap.requirements.noProgress') }}
+              {{ row.current.satisfied ? t('academicMap.requirements.satisfied') : progressLabel(row.current) }}
             </div>
             <span class="am-expand-indicator">{{ expandedRowKey === row.key ? t('academicMap.requirements.collapse') : t('academicMap.requirements.expand') }}</span>
           </div>
@@ -220,7 +218,7 @@ watch(activeMajorCode, () => {
           <div class="am-drawer-head">
             <div>
               <strong>{{ rowTitle(row) }}</strong>
-              <span>{{ t('academicMap.requirements.drawerCopy', { progress: row.progress_label || '-' }) }}</span>
+              <span>{{ progressLabel(row.current) }}</span>
             </div>
           </div>
 
@@ -233,7 +231,10 @@ watch(activeMajorCode, () => {
               <div class="am-expanded-section-head">
                 <div>
                   <strong>{{ sectionLabel(section) }}</strong>
-                  <small>{{ sectionProgress(section) }}</small>
+                  <small>{{ progressLabel(section.current) }}</small>
+                  <small v-if="hasProjectedChange(section.current, section.projected)" class="am-projected-copy">
+                    {{ progressLabel(section.projected, true) }}
+                  </small>
                 </div>
                 <span :class="['am-kind-badge', `is-${section.kind}`]">{{ sectionKindLabel(section) }}</span>
               </div>
@@ -241,15 +242,25 @@ watch(activeMajorCode, () => {
               <div class="am-expanded-cell-grid">
                 <span
                   v-for="cell in section.cells"
-                  :key="`${section.key}-${cell.course_code || cell.label}`"
-                  :class="['am-expanded-cell', `is-${cell.status}`]"
+                  :key="`${section.key}-${cell.course_code}`"
+                  :class="['am-expanded-cell', `is-${cellState(cell)}`]"
                 >
                   <strong>{{ cellLabel(cell) }}</strong>
                   <small>{{ cellTitle(cell) }}</small>
+                  <small class="am-cell-status">{{ t(`academicMap.requirements.status.${cellState(cell)}`) }}</small>
+                  <small v-if="cell.allocation_status === 'excluded_duplicate' && cell.counted_toward">
+                    {{ t('academicMap.requirements.countedToward', { section: cell.counted_toward }) }}
+                  </small>
                   <em v-if="cell.shared_majors && cell.shared_majors.length > 1">{{ cell.shared_majors.join('+') }}</em>
                 </span>
               </div>
             </section>
+          </div>
+
+          <div v-if="row.warnings.length" class="am-warning-list">
+            <span v-for="warning in row.warnings" :key="warning">
+              {{ warning.startsWith('missing_credit:') ? t('academicMap.requirements.creditToConfirm') : warning }}
+            </span>
           </div>
         </div>
       </article>
@@ -413,6 +424,12 @@ watch(activeMajorCode, () => {
   min-width: 0;
 }
 
+.am-projected-copy {
+  color: var(--interactive-active) !important;
+  display: block;
+  margin-top: 3px;
+}
+
 .am-section-strip {
   display: flex;
   flex-wrap: wrap;
@@ -445,85 +462,6 @@ watch(activeMajorCode, () => {
     font-weight: 850;
     white-space: nowrap;
   }
-}
-
-.am-cell-lane {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  min-width: 0;
-}
-
-.am-course-cell {
-  appearance: none;
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  cursor: pointer;
-  display: grid;
-  gap: 2px;
-  min-height: 62px;
-  min-width: 0;
-  padding: 8px;
-  position: relative;
-  text-align: left;
-  transition: all 0.2s ease;
-
-  &:hover {
-    box-shadow: var(--shadow-small);
-  }
-}
-
-.am-cell-code {
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  font-weight: 850;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.am-cell-title {
-  color: var(--text-tertiary);
-  font-size: 0.68rem;
-  line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.am-shared-tag {
-  align-self: end;
-  background: rgba(130, 89, 255, 0.1);
-  border-radius: 999px;
-  color: #6e4bd8;
-  font-size: 0.62rem;
-  font-weight: 850;
-  justify-self: start;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 2px 6px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.is-now {
-  background: rgba(38, 164, 255, 0.11);
-  border-color: rgba(38, 164, 255, 0.38);
-}
-
-.is-done {
-  background: rgba(35, 190, 110, 0.1);
-  border-color: rgba(35, 190, 110, 0.36);
-}
-
-.is-need {
-  background: rgba(255, 172, 64, 0.1);
-  border-color: rgba(255, 172, 64, 0.35);
-}
-
-.is-choice {
-  background: rgba(130, 89, 255, 0.08);
-  border-color: rgba(130, 89, 255, 0.3);
 }
 
 .is-more {
@@ -664,11 +602,52 @@ watch(activeMajorCode, () => {
     white-space: nowrap;
   }
 
+  .am-cell-status {
+    color: var(--text-secondary);
+    font-weight: 750;
+  }
+
   em {
     color: var(--interactive-active);
     font-size: 0.66rem;
     font-style: normal;
     font-weight: 850;
+  }
+}
+
+.is-in_progress {
+  background: color-mix(in srgb, var(--semantic-info) 11%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-info) 38%, transparent);
+}
+
+.is-completed {
+  background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-success) 36%, transparent);
+}
+
+.is-planned {
+  background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--interactive-primary) 30%, transparent);
+}
+
+.is-candidate {
+  background: var(--surface-primary);
+  border-color: var(--border-primary);
+}
+
+.is-excluded_duplicate,
+.is-missing_credit {
+  background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-warning) 35%, transparent);
+}
+
+.am-warning-list {
+  display: grid;
+  gap: 4px;
+
+  span {
+    color: var(--semantic-warning);
+    font-size: 0.76rem;
   }
 }
 
@@ -683,9 +662,4 @@ watch(activeMajorCode, () => {
   }
 }
 
-@media (max-width: 640px) {
-  .am-cell-lane {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 </style>
