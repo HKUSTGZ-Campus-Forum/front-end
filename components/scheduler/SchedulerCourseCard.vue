@@ -1,13 +1,14 @@
 <!-- front-end/components/scheduler/SchedulerCourseCard.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CartCourse, BundleData } from '~/utils/scheduler'
 
 const props = defineProps<{
   course: CartCourse
   courseIndex: number
-  currentSelection?: { bundleId: number; layer: number }
+  currentSelection?: Record<number, number>
 }>()
+const { t } = useI18n()
 
 const emit = defineEmits<{
   (e: 'toggle-course', code: string, enabled: boolean): void
@@ -28,18 +29,21 @@ function getBundleLabel(bundle: BundleData): string {
       <div class="course-card__info">
         <div class="course-card__code">
           {{ course.course_code }}
-          <span class="course-card__credits">{{ course.credit }} credits</span>
+          <span class="course-card__credits">{{ t('scheduler.credits', { count: course.credit }) }}</span>
         </div>
         <div class="course-card__title">{{ course.course_title }}</div>
       </div>
+      <button class="course-card__detail" type="button" @click.stop="emit('show-info', course.course_code)">
+        {{ t('scheduler.details') }}
+      </button>
     </div>
 
     <div v-if="course.enabled" class="course-card__bundles">
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
         <div class="course-card__layer-header">
-          <span>Layer {{ layer }}</span>
-          <button class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), true)">All</button>
-          <button class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), false)">None</button>
+          <span>{{ t('scheduler.layer', { layer }) }}</span>
+          <button class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
+          <button class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
         </div>
         <div class="course-card__bundle-row">
           <button
@@ -48,7 +52,7 @@ function getBundleLabel(bundle: BundleData): string {
             class="course-card__bundle"
             :class="{
               'course-card__bundle--active': bundle.enabled,
-              'course-card__bundle--selected': currentSelection?.bundleId === bundle.id && currentSelection?.layer === Number(layer),
+              'course-card__bundle--selected': currentSelection?.[Number(layer)] === bundle.id,
             }"
             @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), !bundle.enabled)"
           >
@@ -85,7 +89,7 @@ function getBundleLabel(bundle: BundleData): string {
     background: var(--text-tertiary);
     flex-shrink: 0;
     transition: background 0.2s;
-    &--on { background: #22c55e; }
+    &--on { background: var(--semantic-success); }
   }
 
   &__info { flex: 1; min-width: 0; }
@@ -109,6 +113,14 @@ function getBundleLabel(bundle: BundleData): string {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &__detail {
+    border: 0;
+    background: transparent;
+    color: var(--interactive-primary);
+    cursor: pointer;
+    font-size: 0.75rem;
   }
 
   &__bundles {
@@ -157,12 +169,12 @@ function getBundleLabel(bundle: BundleData): string {
     transition: all 0.15s;
 
     &--active {
-      background: rgba(38, 164, 255, 0.15);
-      border-color: rgba(38, 164, 255, 0.4);
+      background: color-mix(in srgb, var(--interactive-primary) 15%, transparent);
+      border-color: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
     }
 
     &--selected {
-      border-color: #f59e0b;
+      border-color: var(--semantic-warning);
       &::after {
         content: '';
         position: absolute;
@@ -171,11 +183,11 @@ function getBundleLabel(bundle: BundleData): string {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #f59e0b;
+        background: var(--semantic-warning);
       }
     }
 
-    &:hover { background: rgba(38, 164, 255, 0.1); }
+    &:hover { background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); }
   }
 }
 </style>

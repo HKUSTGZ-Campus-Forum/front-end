@@ -1,6 +1,7 @@
 <!-- front-end/components/scheduler/SchedulerMap.vue -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface MapComponent {
   id: string
@@ -19,21 +20,33 @@ interface MapLine {
   category: number
 }
 
+interface MapCourse {
+  course_code: string
+  course_title_abbr: string
+}
+
+const { t } = useI18n()
+const { getMapComponents, getMapLines, getMapCourses } = useScheduler()
 const components = ref<MapComponent[]>([])
 const lines = ref<MapLine[]>([])
+const courses = ref<MapCourse[]>([])
 const searchQuery = ref('')
 const hoveredId = ref<string | null>(null)
 const loading = ref(true)
+const errorMessage = ref('')
 
-// Fetch data
 onMounted(async () => {
   try {
-    const [compResp, lineResp] = await Promise.all([
-      fetch('/api/scheduler/map/components'),
-      fetch('/api/scheduler/map/lines'),
+    const [mapComponents, mapLines, mapCourses] = await Promise.all([
+      getMapComponents(),
+      getMapLines(),
+      getMapCourses(),
     ])
-    components.value = await compResp.json()
-    lines.value = await lineResp.json()
+    components.value = mapComponents
+    lines.value = mapLines
+    courses.value = mapCourses
+  } catch {
+    errorMessage.value = t('scheduler.mapFailed')
   } finally {
     loading.value = false
   }
@@ -76,10 +89,20 @@ const componentMap = computed(() => {
   return map
 })
 
+const courseMap = computed(() => {
+  const map: Record<string, MapCourse> = {}
+  for (const course of courses.value) map[course.course_code] = course
+  return map
+})
+
 const filteredComponents = computed(() => {
   if (!searchQuery.value) return components.value
   const q = searchQuery.value.toLowerCase()
-  return components.value.filter(c => c.id.toLowerCase().includes(q))
+  return components.value.filter((component) => {
+    const course = courseMap.value[component.id]
+    return component.id.toLowerCase().includes(q)
+      || course?.course_title_abbr.toLowerCase().includes(q)
+  })
 })
 
 const filteredIds = computed(() => {
@@ -101,9 +124,9 @@ function isLineHighlighted(line: MapLine): boolean {
 }
 
 function getLineColor(line: MapLine): string {
-  if (line.category === 2) return '#3b82f6' // co-req blue
-  if (line.category === 3) return '#ef4444' // exclusion red
-  return '#374151' // prerequisite dark
+  if (line.category === 2) return 'var(--semantic-info)'
+  if (line.category === 3) return 'var(--semantic-error)'
+  return 'var(--text-primary)'
 }
 
 function getLineDash(line: MapLine): string {
@@ -111,9 +134,9 @@ function getLineDash(line: MapLine): string {
 }
 
 function getNodeColor(comp: MapComponent): string {
-  if (comp.category === 1) return '#000' // junction
-  if (comp.category === 2) return '#3b82f6' // co-req junction
-  if (comp.category === 3) return '#ef4444' // exclusion junction
+  if (comp.category === 1) return 'var(--text-primary)'
+  if (comp.category === 2) return 'var(--semantic-info)'
+  if (comp.category === 3) return 'var(--semantic-error)'
   // course node - color by subject (first 4 chars of id)
   const subject = comp.id.slice(0, 4)
   const subjects = ['UCUG', 'UFUG', 'AIAA', 'DSAA', 'SMMG', 'FTEC', 'DLED', 'AMAT', 'BSBE', 'CMAA', 'CNCC', 'CNGF', 'EOAS', 'FUNH', 'INFH', 'INTR', 'IOTA', 'IPEN', 'LANG', 'MICS', 'MSSM', 'PDEV', 'PLED', 'ROAS', 'SEEN', 'SOCH', 'SYSH', 'UCMP', 'UGOD']
@@ -125,14 +148,15 @@ function getNodeColor(comp: MapComponent): string {
 
 <template>
   <div class="map-page">
-    <div v-if="loading" class="map-page__loading">Loading map...</div>
+    <div v-if="loading" class="map-page__loading">{{ t('scheduler.loadingMap') }}</div>
+    <div v-else-if="errorMessage" class="map-page__loading map-page__error">{{ errorMessage }}</div>
     <template v-else>
       <!-- Search bar -->
       <div class="map-page__search">
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search courses..."
+          :placeholder="t('scheduler.mapSearchPlaceholder')"
           class="map-page__input"
         />
       </div>
@@ -180,7 +204,7 @@ function getNodeColor(comp: MapComponent): string {
                   width="420" height="60" rx="8"
                   :fill="getNodeColor(comp)"
                   :opacity="hoveredId ? (isHighlighted(comp.id) ? 1 : 0.2) : 0.85"
-                  :stroke="hoveredId === comp.id ? '#000' : 'none'"
+                  :stroke="hoveredId === comp.id ? 'var(--text-primary)' : 'none'"
                   stroke-width="2"
                 />
                 <text
@@ -188,7 +212,7 @@ function getNodeColor(comp: MapComponent): string {
                   fill="white"
                   font-size="16"
                   font-weight="bold"
-                >{{ comp.id }}</text>
+                >{{ courseMap[comp.id]?.course_title_abbr || comp.id }}</text>
                 <text
                   x="12" y="48"
                   fill="rgba(255,255,255,0.8)"
@@ -238,8 +262,12 @@ function getNodeColor(comp: MapComponent): string {
     outline: none;
 
     &:focus {
-      border-color: #2563eb;
+      border-color: var(--interactive-primary);
     }
+  }
+
+  &__error {
+    color: var(--semantic-error);
   }
 
   &__canvas {

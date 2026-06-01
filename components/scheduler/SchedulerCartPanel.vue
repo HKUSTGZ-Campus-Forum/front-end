@@ -1,6 +1,7 @@
 <!-- front-end/components/scheduler/SchedulerCartPanel.vue -->
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CartCourse, SearchResult, SearchResponse } from '~/utils/scheduler'
 import { FREQUENT_SUBJECTS } from '~/utils/scheduler'
 
@@ -14,9 +15,9 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'add', code: string): void
   (e: 'remove', code: string): void
-  (e: 'refresh'): void
 }>()
 
+const { t } = useI18n()
 const { searchCourses } = useScheduler()
 
 const searchQuery = ref('')
@@ -28,6 +29,7 @@ const searching = ref(false)
 const addingCodes = ref<Set<string>>(new Set())
 const removingCodes = ref<Set<string>>(new Set())
 const showCartDrawer = ref(false)
+const errorMessage = ref('')
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -37,13 +39,22 @@ watch(searchQuery, () => {
 })
 
 async function doSearch(page: number) {
-  if (!searchQuery.value.trim()) return
+  errorMessage.value = ''
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    totalResults.value = 0
+    return
+  }
   searching.value = true
   currentPage.value = page
   try {
     const result: SearchResponse = await searchCourses(searchQuery.value, props.semesterId, page, pageSize)
     searchResults.value = result.items
     totalResults.value = result.total
+  } catch {
+    searchResults.value = []
+    totalResults.value = 0
+    errorMessage.value = t('scheduler.searchFailed')
   } finally {
     searching.value = false
   }
@@ -56,8 +67,7 @@ function inCart(code: string): boolean {
 async function handleAdd(code: string) {
   addingCodes.value.add(code)
   try {
-    await emit('add', code)
-    await emit('refresh')
+    emit('add', code)
   } finally {
     addingCodes.value.delete(code)
   }
@@ -66,8 +76,7 @@ async function handleAdd(code: string) {
 async function handleRemove(code: string) {
   removingCodes.value.add(code)
   try {
-    await emit('remove', code)
-    await emit('refresh')
+    emit('remove', code)
   } finally {
     removingCodes.value.delete(code)
   }
@@ -80,12 +89,12 @@ async function handleRemove(code: string) {
       <div v-if="visible" class="cart-panel" @click.self="emit('close')">
         <div class="cart-panel__content">
           <div class="cart-panel__header">
-            <h2>Course Cart</h2>
+            <h2>{{ t('scheduler.cart') }}</h2>
             <button class="cart-panel__close" @click="emit('close')">&times;</button>
           </div>
 
           <div class="cart-panel__search">
-            <input v-model="searchQuery" type="text" placeholder="Search by code or title..." class="cart-panel__input" />
+            <input v-model="searchQuery" type="text" :placeholder="t('scheduler.searchPlaceholder')" class="cart-panel__input" />
           </div>
 
           <div class="cart-panel__subjects">
@@ -99,13 +108,14 @@ async function handleRemove(code: string) {
           </div>
 
           <div class="cart-panel__results">
-            <div v-if="searching" class="cart-panel__loading">Searching...</div>
-            <div v-else-if="searchResults.length === 0 && searchQuery" class="cart-panel__empty">No courses found</div>
+            <div v-if="searching" class="cart-panel__loading">{{ t('scheduler.searching') }}</div>
+            <div v-else-if="errorMessage" class="cart-panel__error">{{ errorMessage }}</div>
+            <div v-else-if="searchResults.length === 0 && searchQuery" class="cart-panel__empty">{{ t('scheduler.noResults') }}</div>
             <div v-else>
               <div v-for="item in searchResults" :key="item.course_code" class="cart-panel__result">
                 <div class="cart-panel__result-info">
                   <span class="cart-panel__result-code">{{ item.course_code }}</span>
-                  <span class="cart-panel__result-credits">{{ item.credit }} cr</span>
+                  <span class="cart-panel__result-credits">{{ t('scheduler.creditsShort', { count: item.credit }) }}</span>
                   <span class="cart-panel__result-title">{{ item.course_title }}</span>
                 </div>
                 <div class="cart-panel__result-actions">
@@ -125,15 +135,15 @@ async function handleRemove(code: string) {
           </div>
 
           <div class="cart-panel__footer">
-            <button class="cart-panel__drawer-btn" @click="showCartDrawer = !showCartDrawer">Cart ({{ courseList.length }})</button>
+            <button class="cart-panel__drawer-btn" @click="showCartDrawer = !showCartDrawer">{{ t('scheduler.cart') }} ({{ courseList.length }})</button>
           </div>
 
           <div v-if="showCartDrawer" class="cart-panel__drawer">
             <div v-for="course in courseList" :key="course.course_code" class="cart-panel__drawer-item">
               <span>{{ course.course_code }} - {{ course.course_title }}</span>
-              <button @click="handleRemove(course.course_code)">Remove</button>
+              <button @click="handleRemove(course.course_code)">{{ t('scheduler.remove') }}</button>
             </div>
-            <div v-if="courseList.length === 0" class="cart-panel__drawer-empty">Cart is empty</div>
+            <div v-if="courseList.length === 0" class="cart-panel__drawer-empty">{{ t('scheduler.emptyCart') }}</div>
           </div>
         </div>
       </div>
@@ -149,7 +159,7 @@ async function handleRemove(code: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+    background: var(--modal-backdrop);
   backdrop-filter: blur(4px);
 
   &__content {
@@ -192,7 +202,7 @@ async function handleRemove(code: string) {
     background: var(--surface-secondary);
     color: var(--text-primary);
     outline: none;
-    &:focus { border-color: #2563eb; }
+    &:focus { border-color: var(--interactive-primary); }
   }
 
   &__subjects {
@@ -210,7 +220,7 @@ async function handleRemove(code: string) {
     font-size: 0.75rem;
     cursor: pointer;
     color: var(--text-secondary);
-    &.active, &:hover { background: rgba(38, 164, 255, 0.1); border-color: rgba(38, 164, 255, 0.3); color: #2563eb; }
+    &.active, &:hover { background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); border-color: color-mix(in srgb, var(--interactive-primary) 30%, transparent); color: var(--interactive-primary); }
   }
 
   &__results {
@@ -221,6 +231,7 @@ async function handleRemove(code: string) {
   }
 
   &__loading, &__empty { text-align: center; color: var(--text-tertiary); padding: 2rem; }
+  &__error { text-align: center; color: var(--semantic-error); padding: 2rem; }
 
   &__result {
     display: flex;
@@ -242,8 +253,8 @@ async function handleRemove(code: string) {
     font-size: 1.1rem; display: flex; align-items: center; justify-content: center; color: white;
     &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
-  &__add-btn { background: #22c55e; &:hover { background: #16a34a; } }
-  &__remove-btn { background: #ef4444; &:hover { background: #dc2626; } }
+  &__add-btn { background: var(--semantic-success); }
+  &__remove-btn { background: var(--semantic-error); }
 
   &__pagination {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -269,7 +280,7 @@ async function handleRemove(code: string) {
   &__drawer-item {
     display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0;
     font-size: 0.8rem; color: var(--text-primary);
-    button { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.75rem; }
+    button { background: none; border: none; color: var(--semantic-error); cursor: pointer; font-size: 0.75rem; }
   }
 
   &__drawer-empty { text-align: center; color: var(--text-tertiary); padding: 1rem; font-size: 0.8rem; }

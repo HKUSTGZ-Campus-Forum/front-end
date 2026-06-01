@@ -104,8 +104,8 @@ function isActive(path: string) {
 
         <li>
           <NuxtLink
-            :to="getLocalePath('/scheduler')"
-            :class="{ active: isActive('/scheduler') }"
+            :to="getLocalePath('/schedule')"
+            :class="{ active: isActive('/schedule') }"
           >
             <img src="/icons/sidebar_schedulerlogo.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.scheduler') }}</span>

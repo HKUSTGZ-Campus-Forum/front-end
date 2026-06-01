@@ -5,7 +5,7 @@ import type { SemesterInfo } from '~/utils/scheduler'
 
 definePageMeta({ layout: 'keguang' })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { getLocalePath } = useAppLocale()
 const { getSemesters } = useScheduler()
 
@@ -35,7 +35,7 @@ function groupByYear(sems: SemesterInfo[]) {
 <template>
   <div class="scheduler-home">
     <h1 class="scheduler-home__title">{{ t('scheduler.dashboard') }}</h1>
-    <div v-if="loading" class="scheduler-home__loading">Loading...</div>
+    <div v-if="loading" class="scheduler-home__loading">{{ t('scheduler.loading') }}</div>
     <div v-else class="scheduler-home__timeline">
       <div v-for="(sems, year) in groupByYear(semesters)" :key="year" class="scheduler-home__year">
         <div class="scheduler-home__year-label">{{ year }}</div>
@@ -43,15 +43,15 @@ function groupByYear(sems: SemesterInfo[]) {
           <NuxtLink
             v-for="sem in sems"
             :key="sem.id"
-            :to="getLocalePath(`/scheduler/dashboard/${sem.id}`)"
+            :to="getLocalePath(`/schedule/dashboard/${sem.id}`)"
             class="scheduler-home__card"
           >
-            <div class="scheduler-home__card-name">{{ sem.name_zh }}</div>
-            <div class="scheduler-home__card-count">{{ sem.section_count }} sections</div>
+            <div class="scheduler-home__card-name">{{ locale === 'zh' ? sem.name_zh : sem.name }}</div>
+            <div class="scheduler-home__card-count">{{ t('scheduler.sections', { count: sem.section_count }) }}</div>
           </NuxtLink>
         </div>
       </div>
-      <div v-if="semesters.length === 0" class="scheduler-home__empty">No semesters available</div>
+      <div v-if="semesters.length === 0" class="scheduler-home__empty">{{ t('scheduler.noSemesters') }}</div>
     </div>
   </div>
 </template>

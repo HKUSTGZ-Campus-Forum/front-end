@@ -2,7 +2,7 @@
 definePageMeta({ layout: 'keguang' })
 const router = useRouter()
 const { getLocalePath } = useAppLocale()
-router.replace(getLocalePath('/scheduler/dashboard'))
+router.replace(getLocalePath('/schedule/dashboard'))
 </script>
 
 <template>

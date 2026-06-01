@@ -1,11 +1,15 @@
 <!-- front-end/components/scheduler/SchedulerSidePanel.vue -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CartCourse } from '~/utils/scheduler'
+
+type DisplayOption = 'name' | 'section' | 'location' | 'instructor' | 'duration'
 
 const props = defineProps<{
   courseList: CartCourse[]
   currentPlan: { courseIndex: number; bundleId: number; layer: number }[]
+  displayOptions: Record<DisplayOption, boolean>
 }>()
 
 const emit = defineEmits<{
@@ -15,9 +19,12 @@ const emit = defineEmits<{
   (e: 'show-info', code: string): void
   (e: 'open-cart'): void
   (e: 'toggle-filter'): void
+  (e: 'update:display-option', key: DisplayOption, value: boolean): void
 }>()
 
 const activeTab = ref<'main' | 'klms'>('main')
+const { t } = useI18n()
+const displayOptionKeys: DisplayOption[] = ['name', 'section', 'location', 'instructor', 'duration']
 
 const filteredCourses = computed(() => {
   if (activeTab.value === 'klms') return props.courseList.filter(c => c.klms_course)
@@ -25,10 +32,13 @@ const filteredCourses = computed(() => {
 })
 
 const currentSelectionMap = computed(() => {
-  const map: Record<string, { bundleId: number; layer: number }> = {}
+  const map: Record<string, Record<number, number>> = {}
   for (const sel of props.currentPlan) {
     const course = props.courseList[sel.courseIndex]
-    if (course) map[course.course_code] = { bundleId: sel.bundleId, layer: sel.layer }
+    if (course) {
+      map[course.course_code] ||= {}
+      map[course.course_code][sel.layer] = sel.bundleId
+    }
   }
   return map
 })
@@ -36,17 +46,33 @@ const currentSelectionMap = computed(() => {
 const totalCredits = computed(() =>
   props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + c.credit, 0)
 )
+
+function updateDisplayOption(key: DisplayOption, event: Event) {
+  emit('update:display-option', key, (event.target as HTMLInputElement).checked)
+}
 </script>
 
 <template>
   <div class="side-panel">
     <div class="side-panel__header">
       <div class="side-panel__tabs">
-        <button :class="{ active: activeTab === 'main' }" @click="activeTab = 'main'">Main</button>
-        <button :class="{ active: activeTab === 'klms' }" @click="activeTab = 'klms'">KLMS</button>
+        <button :class="{ active: activeTab === 'main' }" @click="activeTab = 'main'">{{ t('scheduler.main') }}</button>
+        <button :class="{ active: activeTab === 'klms' }" @click="activeTab = 'klms'">{{ t('scheduler.klms') }}</button>
       </div>
-      <div class="side-panel__credits">{{ totalCredits }} credits</div>
+      <div class="side-panel__credits">{{ t('scheduler.credits', { count: totalCredits }) }}</div>
     </div>
+
+    <details class="side-panel__display">
+      <summary>{{ t('scheduler.display') }}</summary>
+      <label v-for="key in displayOptionKeys" :key="key">
+        <input
+          type="checkbox"
+          :checked="displayOptions[key]"
+          @change="updateDisplayOption(key, $event)"
+        >
+        {{ t(`scheduler.display${key.charAt(0).toUpperCase()}${key.slice(1)}`) }}
+      </label>
+    </details>
 
     <div class="side-panel__list">
       <SchedulerCourseCard
@@ -60,12 +86,12 @@ const totalCredits = computed(() =>
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
         @show-info="(...args) => emit('show-info', ...args)"
       />
-      <div v-if="filteredCourses.length === 0" class="side-panel__empty">No courses in cart</div>
+      <div v-if="filteredCourses.length === 0" class="side-panel__empty">{{ t('scheduler.emptyCart') }}</div>
     </div>
 
     <div class="side-panel__actions">
-      <button class="side-panel__btn" @click="emit('toggle-filter')">Filter</button>
-      <button class="side-panel__btn side-panel__btn--primary" @click="emit('open-cart')">Cart</button>
+      <button class="side-panel__btn" @click="emit('toggle-filter')">{{ t('scheduler.filter') }}</button>
+      <button class="side-panel__btn side-panel__btn--primary" @click="emit('open-cart')">{{ t('scheduler.cart') }}</button>
     </div>
   </div>
 </template>
@@ -109,6 +135,26 @@ const totalCredits = computed(() =>
     padding: 0.5rem;
   }
 
+  &__display {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+
+    summary {
+      cursor: pointer;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    label {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
+  }
+
   &__empty {
     text-align: center;
     color: var(--text-tertiary);
@@ -136,10 +182,10 @@ const totalCredits = computed(() =>
     &:hover { background: var(--surface-secondary); }
 
     &--primary {
-      background: rgba(38, 164, 255, 0.15);
-      border-color: rgba(38, 164, 255, 0.4);
-      color: #2563eb;
-      &:hover { background: rgba(38, 164, 255, 0.25); }
+      background: color-mix(in srgb, var(--interactive-primary) 15%, transparent);
+      border-color: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
+      color: var(--interactive-primary);
+      &:hover { background: color-mix(in srgb, var(--interactive-primary) 25%, transparent); }
     }
   }
 }

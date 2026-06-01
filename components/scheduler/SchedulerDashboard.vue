@@ -1,8 +1,9 @@
 <!-- front-end/components/scheduler/SchedulerDashboard.vue -->
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import type { CartCourse } from '~/utils/scheduler'
-import { solvePlans } from '~/utils/scheduler'
+import { ref, computed, toRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import type { CartCourse, CourseDetail } from '~/utils/scheduler'
+import { getMaxDayNum, solvePlans } from '~/utils/scheduler'
 
 const props = defineProps<{
   semesterId: string
@@ -11,15 +12,24 @@ const props = defineProps<{
   loading: boolean
 }>()
 
-const { addToCart, removeFromCart, toggleCourse, toggleBundle, toggleLayer, getCart } = useScheduler()
-
-const courseList = ref<CartCourse[]>([...props.initialCourseList])
+const { t } = useI18n()
+const { getCourseDetail } = useScheduler()
+const cart = useSchedulerCart(
+  props.semesterId,
+  toRef(props, 'isLoggedIn'),
+  toRef(props, 'initialCourseList'),
+)
+const courseList = cart.courses
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
 )
 const filterMode = ref(false)
 const showCartPanel = ref(false)
+const showGuestHint = ref(true)
+const selectedCourse = ref<CourseDetail | null>(null)
+const showCourseDetail = ref(false)
+const cartError = ref('')
 const displayOptions = ref({
   name: true,
   section: true,
@@ -28,35 +38,26 @@ const displayOptions = ref({
   duration: false,
 })
 
-const maxDayNum = computed(() => {
-  let hasWeekend = false
-  for (const plan of planList.value[viewIndex.value - 1] || []) {
-    const course = courseList.value[plan.courseIndex]
-    if (!course) continue
-    const bundles = course.layers[plan.layer]
-    if (!bundles) continue
-    const bundle = bundles.find(b => b.id === plan.bundleId)
-    if (!bundle) continue
-    for (const section of bundle.sections) {
-      for (const lecture of section.lectures) {
-        if (lecture.day >= 5) hasWeekend = true
-      }
-    }
-  }
-  return hasWeekend ? 7 : 5
-})
-
-const planList = computed(() => solvePlans(courseList.value, bannedPeriods.value))
+const solverResult = computed(() => solvePlans(courseList.value, bannedPeriods.value))
+const planList = computed(() => solverResult.value.status === 'ok' ? solverResult.value.plans : [])
 
 const currentPlan = computed(() => {
   const plan = planList.value[viewIndex.value - 1]
   return plan || []
 })
 
+const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
+
 const planMessage = computed(() => {
-  if (courseList.value.length === 0) return 'Cart is empty'
-  if (courseList.value.filter(c => c.enabled).length === 0) return 'Enable at least one course'
-  if (planList.value.length === 0) return 'No valid schedule found'
+  if (solverResult.value.status === 'empty-cart') return t('scheduler.emptyCartHint')
+  if (solverResult.value.status === 'all-disabled') return t('scheduler.allDisabled')
+  if (solverResult.value.status === 'unavailable-layer') {
+    return t('scheduler.unavailableLayer', {
+      course: solverResult.value.courseCode,
+      layer: solverResult.value.layer,
+    })
+  }
+  if (solverResult.value.status === 'no-solution') return t('scheduler.noSolution')
   return null
 })
 
@@ -67,40 +68,17 @@ watch(planList, (plans) => {
   }
 })
 
-async function handleRefresh() {
-  courseList.value = await getCart(props.semesterId)
+async function handleShowInfo(code: string) {
+  selectedCourse.value = await getCourseDetail(code, props.semesterId)
+  showCourseDetail.value = true
 }
 
-async function handleAddCourse(code: string) {
-  await addToCart(props.semesterId, code)
-}
-
-async function handleRemoveCourse(code: string) {
-  await removeFromCart(props.semesterId, code)
-}
-
-async function handleToggleCourse(code: string, enabled: boolean) {
-  await toggleCourse(props.semesterId, code, enabled)
-  const course = courseList.value.find(c => c.course_code === code)
-  if (course) course.enabled = enabled
-}
-
-async function handleToggleBundle(code: string, bundleId: number, layer: number, enabled: boolean) {
-  await toggleBundle(props.semesterId, code, bundleId, layer, enabled)
-  const course = courseList.value.find(c => c.course_code === code)
-  if (course?.layers[layer]) {
-    const bundle = course.layers[layer].find(b => b.id === bundleId)
-    if (bundle) bundle.enabled = enabled
-  }
-}
-
-async function handleToggleLayer(code: string, layer: number, enabled: boolean) {
-  await toggleLayer(props.semesterId, code, layer, enabled)
-  const course = courseList.value.find(c => c.course_code === code)
-  if (course?.layers[layer]) {
-    for (const bundle of course.layers[layer]) {
-      bundle.enabled = enabled
-    }
+async function handleCartAction(action: () => Promise<void>) {
+  cartError.value = ''
+  try {
+    await action()
+  } catch {
+    cartError.value = t('scheduler.cartFailed')
   }
 }
 
@@ -112,13 +90,14 @@ function toggleBan(day: number, period: number) {
 <template>
   <div class="dashboard">
     <!-- Login banner -->
-    <div v-if="!isLoggedIn" class="dashboard__banner">
-      Log in to save your cart
+    <div v-if="!isLoggedIn && showGuestHint" class="dashboard__banner">
+      {{ t('scheduler.guestHint') }}
+      <button type="button" :aria-label="t('scheduler.close')" @click="showGuestHint = false">&times;</button>
     </div>
 
     <!-- Error overlay -->
-    <div v-if="planMessage" class="dashboard__message">
-      {{ planMessage }}
+    <div v-if="cartError || planMessage" class="dashboard__message">
+      {{ cartError || planMessage }}
     </div>
 
     <div class="dashboard__body">
@@ -135,7 +114,7 @@ function toggleBan(day: number, period: number) {
             :max-day-num="maxDayNum"
             @toggle-ban="toggleBan"
           />
-          <div v-else class="dashboard__loading">Loading...</div>
+          <div v-else class="dashboard__loading">{{ t('scheduler.loading') }}</div>
         </div>
         <SchedulerBottomPanel
           :current-index="viewIndex"
@@ -149,11 +128,14 @@ function toggleBan(day: number, period: number) {
         <SchedulerSidePanel
           :course-list="courseList"
           :current-plan="currentPlan"
-          @toggle-course="handleToggleCourse"
-          @toggle-bundle="handleToggleBundle"
-          @toggle-layer="handleToggleLayer"
+          :display-options="displayOptions"
+          @toggle-course="(code, enabled) => handleCartAction(() => cart.toggleCourse(code, enabled))"
+          @toggle-bundle="(code, bundleId, layer, enabled) => handleCartAction(() => cart.toggleBundle(code, bundleId, layer, enabled))"
+          @toggle-layer="(code, layer, enabled) => handleCartAction(() => cart.toggleLayer(code, layer, enabled))"
+          @show-info="handleShowInfo"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
+          @update:display-option="(key, value) => displayOptions[key] = value"
         />
       </div>
     </div>
@@ -164,9 +146,14 @@ function toggleBan(day: number, period: number) {
       :course-list="courseList"
       :visible="showCartPanel"
       @close="showCartPanel = false"
-      @add="handleAddCourse"
-      @remove="handleRemoveCourse"
-      @refresh="handleRefresh"
+      @add="(code) => handleCartAction(() => cart.add(code))"
+      @remove="(code) => handleCartAction(() => cart.remove(code))"
+    />
+
+    <SchedulerCourseDetail
+      :visible="showCourseDetail"
+      :course="selectedCourse"
+      @close="showCourseDetail = false"
     />
   </div>
 </template>
@@ -179,11 +166,23 @@ function toggleBan(day: number, period: number) {
   overflow: hidden;
 
   &__banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 0.5rem 1rem;
-    background: #fef3c7;
-    color: #92400e;
+    background: color-mix(in srgb, var(--semantic-warning) 18%, var(--surface-primary));
+    color: var(--text-primary);
     font-size: 0.85rem;
     text-align: center;
+
+    button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-size: 1rem;
+    }
   }
 
   &__message {

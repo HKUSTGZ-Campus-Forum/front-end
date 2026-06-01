@@ -1,8 +1,9 @@
 <!-- front-end/components/scheduler/SchedulerTimetable.vue -->
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { CartCourse, SchedulerLecture } from '~/utils/scheduler'
-import { DAY_NAMES, TIME_SLOTS, getTopOffset, getHeight, getCourseColor } from '~/utils/scheduler'
+import { useI18n } from 'vue-i18n'
+import type { CartCourse } from '~/utils/scheduler'
+import { TIME_SLOTS, getTopOffset, getHeight, getCourseColor } from '~/utils/scheduler'
 
 const props = defineProps<{
   courseList: CartCourse[]
@@ -16,6 +17,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-ban', day: number, period: number): void
 }>()
+const { t } = useI18n()
+const dayNames = computed(() => [
+  t('scheduler.days.mon'),
+  t('scheduler.days.tue'),
+  t('scheduler.days.wed'),
+  t('scheduler.days.thu'),
+  t('scheduler.days.fri'),
+  t('scheduler.days.sat'),
+  t('scheduler.days.sun'),
+])
 
 const containerRef = ref<HTMLElement | null>(null)
 const containerWidth = ref(800)
@@ -55,8 +66,8 @@ const rowHeight = computed(() => {
 
 interface LectureBlock {
   day: number
-  startTime: number
-  endTime: number
+  start_time: number
+  end_time: number
   room: string
   instructor: string
   courseCode: string
@@ -95,9 +106,9 @@ const lectureBlocks = computed(() => {
 })
 
 function getBlockStyle(block: LectureBlock) {
-  const top = headerHeight + decorationWidth + getTopOffset(block.startTime) * rowHeight.value
-  const left = timeColWidth + decorationWidth + block.day * dayColWidth.value
-  const height = getHeight(block.startTime, block.endTime) * rowHeight.value - 2
+  const top = headerHeight + decorationWidth + getTopOffset(block.start_time) * rowHeight.value
+  const left = timeColWidth + decorationWidth + (block.day - 1) * dayColWidth.value
+  const height = getHeight(block.start_time, block.end_time) * rowHeight.value - 2
   const width = dayColWidth.value - 2
   return {
     top: `${top}px`,
@@ -133,7 +144,7 @@ function isBanned(day: number, period: number): boolean {
         height: `${headerHeight}px`,
       }"
     >
-      {{ DAY_NAMES[d - 1] }}
+      {{ dayNames[d - 1] }}
     </div>
 
     <!-- Time labels -->
@@ -183,7 +194,7 @@ function isBanned(day: number, period: number): boolean {
         <div v-if="displayOptions.location" class="timetable__block-room">{{ block.room }}</div>
         <div v-if="displayOptions.instructor" class="timetable__block-instructor">{{ block.instructor }}</div>
         <div v-if="displayOptions.duration" class="timetable__block-time">
-          {{ formatTime(block.startTime) }}-{{ formatTime(block.endTime) }}
+          {{ formatTime(block.start_time) }}-{{ formatTime(block.end_time) }}
         </div>
       </template>
     </div>
@@ -227,14 +238,14 @@ function isBanned(day: number, period: number): boolean {
     transition: background 0.15s;
 
     &:hover {
-      background: rgba(255, 0, 0, 0.08);
+      background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
     }
 
     &--banned {
       background: repeating-linear-gradient(
         45deg,
-        rgba(255, 0, 0, 0.12),
-        rgba(255, 0, 0, 0.12) 4px,
+        color-mix(in srgb, var(--semantic-error) 12%, transparent),
+        color-mix(in srgb, var(--semantic-error) 12%, transparent) 4px,
         transparent 4px,
         transparent 8px
       );

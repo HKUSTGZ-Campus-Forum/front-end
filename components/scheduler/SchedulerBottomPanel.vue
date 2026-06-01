@@ -17,11 +17,12 @@ const sliderPercent = computed(() => {
 })
 
 function goToStart() { emit('update:index', 1) }
-function goToEnd() { emit('update:index', props.totalPlans) }
+function goToEnd() { if (props.totalPlans > 0) emit('update:index', props.totalPlans) }
 function goPrev() { emit('update:index', Math.max(1, props.currentIndex - 1)) }
-function goNext() { emit('update:index', Math.min(props.totalPlans, props.currentIndex + 1)) }
+function goNext() { if (props.totalPlans > 0) emit('update:index', Math.min(props.totalPlans, props.currentIndex + 1)) }
 
 function onSliderClick(e: MouseEvent) {
+  if (props.totalPlans === 0) return
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   const percent = (e.clientX - rect.left) / rect.width
   const newIndex = Math.max(1, Math.min(props.totalPlans, Math.round(percent * (props.totalPlans - 1)) + 1))
@@ -34,7 +35,7 @@ function onSliderClick(e: MouseEvent) {
     <div class="bottom-panel__controls">
       <button :disabled="currentIndex <= 1" @click="goToStart">&#9198;</button>
       <button :disabled="currentIndex <= 1" @click="goPrev">&#9664;</button>
-      <span class="bottom-panel__counter">{{ currentIndex }} / {{ totalPlans }}</span>
+      <span class="bottom-panel__counter">{{ totalPlans === 0 ? 0 : currentIndex }} / {{ totalPlans }}</span>
       <button :disabled="currentIndex >= totalPlans" @click="goNext">&#9654;</button>
       <button :disabled="currentIndex >= totalPlans" @click="goToEnd">&#9197;</button>
     </div>
@@ -86,7 +87,7 @@ function onSliderClick(e: MouseEvent) {
 
   &__thumb {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
-    width: 16px; height: 16px; border-radius: 50%; background: #2563eb;
+    width: 16px; height: 16px; border-radius: 50%; background: var(--interactive-primary);
     transition: left 0.1s ease; box-shadow: 0 1px 4px rgba(37, 99, 235, 0.4);
   }
 }

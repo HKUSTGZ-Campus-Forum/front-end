@@ -3,10 +3,10 @@ import type {
 } from '~/utils/scheduler'
 
 export function useScheduler() {
-  const { fetchWithAuth } = useApi()
+  const { fetchPublic, fetchWithAuth } = useApi()
 
   async function getSemesters(): Promise<SemesterInfo[]> {
-    const resp = await fetch('/api/scheduler/semesters')
+    const resp = await fetchPublic('/api/scheduler/semesters')
     if (!resp.ok) throw new Error('Failed to fetch semesters')
     return resp.json()
   }
@@ -14,13 +14,13 @@ export function useScheduler() {
   async function searchCourses(query: string, semester: string, page = 1, pageSize = 8): Promise<SearchResponse> {
     const params = new URLSearchParams({ query, page: String(page), pageSize: String(pageSize) })
     if (semester) params.set('semester', semester)
-    const resp = await fetch(`/api/scheduler/courses/search?${params}`)
+    const resp = await fetchPublic(`/api/scheduler/courses/search?${params}`)
     if (!resp.ok) throw new Error('Search failed')
     return resp.json()
   }
 
   async function getCourseDetail(code: string, semester: string): Promise<CourseDetail> {
-    const resp = await fetch(`/api/scheduler/courses/${code}?semester=${semester}`)
+    const resp = await fetchPublic(`/api/scheduler/courses/${code}?semester=${semester}`)
     if (!resp.ok) throw new Error('Course not found')
     return resp.json()
   }
@@ -74,6 +74,24 @@ export function useScheduler() {
     if (!resp.ok) throw new Error('Failed to toggle layer')
   }
 
+  async function getMapComponents() {
+    const resp = await fetchPublic('/api/scheduler/map/components')
+    if (!resp.ok) throw new Error('Map components failed')
+    return resp.json()
+  }
+
+  async function getMapLines() {
+    const resp = await fetchPublic('/api/scheduler/map/lines')
+    if (!resp.ok) throw new Error('Map lines failed')
+    return resp.json()
+  }
+
+  async function getMapCourses() {
+    const resp = await fetchPublic('/api/scheduler/map/courses')
+    if (!resp.ok) throw new Error('Map courses failed')
+    return resp.json()
+  }
+
   return {
     getSemesters,
     searchCourses,
@@ -84,5 +102,8 @@ export function useScheduler() {
     toggleCourse,
     toggleBundle,
     toggleLayer,
+    getMapComponents,
+    getMapLines,
+    getMapCourses,
   }
 }
