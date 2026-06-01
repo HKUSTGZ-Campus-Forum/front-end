@@ -96,97 +96,116 @@ export const FREQUENT_SUBJECTS = ['MOES', 'UCUG', 'UFUG', 'AIAA', 'DSAA', 'SMMG'
 
 // --- Plan Solver ---
 
-export function solvePlans(
-  courseList: CartCourse[],
-  bannedPeriods: boolean[][]
-): { courseIndex: number; bundleId: number; layer: number }[][] {
-  const enabledCourses = courseList
-    .map((course, idx) => ({ course, idx }))
-    .filter(({ course }) => course.enabled)
+export interface PlanSelection {
+  courseIndex: number
+  bundleId: number
+  layer: number
+}
 
-  if (enabledCourses.length === 0) return []
+export type SolverResult =
+  | { status: 'ok'; plans: PlanSelection[][] }
+  | { status: 'empty-cart'; plans: [] }
+  | { status: 'all-disabled'; plans: [] }
+  | { status: 'unavailable-layer'; plans: []; courseCode: string; layer: number }
+  | { status: 'no-solution'; plans: [] }
 
-  const courseBundles: { courseIndex: number; bundleId: number; layer: number; lectures: SchedulerLecture[] }[][] = []
-
-  for (const { course, idx } of enabledCourses) {
-    const bundles: typeof courseBundles[0] = []
-    for (const [layerStr, layerBundles] of Object.entries(course.layers)) {
-      const layer = Number(layerStr)
-      for (const bundle of layerBundles) {
-        if (!bundle.enabled) continue
-        const lectures = bundle.sections.flatMap(s => s.lectures)
-        const overlapsBanned = lectures.some(l => {
-          for (let period = 0; period < 8; period++) {
-            const slotStart = 900 + period * 90
-            const slotEnd = slotStart + 90
-            if (l.start_time < slotEnd && l.end_time > slotStart && bannedPeriods[l.day]?.[period]) {
-              return true
-            }
-          }
-          return false
-        })
-        if (!overlapsBanned) {
-          bundles.push({ courseIndex: idx, bundleId: bundle.id, layer, lectures })
-        }
+function overlapsBanned(lectures: SchedulerLecture[], bannedPeriods: boolean[][]): boolean {
+  return lectures.some((lecture) => {
+    for (let period = 0; period < TIME_SLOTS.length; period++) {
+      const slot = TIME_SLOTS[period]
+      if (
+        lecture.start_time < slot.end &&
+        lecture.end_time > slot.start &&
+        bannedPeriods[lecture.day - 1]?.[period]
+      ) {
+        return true
       }
     }
-    courseBundles.push(bundles)
+    return false
+  })
+}
+
+export function solvePlans(courseList: CartCourse[], bannedPeriods: boolean[][]): SolverResult {
+  if (courseList.length === 0) return { status: 'empty-cart', plans: [] }
+
+  const enabledCourses = courseList
+    .map((course, courseIndex) => ({ course, courseIndex }))
+    .filter(({ course }) => course.enabled)
+  if (enabledCourses.length === 0) return { status: 'all-disabled', plans: [] }
+
+  const choices: {
+    courseIndex: number
+    courseCode: string
+    layer: number
+    bundles: { selection: PlanSelection; lectures: SchedulerLecture[] }[]
+  }[] = []
+
+  for (const { course, courseIndex } of enabledCourses) {
+    const layers = Object.entries(course.layers)
+      .map(([layerText, bundles]) => ({ layer: Number(layerText), bundles }))
+      .sort((a, b) => a.layer - b.layer)
+
+    for (const { layer, bundles: layerBundles } of layers) {
+      const bundles = layerBundles
+        .filter(bundle => bundle.enabled)
+        .map(bundle => ({
+          selection: { courseIndex, layer, bundleId: bundle.id },
+          lectures: bundle.sections.flatMap(section => section.lectures),
+        }))
+        .filter(bundle => !overlapsBanned(bundle.lectures, bannedPeriods))
+
+      if (bundles.length === 0) {
+        return { status: 'unavailable-layer', plans: [], courseCode: course.course_code, layer }
+      }
+      choices.push({ courseIndex, courseCode: course.course_code, layer, bundles })
+    }
   }
 
-  const plans: { courseIndex: number; bundleId: number; layer: number }[][] = []
-  const bucket: Map<number, { start: number; end: number }[]> = new Map()
+  const plans: PlanSelection[][] = []
+  const bucket = new Map<number, { start: number; end: number }[]>()
+  const selected: PlanSelection[] = []
 
-  function hasOverlap(day: number, start: number, end: number): boolean {
-    const slots = bucket.get(day) || []
-    return slots.some(s => start < s.end && end > s.start)
+  function canPlace(lectures: SchedulerLecture[]) {
+    return lectures.every(lecture =>
+      !(bucket.get(lecture.day) || []).some(slot =>
+        lecture.start_time < slot.end && lecture.end_time > slot.start,
+      ),
+    )
   }
 
-  function addToBucket(day: number, start: number, end: number) {
-    if (!bucket.has(day)) bucket.set(day, [])
-    bucket.get(day)!.push({ start, end })
-  }
-
-  const currentSelection: typeof courseBundles[0] = []
-
-  function searchPlans(courseIdx: number) {
-    if (courseIdx >= courseBundles.length) {
-      const plan = currentSelection.map(s => ({
-        courseIndex: s.courseIndex,
-        bundleId: s.bundleId,
-        layer: s.layer,
-      }))
-      plans.push(plan)
+  function search(index: number) {
+    if (index === choices.length) {
+      plans.push(selected.map(selection => ({ ...selection })))
       return
     }
 
-    for (const bundle of courseBundles[courseIdx]) {
-      let canPlace = true
-      const placed: { day: number; start: number; end: number }[] = []
-
+    for (const bundle of choices[index].bundles) {
+      if (!canPlace(bundle.lectures)) continue
       for (const lecture of bundle.lectures) {
-        if (hasOverlap(lecture.day, lecture.start_time, lecture.end_time)) {
-          canPlace = false
-          break
-        }
-        placed.push({ day: lecture.day, start: lecture.start_time, end: lecture.end_time })
+        if (!bucket.has(lecture.day)) bucket.set(lecture.day, [])
+        bucket.get(lecture.day)!.push({ start: lecture.start_time, end: lecture.end_time })
       }
-
-      if (canPlace) {
-        for (const p of placed) addToBucket(p.day, p.start, p.end)
-        currentSelection.push(bundle)
-        searchPlans(courseIdx + 1)
-        currentSelection.pop()
-        for (const p of placed) {
-          const slots = bucket.get(p.day)!
-          const idx = slots.findIndex(s => s.start === p.start && s.end === p.end)
-          if (idx !== -1) slots.splice(idx, 1)
-        }
-      }
+      selected.push(bundle.selection)
+      search(index + 1)
+      selected.pop()
+      for (const lecture of bundle.lectures) bucket.get(lecture.day)!.pop()
     }
   }
 
-  searchPlans(0)
-  return plans
+  search(0)
+  return plans.length ? { status: 'ok', plans } : { status: 'no-solution', plans: [] }
+}
+
+export function getMaxDayNum(courseList: CartCourse[], plan: PlanSelection[]): number {
+  let maxDay = 5
+  for (const selection of plan) {
+    const bundle = courseList[selection.courseIndex]?.layers[selection.layer]
+      ?.find(item => item.id === selection.bundleId)
+    for (const section of bundle?.sections || []) {
+      for (const lecture of section.lectures) maxDay = Math.max(maxDay, lecture.day)
+    }
+  }
+  return maxDay
 }
 
 // --- Time Helpers ---
