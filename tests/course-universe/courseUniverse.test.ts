@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import {
   COURSE_UNIVERSE_ALIAS_PREFIXES,
   COURSE_UNIVERSE_COURSE_HEIGHT,
@@ -88,6 +89,17 @@ const directPathLines = [
 ]
 
 describe('course universe helpers', () => {
+  it('renders course cards as native SVG groups so they share graph transforms with lines', () => {
+    const canvasSource = readFileSync(
+      new URL('../../components/courses/universe/CourseUniverseCanvas.vue', import.meta.url),
+      'utf8',
+    )
+
+    expect(canvasSource).not.toContain('<foreignObject')
+    expect(canvasSource).toContain('<g\n            v-for="node in visibleNodes"')
+    expect(canvasSource).toContain('<rect class="cu-node__card"')
+  })
+
   it('exports the expected course modes', () => {
     expect(COURSE_UNIVERSE_MODES.map(mode => mode.key)).toEqual([
       'universe',

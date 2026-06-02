@@ -308,6 +308,25 @@ function shouldShowPrefixBadge(node: CourseUniverseNode) {
   return Boolean(selectedPrefix.value && getCourseUniverseNodePrefix(node.code) !== selectedPrefix.value)
 }
 
+function getNodeX(node: CourseUniverseNode) {
+  return renderComponentById.value.get(node.componentId)?.x || 0
+}
+
+function getNodeY(node: CourseUniverseNode) {
+  return renderComponentById.value.get(node.componentId)?.y || 0
+}
+
+function getNodeStatus(node: CourseUniverseNode) {
+  if (node.inPlanner) return t('courseUniverse.legend.inPlanner')
+  if (node.academicStatus) return t(`academicMap.status.${node.academicStatus}`)
+  return t('courseUniverse.selectCourse')
+}
+
+function getNodeTitle(node: CourseUniverseNode) {
+  if (node.title.length <= 27) return node.title
+  return `${node.title.slice(0, 26)}...`
+}
+
 watch(prefixOptions, options => {
   if (!options.some(option => option.prefix === selectedPrefix.value)) {
     selectedPrefix.value = options[0]?.prefix || ''
@@ -465,40 +484,40 @@ onBeforeUnmount(() => {
         </g>
 
         <g class="cu-nodes">
-          <foreignObject
+          <g
             v-for="node in visibleNodes"
             :key="node.componentId"
-            :x="renderComponentById.get(node.componentId)?.x || 0"
-            :y="renderComponentById.get(node.componentId)?.y || 0"
-            :width="COURSE_UNIVERSE_COURSE_WIDTH"
-            :height="COURSE_UNIVERSE_COURSE_HEIGHT"
+            :class="[
+              ...nodeClasses(node),
+              {
+                'is-highlighted': highlightedComponentIds.has(node.componentId),
+                'is-dimmed': isRenderComponentDimmed(node.componentId),
+              },
+            ]"
+            :transform="`translate(${getNodeX(node)}, ${getNodeY(node)})`"
+            :aria-label="node.displayCode"
+            role="button"
+            tabindex="0"
+            @mouseenter="hoveredId = node.componentId"
+            @mouseleave="hoveredId = ''"
+            @pointerdown.stop="handlePointerDown"
+            @click="handleNodeClick(node.code)"
+            @keydown.enter="handleNodeClick(node.code)"
+            @keydown.space.prevent="handleNodeClick(node.code)"
           >
-            <button
-              type="button"
-              :class="[
-                ...nodeClasses(node),
-                {
-                  'is-highlighted': highlightedComponentIds.has(node.componentId),
-                  'is-dimmed': isRenderComponentDimmed(node.componentId),
-                },
-              ]"
-              @mouseenter="hoveredId = node.componentId"
-              @mouseleave="hoveredId = ''"
-              @pointerdown.stop="handlePointerDown"
-              @click="handleNodeClick(node.code)"
-            >
-              <strong>{{ node.displayCode }}</strong>
-              <em v-if="shouldShowPrefixBadge(node)">
-                {{ getCourseUniverseNodePrefix(node.code) }}
-              </em>
-              <span v-if="semanticLevel !== 'far' && hasDistinctTitle(node)">{{ node.title }}</span>
-              <small v-if="semanticLevel === 'near'">
-                <template v-if="node.inPlanner">{{ t('courseUniverse.legend.inPlanner') }}</template>
-                <template v-else-if="node.academicStatus">{{ t(`academicMap.status.${node.academicStatus}`) }}</template>
-                <template v-else>{{ t('courseUniverse.selectCourse') }}</template>
-              </small>
-            </button>
-          </foreignObject>
+            <rect class="cu-node__card" :width="COURSE_UNIVERSE_COURSE_WIDTH" :height="COURSE_UNIVERSE_COURSE_HEIGHT" rx="14" ry="14" />
+            <rect class="cu-node__accent" width="6" :height="COURSE_UNIVERSE_COURSE_HEIGHT" rx="6" ry="6" />
+            <text class="cu-node__code" x="16" y="31">{{ node.displayCode }}</text>
+            <text v-if="semanticLevel !== 'far' && hasDistinctTitle(node)" class="cu-node__title" x="16" y="53">
+              {{ getNodeTitle(node) }}
+            </text>
+            <text v-if="semanticLevel === 'near'" class="cu-node__status" x="16" y="75">
+              {{ getNodeStatus(node) }}
+            </text>
+            <text v-if="shouldShowPrefixBadge(node)" class="cu-node__prefix" :x="COURSE_UNIVERSE_COURSE_WIDTH - 12" y="78">
+              {{ getCourseUniverseNodePrefix(node.code) }}
+            </text>
+          </g>
         </g>
       </svg>
     </div>
@@ -740,108 +759,76 @@ onBeforeUnmount(() => {
 }
 
 .cu-node {
-  appearance: none;
-  background: var(--surface-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 14px;
-  box-shadow: var(--shadow-medium);
-  color: var(--text-primary);
   cursor: pointer;
-  display: grid;
-  gap: 4px;
-  height: 100%;
-  min-height: 82px;
-  padding: 10px;
-  position: relative;
-  text-align: left;
-  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, opacity 0.18s;
-  width: 100%;
+  outline: none;
+  transition: opacity 0.18s;
 }
 
-.cu-node::before {
-  background: var(--cu-node-accent, var(--interactive-primary));
-  border-radius: 14px 0 0 14px;
-  bottom: 0;
-  content: '';
-  left: 0;
+.cu-node__card {
+  fill: var(--surface-primary);
+  filter: drop-shadow(0 4px 8px color-mix(in srgb, var(--text-primary) 11%, transparent));
+  stroke: var(--border-primary);
+  stroke-width: 1.5;
+  transition: fill 0.18s, stroke 0.18s, stroke-width 0.18s;
+}
+
+.cu-node__accent {
+  fill: var(--cu-node-accent, var(--interactive-primary));
   opacity: 0.88;
-  position: absolute;
-  top: 0;
-  width: 6px;
 }
 
-.cu-node strong {
-  font-size: 0.98rem;
-  line-height: 1.12;
-  padding-left: 4px;
+.cu-node__code,
+.cu-node__title,
+.cu-node__status,
+.cu-node__prefix {
+  pointer-events: none;
+  user-select: none;
 }
 
-.cu-node span,
-.cu-node small,
-.cu-node em {
-  color: var(--text-secondary);
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.cu-node em {
-  background: color-mix(in srgb, var(--cu-node-accent, var(--interactive-primary)) 14%, var(--surface-secondary));
-  border: 1px solid color-mix(in srgb, var(--cu-node-accent, var(--interactive-primary)) 34%, var(--border-primary));
-  border-radius: 999px;
-  color: var(--text-primary);
-  font-style: normal;
+.cu-node__code {
+  fill: var(--text-primary);
+  font-size: 16px;
   font-weight: 800;
-  justify-self: start;
-  padding: 1px 7px;
 }
 
-.cu-node span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.cu-node__title,
+.cu-node__status,
+.cu-node__prefix {
+  fill: var(--text-secondary);
+  font-size: 12px;
 }
 
-.cu-node small {
+.cu-node__status,
+.cu-node__prefix {
   font-weight: 700;
 }
 
-.cu-node.is-far {
-  align-content: center;
-  min-height: 82px;
+.cu-node__prefix {
+  text-anchor: end;
 }
 
-.cu-node.is-far strong {
-  font-size: 1.08rem;
+.cu-node.is-far .cu-node__code {
+  font-size: 18px;
+  transform: translateY(18px);
 }
 
-.cu-node.is-mid {
-  gap: 6px;
-}
-
-.cu-node.is-near span {
-  white-space: normal;
-}
-
-.cu-node.is-selected {
-  border-color: var(--interactive-primary);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-primary) 18%, transparent), var(--shadow-large);
-}
-
-.cu-node.is-matched,
-.cu-node.is-related {
-  border-color: color-mix(in srgb, var(--interactive-primary) 62%, var(--border-primary));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent), var(--shadow-medium);
+.cu-node.is-selected .cu-node__card,
+.cu-node:focus .cu-node__card {
+  stroke: var(--interactive-primary);
+  stroke-width: 4;
 }
 
 .cu-node.is-dimmed {
   opacity: 0.34;
 }
 
-.cu-node.is-completed { border-color: color-mix(in srgb, var(--semantic-success) 45%, var(--border-primary)); }
-.cu-node.is-in-progress { border-color: color-mix(in srgb, var(--interactive-primary) 55%, var(--border-primary)); }
-.cu-node.is-planned { border-color: color-mix(in srgb, var(--interactive-primary) 50%, var(--border-primary)); }
-.cu-node.is-interested { border-color: color-mix(in srgb, var(--text-secondary) 38%, var(--border-primary)); }
-.cu-node.is-planner { background: color-mix(in srgb, var(--interactive-primary) 7%, var(--surface-primary)); }
+.cu-node.is-matched .cu-node__card,
+.cu-node.is-related .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 62%, var(--border-primary)); }
+.cu-node.is-completed .cu-node__card { stroke: color-mix(in srgb, var(--semantic-success) 45%, var(--border-primary)); }
+.cu-node.is-in-progress .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 55%, var(--border-primary)); }
+.cu-node.is-planned .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 50%, var(--border-primary)); }
+.cu-node.is-interested .cu-node__card { stroke: color-mix(in srgb, var(--text-secondary) 38%, var(--border-primary)); }
+.cu-node.is-planner .cu-node__card { fill: color-mix(in srgb, var(--interactive-primary) 7%, var(--surface-primary)); }
 
 .cu-node.is-tone-0 { --cu-node-accent: var(--interactive-primary); }
 .cu-node.is-tone-1 { --cu-node-accent: var(--semantic-success); }
