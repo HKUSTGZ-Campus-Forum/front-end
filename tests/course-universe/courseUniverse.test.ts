@@ -3,11 +3,15 @@ import {
   COURSE_UNIVERSE_ALIAS_PREFIXES,
   COURSE_UNIVERSE_MODES,
   buildCourseUniverseModePath,
+  buildCourseUniversePrefixOptions,
+  buildCourseUniverseVisibleCodeSet,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
   getCourseUniverseRedirect,
   getCourseUniverseViewBox,
+  getCourseUniverseNodePrefix,
   isCourseUniverseActivePath,
+  layoutCourseUniverseLocalSubgraph,
   normalizeCourseUniverseNodes,
   type CourseUniverseAcademicRecord,
   type CourseUniverseCartCourse,
@@ -32,6 +36,21 @@ const records: CourseUniverseAcademicRecord[] = [
 
 const cart: CourseUniverseCartCourse[] = [
   { course_code: 'DSAA 3010' },
+]
+
+const prefixNodes = [
+  { code: 'UCUG1051', displayCode: 'UCUG 1051', title: 'Core A', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+  { code: 'UCUG1052', displayCode: 'UCUG 1052', title: 'Core B', x: 100, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+  { code: 'UFUG1101', displayCode: 'UFUG 1101', title: 'Foundation A', x: 200, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+  { code: 'DLED2010', displayCode: 'DLED 2010', title: 'Design Lab', x: 300, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+  { code: 'AIAA2205', displayCode: 'AIAA 2205', title: 'Intro to AI', x: 400, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+]
+
+const prefixLines = [
+  { id: 1, start_id: 'UCUG1051', end_id: 'UCUG1052', line_type: null, x_coordinate: 0, category: 1 },
+  { id: 2, start_id: 'UFUG1101', end_id: 'UCUG1052', line_type: null, x_coordinate: 0, category: 1 },
+  { id: 3, start_id: 'UCUG1052', end_id: 'DLED2010', line_type: null, x_coordinate: 0, category: 1 },
+  { id: 4, start_id: 'AIAA2205', end_id: 'UFUG1101', line_type: null, x_coordinate: 0, category: 1 },
 ]
 
 describe('course universe helpers', () => {
@@ -138,5 +157,60 @@ describe('course universe helpers', () => {
     expect(viewport.centerX).toBe(4200)
     expect(viewport.centerY).toBe(1200)
     expect(viewport.zoom).toBeGreaterThan(1)
+  })
+
+  it('extracts course prefixes from compact or formatted course codes', () => {
+    expect(getCourseUniverseNodePrefix('UCUG1051')).toBe('UCUG')
+    expect(getCourseUniverseNodePrefix('UFUG 1101')).toBe('UFUG')
+    expect(getCourseUniverseNodePrefix('DLED2010A')).toBe('DLED')
+  })
+
+  it('builds prefix options sorted by graph density', () => {
+    expect(buildCourseUniversePrefixOptions(prefixNodes, 2)).toEqual([
+      { prefix: 'UCUG', count: 2 },
+      { prefix: 'AIAA', count: 1 },
+    ])
+  })
+
+  it('keeps cross-prefix direct neighbours inside a prefix subgraph', () => {
+    const visibleCodes = buildCourseUniverseVisibleCodeSet({
+      nodes: prefixNodes,
+      lines: prefixLines,
+      selectedPrefix: 'UCUG',
+    })
+
+    expect([...visibleCodes].sort()).toEqual([
+      'DLED2010',
+      'UCUG1051',
+      'UCUG1052',
+      'UFUG1101',
+    ])
+  })
+
+  it('limits a selected course view to upstream and downstream courses', () => {
+    const visibleCodes = buildCourseUniverseVisibleCodeSet({
+      nodes: prefixNodes,
+      lines: prefixLines,
+      selectedCourseCode: 'UFUG1101',
+    })
+
+    expect([...visibleCodes].sort()).toEqual([
+      'AIAA2205',
+      'DLED2010',
+      'UCUG1052',
+      'UFUG1101',
+    ])
+  })
+
+  it('lays out local subgraphs in readable lanes instead of keeping global spacing', () => {
+    const localNodes = layoutCourseUniverseLocalSubgraph(prefixNodes)
+    const xs = localNodes.map(node => node.x)
+    const ys = localNodes.map(node => node.y)
+
+    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(1200)
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(170)
+    expect(localNodes.find(node => node.code === 'UCUG1051')?.x).toBeLessThan(
+      localNodes.find(node => node.code === 'AIAA2205')?.x || 0,
+    )
   })
 })

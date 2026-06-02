@@ -5,10 +5,14 @@ import type {
   CourseUniverseNode,
 } from '~/utils/courseUniverse'
 import {
+  buildCourseUniversePrefixOptions,
+  buildCourseUniverseVisibleCodeSet,
   clampCourseUniverseZoom,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
+  getCourseUniverseNodePrefix,
   getCourseUniverseViewBox,
+  layoutCourseUniverseLocalSubgraph,
   type CourseUniverseViewBox,
   type CourseUniverseViewport,
 } from '~/utils/courseUniverse'
@@ -33,6 +37,7 @@ const viewport = ref<CourseUniverseViewport>({
   zoom: 1,
 })
 const isDragging = ref(false)
+const selectedPrefix = ref('')
 const dragStart = ref<{
   clientX: number
   clientY: number
@@ -40,13 +45,38 @@ const dragStart = ref<{
   viewBox: CourseUniverseViewBox
 } | null>(null)
 let resizeObserver: ResizeObserver | null = null
+const localLayoutMinZoom = 0.72
 
-const nodeByCode = computed(() => new Map(props.nodes.map(node => [node.code, node])))
+const rawNodeByCode = computed(() => new Map(props.nodes.map(node => [node.code, node])))
 const query = computed(() => props.searchQuery.trim().toLowerCase())
+const selectedCode = computed(() => props.nodes.find(node => node.selected)?.code || '')
+const prefixOptions = computed(() => buildCourseUniversePrefixOptions(props.nodes))
+
+const visibleNodeCodes = computed(() => {
+  return buildCourseUniverseVisibleCodeSet({
+    nodes: props.nodes,
+    lines: props.lines,
+    selectedPrefix: selectedPrefix.value,
+    selectedCourseCode: selectedCode.value,
+    searchQuery: props.searchQuery,
+  })
+})
+
+const visibleNodes = computed(() => {
+  return props.nodes.filter(node => visibleNodeCodes.value.has(node.code))
+})
+
+const usesLocalLayout = computed(() => Boolean(selectedPrefix.value || selectedCode.value || query.value))
+
+const renderedNodes = computed(() => (
+  usesLocalLayout.value ? layoutCourseUniverseLocalSubgraph(visibleNodes.value) : visibleNodes.value
+))
+
+const nodeByCode = computed(() => new Map(renderedNodes.value.map(node => [node.code, node])))
 
 const matchingNodeCodes = computed(() => {
   if (!query.value) return new Set<string>()
-  return new Set(props.nodes
+  return new Set(visibleNodes.value
     .filter(node => (
       node.displayCode.toLowerCase().includes(query.value)
       || node.title.toLowerCase().includes(query.value)
@@ -54,51 +84,24 @@ const matchingNodeCodes = computed(() => {
     .map(node => node.code))
 })
 
-const visibleNodeCodes = computed(() => {
-  if (!query.value) return new Set(props.nodes.map(node => node.code))
-
-  const codes = new Set(matchingNodeCodes.value)
-  props.lines.forEach(line => {
-    const startCode = compact(line.start_id)
-    const endCode = compact(line.end_id)
-    if (matchingNodeCodes.value.has(startCode) || matchingNodeCodes.value.has(endCode)) {
-      codes.add(startCode)
-      codes.add(endCode)
-    }
-  })
-  return codes
-})
-
-const visibleNodes = computed(() => {
-  return props.nodes.filter(node => visibleNodeCodes.value.has(node.code))
-})
-
 const visibleLines = computed(() => props.lines.filter(line => (
   visibleNodeCodes.value.has(compact(line.start_id))
   && visibleNodeCodes.value.has(compact(line.end_id))
-  && nodeByCode.value.has(compact(line.start_id))
-  && nodeByCode.value.has(compact(line.end_id))
+  && rawNodeByCode.value.has(compact(line.start_id))
+  && rawNodeByCode.value.has(compact(line.end_id))
 )))
 
-const selectedCode = computed(() => props.nodes.find(node => node.selected)?.code || '')
-
 const relatedNodeCodes = computed(() => {
-  const anchorCodes = new Set<string>()
-  if (selectedCode.value) anchorCodes.add(selectedCode.value)
-  matchingNodeCodes.value.forEach(code => anchorCodes.add(code))
-  if (!anchorCodes.size) return new Set<string>()
-
-  const codes = new Set(anchorCodes)
-  props.lines.forEach(line => {
-    const startCode = compact(line.start_id)
-    const endCode = compact(line.end_id)
-    if (anchorCodes.has(startCode) || anchorCodes.has(endCode)) {
-      codes.add(startCode)
-      codes.add(endCode)
-    }
-  })
-  return codes
+  if (selectedCode.value || matchingNodeCodes.value.size) return new Set(visibleNodeCodes.value)
+  return new Set<string>()
 })
+
+const prefixToneByPrefix = computed(() => {
+  const prefixes = new Set(props.nodes.map(node => getCourseUniverseNodePrefix(node.code)))
+  return new Map([...prefixes].sort().map((prefix, index) => [prefix, index % 8]))
+})
+
+const activePrefixLabel = computed(() => selectedPrefix.value || t('courseUniverse.graph.allPrefixes'))
 
 const viewBox = computed(() => {
   const box = getCourseUniverseViewBox(viewport.value, canvasSize.value)
@@ -114,9 +117,11 @@ const semanticLevel = computed(() => {
 function nodeClasses(node: CourseUniverseNode) {
   const hasFocusContext = Boolean(selectedCode.value || matchingNodeCodes.value.size)
   const isRelated = relatedNodeCodes.value.has(node.code)
+  const prefix = getCourseUniverseNodePrefix(node.code)
   return [
     'cu-node',
     `is-${semanticLevel.value}`,
+    `is-tone-${prefixToneByPrefix.value.get(prefix) || 0}`,
     {
       'is-selected': node.selected,
       'is-matched': matchingNodeCodes.value.has(node.code),
@@ -133,23 +138,44 @@ function nodeClasses(node: CourseUniverseNode) {
 
 function resetReadableView() {
   viewport.value = createReadableCourseUniverseViewport({
-    nodes: props.nodes,
+    nodes: renderedNodes.value,
     focusQuery: props.searchQuery,
   })
 }
 
 function fitFullGraph() {
   viewport.value = fitCourseUniverseViewport({
-    nodes: props.nodes,
+    nodes: renderedNodes.value,
     canvasSize: canvasSize.value,
   })
 }
 
+function fitLocalGraph() {
+  const nextViewport = fitCourseUniverseViewport({
+    nodes: renderedNodes.value,
+    canvasSize: canvasSize.value,
+  })
+  viewport.value = {
+    ...nextViewport,
+    zoom: Math.max(nextViewport.zoom, localLayoutMinZoom),
+  }
+}
+
 function focusSelection() {
   viewport.value = createReadableCourseUniverseViewport({
-    nodes: props.nodes,
+    nodes: renderedNodes.value,
     focusQuery: selectedCode.value || props.searchQuery,
   })
+}
+
+function selectPrefix(prefix: string) {
+  if (selectedCode.value) emit('select', '')
+  selectedPrefix.value = selectedPrefix.value === prefix ? '' : prefix
+}
+
+function showAllPrefixes() {
+  if (selectedCode.value) emit('select', '')
+  selectedPrefix.value = ''
 }
 
 function zoomBy(factor: number) {
@@ -231,6 +257,10 @@ function hasDistinctTitle(node: CourseUniverseNode) {
   return Boolean(node.title && compact(node.title) !== compact(node.displayCode))
 }
 
+function shouldShowPrefixBadge(node: CourseUniverseNode) {
+  return Boolean(selectedPrefix.value && getCourseUniverseNodePrefix(node.code) !== selectedPrefix.value)
+}
+
 watch(() => props.nodes.length, async length => {
   if (!length) return
   await nextTick()
@@ -240,10 +270,20 @@ watch(() => props.nodes.length, async length => {
 watch(() => props.searchQuery, value => {
   if (value.trim()) {
     viewport.value = createReadableCourseUniverseViewport({
-      nodes: props.nodes,
+      nodes: visibleNodes.value,
       focusQuery: value,
     })
   }
+})
+
+watch([selectedPrefix, selectedCode, visibleNodes], async () => {
+  if (!visibleNodes.value.length) return
+  await nextTick()
+  if (selectedPrefix.value || selectedCode.value) {
+    fitLocalGraph()
+    return
+  }
+  resetReadableView()
 })
 
 onMounted(() => {
@@ -267,6 +307,31 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="cu-canvas" :aria-label="t('courseUniverse.title')">
+    <div v-if="prefixOptions.length" class="cu-prefix-bar">
+      <button
+        type="button"
+        :class="['cu-prefix-bar__chip', { active: !selectedPrefix }]"
+        @click="showAllPrefixes"
+      >
+        {{ t('courseUniverse.graph.allPrefixes') }}
+      </button>
+      <button
+        v-for="option in prefixOptions"
+        :key="option.prefix"
+        type="button"
+        :class="['cu-prefix-bar__chip', { active: selectedPrefix === option.prefix }]"
+        @click="selectPrefix(option.prefix)"
+      >
+        {{ option.prefix }}
+        <span>{{ option.count }}</span>
+      </button>
+    </div>
+
+    <div class="cu-canvas__context">
+      <span>{{ activePrefixLabel }}</span>
+      <span v-if="selectedCode">{{ t('courseUniverse.graph.upstreamDownstream') }}</span>
+    </div>
+
     <div v-if="nodes.length === 0" class="cu-canvas__empty">
       {{ t('courseUniverse.empty') }}
     </div>
@@ -319,7 +384,7 @@ onBeforeUnmount(() => {
 
         <g class="cu-nodes">
           <foreignObject
-            v-for="node in visibleNodes"
+            v-for="node in renderedNodes"
             :key="node.code"
             :x="node.x - 96"
             :y="node.y - 42"
@@ -332,6 +397,9 @@ onBeforeUnmount(() => {
               @click="emit('select', node.code)"
             >
               <strong>{{ node.displayCode }}</strong>
+              <em v-if="shouldShowPrefixBadge(node)">
+                {{ getCourseUniverseNodePrefix(node.code) }}
+              </em>
               <span v-if="semanticLevel !== 'far' && hasDistinctTitle(node)">{{ node.title }}</span>
               <small v-if="semanticLevel === 'near'">
                 <template v-if="node.inPlanner">{{ t('courseUniverse.legend.inPlanner') }}</template>
@@ -359,6 +427,69 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
+.cu-prefix-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 14px 0;
+  position: relative;
+  z-index: 4;
+}
+
+.cu-prefix-bar__chip {
+  align-items: center;
+  appearance: none;
+  background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 11px;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+}
+
+.cu-prefix-bar__chip span {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.cu-prefix-bar__chip:hover,
+.cu-prefix-bar__chip.active {
+  background: var(--interactive-primary);
+  border-color: var(--interactive-primary);
+  color: var(--text-inverse);
+  transform: translateY(-1px);
+}
+
+.cu-prefix-bar__chip:hover span,
+.cu-prefix-bar__chip.active span {
+  color: var(--text-inverse);
+}
+
+.cu-canvas__context {
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 8px;
+  padding: 8px 14px 0;
+  position: relative;
+  z-index: 4;
+}
+
+.cu-canvas__context span {
+  background: color-mix(in srgb, var(--surface-primary) 84%, transparent);
+  border: 1px solid var(--border-secondary);
+  border-radius: 999px;
+  padding: 5px 10px;
+}
+
 .cu-canvas__empty {
   align-items: center;
   color: var(--text-secondary);
@@ -368,7 +499,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-canvas__stage {
-  height: clamp(640px, calc(100vh - 260px), 780px);
+  height: clamp(610px, calc(100vh - 292px), 750px);
   position: relative;
 }
 
@@ -463,21 +594,47 @@ onBeforeUnmount(() => {
   gap: 4px;
   min-height: 82px;
   padding: 10px;
+  position: relative;
   text-align: left;
   transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, opacity 0.18s;
   width: 100%;
 }
 
+.cu-node::before {
+  background: var(--cu-node-accent, var(--interactive-primary));
+  border-radius: 14px 0 0 14px;
+  bottom: 0;
+  content: '';
+  left: 0;
+  opacity: 0.88;
+  position: absolute;
+  top: 0;
+  width: 6px;
+}
+
 .cu-node strong {
   font-size: 0.98rem;
   line-height: 1.12;
+  padding-left: 4px;
 }
 
 .cu-node span,
-.cu-node small {
+.cu-node small,
+.cu-node em {
   color: var(--text-secondary);
   font-size: 0.78rem;
   line-height: 1.35;
+}
+
+.cu-node em {
+  background: color-mix(in srgb, var(--cu-node-accent, var(--interactive-primary)) 14%, var(--surface-secondary));
+  border: 1px solid color-mix(in srgb, var(--cu-node-accent, var(--interactive-primary)) 34%, var(--border-primary));
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-style: normal;
+  font-weight: 800;
+  justify-self: start;
+  padding: 1px 7px;
 }
 
 .cu-node span {
@@ -528,13 +685,22 @@ onBeforeUnmount(() => {
 .cu-node.is-interested { border-color: color-mix(in srgb, var(--text-secondary) 38%, var(--border-primary)); }
 .cu-node.is-planner { background: color-mix(in srgb, var(--interactive-primary) 7%, var(--surface-primary)); }
 
+.cu-node.is-tone-0 { --cu-node-accent: var(--interactive-primary); }
+.cu-node.is-tone-1 { --cu-node-accent: var(--semantic-success); }
+.cu-node.is-tone-2 { --cu-node-accent: var(--semantic-warning); }
+.cu-node.is-tone-3 { --cu-node-accent: var(--semantic-info); }
+.cu-node.is-tone-4 { --cu-node-accent: var(--text-secondary); }
+.cu-node.is-tone-5 { --cu-node-accent: color-mix(in srgb, var(--interactive-primary) 70%, var(--semantic-success)); }
+.cu-node.is-tone-6 { --cu-node-accent: color-mix(in srgb, var(--interactive-primary) 60%, var(--semantic-warning)); }
+.cu-node.is-tone-7 { --cu-node-accent: color-mix(in srgb, var(--semantic-info) 70%, var(--semantic-success)); }
+
 @media (max-width: 768px) {
   .cu-canvas,
   .cu-canvas__empty,
   .cu-canvas__stage,
   .cu-canvas__svg {
-    min-height: 520px;
-    height: 520px;
+    min-height: 500px;
+    height: 500px;
   }
 
   .cu-canvas__controls {

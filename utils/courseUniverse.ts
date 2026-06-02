@@ -69,6 +69,11 @@ export interface CourseUniverseViewBox extends CourseUniverseViewport {
   height: number
 }
 
+export interface CourseUniversePrefixOption {
+  prefix: string
+  count: number
+}
+
 export const COURSE_UNIVERSE_NODE_WORLD_WIDTH = 192
 export const COURSE_UNIVERSE_READABLE_SCALE = 0.82
 export const COURSE_UNIVERSE_MIN_ZOOM = 0.28
@@ -93,6 +98,11 @@ export function formatCourseCode(code: string) {
   const compact = compactCourseCode(code)
   const match = compact.match(/^([A-Z]+)(\d+[A-Z]*)$/)
   return match ? `${match[1]} ${match[2]}` : compact
+}
+
+export function getCourseUniverseNodePrefix(code: string) {
+  const match = compactCourseCode(code).match(/^([A-Z]+)\d/)
+  return match?.[1] || compactCourseCode(code)
 }
 
 export function buildCourseUniverseModePath(mode: CourseUniverseModeKey) {
@@ -229,6 +239,162 @@ export function getCourseUniverseViewBox(
     width,
     height,
   }
+}
+
+export function buildCourseUniversePrefixOptions(
+  nodes: CourseUniverseNode[],
+  limit = 12,
+): CourseUniversePrefixOption[] {
+  const counts = new Map<string, number>()
+  nodes.forEach(node => {
+    const prefix = getCourseUniverseNodePrefix(node.code)
+    counts.set(prefix, (counts.get(prefix) || 0) + 1)
+  })
+
+  return [...counts.entries()]
+    .map(([prefix, count]) => ({ prefix, count }))
+    .sort((a, b) => b.count - a.count || a.prefix.localeCompare(b.prefix))
+    .slice(0, limit)
+}
+
+function buildCourseUniverseLineAdjacency(input: {
+  nodes: CourseUniverseNode[]
+  lines: CourseUniverseMapLine[]
+}) {
+  const nodeCodes = new Set(input.nodes.map(node => node.code))
+  const outgoing = new Map<string, Set<string>>()
+  const incoming = new Map<string, Set<string>>()
+
+  input.lines.forEach(line => {
+    const startCode = compactCourseCode(line.start_id)
+    const endCode = compactCourseCode(line.end_id)
+    if (!nodeCodes.has(startCode) || !nodeCodes.has(endCode)) return
+    if (!outgoing.has(startCode)) outgoing.set(startCode, new Set())
+    if (!incoming.has(endCode)) incoming.set(endCode, new Set())
+    outgoing.get(startCode)?.add(endCode)
+    incoming.get(endCode)?.add(startCode)
+  })
+
+  return { incoming, outgoing }
+}
+
+function traverseCourseUniverseGraph(
+  startCode: string,
+  adjacency: Map<string, Set<string>>,
+) {
+  const result = new Set<string>()
+  const queue = [...(adjacency.get(startCode) || [])]
+
+  while (queue.length) {
+    const code = queue.shift()
+    if (!code || result.has(code)) continue
+    result.add(code)
+    adjacency.get(code)?.forEach(nextCode => {
+      if (!result.has(nextCode)) queue.push(nextCode)
+    })
+  }
+
+  return result
+}
+
+export function buildCourseUniverseVisibleCodeSet(input: {
+  nodes: CourseUniverseNode[]
+  lines: CourseUniverseMapLine[]
+  selectedPrefix?: string
+  selectedCourseCode?: string | null
+  searchQuery?: string
+}) {
+  const nodeCodes = new Set(input.nodes.map(node => node.code))
+  const selectedCode = compactCourseCode(input.selectedCourseCode || '')
+  const { incoming, outgoing } = buildCourseUniverseLineAdjacency(input)
+
+  if (selectedCode && nodeCodes.has(selectedCode)) {
+    const codes = new Set<string>([selectedCode])
+    traverseCourseUniverseGraph(selectedCode, incoming).forEach(code => codes.add(code))
+    traverseCourseUniverseGraph(selectedCode, outgoing).forEach(code => codes.add(code))
+    return codes
+  }
+
+  const normalizedQuery = String(input.searchQuery || '').trim().toLowerCase()
+  if (normalizedQuery) {
+    const matchedCodes = new Set(input.nodes
+      .filter(node => (
+        node.displayCode.toLowerCase().includes(normalizedQuery)
+        || node.title.toLowerCase().includes(normalizedQuery)
+      ))
+      .map(node => node.code))
+    const codes = new Set(matchedCodes)
+    matchedCodes.forEach(code => {
+      incoming.get(code)?.forEach(nextCode => codes.add(nextCode))
+      outgoing.get(code)?.forEach(nextCode => codes.add(nextCode))
+    })
+    return codes
+  }
+
+  if (input.selectedPrefix) {
+    const codes = new Set(input.nodes
+      .filter(node => getCourseUniverseNodePrefix(node.code) === input.selectedPrefix)
+      .map(node => node.code))
+    const primaryCodes = new Set(codes)
+    input.lines.forEach(line => {
+      const startCode = compactCourseCode(line.start_id)
+      const endCode = compactCourseCode(line.end_id)
+      if (!nodeCodes.has(startCode) || !nodeCodes.has(endCode)) return
+      if (primaryCodes.has(startCode) || primaryCodes.has(endCode)) {
+        codes.add(startCode)
+        codes.add(endCode)
+      }
+    })
+    return codes
+  }
+
+  return nodeCodes
+}
+
+export function layoutCourseUniverseLocalSubgraph(nodes: CourseUniverseNode[]): CourseUniverseNode[] {
+  if (nodes.length <= 1) {
+    return nodes.map(node => ({ ...node, x: 600, y: 360 }))
+  }
+
+  const sortedNodes = [...nodes].sort((a, b) => a.x - b.x || a.y - b.y || a.code.localeCompare(b.code))
+  const sourceColumns: CourseUniverseNode[][] = []
+  const columnThreshold = 180
+
+  sortedNodes.forEach(node => {
+    const lastColumn = sourceColumns[sourceColumns.length - 1]
+    const lastColumnAverageX = lastColumn
+      ? lastColumn.reduce((sum, item) => sum + item.x, 0) / lastColumn.length
+      : null
+    if (lastColumn && lastColumnAverageX !== null && Math.abs(node.x - lastColumnAverageX) <= columnThreshold) {
+      lastColumn.push(node)
+      return
+    }
+    sourceColumns.push([node])
+  })
+
+  const maxRowsPerColumn = 9
+  const renderColumns: CourseUniverseNode[][] = []
+  sourceColumns.forEach(column => {
+    const sortedColumn = [...column].sort((a, b) => a.y - b.y || a.x - b.x || a.code.localeCompare(b.code))
+    for (let index = 0; index < sortedColumn.length; index += maxRowsPerColumn) {
+      renderColumns.push(sortedColumn.slice(index, index + maxRowsPerColumn))
+    }
+  })
+
+  const maxRows = Math.max(...renderColumns.map(column => column.length))
+  const columnGap = 270
+  const rowGap = 118
+  const offsetX = 220
+  const offsetY = 170
+
+  return renderColumns.flatMap((column, columnIndex) => {
+    const rowOffset = (maxRows - column.length) / 2
+    return column.map((node, rowIndex) => ({
+      ...node,
+      x: offsetX + columnIndex * columnGap,
+      y: offsetY + (rowOffset + rowIndex) * rowGap,
+    }))
+  })
 }
 
 export function normalizeCourseUniverseNodes(input: {

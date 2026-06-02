@@ -677,6 +677,10 @@
       "blocker": "Prerequisite blocker",
       "reviewSignal": "Review signal"
     },
+    "graph": {
+      "allPrefixes": "All prefixes",
+      "upstreamDownstream": "Upstream/downstream view"
+    },
     "actions": {
       "addToPlanner": "Add to planner",
       "openPlanner": "Open planner",
