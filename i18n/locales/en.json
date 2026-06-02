@@ -653,6 +653,53 @@
       "sectionTwoBody": "You can manage your public profile, contact details, and some notification settings. A fuller privacy policy can be added later."
     }
   },
+  "courseUniverse": {
+    "title": "Course Universe",
+    "subtitle": "Find your next course through relationships, reviews, schedules, and degree progress.",
+    "searchPlaceholder": "Search course code, title, or requirement...",
+    "selectedSemester": "Current semester",
+    "targetMajor": "Target major",
+    "loading": "Loading Course Universe...",
+    "empty": "No course graph data yet.",
+    "selectCourse": "Select a course to inspect it",
+    "modes": {
+      "universe": "Universe",
+      "explore": "Explore",
+      "planner": "Planner",
+      "academicMap": "Academic Map"
+    },
+    "legend": {
+      "completed": "Completed",
+      "inProgress": "In progress",
+      "planned": "Planned",
+      "interested": "Interested",
+      "inPlanner": "Planner cart",
+      "blocker": "Prerequisite blocker",
+      "reviewSignal": "Review signal"
+    },
+    "actions": {
+      "addToPlanner": "Add to planner",
+      "openPlanner": "Open planner",
+      "openReviews": "View reviews",
+      "writeReview": "Write review",
+      "openAcademicMap": "Open Academic Map",
+      "markStatus": "Update academic status"
+    },
+    "detail": {
+      "overview": "Course overview",
+      "academicStatus": "Academic status",
+      "plannerStatus": "Planner status",
+      "plannerAdded": "Already in this semester's planner cart",
+      "plannerNotAdded": "Not added to this semester's planner yet",
+      "impact": "Impact after adding",
+      "reviewSignal": "What students say",
+      "notAvailable": "Not available"
+    },
+    "errors": {
+      "load": "Course Universe failed to load. Please try again later.",
+      "courseDetail": "Failed to load course detail."
+    }
+  },
   "courses": {
     "title": "Course reviews",
     "subtitle": "Browse and share course experiences",

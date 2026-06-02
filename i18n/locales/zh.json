@@ -653,6 +653,53 @@
       "sectionTwoBody": "你可以管理公开资料、联系方式和部分通知设置。后续我们会补充更完整的隐私说明。"
     }
   },
+  "courseUniverse": {
+    "title": "课程宇宙",
+    "subtitle": "从课程关系、评价、课表和毕业进度里找到下一门课。",
+    "searchPlaceholder": "搜索课程代码、名称或要求...",
+    "selectedSemester": "当前学期",
+    "targetMajor": "目标专业",
+    "loading": "正在加载课程宇宙...",
+    "empty": "暂无课程图谱数据。",
+    "selectCourse": "选择一门课程查看详情",
+    "modes": {
+      "universe": "图谱",
+      "explore": "探索",
+      "planner": "排课",
+      "academicMap": "学业地图"
+    },
+    "legend": {
+      "completed": "已修",
+      "inProgress": "在修",
+      "planned": "计划",
+      "interested": "感兴趣",
+      "inPlanner": "排课车",
+      "blocker": "先修卡点",
+      "reviewSignal": "评价信号"
+    },
+    "actions": {
+      "addToPlanner": "加入排课",
+      "openPlanner": "打开排课",
+      "openReviews": "查看评价",
+      "writeReview": "写评价",
+      "openAcademicMap": "打开学业地图",
+      "markStatus": "更新学业状态"
+    },
+    "detail": {
+      "overview": "课程概览",
+      "academicStatus": "学业状态",
+      "plannerStatus": "排课状态",
+      "plannerAdded": "已在本学期排课车",
+      "plannerNotAdded": "还未加入本学期排课",
+      "impact": "加入后的影响",
+      "reviewSignal": "同学怎么说",
+      "notAvailable": "暂无信息"
+    },
+    "errors": {
+      "load": "课程宇宙加载失败，请稍后重试。",
+      "courseDetail": "课程详情加载失败。"
+    }
+  },
   "courses": {
     "title": "课程评价",
     "subtitle": "查看并分享课程体验",
