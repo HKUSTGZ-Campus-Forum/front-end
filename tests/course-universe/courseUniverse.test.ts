@@ -75,6 +75,18 @@ const graphLines = [
   { id: 13, start_id: 'ex_UCUG1051_UFUG1101', end_id: 'UFUG1101', line_type: true, x_coordinate: 490, category: 3 },
 ]
 
+const directPathComponents: CourseUniverseMapComponent[] = [
+  ...graphComponents,
+  { id: '(UFUG1101&DLED2010)', node_type: false, x_coordinate: 760, y_coordinate: 286, category: 1 },
+  { id: 'DLED2010', node_type: null, x_coordinate: 920, y_coordinate: 240, category: 0 },
+]
+
+const directPathLines = [
+  ...graphLines,
+  { id: 14, start_id: 'UFUG1101', end_id: '(UFUG1101&DLED2010)', line_type: false, x_coordinate: 720, category: 1 },
+  { id: 15, start_id: '(UFUG1101&DLED2010)', end_id: 'DLED2010', line_type: null, x_coordinate: 840, category: 1 },
+]
+
 describe('course universe helpers', () => {
   it('exports the expected course modes', () => {
     expect(COURSE_UNIVERSE_MODES.map(mode => mode.key)).toEqual([
@@ -316,6 +328,31 @@ describe('course universe helpers', () => {
     expect(visible).toContain('UCUG1051')
     expect(visible).toContain('(UCUG1051|UFUG1101)')
     expect(visible).toContain('UFUG1101')
+  })
+
+  it('limits prefix views to direct relationship paths while keeping intermediate nodes', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: directPathComponents,
+      courses: [
+        { course_code: 'UCUG1051', course_title_abbr: 'Core A' },
+        { course_code: 'UFUG1101', course_title_abbr: 'Foundation A' },
+        { course_code: 'DLED2010', course_title_abbr: 'Design Lab' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: directPathComponents,
+      lines: directPathLines,
+      courseNodes,
+      selectedPrefix: 'UCUG',
+    })
+
+    expect(visible).toContain('UCUG1051')
+    expect(visible).toContain('(UCUG1051|UFUG1101)')
+    expect(visible).toContain('UFUG1101')
+    expect(visible).not.toContain('(UFUG1101&DLED2010)')
+    expect(visible).not.toContain('DLED2010')
   })
 
   it('traverses complete relationship chains for hover highlighting', () => {
