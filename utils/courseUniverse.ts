@@ -128,6 +128,14 @@ export function clampCourseUniverseZoom(zoom: number, minZoom = COURSE_UNIVERSE_
   return Math.min(COURSE_UNIVERSE_MAX_ZOOM, Math.max(minZoom, zoom))
 }
 
+export function hasCourseUniversePointerMoved(
+  start: { clientX: number; clientY: number },
+  current: { clientX: number; clientY: number },
+  threshold = 5,
+) {
+  return Math.hypot(current.clientX - start.clientX, current.clientY - start.clientY) > threshold
+}
+
 export function getCourseUniverseBounds(nodes: CourseUniverseNode[], padding = 360) {
   if (!nodes.length) {
     return {
@@ -206,8 +214,9 @@ export function createReadableCourseUniverseViewport(input: {
 export function fitCourseUniverseViewport(input: {
   nodes: CourseUniverseNode[]
   canvasSize: CourseUniverseCanvasSize
+  padding?: number
 }): CourseUniverseViewport {
-  const bounds = getCourseUniverseBounds(input.nodes)
+  const bounds = getCourseUniverseBounds(input.nodes, input.padding)
   const widthScale = input.canvasSize.width / Math.max(1, bounds.width)
   const heightScale = input.canvasSize.height / Math.max(1, bounds.height)
   const fitScale = Math.min(widthScale, heightScale)

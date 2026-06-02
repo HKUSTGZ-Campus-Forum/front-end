@@ -677,10 +677,6 @@
       "blocker": "先修卡点",
       "reviewSignal": "评价信号"
     },
-    "graph": {
-      "allPrefixes": "全部前缀",
-      "upstreamDownstream": "上下游视图"
-    },
     "actions": {
       "addToPlanner": "加入排课",
       "openPlanner": "打开排课",

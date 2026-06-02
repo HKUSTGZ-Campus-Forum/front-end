@@ -12,6 +12,7 @@ import {
   fitCourseUniverseViewport,
   getCourseUniverseNodePrefix,
   getCourseUniverseViewBox,
+  hasCourseUniversePointerMoved,
   layoutCourseUniverseLocalSubgraph,
   type CourseUniverseViewBox,
   type CourseUniverseViewport,
@@ -37,6 +38,7 @@ const viewport = ref<CourseUniverseViewport>({
   zoom: 1,
 })
 const isDragging = ref(false)
+const didDrag = ref(false)
 const selectedPrefix = ref('')
 const dragStart = ref<{
   clientX: number
@@ -45,7 +47,6 @@ const dragStart = ref<{
   viewBox: CourseUniverseViewBox
 } | null>(null)
 let resizeObserver: ResizeObserver | null = null
-const localLayoutMinZoom = 0.72
 
 const rawNodeByCode = computed(() => new Map(props.nodes.map(node => [node.code, node])))
 const query = computed(() => props.searchQuery.trim().toLowerCase())
@@ -101,8 +102,6 @@ const prefixToneByPrefix = computed(() => {
   return new Map([...prefixes].sort().map((prefix, index) => [prefix, index % 8]))
 })
 
-const activePrefixLabel = computed(() => selectedPrefix.value || t('courseUniverse.graph.allPrefixes'))
-
 const viewBox = computed(() => {
   const box = getCourseUniverseViewBox(viewport.value, canvasSize.value)
   return `${box.x} ${box.y} ${box.width} ${box.height}`
@@ -151,14 +150,11 @@ function fitFullGraph() {
 }
 
 function fitLocalGraph() {
-  const nextViewport = fitCourseUniverseViewport({
+  viewport.value = fitCourseUniverseViewport({
     nodes: renderedNodes.value,
     canvasSize: canvasSize.value,
+    padding: 150,
   })
-  viewport.value = {
-    ...nextViewport,
-    zoom: Math.max(nextViewport.zoom, localLayoutMinZoom),
-  }
 }
 
 function focusSelection() {
@@ -170,12 +166,11 @@ function focusSelection() {
 
 function selectPrefix(prefix: string) {
   if (selectedCode.value) emit('select', '')
-  selectedPrefix.value = selectedPrefix.value === prefix ? '' : prefix
+  selectedPrefix.value = prefix
 }
 
-function showAllPrefixes() {
-  if (selectedCode.value) emit('select', '')
-  selectedPrefix.value = ''
+function returnToPrefixGraph() {
+  emit('select', '')
 }
 
 function zoomBy(factor: number) {
@@ -216,21 +211,27 @@ function handleWheel(event: WheelEvent) {
 }
 
 function handlePointerDown(event: PointerEvent) {
-  if ((event.target as HTMLElement).closest('.cu-node, .cu-canvas__control')) return
+  if ((event.target as Element).closest('.cu-canvas__control')) return
   const svg = svgRef.value
   if (!svg) return
-  isDragging.value = true
+  didDrag.value = false
   dragStart.value = {
     clientX: event.clientX,
     clientY: event.clientY,
     viewport: { ...viewport.value },
     viewBox: getCourseUniverseViewBox(viewport.value, canvasSize.value),
   }
-  svg.setPointerCapture(event.pointerId)
 }
 
 function handlePointerMove(event: PointerEvent) {
-  if (!isDragging.value || !dragStart.value || !svgRef.value) return
+  if (!dragStart.value || !svgRef.value) return
+  if (!isDragging.value) {
+    if (!hasCourseUniversePointerMoved(dragStart.value, event)) return
+    isDragging.value = true
+    didDrag.value = true
+    svgRef.value.setPointerCapture(event.pointerId)
+  }
+  event.preventDefault()
   const rect = svgRef.value.getBoundingClientRect()
   const deltaX = event.clientX - dragStart.value.clientX
   const deltaY = event.clientY - dragStart.value.clientY
@@ -247,6 +248,14 @@ function handlePointerUp(event: PointerEvent) {
   }
   isDragging.value = false
   dragStart.value = null
+}
+
+function handleNodeClick(code: string) {
+  if (didDrag.value) {
+    didDrag.value = false
+    return
+  }
+  emit('select', code)
 }
 
 function compact(code: string) {
@@ -270,11 +279,17 @@ watch(() => props.nodes.length, async length => {
 watch(() => props.searchQuery, value => {
   if (value.trim()) {
     viewport.value = createReadableCourseUniverseViewport({
-      nodes: visibleNodes.value,
+      nodes: renderedNodes.value,
       focusQuery: value,
     })
   }
 })
+
+watch(prefixOptions, options => {
+  if (!options.some(option => option.prefix === selectedPrefix.value)) {
+    selectedPrefix.value = options[0]?.prefix || ''
+  }
+}, { immediate: true })
 
 watch([selectedPrefix, selectedCode, visibleNodes], async () => {
   if (!visibleNodes.value.length) return
@@ -309,13 +324,6 @@ onBeforeUnmount(() => {
   <section class="cu-canvas" :aria-label="t('courseUniverse.title')">
     <div v-if="prefixOptions.length" class="cu-prefix-bar">
       <button
-        type="button"
-        :class="['cu-prefix-bar__chip', { active: !selectedPrefix }]"
-        @click="showAllPrefixes"
-      >
-        {{ t('courseUniverse.graph.allPrefixes') }}
-      </button>
-      <button
         v-for="option in prefixOptions"
         :key="option.prefix"
         type="button"
@@ -328,8 +336,15 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="cu-canvas__context">
-      <span>{{ activePrefixLabel }}</span>
-      <span v-if="selectedCode">{{ t('courseUniverse.graph.upstreamDownstream') }}</span>
+      <button
+        v-if="selectedCode"
+        type="button"
+        class="cu-canvas__back"
+        @click="returnToPrefixGraph"
+      >
+        ← {{ t('common.back') }}
+      </button>
+      <span v-if="selectedPrefix">{{ selectedPrefix }}</span>
     </div>
 
     <div v-if="nodes.length === 0" class="cu-canvas__empty">
@@ -394,7 +409,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               :class="nodeClasses(node)"
-              @click="emit('select', node.code)"
+              @click="handleNodeClick(node.code)"
             >
               <strong>{{ node.displayCode }}</strong>
               <em v-if="shouldShowPrefixBadge(node)">
@@ -490,6 +505,25 @@ onBeforeUnmount(() => {
   padding: 5px 10px;
 }
 
+.cu-canvas__back {
+  appearance: none;
+  background: var(--interactive-primary);
+  border: 1px solid var(--interactive-primary);
+  border-radius: 999px;
+  color: var(--text-inverse);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 5px 10px;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+}
+
+.cu-canvas__back:hover {
+  background: var(--interactive-hover);
+  border-color: var(--interactive-hover);
+  transform: translateY(-1px);
+}
+
 .cu-canvas__empty {
   align-items: center;
   color: var(--text-secondary);
@@ -556,6 +590,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-line {
+  pointer-events: none;
   stroke: color-mix(in srgb, var(--text-secondary) 28%, transparent);
   stroke-width: 2;
   transition: opacity 0.18s, stroke 0.18s, stroke-width 0.18s;

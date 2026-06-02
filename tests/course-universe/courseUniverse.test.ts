@@ -10,6 +10,7 @@ import {
   getCourseUniverseRedirect,
   getCourseUniverseViewBox,
   getCourseUniverseNodePrefix,
+  hasCourseUniversePointerMoved,
   isCourseUniverseActivePath,
   layoutCourseUniverseLocalSubgraph,
   normalizeCourseUniverseNodes,
@@ -143,6 +144,22 @@ describe('course universe helpers', () => {
     expect(getCourseUniverseViewBox(fitted, { width: 1200, height: 620 }).width).toBeGreaterThan(4200)
   })
 
+  it('fits local subgraphs with compact padding so connected endpoints remain in frame', () => {
+    const nodes = layoutCourseUniverseLocalSubgraph(prefixNodes)
+    const canvasSize = { width: 1200, height: 620 }
+    const viewport = fitCourseUniverseViewport({ nodes, canvasSize, padding: 150 })
+    const overviewViewport = fitCourseUniverseViewport({ nodes, canvasSize })
+    const viewBox = getCourseUniverseViewBox(viewport, canvasSize)
+    const xs = nodes.map(node => node.x)
+    const ys = nodes.map(node => node.y)
+
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(viewBox.x)
+    expect(Math.max(...xs)).toBeLessThanOrEqual(viewBox.x + viewBox.width)
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(viewBox.y)
+    expect(Math.max(...ys)).toBeLessThanOrEqual(viewBox.y + viewBox.height)
+    expect(viewport.zoom).toBeGreaterThan(overviewViewport.zoom)
+  })
+
   it('centers search matches and zooms in for inspection', () => {
     const nodes = [
       { code: 'AIAA2205', displayCode: 'AIAA 2205', title: 'Intro to AI', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
@@ -157,6 +174,13 @@ describe('course universe helpers', () => {
     expect(viewport.centerX).toBe(4200)
     expect(viewport.centerY).toBe(1200)
     expect(viewport.zoom).toBeGreaterThan(1)
+  })
+
+  it('starts graph dragging only after the pointer leaves the click tolerance', () => {
+    const start = { clientX: 100, clientY: 100 }
+
+    expect(hasCourseUniversePointerMoved(start, { clientX: 103, clientY: 104 })).toBe(false)
+    expect(hasCourseUniversePointerMoved(start, { clientX: 106, clientY: 100 })).toBe(true)
   })
 
   it('extracts course prefixes from compact or formatted course codes', () => {
