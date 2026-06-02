@@ -51,6 +51,31 @@ export interface CourseUniverseNode {
   selected: boolean
 }
 
+export interface CourseUniverseCanvasSize {
+  width: number
+  height: number
+}
+
+export interface CourseUniverseViewport {
+  centerX: number
+  centerY: number
+  zoom: number
+}
+
+export interface CourseUniverseViewBox extends CourseUniverseViewport {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export const COURSE_UNIVERSE_NODE_WORLD_WIDTH = 192
+export const COURSE_UNIVERSE_READABLE_SCALE = 0.82
+export const COURSE_UNIVERSE_MIN_ZOOM = 0.28
+export const COURSE_UNIVERSE_FIT_MIN_ZOOM = 0.14
+export const COURSE_UNIVERSE_MAX_ZOOM = 2.25
+export const COURSE_UNIVERSE_FOCUS_ZOOM = 1.45
+
 export const COURSE_UNIVERSE_MODES: CourseUniverseMode[] = [
   { key: 'universe', labelKey: 'courseUniverse.modes.universe', path: '/courses' },
   { key: 'explore', labelKey: 'courseUniverse.modes.explore', path: '/courses/explore' },
@@ -87,6 +112,123 @@ export function getCourseUniverseRedirect(path: string) {
   }
   if (path === '/academic-map') return '/courses/academic-map'
   return null
+}
+
+export function clampCourseUniverseZoom(zoom: number, minZoom = COURSE_UNIVERSE_MIN_ZOOM) {
+  return Math.min(COURSE_UNIVERSE_MAX_ZOOM, Math.max(minZoom, zoom))
+}
+
+export function getCourseUniverseBounds(nodes: CourseUniverseNode[], padding = 360) {
+  if (!nodes.length) {
+    return {
+      minX: -padding,
+      minY: -padding,
+      maxX: 1200 + padding,
+      maxY: 720 + padding,
+      width: 1200 + padding * 2,
+      height: 720 + padding * 2,
+      centerX: 600,
+      centerY: 360,
+    }
+  }
+
+  const xs = nodes.map(node => node.x)
+  const ys = nodes.map(node => node.y)
+  const minX = Math.min(...xs) - padding
+  const minY = Math.min(...ys) - padding
+  const maxX = Math.max(...xs) + padding
+  const maxY = Math.max(...ys) + padding
+  const width = maxX - minX
+  const height = maxY - minY
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width,
+    height,
+    centerX: minX + width / 2,
+    centerY: minY + height / 2,
+  }
+}
+
+export function findCourseUniverseFocusNode(nodes: CourseUniverseNode[], focusQuery?: string | null) {
+  const query = compactCourseCode(focusQuery || '')
+  const normalizedTextQuery = String(focusQuery || '').trim().toLowerCase()
+  if (query || normalizedTextQuery) {
+    const exactCodeMatch = nodes.find(node => (
+      compactCourseCode(node.code) === query || compactCourseCode(node.displayCode) === query
+    ))
+    if (exactCodeMatch) return exactCodeMatch
+
+    const textMatch = nodes.find(node => (
+      node.displayCode.toLowerCase().includes(normalizedTextQuery)
+      || node.title.toLowerCase().includes(normalizedTextQuery)
+    ))
+    if (textMatch) return textMatch
+  }
+
+  return nodes.find(node => node.selected) || null
+}
+
+export function createReadableCourseUniverseViewport(input: {
+  nodes: CourseUniverseNode[]
+  focusQuery?: string | null
+}): CourseUniverseViewport {
+  const focusNode = findCourseUniverseFocusNode(input.nodes, input.focusQuery)
+  if (focusNode) {
+    return {
+      centerX: focusNode.x,
+      centerY: focusNode.y,
+      zoom: COURSE_UNIVERSE_FOCUS_ZOOM,
+    }
+  }
+
+  const bounds = getCourseUniverseBounds(input.nodes)
+  return {
+    centerX: bounds.centerX,
+    centerY: bounds.centerY,
+    zoom: 1,
+  }
+}
+
+export function fitCourseUniverseViewport(input: {
+  nodes: CourseUniverseNode[]
+  canvasSize: CourseUniverseCanvasSize
+}): CourseUniverseViewport {
+  const bounds = getCourseUniverseBounds(input.nodes)
+  const widthScale = input.canvasSize.width / Math.max(1, bounds.width)
+  const heightScale = input.canvasSize.height / Math.max(1, bounds.height)
+  const fitScale = Math.min(widthScale, heightScale)
+
+  return {
+    centerX: bounds.centerX,
+    centerY: bounds.centerY,
+    zoom: clampCourseUniverseZoom(
+      fitScale / COURSE_UNIVERSE_READABLE_SCALE,
+      COURSE_UNIVERSE_FIT_MIN_ZOOM,
+    ),
+  }
+}
+
+export function getCourseUniverseViewBox(
+  viewport: CourseUniverseViewport,
+  canvasSize: CourseUniverseCanvasSize,
+): CourseUniverseViewBox {
+  const scale = COURSE_UNIVERSE_READABLE_SCALE * clampCourseUniverseZoom(viewport.zoom, COURSE_UNIVERSE_FIT_MIN_ZOOM)
+  const width = Math.max(1, canvasSize.width / scale)
+  const height = Math.max(1, canvasSize.height / scale)
+
+  return {
+    centerX: viewport.centerX,
+    centerY: viewport.centerY,
+    zoom: viewport.zoom,
+    x: viewport.centerX - width / 2,
+    y: viewport.centerY - height / 2,
+    width,
+    height,
+  }
 }
 
 export function normalizeCourseUniverseNodes(input: {

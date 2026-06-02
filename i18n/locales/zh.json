@@ -683,7 +683,12 @@
       "openReviews": "查看评价",
       "writeReview": "写评价",
       "openAcademicMap": "打开学业地图",
-      "markStatus": "更新学业状态"
+      "markStatus": "更新学业状态",
+      "graphControls": "图谱控制",
+      "zoomIn": "放大图谱",
+      "zoomOut": "缩小图谱",
+      "fitGraph": "适配全图",
+      "focusSelection": "定位选中课程"
     },
     "detail": {
       "overview": "课程概览",

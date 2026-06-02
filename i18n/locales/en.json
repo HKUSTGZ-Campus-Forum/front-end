@@ -683,7 +683,12 @@
       "openReviews": "View reviews",
       "writeReview": "Write review",
       "openAcademicMap": "Open Academic Map",
-      "markStatus": "Update academic status"
+      "markStatus": "Update academic status",
+      "graphControls": "Graph controls",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fitGraph": "Fit graph",
+      "focusSelection": "Focus selected course"
     },
     "detail": {
       "overview": "Course overview",

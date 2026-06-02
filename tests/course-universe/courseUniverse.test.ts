@@ -3,7 +3,10 @@ import {
   COURSE_UNIVERSE_ALIAS_PREFIXES,
   COURSE_UNIVERSE_MODES,
   buildCourseUniverseModePath,
+  createReadableCourseUniverseViewport,
+  fitCourseUniverseViewport,
   getCourseUniverseRedirect,
+  getCourseUniverseViewBox,
   isCourseUniverseActivePath,
   normalizeCourseUniverseNodes,
   type CourseUniverseAcademicRecord,
@@ -91,5 +94,49 @@ describe('course universe helpers', () => {
       inPlanner: true,
       selected: true,
     })
+  })
+
+  it('creates a readable default viewport instead of fitting the entire graph', () => {
+    const nodes = [
+      { code: 'AIAA2205', displayCode: 'AIAA 2205', title: 'Intro to AI', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+      { code: 'DSAA3010', displayCode: 'DSAA 3010', title: 'Data Mining', x: 4200, y: 1200, category: 0, academicStatus: null, inPlanner: false, selected: false },
+    ]
+
+    const viewport = createReadableCourseUniverseViewport({ nodes })
+    const viewBox = getCourseUniverseViewBox(viewport, { width: 1200, height: 620 })
+
+    expect(viewBox.width).toBeLessThan(2300)
+    expect(192 * (1200 / viewBox.width)).toBeGreaterThan(105)
+    expect(viewBox.centerX).toBe(2100)
+    expect(viewBox.centerY).toBe(600)
+  })
+
+  it('fits the full graph as an explicit overview action', () => {
+    const nodes = [
+      { code: 'AIAA2205', displayCode: 'AIAA 2205', title: 'Intro to AI', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+      { code: 'DSAA3010', displayCode: 'DSAA 3010', title: 'Data Mining', x: 4200, y: 1200, category: 0, academicStatus: null, inPlanner: false, selected: false },
+    ]
+
+    const readable = createReadableCourseUniverseViewport({ nodes })
+    const fitted = fitCourseUniverseViewport({ nodes, canvasSize: { width: 1200, height: 620 } })
+
+    expect(fitted.zoom).toBeLessThan(readable.zoom)
+    expect(getCourseUniverseViewBox(fitted, { width: 1200, height: 620 }).width).toBeGreaterThan(4200)
+  })
+
+  it('centers search matches and zooms in for inspection', () => {
+    const nodes = [
+      { code: 'AIAA2205', displayCode: 'AIAA 2205', title: 'Intro to AI', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+      { code: 'DSAA3010', displayCode: 'DSAA 3010', title: 'Data Mining', x: 4200, y: 1200, category: 0, academicStatus: null, inPlanner: false, selected: false },
+    ]
+
+    const viewport = createReadableCourseUniverseViewport({
+      nodes,
+      focusQuery: 'data mining',
+    })
+
+    expect(viewport.centerX).toBe(4200)
+    expect(viewport.centerY).toBe(1200)
+    expect(viewport.zoom).toBeGreaterThan(1)
   })
 })
