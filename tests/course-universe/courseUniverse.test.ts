@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import {
   COURSE_UNIVERSE_ALIAS_PREFIXES,
+  COURSE_UNIVERSE_COURSE_HEIGHT,
+  COURSE_UNIVERSE_COURSE_WIDTH,
   COURSE_UNIVERSE_MODES,
+  buildCourseUniverseGraph,
+  buildCourseUniverseHighlightSet,
   buildCourseUniverseModePath,
   buildCourseUniversePrefixOptions,
+  buildCourseUniverseVisibleComponentSet,
   buildCourseUniverseVisibleCodeSet,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
   getCourseUniverseRedirect,
+  getCourseUniverseLineStyle,
   getCourseUniverseViewBox,
   getCourseUniverseNodePrefix,
   hasCourseUniversePointerMoved,
@@ -52,6 +58,21 @@ const prefixLines = [
   { id: 2, start_id: 'UFUG1101', end_id: 'UCUG1052', line_type: null, x_coordinate: 0, category: 1 },
   { id: 3, start_id: 'UCUG1052', end_id: 'DLED2010', line_type: null, x_coordinate: 0, category: 1 },
   { id: 4, start_id: 'AIAA2205', end_id: 'UFUG1101', line_type: null, x_coordinate: 0, category: 1 },
+]
+
+const graphComponents: CourseUniverseMapComponent[] = [
+  { id: 'UCUG1051', node_type: null, x_coordinate: 100, y_coordinate: 120, category: 0 },
+  { id: '(UCUG1051|UFUG1101)', node_type: true, x_coordinate: 380, y_coordinate: 150, category: 1 },
+  { id: 'UFUG1101', node_type: null, x_coordinate: 520, y_coordinate: 240, category: 0 },
+  { id: 'co_UCUG1051_UFUG1101', node_type: false, x_coordinate: 440, y_coordinate: 330, category: 2 },
+  { id: 'ex_UCUG1051_UFUG1101', node_type: false, x_coordinate: 440, y_coordinate: 420, category: 3 },
+]
+
+const graphLines = [
+  { id: 10, start_id: 'UCUG1051', end_id: '(UCUG1051|UFUG1101)', line_type: false, x_coordinate: 340, category: 1 },
+  { id: 11, start_id: '(UCUG1051|UFUG1101)', end_id: 'UFUG1101', line_type: null, x_coordinate: 460, category: 1 },
+  { id: 12, start_id: 'UCUG1051', end_id: 'co_UCUG1051_UFUG1101', line_type: true, x_coordinate: 360, category: 2 },
+  { id: 13, start_id: 'ex_UCUG1051_UFUG1101', end_id: 'UFUG1101', line_type: true, x_coordinate: 490, category: 3 },
 ]
 
 describe('course universe helpers', () => {
@@ -236,5 +257,97 @@ describe('course universe helpers', () => {
     expect(localNodes.find(node => node.code === 'UCUG1051')?.x).toBeLessThan(
       localNodes.find(node => node.code === 'AIAA2205')?.x || 0,
     )
+  })
+
+  it('preserves course cards and intermediate logic nodes in the render graph', () => {
+    const graph = buildCourseUniverseGraph({ components: graphComponents, lines: graphLines })
+
+    expect(graph.components).toHaveLength(5)
+    expect(graph.components.find(component => component.id === 'UCUG1051')).toMatchObject({
+      kind: 'course',
+      x: 100,
+      y: 120,
+      width: COURSE_UNIVERSE_COURSE_WIDTH,
+      height: COURSE_UNIVERSE_COURSE_HEIGHT,
+    })
+    expect(graph.components.find(component => component.id === '(UCUG1051|UFUG1101)')).toMatchObject({
+      kind: 'logic',
+      category: 1,
+      hollow: true,
+    })
+  })
+
+  it('routes lines from course edges through the API elbow coordinate', () => {
+    const graph = buildCourseUniverseGraph({ components: graphComponents, lines: graphLines })
+
+    expect(graph.lines.find(line => line.id === 10)).toMatchObject({
+      path: `M ${100 + COURSE_UNIVERSE_COURSE_WIDTH},${120 + COURSE_UNIVERSE_COURSE_HEIGHT / 2} H 340 V 150 H 380`,
+    })
+    expect(graph.lines.find(line => line.id === 11)).toMatchObject({
+      path: `M 380,150 H 460 V ${240 + COURSE_UNIVERSE_COURSE_HEIGHT / 2} H 520`,
+    })
+  })
+
+  it('generates arrows and keeps relationship styling distinct', () => {
+    const graph = buildCourseUniverseGraph({ components: graphComponents, lines: graphLines })
+
+    expect(getCourseUniverseLineStyle({ category: 1, lineType: false })).toMatchObject({
+      tone: 'prerequisite',
+      dashed: false,
+    })
+    expect(getCourseUniverseLineStyle({ category: 2, lineType: true })).toMatchObject({
+      tone: 'corequisite',
+    })
+    expect(getCourseUniverseLineStyle({ category: 3, lineType: true })).toMatchObject({
+      tone: 'exclusion',
+    })
+    expect(graph.lines.find(line => line.id === 10)?.arrowPaths.length).toBeGreaterThan(0)
+    expect(graph.lines.find(line => line.id === 13)?.arrowPaths).toHaveLength(2)
+  })
+
+  it('keeps intermediate nodes when focusing a selected course', () => {
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: graphComponents,
+      lines: graphLines,
+      courseNodes: prefixNodes,
+      selectedCourseCode: 'UCUG1051',
+    })
+
+    expect(visible).toContain('UCUG1051')
+    expect(visible).toContain('(UCUG1051|UFUG1101)')
+    expect(visible).toContain('UFUG1101')
+  })
+
+  it('traverses complete relationship chains for hover highlighting', () => {
+    const highlighted = buildCourseUniverseHighlightSet({
+      startId: 'UCUG1051',
+      components: graphComponents,
+      lines: graphLines,
+    })
+
+    expect(highlighted.componentIds).toContain('(UCUG1051|UFUG1101)')
+    expect(highlighted.componentIds).toContain('UFUG1101')
+    expect(highlighted.lineIds).toContain(10)
+    expect(highlighted.lineIds).toContain(11)
+  })
+
+  it('normalizes copied course components to their selectable course code', () => {
+    const nodes = normalizeCourseUniverseNodes({
+      components: [
+        { id: 'DLED4010[2]', node_type: null, x_coordinate: 5237, y_coordinate: 721, category: 0 },
+      ],
+      courses: [
+        { course_code: 'DLED4010', course_title_abbr: 'Capstone Project' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+
+    expect(nodes[0]).toMatchObject({
+      code: 'DLED4010',
+      componentId: 'DLED4010[2]',
+      displayCode: 'DLED 4010',
+      title: 'Capstone Project',
+    })
   })
 })
