@@ -147,6 +147,7 @@ onMounted(loadUniverse)
       <div class="cu-page__main">
         <div class="cu-page__graph">
           <CourseUniverseCanvas
+            :components="components"
             :nodes="nodes"
             :lines="lines"
             :search-query="searchQuery"
