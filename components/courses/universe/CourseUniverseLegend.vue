@@ -51,9 +51,9 @@ const items = [
 
 .is-completed { background: var(--semantic-success); }
 .is-in-progress { background: var(--interactive-primary); }
-.is-planned { background: #7c3aed; }
-.is-interested { background: #8b9bb2; }
-.is-planner { background: #0ea5e9; }
+.is-planned { background: var(--interactive-primary); }
+.is-interested { background: var(--text-secondary); }
+.is-planner { background: var(--interactive-hover); }
 .is-blocker { background: var(--semantic-warning); }
-.is-review { background: #a855f7; }
+.is-review { background: var(--semantic-info); }
 </style>
