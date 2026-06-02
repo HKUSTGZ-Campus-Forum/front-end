@@ -357,6 +357,26 @@ function traverseCourseUniverseComponents(startId: string, adjacency: Map<string
   return result
 }
 
+function traverseCourseUniverseDirectPaths(
+  startId: string,
+  adjacency: Map<string, Set<string>>,
+  courseComponentIds: Set<string>,
+  seedIds: Set<string>,
+) {
+  const result = new Set<string>()
+  const queue = [...(adjacency.get(startId) || [])]
+  while (queue.length) {
+    const id = queue.shift()
+    if (!id || result.has(id)) continue
+    result.add(id)
+    if (courseComponentIds.has(id) && !seedIds.has(id)) continue
+    adjacency.get(id)?.forEach(nextId => {
+      if (!result.has(nextId)) queue.push(nextId)
+    })
+  }
+  return result
+}
+
 export function buildCourseUniverseVisibleComponentSet(input: {
   components: CourseUniverseMapComponent[]
   lines: CourseUniverseMapLine[]
@@ -367,7 +387,11 @@ export function buildCourseUniverseVisibleComponentSet(input: {
 }) {
   const { incoming, outgoing } = buildCourseUniverseComponentAdjacency(input)
   const selectedCode = compactCourseCode(input.selectedCourseCode || '')
+  const courseComponentIds = new Set(input.components
+    .filter(component => component.category === 0)
+    .map(component => component.id))
   const seeds = new Set<string>()
+  let directPathsOnly = false
 
   if (selectedCode) {
     input.components.forEach(component => {
@@ -376,6 +400,7 @@ export function buildCourseUniverseVisibleComponentSet(input: {
       }
     })
   } else if (String(input.searchQuery || '').trim()) {
+    directPathsOnly = true
     const query = String(input.searchQuery).trim().toLowerCase()
     input.courseNodes.forEach(node => {
       if (node.displayCode.toLowerCase().includes(query) || node.title.toLowerCase().includes(query)) {
@@ -383,6 +408,7 @@ export function buildCourseUniverseVisibleComponentSet(input: {
       }
     })
   } else if (input.selectedPrefix) {
+    directPathsOnly = true
     input.courseNodes.forEach(node => {
       if (getCourseUniverseNodePrefix(node.code) === input.selectedPrefix) {
         seeds.add(node.componentId)
@@ -394,8 +420,14 @@ export function buildCourseUniverseVisibleComponentSet(input: {
 
   const result = new Set(seeds)
   seeds.forEach(seed => {
-    traverseCourseUniverseComponents(seed, incoming).forEach(id => result.add(id))
-    traverseCourseUniverseComponents(seed, outgoing).forEach(id => result.add(id))
+    const upstream = directPathsOnly
+      ? traverseCourseUniverseDirectPaths(seed, incoming, courseComponentIds, seeds)
+      : traverseCourseUniverseComponents(seed, incoming)
+    const downstream = directPathsOnly
+      ? traverseCourseUniverseDirectPaths(seed, outgoing, courseComponentIds, seeds)
+      : traverseCourseUniverseComponents(seed, outgoing)
+    upstream.forEach(id => result.add(id))
+    downstream.forEach(id => result.add(id))
   })
   return result
 }

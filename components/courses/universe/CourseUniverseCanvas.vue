@@ -1,24 +1,29 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type {
+  CourseUniverseMapComponent,
   CourseUniverseMapLine,
   CourseUniverseNode,
 } from '~/utils/courseUniverse'
 import {
+  COURSE_UNIVERSE_COURSE_HEIGHT,
+  COURSE_UNIVERSE_COURSE_WIDTH,
+  buildCourseUniverseGraph,
+  buildCourseUniverseHighlightSet,
   buildCourseUniversePrefixOptions,
-  buildCourseUniverseVisibleCodeSet,
+  buildCourseUniverseVisibleComponentSet,
   clampCourseUniverseZoom,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
   getCourseUniverseNodePrefix,
   getCourseUniverseViewBox,
   hasCourseUniversePointerMoved,
-  layoutCourseUniverseLocalSubgraph,
   type CourseUniverseViewBox,
   type CourseUniverseViewport,
 } from '~/utils/courseUniverse'
 
 const props = defineProps<{
+  components: CourseUniverseMapComponent[]
   nodes: CourseUniverseNode[]
   lines: CourseUniverseMapLine[]
   searchQuery: string
@@ -39,6 +44,7 @@ const viewport = ref<CourseUniverseViewport>({
 })
 const isDragging = ref(false)
 const didDrag = ref(false)
+const hoveredId = ref('')
 const selectedPrefix = ref('')
 const dragStart = ref<{
   clientX: number
@@ -47,53 +53,73 @@ const dragStart = ref<{
   viewBox: CourseUniverseViewBox
 } | null>(null)
 let resizeObserver: ResizeObserver | null = null
+const localLayoutMinZoom = 0.72
 
-const rawNodeByCode = computed(() => new Map(props.nodes.map(node => [node.code, node])))
 const query = computed(() => props.searchQuery.trim().toLowerCase())
 const selectedCode = computed(() => props.nodes.find(node => node.selected)?.code || '')
 const prefixOptions = computed(() => buildCourseUniversePrefixOptions(props.nodes))
-
-const visibleNodeCodes = computed(() => {
-  return buildCourseUniverseVisibleCodeSet({
-    nodes: props.nodes,
+const graph = computed(() => buildCourseUniverseGraph({
+  components: props.components,
+  lines: props.lines,
+}))
+const renderComponentById = computed(() => new Map(graph.value.components.map(component => [component.id, component])))
+const visibleComponentIds = computed(() => {
+  return buildCourseUniverseVisibleComponentSet({
+    components: props.components,
     lines: props.lines,
     selectedPrefix: selectedPrefix.value,
     selectedCourseCode: selectedCode.value,
     searchQuery: props.searchQuery,
+    courseNodes: props.nodes,
   })
 })
 
 const visibleNodes = computed(() => {
-  return props.nodes.filter(node => visibleNodeCodes.value.has(node.code))
+  return props.nodes.filter(node => visibleComponentIds.value.has(node.componentId))
 })
 
-const usesLocalLayout = computed(() => Boolean(selectedPrefix.value || selectedCode.value || query.value))
-
-const renderedNodes = computed(() => (
-  usesLocalLayout.value ? layoutCourseUniverseLocalSubgraph(visibleNodes.value) : visibleNodes.value
+const visibleRenderComponents = computed(() => (
+  graph.value.components.filter(component => visibleComponentIds.value.has(component.id))
 ))
 
-const nodeByCode = computed(() => new Map(renderedNodes.value.map(node => [node.code, node])))
+const visibleLogicComponents = computed(() => (
+  visibleRenderComponents.value.filter(component => (
+    component.kind === 'logic'
+    && !(component.category === 3 && component.hollow)
+  ))
+))
 
-const matchingNodeCodes = computed(() => {
+const visibleRenderLines = computed(() => (
+  graph.value.lines.filter(line => (
+    visibleComponentIds.value.has(line.startId)
+    && visibleComponentIds.value.has(line.endId)
+  ))
+))
+
+const matchingComponentIds = computed(() => {
   if (!query.value) return new Set<string>()
   return new Set(visibleNodes.value
     .filter(node => (
       node.displayCode.toLowerCase().includes(query.value)
       || node.title.toLowerCase().includes(query.value)
     ))
-    .map(node => node.code))
+    .map(node => node.componentId))
 })
 
-const visibleLines = computed(() => props.lines.filter(line => (
-  visibleNodeCodes.value.has(compact(line.start_id))
-  && visibleNodeCodes.value.has(compact(line.end_id))
-  && rawNodeByCode.value.has(compact(line.start_id))
-  && rawNodeByCode.value.has(compact(line.end_id))
-)))
+const highlighted = computed(() => (
+  hoveredId.value
+    ? buildCourseUniverseHighlightSet({
+        startId: hoveredId.value,
+        components: props.components,
+        lines: props.lines,
+      })
+    : { componentIds: [], lineIds: [] }
+))
+const highlightedComponentIds = computed(() => new Set(highlighted.value.componentIds))
+const highlightedLineIds = computed(() => new Set(highlighted.value.lineIds))
 
-const relatedNodeCodes = computed(() => {
-  if (selectedCode.value || matchingNodeCodes.value.size) return new Set(visibleNodeCodes.value)
+const relatedComponentIds = computed(() => {
+  if (selectedCode.value || matchingComponentIds.value.size) return new Set(visibleComponentIds.value)
   return new Set<string>()
 })
 
@@ -114,8 +140,8 @@ const semanticLevel = computed(() => {
 })
 
 function nodeClasses(node: CourseUniverseNode) {
-  const hasFocusContext = Boolean(selectedCode.value || matchingNodeCodes.value.size)
-  const isRelated = relatedNodeCodes.value.has(node.code)
+  const hasFocusContext = Boolean(selectedCode.value || matchingComponentIds.value.size)
+  const isRelated = relatedComponentIds.value.has(node.componentId)
   const prefix = getCourseUniverseNodePrefix(node.code)
   return [
     'cu-node',
@@ -123,7 +149,7 @@ function nodeClasses(node: CourseUniverseNode) {
     `is-tone-${prefixToneByPrefix.value.get(prefix) || 0}`,
     {
       'is-selected': node.selected,
-      'is-matched': matchingNodeCodes.value.has(node.code),
+      'is-matched': matchingComponentIds.value.has(node.componentId),
       'is-related': isRelated,
       'is-dimmed': hasFocusContext && !isRelated,
       'is-completed': node.academicStatus === 'completed',
@@ -137,29 +163,33 @@ function nodeClasses(node: CourseUniverseNode) {
 
 function resetReadableView() {
   viewport.value = createReadableCourseUniverseViewport({
-    nodes: renderedNodes.value,
+    nodes: visibleNodes.value,
     focusQuery: props.searchQuery,
   })
 }
 
 function fitFullGraph() {
   viewport.value = fitCourseUniverseViewport({
-    nodes: renderedNodes.value,
+    nodes: visibleNodes.value,
     canvasSize: canvasSize.value,
   })
 }
 
 function fitLocalGraph() {
-  viewport.value = fitCourseUniverseViewport({
-    nodes: renderedNodes.value,
+  const nextViewport = fitCourseUniverseViewport({
+    nodes: visibleNodes.value,
     canvasSize: canvasSize.value,
     padding: 150,
   })
+  viewport.value = {
+    ...nextViewport,
+    zoom: Math.max(nextViewport.zoom, localLayoutMinZoom),
+  }
 }
 
 function focusSelection() {
   viewport.value = createReadableCourseUniverseViewport({
-    nodes: renderedNodes.value,
+    nodes: visibleNodes.value,
     focusQuery: selectedCode.value || props.searchQuery,
   })
 }
@@ -258,6 +288,14 @@ function handleNodeClick(code: string) {
   emit('select', code)
 }
 
+function isRenderComponentDimmed(id: string) {
+  return Boolean(hoveredId.value && !highlightedComponentIds.value.has(id))
+}
+
+function isRenderLineDimmed(id: number) {
+  return Boolean(hoveredId.value && !highlightedLineIds.value.has(id))
+}
+
 function compact(code: string) {
   return String(code || '').replace(/\s+/g, '').toUpperCase()
 }
@@ -270,36 +308,32 @@ function shouldShowPrefixBadge(node: CourseUniverseNode) {
   return Boolean(selectedPrefix.value && getCourseUniverseNodePrefix(node.code) !== selectedPrefix.value)
 }
 
-watch(() => props.nodes.length, async length => {
-  if (!length) return
-  await nextTick()
-  resetReadableView()
-}, { immediate: true })
-
-watch(() => props.searchQuery, value => {
-  if (value.trim()) {
-    viewport.value = createReadableCourseUniverseViewport({
-      nodes: renderedNodes.value,
-      focusQuery: value,
-    })
-  }
-})
-
 watch(prefixOptions, options => {
   if (!options.some(option => option.prefix === selectedPrefix.value)) {
     selectedPrefix.value = options[0]?.prefix || ''
   }
 }, { immediate: true })
 
-watch([selectedPrefix, selectedCode, visibleNodes], async () => {
+watch([selectedPrefix, selectedCode, visibleNodes, canvasSize], async () => {
   if (!visibleNodes.value.length) return
   await nextTick()
+  if (selectedCode.value) {
+    focusSelection()
+    return
+  }
+  if (query.value) {
+    viewport.value = createReadableCourseUniverseViewport({
+      nodes: visibleNodes.value,
+      focusQuery: props.searchQuery,
+    })
+    return
+  }
   if (selectedPrefix.value || selectedCode.value) {
     fitLocalGraph()
     return
   }
   resetReadableView()
-})
+}, { immediate: true })
 
 onMounted(() => {
   if (!svgRef.value) return
@@ -379,19 +413,52 @@ onBeforeUnmount(() => {
         @pointercancel="handlePointerUp"
       >
         <g class="cu-lines">
-          <line
-            v-for="line in visibleLines"
+          <path
+            v-for="line in visibleRenderLines"
             :key="line.id"
-            :x1="nodeByCode.get(compact(line.start_id))?.x || 0"
-            :y1="nodeByCode.get(compact(line.start_id))?.y || 0"
-            :x2="nodeByCode.get(compact(line.end_id))?.x || 0"
-            :y2="nodeByCode.get(compact(line.end_id))?.y || 0"
+            :d="line.path"
             :class="[
               'cu-line',
-              `is-category-${line.category}`,
+              `is-${line.tone}`,
               {
-                'is-related': relatedNodeCodes.has(compact(line.start_id)) && relatedNodeCodes.has(compact(line.end_id)),
-                'is-dimmed': relatedNodeCodes.size && !(relatedNodeCodes.has(compact(line.start_id)) && relatedNodeCodes.has(compact(line.end_id))),
+                'is-dashed': line.dashed,
+                'is-highlighted': highlightedLineIds.has(line.id),
+                'is-dimmed': isRenderLineDimmed(line.id),
+              },
+            ]"
+          />
+        </g>
+
+        <g class="cu-line-arrows">
+          <g
+            v-for="line in visibleRenderLines"
+            :key="`arrows-${line.id}`"
+            :class="[
+              `is-${line.tone}`,
+              {
+                'is-highlighted': highlightedLineIds.has(line.id),
+                'is-dimmed': isRenderLineDimmed(line.id),
+              },
+            ]"
+          >
+            <path v-for="(path, index) in line.arrowPaths" :key="`${line.id}-${index}`" :d="path" />
+          </g>
+        </g>
+
+        <g class="cu-logic-nodes">
+          <circle
+            v-for="component in visibleLogicComponents"
+            :key="component.id"
+            :cx="component.x"
+            :cy="component.y"
+            :r="component.category === 1 ? 5 : 3"
+            :class="[
+              'cu-logic-node',
+              `is-category-${component.category}`,
+              {
+                'is-hollow': component.hollow,
+                'is-highlighted': highlightedComponentIds.has(component.id),
+                'is-dimmed': isRenderComponentDimmed(component.id),
               },
             ]"
           />
@@ -399,16 +466,25 @@ onBeforeUnmount(() => {
 
         <g class="cu-nodes">
           <foreignObject
-            v-for="node in renderedNodes"
-            :key="node.code"
-            :x="node.x - 96"
-            :y="node.y - 42"
-            width="192"
-            height="92"
+            v-for="node in visibleNodes"
+            :key="node.componentId"
+            :x="renderComponentById.get(node.componentId)?.x || 0"
+            :y="renderComponentById.get(node.componentId)?.y || 0"
+            :width="COURSE_UNIVERSE_COURSE_WIDTH"
+            :height="COURSE_UNIVERSE_COURSE_HEIGHT"
           >
             <button
               type="button"
-              :class="nodeClasses(node)"
+              :class="[
+                ...nodeClasses(node),
+                {
+                  'is-highlighted': highlightedComponentIds.has(node.componentId),
+                  'is-dimmed': isRenderComponentDimmed(node.componentId),
+                },
+              ]"
+              @mouseenter="hoveredId = node.componentId"
+              @mouseleave="hoveredId = ''"
+              @pointerdown.stop="handlePointerDown"
               @click="handleNodeClick(node.code)"
             >
               <strong>{{ node.displayCode }}</strong>
@@ -590,31 +666,77 @@ onBeforeUnmount(() => {
 }
 
 .cu-line {
+  fill: none;
   pointer-events: none;
-  stroke: color-mix(in srgb, var(--text-secondary) 28%, transparent);
+  stroke: var(--text-primary);
   stroke-width: 2;
   transition: opacity 0.18s, stroke 0.18s, stroke-width 0.18s;
 }
 
-.cu-line.is-category-2 {
-  stroke: color-mix(in srgb, var(--interactive-primary) 58%, transparent);
-  stroke-width: 3;
+.cu-line.is-corequisite {
+  stroke: var(--semantic-info);
 }
 
-.cu-line.is-category-3 {
-  stroke: color-mix(in srgb, var(--semantic-warning) 62%, transparent);
-  stroke-dasharray: 8 6;
-  stroke-width: 3;
+.cu-line.is-exclusion {
+  stroke: var(--semantic-error);
 }
 
-.cu-line.is-related {
-  opacity: 1;
-  stroke: color-mix(in srgb, var(--interactive-primary) 78%, var(--text-secondary));
+.cu-line.is-dashed {
+  stroke-dasharray: 6 5;
+}
+
+.cu-line.is-highlighted {
   stroke-width: 4;
 }
 
-.cu-line.is-dimmed {
+.cu-line.is-dimmed,
+.cu-line-arrows .is-dimmed,
+.cu-logic-node.is-dimmed {
   opacity: 0.16;
+}
+
+.cu-line-arrows {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--text-primary);
+  stroke-width: 2;
+}
+
+.cu-line-arrows .is-corequisite {
+  stroke: var(--semantic-info);
+}
+
+.cu-line-arrows .is-exclusion {
+  stroke: var(--semantic-error);
+}
+
+.cu-line-arrows .is-highlighted {
+  stroke-width: 3;
+}
+
+.cu-logic-node {
+  fill: var(--text-primary);
+  pointer-events: none;
+  stroke: var(--text-primary);
+  stroke-width: 2;
+}
+
+.cu-logic-node.is-category-2 {
+  fill: var(--semantic-info);
+  stroke: var(--semantic-info);
+}
+
+.cu-logic-node.is-category-3 {
+  fill: var(--semantic-error);
+  stroke: var(--semantic-error);
+}
+
+.cu-logic-node.is-hollow {
+  fill: var(--surface-primary);
+}
+
+.cu-logic-node.is-highlighted {
+  stroke-width: 3;
 }
 
 .cu-node {
@@ -627,6 +749,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   display: grid;
   gap: 4px;
+  height: 100%;
   min-height: 82px;
   padding: 10px;
   position: relative;
