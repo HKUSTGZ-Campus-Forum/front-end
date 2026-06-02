@@ -40,6 +40,7 @@ export interface CourseUniverseCartCourse {
 }
 
 export interface CourseUniverseNode {
+  componentId: string
   code: string
   displayCode: string
   title: string
@@ -74,7 +75,38 @@ export interface CourseUniversePrefixOption {
   count: number
 }
 
-export const COURSE_UNIVERSE_NODE_WORLD_WIDTH = 192
+export interface CourseUniverseRenderComponent {
+  id: string
+  kind: 'course' | 'logic'
+  category: number
+  courseCode: string | null
+  x: number
+  y: number
+  width: number
+  height: number
+  hollow: boolean
+}
+
+export interface CourseUniverseRenderLine {
+  id: number
+  startId: string
+  endId: string
+  category: number
+  lineType: boolean | null
+  path: string
+  arrowPaths: string[]
+  tone: 'prerequisite' | 'corequisite' | 'exclusion'
+  dashed: boolean
+}
+
+export interface CourseUniverseGraph {
+  components: CourseUniverseRenderComponent[]
+  lines: CourseUniverseRenderLine[]
+}
+
+export const COURSE_UNIVERSE_COURSE_WIDTH = 192
+export const COURSE_UNIVERSE_COURSE_HEIGHT = 92
+export const COURSE_UNIVERSE_NODE_WORLD_WIDTH = COURSE_UNIVERSE_COURSE_WIDTH
 export const COURSE_UNIVERSE_READABLE_SCALE = 0.82
 export const COURSE_UNIVERSE_MIN_ZOOM = 0.28
 export const COURSE_UNIVERSE_FIT_MIN_ZOOM = 0.14
@@ -92,6 +124,10 @@ export const COURSE_UNIVERSE_ALIAS_PREFIXES = ['/courses', '/schedule', '/academ
 
 export function compactCourseCode(code: string) {
   return String(code || '').replace(/\s+/g, '').toUpperCase()
+}
+
+export function getCourseUniverseComponentCourseCode(componentId: string) {
+  return compactCourseCode(componentId).replace(/\[\d+\]$/, '')
 }
 
 export function formatCourseCode(code: string) {
@@ -134,6 +170,251 @@ export function hasCourseUniversePointerMoved(
   threshold = 5,
 ) {
   return Math.hypot(current.clientX - start.clientX, current.clientY - start.clientY) > threshold
+}
+
+export function getCourseUniverseLineStyle(input: {
+  category: number
+  lineType: boolean | null
+}) {
+  return {
+    tone: input.category === 2
+      ? 'corequisite' as const
+      : input.category === 3
+        ? 'exclusion' as const
+        : 'prerequisite' as const,
+    dashed: !(
+      (input.category <= 2 && input.lineType === false)
+      || (input.category === 3 && input.lineType === true)
+    ),
+  }
+}
+
+function getCourseUniverseLinePoint(
+  component: CourseUniverseMapComponent,
+  edge: 'start' | 'end',
+) {
+  if (component.category !== 0) {
+    return { x: component.x_coordinate, y: component.y_coordinate }
+  }
+  return {
+    x: component.x_coordinate + (edge === 'start' ? COURSE_UNIVERSE_COURSE_WIDTH : 0),
+    y: component.y_coordinate + COURSE_UNIVERSE_COURSE_HEIGHT / 2,
+  }
+}
+
+function buildCourseUniverseArrowPath(
+  x: number,
+  y: number,
+  direction: 'up' | 'down' | 'left' | 'right',
+) {
+  if (direction === 'up') return `M ${x - 4},${y - 4} L ${x},${y} L ${x + 4},${y - 4}`
+  if (direction === 'down') return `M ${x - 4},${y + 4} L ${x},${y} L ${x + 4},${y + 4}`
+  if (direction === 'left') return `M ${x + 4},${y - 4} L ${x},${y} L ${x + 4},${y + 4}`
+  return `M ${x - 4},${y - 4} L ${x},${y} L ${x - 4},${y + 4}`
+}
+
+function buildCourseUniverseRepeatedArrows(
+  start: number,
+  end: number,
+  fixed: number,
+  axis: 'horizontal' | 'vertical',
+) {
+  if (start === end) return []
+  const distance = Math.abs(end - start)
+  const count = Math.max(1, Math.floor(distance / 60))
+  const direction = axis === 'vertical'
+    ? start < end ? 'up' as const : 'down' as const
+    : start < end ? 'right' as const : 'left' as const
+  const step = (end - start) / (count + 1)
+  return Array.from({ length: count }, (_, index) => {
+    const moving = start + step * (index + 1)
+    return axis === 'vertical'
+      ? buildCourseUniverseArrowPath(fixed, moving, direction)
+      : buildCourseUniverseArrowPath(moving, fixed, direction)
+  })
+}
+
+function buildCourseUniverseLineArrows(input: {
+  category: number
+  lineType: boolean | null
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+  elbowX: number
+}) {
+  const arrows = []
+  if (input.category === 1 || input.category === 2 || (input.category === 3 && !input.lineType)) {
+    arrows.push(...buildCourseUniverseRepeatedArrows(input.startY, input.endY, input.elbowX, 'vertical'))
+  }
+  if (input.category === 2 || (input.category === 3 && !input.lineType)) {
+    arrows.push(...buildCourseUniverseRepeatedArrows(input.startX, input.elbowX, input.startY, 'horizontal'))
+    arrows.push(...buildCourseUniverseRepeatedArrows(input.elbowX, input.endX, input.endY, 'horizontal'))
+  }
+  if (input.category === 3 && input.lineType) {
+    if (Math.abs(input.elbowX - input.startX) >= 5) {
+      arrows.push(buildCourseUniverseArrowPath(
+        input.startX,
+        input.startY,
+        input.elbowX > input.startX ? 'left' : 'right',
+      ))
+    } else if (Math.abs(input.endY - input.startY) >= 5) {
+      arrows.push(buildCourseUniverseArrowPath(
+        input.elbowX,
+        input.startY,
+        input.endY > input.startY ? 'down' : 'up',
+      ))
+    }
+    if (Math.abs(input.elbowX - input.endX) >= 5) {
+      arrows.push(buildCourseUniverseArrowPath(
+        input.endX,
+        input.endY,
+        input.elbowX > input.endX ? 'left' : 'right',
+      ))
+    } else if (Math.abs(input.startY - input.endY) >= 5) {
+      arrows.push(buildCourseUniverseArrowPath(
+        input.elbowX,
+        input.endY,
+        input.startY > input.endY ? 'down' : 'up',
+      ))
+    }
+  }
+  return arrows
+}
+
+export function buildCourseUniverseGraph(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+}): CourseUniverseGraph {
+  const componentById = new Map(input.components.map(component => [component.id, component]))
+  const components = input.components.map(component => ({
+    id: component.id,
+    kind: component.category === 0 ? 'course' as const : 'logic' as const,
+    category: component.category,
+    courseCode: component.category === 0 ? getCourseUniverseComponentCourseCode(component.id) : null,
+    x: component.x_coordinate,
+    y: component.y_coordinate,
+    width: component.category === 0 ? COURSE_UNIVERSE_COURSE_WIDTH : 0,
+    height: component.category === 0 ? COURSE_UNIVERSE_COURSE_HEIGHT : 0,
+    hollow: Boolean(component.node_type),
+  }))
+  const lines = input.lines.flatMap(line => {
+    const start = componentById.get(line.start_id)
+    const end = componentById.get(line.end_id)
+    if (!start || !end) return []
+    const startPoint = getCourseUniverseLinePoint(start, 'start')
+    const endPoint = getCourseUniverseLinePoint(end, 'end')
+    return [{
+      id: line.id,
+      startId: line.start_id,
+      endId: line.end_id,
+      category: line.category,
+      lineType: line.line_type,
+      path: `M ${startPoint.x},${startPoint.y} H ${line.x_coordinate} V ${endPoint.y} H ${endPoint.x}`,
+      arrowPaths: buildCourseUniverseLineArrows({
+        category: line.category,
+        lineType: line.line_type,
+        startX: startPoint.x,
+        startY: startPoint.y,
+        endX: endPoint.x,
+        endY: endPoint.y,
+        elbowX: line.x_coordinate,
+      }),
+      ...getCourseUniverseLineStyle({ category: line.category, lineType: line.line_type }),
+    }]
+  })
+  return { components, lines }
+}
+
+function buildCourseUniverseComponentAdjacency(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+}) {
+  const ids = new Set(input.components.map(component => component.id))
+  const outgoing = new Map<string, Set<string>>()
+  const incoming = new Map<string, Set<string>>()
+  input.lines.forEach(line => {
+    if (!ids.has(line.start_id) || !ids.has(line.end_id)) return
+    if (!outgoing.has(line.start_id)) outgoing.set(line.start_id, new Set())
+    if (!incoming.has(line.end_id)) incoming.set(line.end_id, new Set())
+    outgoing.get(line.start_id)?.add(line.end_id)
+    incoming.get(line.end_id)?.add(line.start_id)
+  })
+  return { incoming, outgoing }
+}
+
+function traverseCourseUniverseComponents(startId: string, adjacency: Map<string, Set<string>>) {
+  const result = new Set<string>()
+  const queue = [...(adjacency.get(startId) || [])]
+  while (queue.length) {
+    const id = queue.shift()
+    if (!id || result.has(id)) continue
+    result.add(id)
+    adjacency.get(id)?.forEach(nextId => {
+      if (!result.has(nextId)) queue.push(nextId)
+    })
+  }
+  return result
+}
+
+export function buildCourseUniverseVisibleComponentSet(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  courseNodes: CourseUniverseNode[]
+  selectedPrefix?: string
+  selectedCourseCode?: string | null
+  searchQuery?: string
+}) {
+  const { incoming, outgoing } = buildCourseUniverseComponentAdjacency(input)
+  const selectedCode = compactCourseCode(input.selectedCourseCode || '')
+  const seeds = new Set<string>()
+
+  if (selectedCode) {
+    input.components.forEach(component => {
+      if (component.category === 0 && getCourseUniverseComponentCourseCode(component.id) === selectedCode) {
+        seeds.add(component.id)
+      }
+    })
+  } else if (String(input.searchQuery || '').trim()) {
+    const query = String(input.searchQuery).trim().toLowerCase()
+    input.courseNodes.forEach(node => {
+      if (node.displayCode.toLowerCase().includes(query) || node.title.toLowerCase().includes(query)) {
+        seeds.add(node.componentId)
+      }
+    })
+  } else if (input.selectedPrefix) {
+    input.courseNodes.forEach(node => {
+      if (getCourseUniverseNodePrefix(node.code) === input.selectedPrefix) {
+        seeds.add(node.componentId)
+      }
+    })
+  } else {
+    return new Set(input.components.map(component => component.id))
+  }
+
+  const result = new Set(seeds)
+  seeds.forEach(seed => {
+    traverseCourseUniverseComponents(seed, incoming).forEach(id => result.add(id))
+    traverseCourseUniverseComponents(seed, outgoing).forEach(id => result.add(id))
+  })
+  return result
+}
+
+export function buildCourseUniverseHighlightSet(input: {
+  startId: string
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+}) {
+  const { incoming, outgoing } = buildCourseUniverseComponentAdjacency(input)
+  const componentIds = new Set<string>([input.startId])
+  traverseCourseUniverseComponents(input.startId, incoming).forEach(id => componentIds.add(id))
+  traverseCourseUniverseComponents(input.startId, outgoing).forEach(id => componentIds.add(id))
+  return {
+    componentIds: [...componentIds],
+    lineIds: input.lines
+      .filter(line => componentIds.has(line.start_id) && componentIds.has(line.end_id))
+      .map(line => line.id),
+  }
 }
 
 export function getCourseUniverseBounds(nodes: CourseUniverseNode[], padding = 360) {
@@ -425,11 +706,12 @@ export function normalizeCourseUniverseNodes(input: {
   return input.components
     .filter(component => component.category === 0)
     .map(component => {
-      const code = compactCourseCode(component.id)
+      const code = getCourseUniverseComponentCourseCode(component.id)
       const course = coursesByCode.get(code)
       const record = recordsByCode.get(code)
 
       return {
+        componentId: component.id,
         code,
         displayCode: formatCourseCode(code),
         title: course?.course_title_abbr || formatCourseCode(code),
