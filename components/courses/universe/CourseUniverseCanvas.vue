@@ -18,6 +18,7 @@ import {
   getCourseUniverseNodePrefix,
   getCourseUniverseViewBox,
   hasCourseUniversePointerMoved,
+  layoutCourseUniverseGraphComponents,
   type CourseUniverseViewBox,
   type CourseUniverseViewport,
 } from '~/utils/courseUniverse'
@@ -58,11 +59,6 @@ const localLayoutMinZoom = 0.72
 const query = computed(() => props.searchQuery.trim().toLowerCase())
 const selectedCode = computed(() => props.nodes.find(node => node.selected)?.code || '')
 const prefixOptions = computed(() => buildCourseUniversePrefixOptions(props.nodes))
-const graph = computed(() => buildCourseUniverseGraph({
-  components: props.components,
-  lines: props.lines,
-}))
-const renderComponentById = computed(() => new Map(graph.value.components.map(component => [component.id, component])))
 const visibleComponentIds = computed(() => {
   return buildCourseUniverseVisibleComponentSet({
     components: props.components,
@@ -73,9 +69,30 @@ const visibleComponentIds = computed(() => {
     courseNodes: props.nodes,
   })
 })
+const layoutComponents = computed(() => layoutCourseUniverseGraphComponents({
+  components: props.components,
+  lines: props.lines,
+  visibleComponentIds: visibleComponentIds.value,
+}))
+const layoutComponentById = computed(() => new Map(layoutComponents.value.map(component => [component.id, component])))
+const graph = computed(() => buildCourseUniverseGraph({
+  components: layoutComponents.value,
+  lines: props.lines,
+}))
+const renderComponentById = computed(() => new Map(graph.value.components.map(component => [component.id, component])))
 
 const visibleNodes = computed(() => {
-  return props.nodes.filter(node => visibleComponentIds.value.has(node.componentId))
+  return props.nodes
+    .filter(node => visibleComponentIds.value.has(node.componentId))
+    .map(node => {
+      const component = layoutComponentById.value.get(node.componentId)
+      if (!component) return node
+      return {
+        ...node,
+        x: component.x_coordinate,
+        y: component.y_coordinate,
+      }
+    })
 })
 
 const visibleRenderComponents = computed(() => (

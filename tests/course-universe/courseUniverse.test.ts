@@ -7,6 +7,7 @@ import {
   COURSE_UNIVERSE_MODES,
   buildCourseUniverseGraph,
   buildCourseUniverseHighlightSet,
+  layoutCourseUniverseGraphComponents,
   buildCourseUniverseModePath,
   buildCourseUniversePrefixOptions,
   buildCourseUniverseVisibleComponentSet,
@@ -86,6 +87,45 @@ const directPathLines = [
   ...graphLines,
   { id: 14, start_id: 'UFUG1101', end_id: '(UFUG1101&DLED2010)', line_type: false, x_coordinate: 720, category: 1 },
   { id: 15, start_id: '(UFUG1101&DLED2010)', end_id: 'DLED2010', line_type: null, x_coordinate: 840, category: 1 },
+]
+
+const overlappingComponents: CourseUniverseMapComponent[] = [
+  { id: 'UCUG1050', node_type: null, x_coordinate: 100, y_coordinate: 100, category: 0 },
+  { id: 'UCUG1051', node_type: null, x_coordinate: 104, y_coordinate: 178, category: 0 },
+  { id: 'UCUG1052', node_type: null, x_coordinate: 500, y_coordinate: 120, category: 0 },
+  { id: 'UCUG1052A', node_type: null, x_coordinate: 504, y_coordinate: 182, category: 0 },
+  { id: 'UCUG1052S', node_type: null, x_coordinate: 498, y_coordinate: 245, category: 0 },
+  { id: '(UCUG1050&UCUG1051)', node_type: false, x_coordinate: 340, y_coordinate: 170, category: 1 },
+]
+
+const overlappingLines = [
+  { id: 20, start_id: 'UCUG1050', end_id: '(UCUG1050&UCUG1051)', line_type: false, x_coordinate: 300, category: 1 },
+  { id: 21, start_id: 'UCUG1051', end_id: '(UCUG1050&UCUG1051)', line_type: false, x_coordinate: 300, category: 1 },
+  { id: 22, start_id: '(UCUG1050&UCUG1051)', end_id: 'UCUG1052', line_type: null, x_coordinate: 420, category: 1 },
+  { id: 23, start_id: '(UCUG1050&UCUG1051)', end_id: 'UCUG1052A', line_type: null, x_coordinate: 420, category: 1 },
+  { id: 24, start_id: '(UCUG1050&UCUG1051)', end_id: 'UCUG1052S', line_type: null, x_coordinate: 420, category: 1 },
+]
+
+const isolatedComponents: CourseUniverseMapComponent[] = [
+  { id: 'UCUG1050', node_type: null, x_coordinate: 100, y_coordinate: 100, category: 0 },
+  { id: 'UCUG1051', node_type: null, x_coordinate: 500, y_coordinate: 100, category: 0 },
+  { id: 'UCUG1070', node_type: null, x_coordinate: 120, y_coordinate: 420, category: 0 },
+  { id: 'UCUG1071', node_type: null, x_coordinate: 520, y_coordinate: 420, category: 0 },
+  { id: 'UCUG1072', node_type: null, x_coordinate: 250, y_coordinate: 500, category: 0 },
+  { id: 'UCUG1073', node_type: null, x_coordinate: 125, y_coordinate: 610, category: 0 },
+  { id: 'UCUG1074', node_type: null, x_coordinate: 520, y_coordinate: 610, category: 0 },
+  { id: 'UCUG1500', node_type: null, x_coordinate: 130, y_coordinate: 740, category: 0 },
+  { id: 'UCUG1501', node_type: null, x_coordinate: 520, y_coordinate: 740, category: 0 },
+  { id: 'UCUG1502', node_type: null, x_coordinate: 130, y_coordinate: 820, category: 0 },
+  { id: 'UCUG1503', node_type: null, x_coordinate: 520, y_coordinate: 820, category: 0 },
+  { id: 'UCUG1504', node_type: null, x_coordinate: 130, y_coordinate: 900, category: 0 },
+  { id: 'UCUG1505', node_type: null, x_coordinate: 520, y_coordinate: 900, category: 0 },
+  { id: '(UCUG1050|UCUG1051)', node_type: true, x_coordinate: 340, y_coordinate: 130, category: 1 },
+]
+
+const isolatedLines = [
+  { id: 30, start_id: 'UCUG1050', end_id: '(UCUG1050|UCUG1051)', line_type: false, x_coordinate: 280, category: 1 },
+  { id: 31, start_id: '(UCUG1050|UCUG1051)', end_id: 'UCUG1051', line_type: null, x_coordinate: 420, category: 1 },
 ]
 
 describe('course universe helpers', () => {
@@ -298,6 +338,46 @@ describe('course universe helpers', () => {
       kind: 'logic',
       category: 1,
       hollow: true,
+    })
+  })
+
+  it('snaps close course columns and separates overlapping cards before rendering', () => {
+    const laidOut = layoutCourseUniverseGraphComponents({
+      components: overlappingComponents,
+      lines: overlappingLines,
+    })
+    const byId = new Map(laidOut.map(component => [component.id, component]))
+
+    expect(byId.get('UCUG1052')?.x_coordinate).toBe(byId.get('UCUG1052A')?.x_coordinate)
+    expect(byId.get('UCUG1052A')?.x_coordinate).toBe(byId.get('UCUG1052S')?.x_coordinate)
+
+    const rightColumn = ['UCUG1052', 'UCUG1052A', 'UCUG1052S']
+      .map(id => byId.get(id)?.y_coordinate || 0)
+      .sort((a, b) => a - b)
+    expect(rightColumn[1] - rightColumn[0]).toBeGreaterThanOrEqual(COURSE_UNIVERSE_COURSE_HEIGHT + 24)
+    expect(rightColumn[2] - rightColumn[1]).toBeGreaterThanOrEqual(COURSE_UNIVERSE_COURSE_HEIGHT + 24)
+  })
+
+  it('packs isolated visible courses into an aligned multi-column gallery', () => {
+    const visibleIds = new Set(isolatedComponents.map(component => component.id))
+    const laidOut = layoutCourseUniverseGraphComponents({
+      components: isolatedComponents,
+      lines: isolatedLines,
+      visibleComponentIds: visibleIds,
+    })
+    const isolatedCourses = laidOut
+      .filter(component => component.category === 0 && component.id.startsWith('UCUG15'))
+      .sort((a, b) => a.id.localeCompare(b.id))
+    const distinctColumns = new Set(isolatedCourses.map(component => component.x_coordinate))
+    const rowCounts = new Map<number, number>()
+    isolatedCourses.forEach(component => {
+      rowCounts.set(component.y_coordinate, (rowCounts.get(component.y_coordinate) || 0) + 1)
+    })
+
+    expect(distinctColumns.size).toBeGreaterThanOrEqual(3)
+    expect([...rowCounts.values()].some(count => count >= 3)).toBe(true)
+    isolatedCourses.forEach(component => {
+      expect(component.y_coordinate).toBeGreaterThan(300)
     })
   })
 

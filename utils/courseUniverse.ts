@@ -326,6 +326,125 @@ export function buildCourseUniverseGraph(input: {
   return { components, lines }
 }
 
+function getCourseUniverseVisibleIds(
+  components: CourseUniverseMapComponent[],
+  visibleComponentIds?: Set<string>,
+) {
+  return visibleComponentIds || new Set(components.map(component => component.id))
+}
+
+function getCourseUniverseCourseDegree(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  visibleIds: Set<string>
+}) {
+  const courseIds = new Set(input.components
+    .filter(component => component.category === 0)
+    .map(component => component.id))
+  const degree = new Map<string, number>()
+  input.components.forEach(component => {
+    if (component.category === 0) degree.set(component.id, 0)
+  })
+  input.lines.forEach(line => {
+    if (!input.visibleIds.has(line.start_id) || !input.visibleIds.has(line.end_id)) return
+    if (courseIds.has(line.start_id)) degree.set(line.start_id, (degree.get(line.start_id) || 0) + 1)
+    if (courseIds.has(line.end_id)) degree.set(line.end_id, (degree.get(line.end_id) || 0) + 1)
+  })
+  return degree
+}
+
+function groupCourseUniverseColumns(components: CourseUniverseMapComponent[], threshold = 96) {
+  const columns: CourseUniverseMapComponent[][] = []
+  const sorted = [...components].sort((a, b) => a.x_coordinate - b.x_coordinate || a.y_coordinate - b.y_coordinate || a.id.localeCompare(b.id))
+  sorted.forEach(component => {
+    const lastColumn = columns[columns.length - 1]
+    const averageX = lastColumn
+      ? lastColumn.reduce((sum, item) => sum + item.x_coordinate, 0) / lastColumn.length
+      : null
+    if (lastColumn && averageX !== null && Math.abs(component.x_coordinate - averageX) <= threshold) {
+      lastColumn.push(component)
+      return
+    }
+    columns.push([component])
+  })
+  return columns
+}
+
+function getCourseUniverseAlignedColumnX(column: CourseUniverseMapComponent[]) {
+  const sortedX = column.map(component => component.x_coordinate).sort((a, b) => a - b)
+  return Math.round(sortedX[Math.floor(sortedX.length / 2)])
+}
+
+export function layoutCourseUniverseGraphComponents(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  visibleComponentIds?: Set<string>
+}): CourseUniverseMapComponent[] {
+  const visibleIds = getCourseUniverseVisibleIds(input.components, input.visibleComponentIds)
+  const degree = getCourseUniverseCourseDegree({
+    components: input.components,
+    lines: input.lines,
+    visibleIds,
+  })
+  const laidOut = new Map(input.components.map(component => [component.id, { ...component }]))
+  const visibleCourses = input.components.filter(component => component.category === 0 && visibleIds.has(component.id))
+  const connectedCourses = visibleCourses.filter(component => (degree.get(component.id) || 0) > 0)
+  const isolatedCourses = visibleCourses.filter(component => (degree.get(component.id) || 0) === 0)
+  const minVerticalGap = COURSE_UNIVERSE_COURSE_HEIGHT + 24
+
+  groupCourseUniverseColumns(connectedCourses).forEach(column => {
+    const columnX = getCourseUniverseAlignedColumnX(column)
+    let previousY = Number.NEGATIVE_INFINITY
+    column
+      .sort((a, b) => a.y_coordinate - b.y_coordinate || a.x_coordinate - b.x_coordinate || a.id.localeCompare(b.id))
+      .forEach(component => {
+        const next = laidOut.get(component.id)
+        if (!next) return
+        next.x_coordinate = columnX
+        next.y_coordinate = Math.max(component.y_coordinate, previousY + minVerticalGap)
+        previousY = next.y_coordinate
+      })
+  })
+
+  if (isolatedCourses.length) {
+    const visibleLaidOutCourses = [...laidOut.values()].filter(component => (
+      component.category === 0
+      && visibleIds.has(component.id)
+      && (degree.get(component.id) || 0) > 0
+    ))
+    const connectedMinX = visibleLaidOutCourses.length
+      ? Math.min(...visibleLaidOutCourses.map(component => component.x_coordinate))
+      : Math.min(...isolatedCourses.map(component => component.x_coordinate))
+    const connectedMaxY = visibleLaidOutCourses.length
+      ? Math.max(...visibleLaidOutCourses.map(component => component.y_coordinate))
+      : Math.min(...isolatedCourses.map(component => component.y_coordinate)) - COURSE_UNIVERSE_COURSE_HEIGHT - 160
+    const columnCount = isolatedCourses.length >= 7
+      ? 4
+      : isolatedCourses.length >= 4
+        ? 3
+        : Math.max(1, isolatedCourses.length)
+    const columnGap = COURSE_UNIVERSE_COURSE_WIDTH + 92
+    const rowGap = COURSE_UNIVERSE_COURSE_HEIGHT + 36
+    const startX = Math.round(connectedMinX)
+    const startY = Math.round(connectedMaxY + COURSE_UNIVERSE_COURSE_HEIGHT + 160)
+
+    isolatedCourses
+      .sort((a, b) => getCourseUniverseComponentCourseCode(a.id).localeCompare(
+        getCourseUniverseComponentCourseCode(b.id),
+        undefined,
+        { numeric: true },
+      ))
+      .forEach((component, index) => {
+        const next = laidOut.get(component.id)
+        if (!next) return
+        next.x_coordinate = startX + (index % columnCount) * columnGap
+        next.y_coordinate = startY + Math.floor(index / columnCount) * rowGap
+      })
+  }
+
+  return input.components.map(component => laidOut.get(component.id) || component)
+}
+
 function buildCourseUniverseComponentAdjacency(input: {
   components: CourseUniverseMapComponent[]
   lines: CourseUniverseMapLine[]
