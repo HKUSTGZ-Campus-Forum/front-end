@@ -4,11 +4,10 @@ import CourseNodeDetailPanel from './CourseNodeDetailPanel.vue'
 import CourseUniverseCanvas from './CourseUniverseCanvas.vue'
 import CourseUniverseLegend from './CourseUniverseLegend.vue'
 import CourseUniverseToolbar from './CourseUniverseToolbar.vue'
-import type { AcademicCourseRecord, AcademicCourseStatus } from '~/types/academic-map'
+import type { AcademicCourseRecord } from '~/types/academic-map'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import {
   compactCourseCode,
-  formatCourseCode,
   normalizeCourseUniverseNodes,
   type CourseUniverseMapComponent,
   type CourseUniverseMapCourse,
@@ -20,10 +19,12 @@ const props = defineProps<{
   mode?: CourseUniverseModeKey
 }>()
 
+const route = useRoute()
 const { t } = useI18n()
 const { isLoggedIn } = useAuth()
 const { getMapComponents, getMapLines, getMapCourses, getSemesters, getCart } = useScheduler()
-const { fetchSummary, saveImportedRecords, updateRecord } = useAcademicMap()
+const { fetchSummary } = useAcademicMap()
+const { markCourseInterested, cancelCourseInterest } = useCourseOverview()
 
 const components = ref<CourseUniverseMapComponent[]>([])
 const lines = ref<CourseUniverseMapLine[]>([])
@@ -77,6 +78,8 @@ async function loadUniverse() {
     courses.value = mapCourses
     semesters.value = semesterData
     selectedSemester.value = semesterData[0]?.id || ''
+    const focusedCourse = typeof route.query.focus === 'string' ? compactCourseCode(route.query.focus) : ''
+    if (focusedCourse) selectedCourseCode.value = focusedCourse
 
     if (isLoggedIn.value) {
       const summary = await fetchSummary()
@@ -100,25 +103,25 @@ async function refreshPlannerCart() {
   plannerCourses.value = await getCart(selectedSemester.value)
 }
 
-async function updateAcademicStatus(status: AcademicCourseStatus) {
-  if (!selectedNode.value || !isLoggedIn.value) return
-  const existing = selectedAcademicRecord.value
-  if (existing?.id) {
-    const result = await updateRecord(existing.id, { status })
-    academicRecords.value = academicRecords.value.map(record => (
-      record.id === existing.id ? result.record : record
-    ))
+async function refreshAcademicRecords() {
+  if (!isLoggedIn.value) {
+    academicRecords.value = []
     return
   }
+  const summary = await fetchSummary()
+  academicRecords.value = summary.records || []
+}
 
-  const result = await saveImportedRecords([{
-    course_code: formatCourseCode(selectedNode.value.code),
-    course_title: selectedNode.value.title,
-    term_label: selectedSemester.value,
-    status,
-    needs_review: false,
-  }], false)
-  academicRecords.value = [...academicRecords.value, ...(result.records || [])]
+async function markSelectedCourseInterested() {
+  if (!selectedNode.value || !isLoggedIn.value) return
+  await markCourseInterested(selectedNode.value.code)
+  await refreshAcademicRecords()
+}
+
+async function cancelSelectedCourseInterest() {
+  if (!selectedNode.value || !isLoggedIn.value) return
+  await cancelCourseInterest(selectedNode.value.code)
+  await refreshAcademicRecords()
 }
 
 watch(selectedSemester, refreshPlannerCart)
@@ -160,7 +163,8 @@ onMounted(loadUniverse)
           :academic-status="selectedAcademicStatus"
           :in-planner="selectedInPlanner"
           :selected-semester="selectedSemester"
-          @update-status="updateAcademicStatus"
+          @mark-interest="markSelectedCourseInterested"
+          @cancel-interest="cancelSelectedCourseInterest"
         />
       </div>
     </template>

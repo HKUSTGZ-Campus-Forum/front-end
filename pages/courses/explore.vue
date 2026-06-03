@@ -84,9 +84,6 @@ const buildListQuery = (): Record<string, string> => {
 };
 
 const courseListReturnQuery = computed(() => buildListQuery());
-const selectedOfferingTag = computed(() => (
-  availableSemesters.value.find((semester) => semester.code === selectedSemester.value)?.offering_tag || ""
-));
 
 const syncRouteQuery = () => {
   router.replace({ path: route.path, query: buildListQuery() });
@@ -292,7 +289,7 @@ onMounted(() => { fetchFiltersData(); });
         v-for="course in filteredCourses"
         :key="course.id"
         :to="getLocalePath({
-          path: selectedOfferingTag ? `/courses/${course.id}/offerings/${selectedOfferingTag}` : `/courses/${course.id}`,
+          path: `/courses/${course.code.replace(/[^A-Za-z0-9]+/g, '')}`,
           query: courseListReturnQuery,
         })"
         class="kg-course-card"

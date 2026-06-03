@@ -10,13 +10,23 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'update-status', status: AcademicCourseStatus): void
+  (event: 'mark-interest'): void
+  (event: 'cancel-interest'): void
 }>()
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
+const { isLoggedIn } = useAuth()
 
-const statusOptions: AcademicCourseStatus[] = ['completed', 'in_progress', 'planned', 'interested', 'not_interested']
+const overviewTo = computed(() => (
+  props.node ? getLocalePath(`/courses/${props.node.code}`) : getLocalePath('/courses')
+))
+const isInterested = computed(() => props.academicStatus === 'interested')
+const hasStrongStatus = computed(() => (
+  props.academicStatus === 'completed'
+  || props.academicStatus === 'in_progress'
+  || props.academicStatus === 'planned'
+))
 </script>
 
 <template>
@@ -30,21 +40,42 @@ const statusOptions: AcademicCourseStatus[] = ['completed', 'in_progress', 'plan
         <p class="cu-detail__eyebrow">{{ t('courseUniverse.detail.overview') }}</p>
         <h2>{{ node.displayCode }}</h2>
         <p>{{ node.title || t('courseUniverse.detail.notAvailable') }}</p>
+        <NuxtLink :to="overviewTo" class="cu-detail__primary">
+          {{ t('courseUniverse.actions.openOverview') }}
+        </NuxtLink>
       </section>
 
       <section class="cu-detail__card">
         <p class="cu-detail__eyebrow">{{ t('courseUniverse.detail.academicStatus') }}</p>
-        <div class="cu-detail__status-grid">
-          <button
-            v-for="status in statusOptions"
-            :key="status"
-            type="button"
-            :class="['cu-detail__status', { active: academicStatus === status }]"
-            @click="emit('update-status', status)"
-          >
-            {{ t(`academicMap.status.${status}`) }}
-          </button>
+        <div v-if="academicStatus" class="cu-detail__current-status">
+          {{ t(`academicMap.status.${academicStatus}`) }}
         </div>
+        <p v-else>{{ t('courses.overviewPage.noAcademicStatus') }}</p>
+
+        <template v-if="isLoggedIn">
+          <button
+            v-if="!academicStatus"
+            type="button"
+            class="cu-detail__primary"
+            @click="emit('mark-interest')"
+          >
+            {{ t('courses.overviewPage.markInterested') }}
+          </button>
+          <button
+            v-else-if="isInterested"
+            type="button"
+            class="cu-detail__link"
+            @click="emit('cancel-interest')"
+          >
+            {{ t('courses.overviewPage.cancelInterested') }}
+          </button>
+          <p v-else-if="hasStrongStatus" class="cu-detail__note">
+            {{ t('courses.overviewPage.strongStatusNote') }}
+          </p>
+        </template>
+        <NuxtLink v-else :to="getLocalePath('/login')" class="cu-detail__primary">
+          {{ t('courses.overviewPage.loginToMark') }}
+        </NuxtLink>
       </section>
 
       <section class="cu-detail__card">
@@ -111,29 +142,22 @@ const statusOptions: AcademicCourseStatus[] = ['completed', 'in_progress', 'plan
   margin: 0 0 12px;
 }
 
-.cu-detail__status-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.cu-detail__status {
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-primary);
+.cu-detail__current-status {
+  align-items: center;
+  background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, var(--border-primary));
   border-radius: 999px;
-  color: var(--text-secondary);
-  cursor: pointer;
+  color: var(--interactive-active);
+  display: inline-flex;
   font-size: 0.78rem;
   font-weight: 700;
   min-height: 32px;
   padding: 0 10px;
+  margin-bottom: 12px;
 }
 
-.cu-detail__status.active,
-.cu-detail__status:hover {
-  background: var(--interactive-primary);
-  border-color: var(--interactive-primary);
-  color: var(--text-inverse);
+.cu-detail__note {
+  font-size: 0.82rem !important;
 }
 
 .cu-detail__primary,

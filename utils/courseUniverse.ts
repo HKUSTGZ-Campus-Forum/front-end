@@ -123,7 +123,7 @@ export const COURSE_UNIVERSE_MODES: CourseUniverseMode[] = [
 export const COURSE_UNIVERSE_ALIAS_PREFIXES = ['/courses', '/schedule', '/academic-map'] as const
 
 export function compactCourseCode(code: string) {
-  return String(code || '').replace(/\s+/g, '').toUpperCase()
+  return String(code || '').replace(/[^A-Za-z0-9]+/g, '').toUpperCase()
 }
 
 export function getCourseUniverseComponentCourseCode(componentId: string) {
