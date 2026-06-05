@@ -536,6 +536,102 @@
       "replyUnavailable": "原消息已不可用"
     }
   },
+  "contest": {
+    "defaultTitle": "「百块奖金」校园生活 Web 开发大赛",
+    "metaDescription": "查看百块奖金大赛的比赛说明、公告、报名与作品提交。",
+    "trophyLabel": "奖杯",
+    "defaultDescriptionMarkdown": "想解锁校园版 Web 开发新体验？第一届**「百块奖金」校园生活 Web 开发大赛**邀请 HKUST-GZ 同学把校园日常需求做成真正可用的 Web 项目。\n\n选择一个赛道，和队友一起完成作品，并在截止时间前提交项目链接。",
+    "defaultRulesMarkdown": "设计并实现一个港科广专属趣味人格测试 Web 平台 **“科广TI”**。必做功能是通过答题流程，为每位同学生成专属校园身份或人格结果。\n\n鼓励尝试更丰富的结果卡片、同好匹配、分享传播，或其他贴近校园生活的趣味互动。",
+    "countdown": {
+      "ended": "比赛已结束",
+      "untilDeadline": "离提交截止还有 {days} 天 {hours} 小时 {minutes} 分钟 {seconds} 秒",
+      "untilStart": "离比赛开始还有 {days} 天 {hours} 小时 {minutes} 分钟 {seconds} 秒"
+    },
+    "status": {
+      "ended": "已结束",
+      "paused": "暂不开放",
+      "live": "进行中",
+      "upcoming": "即将开始"
+    },
+    "tabs": {
+      "ariaLabel": "比赛导航",
+      "description": "比赛说明",
+      "announcements": "比赛公告",
+      "problems": "题目",
+      "newBadge": "新"
+    },
+    "time": {
+      "start": "开始 {time}",
+      "deadline": "截止 {time}"
+    },
+    "timeTba": "待公布",
+    "tracks": {
+      "tech": "技术赛道",
+      "fun": "娱乐赛道"
+    },
+    "empty": {
+      "description": "暂无比赛说明。",
+      "announcements": "暂无公告。",
+      "problems": "题目尚未发布。"
+    },
+    "organizerPreview": "你正在以管理员身份预览题目区。选手在报名且比赛开始后才会看到本页；提交列表与导出请在完整后台操作。",
+    "fields": {
+      "teamName": "队名",
+      "teamNameRequired": "队名 *",
+      "projectUrl": "项目链接",
+      "projectUrlRequired": "项目链接 *",
+      "teamMembers": "团队成员",
+      "teamMembersRequired": "团队成员 *",
+      "submittedAt": "提交时间"
+    },
+    "placeholders": {
+      "teamName": "请输入队名",
+      "teamMembers": "例如：张三, 李四"
+    },
+    "actions": {
+      "editSubmission": "编辑提交",
+      "submitting": "提交中...",
+      "updateSubmission": "更新提交",
+      "submitProject": "提交作品",
+      "openAdmin": "打开管理后台",
+      "loginToRegister": "登录后报名",
+      "registering": "报名中...",
+      "register": "报名",
+      "goForum": "前往论坛 →"
+    },
+    "messages": {
+      "endedThanks": "比赛已结束，感谢参与。"
+    },
+    "registration": {
+      "title": "比赛报名",
+      "organizerHint": "你是比赛管理员，报名与提交请用选手账号体验；或使用后台管理数据。",
+      "notRegistered": "您还没有报名本场比赛",
+      "endedCannotRegister": "比赛已结束，无法报名。",
+      "paused": "比赛暂未开放报名：管理员已在后台关闭「开放报名/提交」。开启后即可点击报名。",
+      "registered": "您已成功报名",
+      "waitingForStart": "比赛尚未开始，题目将在开始后显示在「题目」标签页。",
+      "submissionPaused": "报名与提交已由管理员暂停，请留意公告；开启「开放报名/提交」后可继续操作。",
+      "goProblems": "请前往「题目」查看赛题；技术赛道与娱乐赛道各有独立提交入口。"
+    },
+    "discussion": {
+      "title": "比赛讨论区",
+      "description": "赛题交流、组队讨论可前往站内论坛；本页专注于说明与提交。"
+    },
+    "submission": {
+      "placeholderDescription": "已报名，等待提交作品"
+    },
+    "errors": {
+      "registerFailed": "报名失败，请稍后重试",
+      "networkRetry": "网络错误，请稍后重试",
+      "teamNameRequired": "请填写队名",
+      "teamNameReserved": "队名不能使用「待提交」",
+      "projectUrlRequired": "请填写项目链接",
+      "projectUrlInvalid": "项目链接需为有效的 http(s) 地址",
+      "teamMembersRequired": "请填写团队成员",
+      "submitFailed": "提交失败",
+      "network": "网络错误"
+    }
+  },
   "auth": {
     "login": {
       "title": "欢迎回来",

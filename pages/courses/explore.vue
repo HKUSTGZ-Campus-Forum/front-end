@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
+import CourseToolsHeader from "~/components/courses/CourseToolsHeader.vue";
 import type { CourseOffering } from "~/utils/courseOffering";
 import { getSingleQueryValue } from "~/utils/courseOffering";
 
@@ -197,10 +198,10 @@ onMounted(() => { fetchFiltersData(); });
 
 <template>
   <div class="kg-courses">
-    <div class="kg-courses-header">
-      <h1 class="kg-page-title">{{ t("courses.title") }}</h1>
-      <p class="kg-page-subtitle">{{ t("courses.subtitle") }}</p>
-    </div>
+    <CourseToolsHeader
+      mode="explore"
+      :title="t('courses.title')"
+    />
 
     <div class="kg-card kg-filters">
       <input
@@ -309,23 +310,6 @@ onMounted(() => { fetchFiltersData(); });
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 20px 60px;
-}
-
-.kg-courses-header {
-  margin-bottom: 24px;
-}
-
-.kg-page-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #1a2a4a;
-  margin: 0 0 4px;
-}
-
-.kg-page-subtitle {
-  font-size: 0.9rem;
-  color: #4a6080;
-  margin: 0;
 }
 
 .kg-card {

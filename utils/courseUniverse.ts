@@ -821,6 +821,15 @@ export function getCourseUniverseActiveSchedulerSemester(semesters: Array<{ id?:
     .at(-1) || ''
 }
 
+export function formatCourseUniverseAcademicYearLabel(semesterId: string) {
+  const match = String(semesterId || '').trim().match(/^(\d{2})\d{2}$/)
+  if (!match) return String(semesterId || '').trim()
+
+  const startYear = Number(match[1])
+  const endYear = startYear + 1
+  return `20${String(startYear).padStart(2, '0')}-20${String(endYear).padStart(2, '0')}`
+}
+
 export function getCourseUniverseSchedulerSemesterLabel(
   semester: { id?: string | null; name?: string | null; name_zh?: string | null },
   language: string,

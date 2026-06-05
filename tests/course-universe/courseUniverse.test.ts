@@ -18,6 +18,7 @@ import {
   getCourseUniverseRedirect,
   getCourseUniverseLineStyle,
   getCourseUniverseActiveSchedulerSemester,
+  formatCourseUniverseAcademicYearLabel,
   getCourseUniverseSchedulerSemesterLabel,
   getCourseUniverseNodeStatusKey,
   getCourseUniverseViewBox,
@@ -222,6 +223,13 @@ describe('course universe helpers', () => {
     }, 'zh')).toBe('25-26春')
   })
 
+  it('formats scheduler semester ids into full academic year labels', () => {
+    expect(formatCourseUniverseAcademicYearLabel('2530')).toBe('2025-2026')
+    expect(formatCourseUniverseAcademicYearLabel('2510')).toBe('2025-2026')
+    expect(formatCourseUniverseAcademicYearLabel('2440')).toBe('2024-2025')
+    expect(formatCourseUniverseAcademicYearLabel('2430')).toBe('2024-2025')
+  })
+
   it('keeps graph cart actions tied to the active scheduler semester with explicit feedback', () => {
     const pageSource = readFileSync(
       new URL('../../components/courses/universe/CourseUniversePage.vue', import.meta.url),
@@ -235,15 +243,44 @@ describe('course universe helpers', () => {
     expect(pageSource).not.toContain("selectedSemester.value = semesterData[0]?.id || ''")
   })
 
-  it('keeps the course graph toolbar focused on mode navigation', () => {
+  it('keeps the shared course tools header focused on mode navigation', () => {
     const toolbarSource = readFileSync(
-      new URL('../../components/courses/universe/CourseUniverseToolbar.vue', import.meta.url),
+      new URL('../../components/courses/CourseToolsHeader.vue', import.meta.url),
       'utf8',
     )
 
     expect(toolbarSource).toContain('COURSE_UNIVERSE_MODES')
     expect(toolbarSource).not.toContain('<select')
     expect(toolbarSource).not.toContain('semesterLocked')
+  })
+
+  it('keeps all course tool entry pages on the shared mode navigation', () => {
+    const expectedPages = [
+      ['../../components/courses/universe/CourseUniversePage.vue', 'mode="mode"'],
+      ['../../pages/courses/explore.vue', 'mode="explore"'],
+      ['../../pages/courses/planner/index.vue', 'mode="planner"'],
+      ['../../pages/courses/academic-map.vue', 'mode="academicMap"'],
+    ] as const
+
+    for (const [path, activeMode] of expectedPages) {
+      const source = readFileSync(new URL(path, import.meta.url), 'utf8')
+      expect(source).toContain('CourseToolsHeader')
+      expect(source).toContain(activeMode)
+      expect(source).not.toContain(':subtitle=')
+    }
+
+    const academicMapSource = readFileSync(
+      new URL('../../pages/courses/academic-map.vue', import.meta.url),
+      'utf8',
+    )
+    expect(academicMapSource).not.toContain("t('academicMap.openCourses')")
+
+    const plannerSource = readFileSync(
+      new URL('../../pages/courses/planner/index.vue', import.meta.url),
+      'utf8',
+    )
+    expect(plannerSource).toContain('<template #actions>')
+    expect(plannerSource).not.toContain('scheduler-home__hero')
   })
 
   it('exports the expected course modes', () => {
