@@ -1,5 +1,5 @@
 import type {
-  CartCourse, CourseDetail, SearchResponse, SemesterInfo
+  CartCourse, CourseDetail, SchedulerSubject, SearchResponse, SemesterInfo
 } from '~/utils/scheduler'
 
 export function useScheduler() {
@@ -16,6 +16,15 @@ export function useScheduler() {
     if (semester) params.set('semester', semester)
     const resp = await fetchPublic(`/api/scheduler/courses/search?${params}`)
     if (!resp.ok) throw new Error('Search failed')
+    return resp.json()
+  }
+
+  async function getSubjects(semester: string): Promise<SchedulerSubject[]> {
+    const params = new URLSearchParams()
+    if (semester) params.set('semester', semester)
+    const query = params.toString()
+    const resp = await fetchPublic(`/api/scheduler/subjects${query ? `?${query}` : ''}`)
+    if (!resp.ok) throw new Error('Subjects failed')
     return resp.json()
   }
 
@@ -94,6 +103,7 @@ export function useScheduler() {
 
   return {
     getSemesters,
+    getSubjects,
     searchCourses,
     getCourseDetail,
     getCart,

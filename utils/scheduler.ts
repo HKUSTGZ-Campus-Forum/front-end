@@ -68,6 +68,11 @@ export interface SearchResponse {
   items: SearchResult[]
 }
 
+export interface SchedulerSubject {
+  subject: string
+  course_count: number
+}
+
 export interface SemesterInfo {
   id: string
   name: string
@@ -91,8 +96,6 @@ export const TIME_SLOTS = [
   { start: 1800, end: 1930, label: '18:00' },
   { start: 1930, end: 2100, label: '19:30' },
 ]
-
-export const FREQUENT_SUBJECTS = ['MOES', 'UCUG', 'UFUG', 'AIAA', 'DSAA', 'SMMG']
 
 // --- Plan Solver ---
 
