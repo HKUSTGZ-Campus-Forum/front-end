@@ -501,7 +501,7 @@
     "metaDescription": "查看热门帖子、校园快捷入口和最新咕咕消息。",
     "relatedLinks": {
       "title": "相关链接",
-      "wiki": "科广 Wiki",
+      "sisNew": "SIS（新）",
       "portal": "myPortal",
       "canvas": "Canvas"
     },
@@ -516,8 +516,13 @@
       }
     },
     "popularPosts": {
-      "title": "热门帖子",
+      "title": "帖子动态",
       "viewAll": "查看全部 →",
+      "sortLabel": "帖子排序方式",
+      "sortLatest": "最新",
+      "sortLatestTitle": "按发布时间从新到旧排序",
+      "sortHeat": "最热",
+      "sortHeatTitle": "按最热排序：综合表情、评论、浏览和发布时间衰减",
       "commentCountTitle": "评论数",
       "reactionCountTitle": "表情反应总数"
     },

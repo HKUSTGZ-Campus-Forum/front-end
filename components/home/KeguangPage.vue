@@ -15,23 +15,37 @@ const { formatRelativeTime } = useDateFormat();
 
 const GUGU_INITIAL_LIMIT = 6;
 const GUGU_PAGE_LIMIT = 20;
-const hotPosts = ref([]);
-const isLoading = ref(true);
+type HomePostSortMode = "latest" | "heat";
 
-const fetchHotPosts = async () => {
+const homePosts = ref<any[]>([]);
+const isLoading = ref(true);
+const postSortMode = ref<HomePostSortMode>("latest");
+
+const fetchHomePosts = async () => {
+  isLoading.value = true;
   try {
     const { getApiUrl } = useApi();
-    const response = await fetchPublic(
-      getApiUrl("/api/analytics/hot-posts?limit=8&hours=72")
-    );
+    const endpoint = postSortMode.value === "heat"
+      ? "/api/analytics/hot-posts?limit=8&hours=72"
+      : "/api/posts?limit=8&page=1&sort_by=created_at&sort_order=desc";
+    const response = await fetchPublic(getApiUrl(endpoint));
     if (response.ok) {
       const data = await response.json();
-      hotPosts.value = data.hot_posts || [];
+      homePosts.value = postSortMode.value === "heat"
+        ? data.hot_posts || []
+        : data.posts || [];
     }
   } catch {
+    homePosts.value = [];
   } finally {
     isLoading.value = false;
   }
+};
+
+const updatePostSortMode = (mode: HomePostSortMode) => {
+  if (postSortMode.value === mode) return;
+  postSortMode.value = mode;
+  fetchHomePosts();
 };
 
 const kgAllGuguMessages = ref<any[]>([]);
@@ -45,9 +59,9 @@ const kgReplyTarget = ref<any | null>(null);
 
 const relatedLinks = computed(() => [
   {
-    key: "wiki",
-    label: t("homePage.relatedLinks.wiki"),
-    href: locale.value === "en" ? "https://wiki.hkust-gz.top/en/home" : "https://wiki.hkust-gz.top",
+    key: "sisNew",
+    label: t("homePage.relatedLinks.sisNew"),
+    href: "http://sisn.hkust-gz.edu.cn",
   },
   {
     key: "portal",
@@ -179,7 +193,7 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 onMounted(() => {
-  fetchHotPosts();
+  fetchHomePosts();
   fetchKgGuguMessages();
 });
 </script>
@@ -208,7 +222,12 @@ onMounted(() => {
     </div>
 
     <div class="kg-card kg-posts-card">
-      <PostCardGrid :posts="hotPosts.slice(0, 3)" :loading="isLoading" />
+      <PostCardGrid
+        :posts="homePosts.slice(0, 3)"
+        :loading="isLoading"
+        :sort-mode="postSortMode"
+        @update:sort-mode="updatePostSortMode"
+      />
     </div>
 
     <div class="kg-card kg-chat-card">

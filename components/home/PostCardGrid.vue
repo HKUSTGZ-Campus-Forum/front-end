@@ -2,9 +2,24 @@
   <div class="post-card-grid">
     <div class="grid-header">
       <h2 class="grid-title">{{ t("homePage.popularPosts.title") }}</h2>
-      <NuxtLink :to="localePath('/forum')" class="view-all">
-        {{ t("homePage.popularPosts.viewAll") }}
-      </NuxtLink>
+      <div class="grid-actions">
+        <div class="sort-switch" :aria-label="t('homePage.popularPosts.sortLabel')">
+          <button
+            v-for="option in sortOptions"
+            :key="option.value"
+            type="button"
+            :class="['sort-button', { active: sortMode === option.value }]"
+            :aria-pressed="sortMode === option.value"
+            :title="option.title"
+            @click="$emit('update:sortMode', option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <NuxtLink :to="localePath('/forum')" class="view-all">
+          {{ t("homePage.popularPosts.viewAll") }}
+        </NuxtLink>
+      </div>
     </div>
 
     <div v-if="loading" class="grid-loading">
@@ -64,7 +79,25 @@ const { formatDate } = useDateFormat();
 defineProps<{
   posts: any[]
   loading?: boolean
+  sortMode: "latest" | "heat"
 }>()
+
+defineEmits<{
+  "update:sortMode": ["latest" | "heat"]
+}>()
+
+const sortOptions = computed(() => [
+  {
+    value: "latest" as const,
+    label: t("homePage.popularPosts.sortLatest"),
+    title: t("homePage.popularPosts.sortLatestTitle"),
+  },
+  {
+    value: "heat" as const,
+    label: t("homePage.popularPosts.sortHeat"),
+    title: t("homePage.popularPosts.sortHeatTitle"),
+  },
+])
 
 function stripHtml(html: string): string {
   if (!html) return ''
@@ -88,6 +121,7 @@ function formatPostDate(iso: string): string {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
@@ -103,7 +137,51 @@ function formatPostDate(iso: string): string {
   color: var(--interactive-primary, #26a4ff);
   text-decoration: none;
   font-weight: 500;
+  white-space: nowrap;
   &:hover { text-decoration: underline; }
+}
+
+.grid-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.sort-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.16rem;
+  border: 1px solid var(--border-primary, #bfd7fb);
+  border-radius: 999px;
+  background: var(--surface-secondary, #eef8ff);
+}
+
+.sort-button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary, #4a6080);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  min-height: 1.72rem;
+  padding: 0 0.72rem;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--interactive-primary, #26a4ff);
+  }
+
+  &.active {
+    background: var(--surface-primary, #ffffff);
+    box-shadow: var(--shadow-small, 0 2px 8px rgba(38, 164, 255, 0.14));
+    color: var(--interactive-primary, #26a4ff);
+  }
 }
 
 .grid {
@@ -243,5 +321,17 @@ function formatPostDate(iso: string): string {
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@media (max-width: 640px) {
+  .grid-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .grid-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
 }
 </style>

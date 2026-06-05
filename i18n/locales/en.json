@@ -501,7 +501,7 @@
     "metaDescription": "Browse trending posts, campus shortcuts, and the latest gugu messages.",
     "relatedLinks": {
       "title": "Related links",
-      "wiki": "HKUST-GZ Wiki",
+      "sisNew": "SIS（新）",
       "portal": "myPortal",
       "canvas": "Canvas"
     },
@@ -516,8 +516,13 @@
       }
     },
     "popularPosts": {
-      "title": "Trending posts",
+      "title": "Post highlights",
       "viewAll": "View all →",
+      "sortLabel": "Post sort order",
+      "sortLatest": "Latest",
+      "sortLatestTitle": "Sort by newest publish time",
+      "sortHeat": "Hottest",
+      "sortHeatTitle": "Sort by hottest posts: reactions, comments, views, and time decay",
       "commentCountTitle": "Comments",
       "reactionCountTitle": "Reactions"
     },
