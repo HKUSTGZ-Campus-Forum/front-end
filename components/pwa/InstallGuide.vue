@@ -77,6 +77,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const { t } = useI18n()
+const route = useRoute()
 const isExpanded = ref(false)
 const canInstall = ref(false)
 const selectedPlatform = ref('chrome')
@@ -85,6 +86,7 @@ const deferredPrompt = ref<any>(null)
 
 const showGuide = computed(() => {
   if (process.server) return false
+  if (route.path.includes('/courses/planner')) return false
   if (localStorage.getItem('pwa-install-dismissed') === 'true') return false
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false
   if (sessionStorage.getItem('pwa-install-session-dismissed') === 'true') return false
@@ -203,33 +205,33 @@ onUnmounted(() => {
 <style scoped>
 .install-guide-container {
   position: relative;
-  z-index: 1000;
+  z-index: 960;
 }
 
 /* Floating Install Button */
 .install-float-btn {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-  padding: 12px 16px;
+  bottom: 84px;
+  right: 24px;
+  background: var(--interactive-primary);
+  color: var(--text-inverse, #ffffff);
+  padding: 10px 14px;
   border-radius: 24px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-medium, 0 4px 12px rgba(38, 164, 255, 0.18));
   transition: all 0.3s ease;
   font-size: 14px;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
+  font-weight: 700;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .install-float-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+  background: var(--interactive-hover);
+  box-shadow: var(--shadow-large, 0 10px 24px rgba(38, 164, 255, 0.16));
 }
 
 .install-icon {
@@ -244,17 +246,18 @@ onUnmounted(() => {
   right: 0;
   background: var(--surface-primary, white);
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--modal-shadow, 0 -4px 32px rgba(0, 0, 0, 0.1));
   max-height: 80vh;
   overflow-y: auto;
-  border: 1px solid var(--border-light, #e5e7eb);
+  border: 1px solid var(--border-secondary, #e5e7eb);
+  z-index: 1130;
 }
 
 @media (min-width: 768px) {
   .install-guide-card {
     position: fixed;
-    bottom: 80px;
-    right: 20px;
+    bottom: 140px;
+    right: 24px;
     left: auto;
     width: 380px;
     border-radius: 16px;
@@ -268,9 +271,9 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--modal-backdrop, rgba(26, 42, 74, 0.45));
   backdrop-filter: blur(4px);
-  z-index: -1;
+  z-index: 1120;
 }
 
 .guide-header {
@@ -278,7 +281,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 20px 16px;
-  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  border-bottom: 1px solid var(--border-secondary, #f1f5f9);
 }
 
 .guide-title {
@@ -327,8 +330,8 @@ onUnmounted(() => {
 /* Primary Install Button */
 .install-btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
+  background: var(--interactive-primary, #26a4ff);
+  color: var(--text-inverse, #ffffff);
   border: none;
   padding: 12px 16px;
   border-radius: 12px;
@@ -345,7 +348,8 @@ onUnmounted(() => {
 
 .install-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  background: var(--interactive-hover, #1a8fe0);
+  box-shadow: var(--shadow-medium, 0 4px 12px rgba(38, 164, 255, 0.18));
 }
 
 .btn-icon {
@@ -354,7 +358,7 @@ onUnmounted(() => {
 
 /* Manual Instructions */
 .manual-instructions {
-  border-top: 1px solid var(--border-light, #f1f5f9);
+  border-top: 1px solid var(--border-secondary, #f1f5f9);
   padding-top: 20px;
 }
 
@@ -381,9 +385,9 @@ onUnmounted(() => {
 }
 
 .tab-btn.active {
-  background: var(--primary-color, #4f46e5);
-  color: white;
-  border-color: var(--primary-color, #4f46e5);
+  background: var(--interactive-primary, #26a4ff);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--interactive-primary, #26a4ff);
 }
 
 .tab-icon {
@@ -405,8 +409,8 @@ onUnmounted(() => {
 .step-number {
   width: 24px;
   height: 24px;
-  background: var(--primary-color, #4f46e5);
-  color: white;
+  background: var(--interactive-primary, #26a4ff);
+  color: var(--text-inverse, #ffffff);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -437,7 +441,7 @@ onUnmounted(() => {
 .guide-footer {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid var(--border-light, #f1f5f9);
+  border-top: 1px solid var(--border-secondary, #f1f5f9);
 }
 
 .dont-show-again {
@@ -494,7 +498,7 @@ onUnmounted(() => {
 /* Mobile optimizations */
 @media (max-width: 767px) {
   .install-float-btn {
-    bottom: 16px;
+    bottom: 84px;
     right: 16px;
     padding: 10px 14px;
     font-size: 13px;

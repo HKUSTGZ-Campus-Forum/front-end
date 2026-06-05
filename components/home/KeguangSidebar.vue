@@ -27,6 +27,10 @@ function isActive(path: string) {
   if (path === '/') return route.path === localizedPath
   return route.path.startsWith(localizedPath)
 }
+
+function isCourseActive() {
+  return ['/courses', '/schedule', '/academic-map'].some(path => isActive(path))
+}
 </script>
 
 <template>
@@ -60,15 +64,9 @@ function isActive(path: string) {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink :to="getLocalePath('/courses')" :class="{ active: isActive('/courses') }">
+          <NuxtLink :to="getLocalePath('/courses')" :class="{ active: isCourseActive() }">
             <img src="/icons/sidebar_courselogo.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.courses') }}</span>
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink :to="getLocalePath('/academic-map')" :class="{ active: isActive('/academic-map') }">
-            <img src="/icons/sidebar_courselogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('nav.academicMap') }}</span>
           </NuxtLink>
         </li>
         <li>
@@ -102,15 +100,6 @@ function isActive(path: string) {
           <span class="kg-divider__line"></span>
         </li>
 
-        <li>
-          <NuxtLink
-            :to="getLocalePath('/schedule')"
-            :class="{ active: isActive('/schedule') }"
-          >
-            <img src="/icons/sidebar_schedulerlogo.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('nav.scheduler') }}</span>
-          </NuxtLink>
-        </li>
         <li>
           <NuxtLink to="https://wiki.hkust-gz.top" target="_blank" rel="noopener noreferrer">
             <img src="/icons/wiki-pure.svg" alt="" class="kg-icon" />

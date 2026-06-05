@@ -56,15 +56,20 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   <div class="side-panel">
     <div class="side-panel__header">
       <div class="side-panel__tabs">
-        <button :class="{ active: activeTab === 'main' }" @click="activeTab = 'main'">{{ t('scheduler.main') }}</button>
-        <button :class="{ active: activeTab === 'klms' }" @click="activeTab = 'klms'">{{ t('scheduler.klms') }}</button>
+        <button type="button" :class="{ active: activeTab === 'main' }" @click="activeTab = 'main'">{{ t('scheduler.main') }}</button>
+        <button type="button" :class="{ active: activeTab === 'klms' }" @click="activeTab = 'klms'">{{ t('scheduler.klms') }}</button>
       </div>
       <div class="side-panel__credits">{{ t('scheduler.credits', { count: totalCredits }) }}</div>
     </div>
 
-    <details class="side-panel__display">
-      <summary>{{ t('scheduler.display') }}</summary>
-      <label v-for="key in displayOptionKeys" :key="key">
+    <details class="side-panel__display" open>
+      <summary>
+        <span>{{ t('scheduler.display') }}</span>
+        <span class="side-panel__display-count">
+          {{ displayOptionKeys.filter((key) => displayOptions[key]).length }}/{{ displayOptionKeys.length }}
+        </span>
+      </summary>
+      <label v-for="key in displayOptionKeys" :key="key" :class="{ active: displayOptions[key] }">
         <input
           type="checkbox"
           :checked="displayOptions[key]"
@@ -86,12 +91,18 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
         @show-info="(...args) => emit('show-info', ...args)"
       />
-      <div v-if="filteredCourses.length === 0" class="side-panel__empty">{{ t('scheduler.emptyCart') }}</div>
+      <div v-if="filteredCourses.length === 0" class="side-panel__empty">
+        <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>
+        <p>{{ t('scheduler.emptyCartDescription') }}</p>
+        <button type="button" class="side-panel__empty-btn" @click="emit('open-cart')">
+          {{ t('scheduler.addCourse') }}
+        </button>
+      </div>
     </div>
 
     <div class="side-panel__actions">
-      <button class="side-panel__btn" @click="emit('toggle-filter')">{{ t('scheduler.filter') }}</button>
-      <button class="side-panel__btn side-panel__btn--primary" @click="emit('open-cart')">{{ t('scheduler.cart') }}</button>
+      <button type="button" class="side-panel__btn" @click="emit('toggle-filter')">{{ t('scheduler.filter') }}</button>
+      <button type="button" class="side-panel__btn side-panel__btn--primary" @click="emit('open-cart')">{{ t('scheduler.cart') }}</button>
     </div>
   </div>
 </template>
@@ -101,91 +112,205 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-secondary);
-  border-left: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 16px;
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-secondary);
+    background: var(--surface-secondary);
   }
 
   &__tabs {
     display: flex;
-    gap: 0.25rem;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 11px;
+    background: var(--surface-primary);
+
     button {
-      padding: 0.25rem 0.75rem;
-      border: 1px solid var(--border-primary);
-      border-radius: 6px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 8px;
       background: transparent;
       cursor: pointer;
       font-size: 0.8rem;
+      font-weight: 700;
       color: var(--text-secondary);
-      &.active { background: var(--surface-primary); color: var(--text-primary); font-weight: 600; }
+      transition: background 0.16s ease, color 0.16s ease;
+
+      &.active {
+        background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+        color: var(--interactive-active);
+      }
     }
   }
 
-  &__credits { font-size: 0.8rem; color: var(--text-secondary); }
+  &__credits {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
 
   &__list {
     flex: 1;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 10px;
+    background: var(--surface-secondary);
   }
 
   &__display {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--border-primary);
+    padding: 12px;
+    border-bottom: 1px solid var(--border-secondary);
     color: var(--text-secondary);
     font-size: 0.8rem;
+    background: var(--surface-primary);
 
     summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       cursor: pointer;
       color: var(--text-primary);
-      font-weight: 600;
+      font-weight: 700;
+      list-style: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
     }
 
     label {
-      display: flex;
-      gap: 0.4rem;
+      display: inline-flex;
       align-items: center;
-      margin-top: 0.5rem;
+      gap: 6px;
+      min-height: 32px;
+      margin: 10px 6px 0 0;
+      padding: 0 10px;
+      border: 1px solid var(--border-secondary);
+      border-radius: 999px;
+      background: var(--surface-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+
+      &.active {
+        border-color: color-mix(in srgb, var(--interactive-primary) 35%, var(--border-secondary));
+        background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+        color: var(--interactive-active);
+      }
+
+      input {
+        accent-color: var(--interactive-primary);
+      }
     }
+  }
+
+  &__display-count {
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-weight: 700;
   }
 
   &__empty {
     text-align: center;
-    color: var(--text-tertiary);
-    padding: 2rem;
-    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 38px 18px;
+    border: 1px dashed var(--border-primary);
+    border-radius: 14px;
+    background: var(--surface-primary);
+    font-size: 0.86rem;
+
+    p {
+      max-width: 240px;
+      margin: 8px auto 0;
+      line-height: 1.55;
+    }
+  }
+
+  &__empty-title {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    font-weight: 700;
+  }
+
+  &__empty-btn {
+    min-height: 36px;
+    margin-top: 16px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 700;
+
+    &:hover {
+      background: var(--interactive-hover);
+    }
   }
 
   &__actions {
     display: flex;
     gap: 0.5rem;
-    padding: 0.75rem;
-    border-top: 1px solid var(--border-primary);
+    padding: 12px;
+    border-top: 1px solid var(--border-secondary);
+    background: var(--surface-primary);
   }
 
   &__btn {
     flex: 1;
-    padding: 0.5rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
     background: var(--surface-primary);
     cursor: pointer;
     font-size: 0.85rem;
+    font-weight: 700;
     color: var(--text-primary);
-    transition: background 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
     &:hover { background: var(--surface-secondary); }
 
     &--primary {
-      background: color-mix(in srgb, var(--interactive-primary) 15%, transparent);
-      border-color: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
-      color: var(--interactive-primary);
-      &:hover { background: color-mix(in srgb, var(--interactive-primary) 25%, transparent); }
+      border-color: var(--interactive-primary);
+      background: var(--interactive-primary);
+      color: var(--text-inverse);
+      &:hover { background: var(--interactive-hover); }
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .side-panel {
+    min-height: 420px;
+    height: auto;
+
+    &__list {
+      max-height: 520px;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .side-panel {
+    &__header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &__credits {
+      padding-left: 4px;
     }
   }
 }

@@ -27,12 +27,10 @@ function getBundleLabel(bundle: BundleData): string {
     <div class="course-card__header" @click="emit('toggle-course', course.course_code, !course.enabled)">
       <div class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
       <div class="course-card__info">
-        <div class="course-card__code">
-          {{ course.course_code }}
-          <span class="course-card__credits">{{ t('scheduler.credits', { count: course.credit }) }}</span>
-        </div>
+        <div class="course-card__code">{{ course.course_code }}</div>
         <div class="course-card__title">{{ course.course_title }}</div>
       </div>
+      <span class="course-card__credits">{{ t('scheduler.credits', { count: course.credit }) }}</span>
       <button class="course-card__detail" type="button" @click.stop="emit('show-info', course.course_code)">
         {{ t('scheduler.details') }}
       </button>
@@ -42,8 +40,8 @@ function getBundleLabel(bundle: BundleData): string {
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
         <div class="course-card__layer-header">
           <span>{{ t('scheduler.layer', { layer }) }}</span>
-          <button class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
-          <button class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
+          <button type="button" class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
+          <button type="button" class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
         </div>
         <div class="course-card__bundle-row">
           <button
@@ -54,6 +52,7 @@ function getBundleLabel(bundle: BundleData): string {
               'course-card__bundle--active': bundle.enabled,
               'course-card__bundle--selected': currentSelection?.[Number(layer)] === bundle.id,
             }"
+            type="button"
             @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), !bundle.enabled)"
           >
             {{ getBundleLabel(bundle) }}
@@ -67,26 +66,34 @@ function getBundleLabel(bundle: BundleData): string {
 <style lang="scss" scoped>
 .course-card {
   background: var(--surface-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  transition: opacity 0.2s;
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-small);
+  transition: opacity 0.2s, border-color 0.2s;
 
-  &--disabled { opacity: 0.5; }
+  &:hover {
+    border-color: var(--interactive-secondary);
+  }
+
+  &--disabled {
+    opacity: 0.58;
+    box-shadow: none;
+  }
 
   &__header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 10px;
     cursor: pointer;
   }
 
   &__dot {
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
-    background: var(--text-tertiary);
+    background: var(--text-muted);
     flex-shrink: 0;
     transition: background 0.2s;
     &--on { background: var(--semantic-success); }
@@ -95,20 +102,25 @@ function getBundleLabel(bundle: BundleData): string {
   &__info { flex: 1; min-width: 0; }
 
   &__code {
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: 0.88rem;
     color: var(--text-primary);
   }
 
   &__credits {
-    font-weight: 400;
+    flex-shrink: 0;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-secondary);
+    font-weight: 700;
     font-size: 0.75rem;
     color: var(--text-secondary);
-    margin-left: 0.5rem;
   }
 
   &__title {
-    font-size: 0.75rem;
+    margin-top: 2px;
+    font-size: 0.78rem;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -116,52 +128,78 @@ function getBundleLabel(bundle: BundleData): string {
   }
 
   &__detail {
-    border: 0;
-    background: transparent;
+    flex-shrink: 0;
+    min-height: 30px;
+    padding: 0 9px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
     color: var(--interactive-primary);
     cursor: pointer;
     font-size: 0.75rem;
+    font-weight: 700;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--interactive-primary) 28%, transparent);
+      color: var(--interactive-active);
+    }
   }
 
   &__bundles {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border-primary);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-secondary);
   }
 
-  &__layer { margin-bottom: 0.4rem; }
+  &__layer {
+    margin-bottom: 8px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 
   &__layer-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--text-tertiary);
-    margin-bottom: 0.25rem;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+
+    span {
+      margin-right: auto;
+      font-weight: 700;
+    }
   }
 
   &__layer-btn {
-    background: none;
-    border: 1px solid var(--border-primary);
-    border-radius: 4px;
-    font-size: 0.65rem;
-    padding: 1px 4px;
+    min-height: 24px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    padding: 0 8px;
     cursor: pointer;
     color: var(--text-secondary);
-    &:hover { background: var(--surface-secondary); }
+    &:hover {
+      border-color: var(--interactive-secondary);
+      color: var(--interactive-active);
+    }
   }
 
   &__bundle-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: 6px;
   }
 
   &__bundle {
     background: var(--surface-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    padding: 2px 8px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    min-height: 28px;
+    padding: 0 10px;
     font-size: 0.75rem;
     cursor: pointer;
     color: var(--text-primary);
@@ -169,25 +207,46 @@ function getBundleLabel(bundle: BundleData): string {
     transition: all 0.15s;
 
     &--active {
-      background: color-mix(in srgb, var(--interactive-primary) 15%, transparent);
+      background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
       border-color: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
+      color: var(--interactive-active);
     }
 
     &--selected {
       border-color: var(--semantic-warning);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--semantic-warning) 18%, transparent);
       &::after {
         content: '';
         position: absolute;
-        top: -3px;
-        right: -3px;
-        width: 6px;
-        height: 6px;
+        top: -2px;
+        right: -2px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: var(--semantic-warning);
       }
     }
 
     &:hover { background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); }
+  }
+}
+
+@media (max-width: 520px) {
+  .course-card {
+    &__header {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    &__info {
+      flex-basis: calc(100% - 24px);
+      order: 1;
+    }
+
+    &__credits,
+    &__detail {
+      order: 2;
+    }
   }
 }
 </style>

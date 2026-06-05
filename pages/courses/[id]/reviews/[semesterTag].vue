@@ -13,6 +13,7 @@ import {
   COURSE_REVIEW_TAG,
   type CourseOffering,
 } from "~/utils/courseOffering";
+import { compactCourseCode } from "~/utils/courseUniverse";
 
 definePageMeta({ layout: "keguang" });
 const { t } = useI18n();
@@ -52,6 +53,7 @@ const router = useRouter();
 const { isLoggedIn } = useAuth();
 const { fetchPublic, fetchWithAuth, getApiUrl } = useApi();
 const { deleteFile } = useCustomFileUpload();
+const { resolveCourseIdentifier } = useCourseOverview();
 
 const courseDetail = ref<Course>({
   id: 0,
@@ -80,12 +82,15 @@ const errorMsg = ref("");
 const showSuccessModal = ref(false);
 const showErrorModal = ref(false);
 
-const courseId = computed(() => String(route.params.id || ""));
+const courseIdentifier = computed(() => String(route.params.id || ""));
+const resolvedCourseId = ref("");
+const courseId = computed(() => resolvedCourseId.value || courseIdentifier.value);
+const overviewCourseCode = computed(() => compactCourseCode(courseDetail.value.code || courseIdentifier.value));
 const semesterTag = computed(() => String(route.params.semesterTag || ""));
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>));
 const listBackTo = computed(() => getLocalePath({ path: "/courses", query: listBackQuery.value }));
 const offeringHomeTo = computed(() => getLocalePath({
-  path: `/courses/${courseId.value}/offerings/${semesterTag.value}`,
+  path: `/courses/${overviewCourseCode.value}/offerings/${semesterTag.value}`,
   query: listBackQuery.value,
 }));
 const selectedOffering = computed(() => (
@@ -109,6 +114,11 @@ const fetchCourseDetail = async () => {
     throw new Error(`${t("courses.errors.loadCourse")}: ${response.status}`);
   }
   courseDetail.value = await response.json();
+};
+
+const resolveCourseId = async () => {
+  const result = await resolveCourseIdentifier(courseIdentifier.value);
+  resolvedCourseId.value = String(result.course_id);
 };
 
 const fetchOfferings = async () => {
@@ -240,6 +250,7 @@ const fetchPage = async () => {
   try {
     isLoading.value = true;
     error.value = "";
+    await resolveCourseId();
     await fetchCourseDetail();
     await fetchOfferings();
     if (!selectedOffering.value) {

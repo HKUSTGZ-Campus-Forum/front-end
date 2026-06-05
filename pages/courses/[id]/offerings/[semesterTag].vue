@@ -8,18 +8,13 @@ import {
   getVisiblePostTags,
   type CourseOffering,
 } from "~/utils/courseOffering";
-import type { AcademicCourseRecord, AcademicCourseStatus } from "~/types/academic-map";
+import { compactCourseCode } from "~/utils/courseUniverse";
 
 definePageMeta({ layout: "keguang" });
 const { t } = useI18n();
 const { locale, getLocalePath } = useAppLocale();
 const { formatDate } = useDateFormat();
-const { isLoggedIn } = useAuth();
-const {
-  fetchSummary: fetchAcademicSummary,
-  saveImportedRecords,
-  updateRecord: updateAcademicRecord,
-} = useAcademicMap();
+const { resolveCourseIdentifier } = useCourseOverview();
 
 interface Course {
   id: number
@@ -65,21 +60,24 @@ const discussions = ref<DiscussionPost[]>([]);
 
 const isLoading = ref(true);
 const isLoadingDiscussions = ref(false);
-const isSavingAcademicMap = ref(false);
 const error = ref("");
-const academicMapMessage = ref("");
-const academicMapRecord = ref<AcademicCourseRecord | null>(null);
-const academicMapStatus = ref<AcademicCourseStatus>("interested");
 
-const courseId = computed(() => String(route.params.id || ""));
+const courseIdentifier = computed(() => String(route.params.id || ""));
+const resolvedCourseId = ref("");
+const courseId = computed(() => resolvedCourseId.value || courseIdentifier.value);
+const overviewCourseCode = computed(() => compactCourseCode(courseDetail.value.code || courseIdentifier.value));
 const semesterTag = computed(() => String(route.params.semesterTag || ""));
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>));
 const listBackTo = computed(() => getLocalePath({ path: "/courses", query: listBackQuery.value }));
+const courseOverviewTo = computed(() => getLocalePath({
+  path: `/courses/${overviewCourseCode.value}`,
+  query: listBackQuery.value,
+}));
 const selectedOffering = computed(() => (
   offerings.value.find((offering) => offering.offering_tag === semesterTag.value) || null
 ));
 const reviewPageTo = computed(() => getLocalePath({
-  path: `/courses/${courseId.value}/reviews/${semesterTag.value}`,
+  path: `/courses/${overviewCourseCode.value}/reviews/${semesterTag.value}`,
   query: listBackQuery.value,
 }));
 const discussionCreateTo = computed(() => getLocalePath({
@@ -103,6 +101,11 @@ const fetchCourseDetail = async () => {
     throw new Error(`${t("courses.errors.loadCourse")}: ${response.status}`);
   }
   courseDetail.value = await response.json();
+};
+
+const resolveCourseId = async () => {
+  const result = await resolveCourseIdentifier(courseIdentifier.value);
+  resolvedCourseId.value = String(result.course_id);
 };
 
 const fetchOfferings = async () => {
@@ -145,55 +148,16 @@ const fetchDiscussions = async () => {
   }
 };
 
-const loadAcademicMapRecord = async () => {
-  if (!isLoggedIn.value || !courseDetail.value.code) return;
-  try {
-    const academicSummary = await fetchAcademicSummary();
-    const record = academicSummary.records.find(item => item.course_code === courseDetail.value.code) || null;
-    academicMapRecord.value = record;
-    academicMapStatus.value = record?.status || "interested";
-  } catch {
-    academicMapRecord.value = null;
-  }
-};
-
-const saveAcademicMapStatus = async (status: AcademicCourseStatus) => {
-  if (!isLoggedIn.value) return;
-  try {
-    isSavingAcademicMap.value = true;
-    academicMapStatus.value = status;
-    if (academicMapRecord.value?.id) {
-      const result = await updateAcademicRecord(academicMapRecord.value.id, { status });
-      academicMapRecord.value = result.record;
-    } else {
-      const result = await saveImportedRecords([{
-        course_code: courseDetail.value.code,
-        course_title: courseDetail.value.name,
-        term_label: selectedOffering.value?.display_name || semesterTag.value,
-        units: courseDetail.value.credits,
-        status,
-        needs_review: false,
-      }], false);
-      academicMapRecord.value = result.records[0] || null;
-    }
-    academicMapMessage.value = t("academicMap.courseDetail.saved");
-  } catch {
-    academicMapMessage.value = t("academicMap.courseDetail.saveFailed");
-  } finally {
-    isSavingAcademicMap.value = false;
-  }
-};
-
 const fetchPage = async () => {
   try {
     isLoading.value = true;
     error.value = "";
+    await resolveCourseId();
     await fetchCourseDetail();
     await fetchOfferings();
     if (!selectedOffering.value) {
       throw new Error(t("courses.offeringMissing"));
     }
-    await loadAcademicMapRecord();
     await fetchDiscussions();
   } catch (err: any) {
     error.value = err.message || t("courses.loading");
@@ -263,21 +227,13 @@ useHead({
           <div class="kg-card kg-pane kg-pane--review">
             <div class="kg-pane-head">
               <div>
-                <p class="kg-pane-eyebrow">{{ t("academicMap.eyebrow") }}</p>
-                <h2 class="kg-pane-title">{{ t("academicMap.courseDetail.title") }}</h2>
+                <p class="kg-pane-eyebrow">{{ t("courses.overviewPage.eyebrow") }}</p>
+                <h2 class="kg-pane-title">{{ t("courses.overviewPage.offeringContextTitle") }}</h2>
               </div>
             </div>
-            <p class="kg-pane-copy">{{ t("academicMap.courseDetail.copy") }}</p>
-            <template v-if="isLoggedIn">
-              <AcademicMapCourseStatusChips
-                :model-value="academicMapStatus"
-                @update:model-value="saveAcademicMapStatus"
-              />
-              <p v-if="academicMapMessage" class="kg-inline-note">{{ academicMapMessage }}</p>
-              <p v-else-if="isSavingAcademicMap" class="kg-inline-note">{{ t("actions.saving") }}</p>
-            </template>
-            <NuxtLink v-else :to="getLocalePath('/login')" class="kg-btn-primary kg-btn-primary--block">
-              {{ t("actions.login") }}
+            <p class="kg-pane-copy">{{ t("courses.overviewPage.offeringContextCopy") }}</p>
+            <NuxtLink :to="courseOverviewTo" class="kg-btn-primary kg-btn-primary--block">
+              {{ t("courseUniverse.actions.openOverview") }}
             </NuxtLink>
           </div>
 
