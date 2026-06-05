@@ -4,6 +4,7 @@ import type {
   AcademicMapSummary,
   AcademicProfile,
 } from '~/types/academic-map'
+import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
 
 definePageMeta({ layout: 'keguang' })
 
@@ -187,14 +188,7 @@ useHead({
 
 <template>
   <div class="am-page">
-    <header class="am-hero">
-      <div>
-        <h1>{{ t('academicMap.title') }}</h1>
-      </div>
-      <NuxtLink :to="getLocalePath('/courses/explore')" class="am-ghost-link">
-        {{ t('academicMap.openCourses') }}
-      </NuxtLink>
-    </header>
+    <CourseToolsHeader mode="academicMap" :title="t('academicMap.title')" />
 
     <div v-if="!isLoggedIn" class="am-card am-login-card">
       <h2>{{ t('academicMap.login.title') }}</h2>
@@ -300,27 +294,6 @@ useHead({
   padding: 24px 20px 64px;
 }
 
-.am-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 18px;
-  margin-bottom: 22px;
-
-  h1 {
-    color: var(--text-primary);
-    font-size: 1.7rem;
-    line-height: 1.25;
-    margin: 2px 0 6px;
-  }
-
-  p {
-    color: var(--text-secondary);
-    margin: 0;
-    max-width: 720px;
-  }
-}
-
 .am-card {
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
@@ -361,8 +334,7 @@ useHead({
 }
 
 .am-primary-btn,
-.am-outline-btn,
-.am-ghost-link {
+.am-outline-btn {
   border-radius: 999px;
   cursor: pointer;
   display: inline-flex;
@@ -375,8 +347,7 @@ useHead({
   white-space: nowrap;
 }
 
-.am-primary-btn,
-.am-ghost-link {
+.am-primary-btn {
   background: var(--interactive-primary);
   border: 0;
   color: var(--text-inverse);
@@ -533,12 +504,10 @@ useHead({
 }
 
 @media (max-width: 900px) {
-  .am-hero,
   .am-record-row {
     grid-template-columns: 1fr;
   }
 
-  .am-hero,
   .am-record-row {
     flex-direction: column;
   }

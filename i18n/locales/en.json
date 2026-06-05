@@ -56,7 +56,7 @@
     "users": "Users",
     "scheduler": "Scheduling Assistant",
     "wiki": "HKUST-GZ Wiki",
-    "contest": "Cash Prize Challenge"
+    "contest": "AMWC"
   },
   "layout": {
     "accountCenter": "Account center",
@@ -510,7 +510,7 @@
       "nextSlide": "Next slide",
       "slideLabel": "Slide {index}",
       "slides": {
-        "contestAlt": "Cash prize challenge banner",
+        "contestAlt": "AMWC banner",
         "welcomeZhAlt": "UniKorn welcome banner in Chinese",
         "welcomeEnAlt": "UniKorn welcome banner in English"
       }
@@ -534,6 +534,102 @@
       "loadMore": "Load more history",
       "noMore": "All history is loaded",
       "replyUnavailable": "The original message is no longer available"
+    }
+  },
+  "contest": {
+    "defaultTitle": "AMWC",
+    "metaDescription": "AMWC contest details, announcements, registration, and project submission.",
+    "trophyLabel": "Trophy",
+    "defaultDescriptionMarkdown": "Want to build useful Web tools for campus life? The first **AMWC (Almost Million Web Contest)** invites HKUST-GZ students to turn everyday campus needs into working web projects.\n\nChoose a track, build with your team, and submit your project link before the deadline.",
+    "defaultRulesMarkdown": "Design and implement an HKUST-GZ themed personality-test Web platform, **KG-TI**. The required feature is a quiz flow that generates a personalized campus identity or personality result for each student.\n\nBonus ideas include richer result cards, social matching, sharing, or other playful campus interactions.",
+    "countdown": {
+      "ended": "The contest has ended",
+      "untilDeadline": "Submission closes in {days}d {hours}h {minutes}m {seconds}s",
+      "untilStart": "Contest starts in {days}d {hours}h {minutes}m {seconds}s"
+    },
+    "status": {
+      "ended": "Ended",
+      "paused": "Paused",
+      "live": "Live",
+      "upcoming": "Upcoming"
+    },
+    "tabs": {
+      "ariaLabel": "Contest navigation",
+      "description": "Overview",
+      "announcements": "Announcements",
+      "problems": "Problems",
+      "newBadge": "NEW"
+    },
+    "time": {
+      "start": "Start {time}",
+      "deadline": "Deadline {time}"
+    },
+    "timeTba": "TBA",
+    "tracks": {
+      "tech": "Technical Track",
+      "fun": "Creative Track"
+    },
+    "empty": {
+      "description": "No contest overview yet.",
+      "announcements": "No announcements yet.",
+      "problems": "Problems have not been released yet."
+    },
+    "organizerPreview": "You are previewing the problem area as an organizer. Participants can only see this page after they register and the contest starts. Please use the full admin panel for submissions and exports.",
+    "fields": {
+      "teamName": "Team name",
+      "teamNameRequired": "Team name *",
+      "projectUrl": "Project link",
+      "projectUrlRequired": "Project link *",
+      "teamMembers": "Team members",
+      "teamMembersRequired": "Team members *",
+      "submittedAt": "Submitted at"
+    },
+    "placeholders": {
+      "teamName": "Enter your team name",
+      "teamMembers": "e.g. Alex Chen, Jamie Li"
+    },
+    "actions": {
+      "editSubmission": "Edit submission",
+      "submitting": "Submitting...",
+      "updateSubmission": "Update submission",
+      "submitProject": "Submit project",
+      "openAdmin": "Open admin panel",
+      "loginToRegister": "Log in to register",
+      "registering": "Registering...",
+      "register": "Register",
+      "goForum": "Go to forum →"
+    },
+    "messages": {
+      "endedThanks": "The contest has ended. Thank you for participating."
+    },
+    "registration": {
+      "title": "Registration",
+      "organizerHint": "You are a contest organizer. Use a participant account to test registration and submission, or manage data in the admin panel.",
+      "notRegistered": "You have not registered for this contest yet.",
+      "endedCannotRegister": "The contest has ended, so registration is closed.",
+      "paused": "Registration is not open: organizers have disabled registration and submission in the admin panel. You can register once it reopens.",
+      "registered": "You are registered",
+      "waitingForStart": "The contest has not started yet. Problems will appear in the Problems tab after it starts.",
+      "submissionPaused": "Registration and submission are paused by organizers. Please watch the announcements; you can continue once they reopen submissions.",
+      "goProblems": "Open the Problems tab to view tasks. The technical and creative tracks have separate submission entries."
+    },
+    "discussion": {
+      "title": "Contest Discussion",
+      "description": "Use the campus forum for problem discussion and team formation. This page focuses on contest details and submission."
+    },
+    "submission": {
+      "placeholderDescription": "Registered; waiting for project submission"
+    },
+    "errors": {
+      "registerFailed": "Registration failed. Please try again later.",
+      "networkRetry": "Network error. Please try again later.",
+      "teamNameRequired": "Please enter a team name.",
+      "teamNameReserved": "This team name is reserved. Please choose another one.",
+      "projectUrlRequired": "Please enter a project link.",
+      "projectUrlInvalid": "The project link must be a valid http(s) URL.",
+      "teamMembersRequired": "Please enter team members.",
+      "submitFailed": "Submission failed.",
+      "network": "Network error."
     }
   },
   "auth": {
