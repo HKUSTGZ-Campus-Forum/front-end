@@ -1,15 +1,13 @@
 <!-- components/forum/EmojiReactions.vue -->
 <template>
   <div class="emoji-reactions">
-    <!-- 紧凑的反应显示区 - 单行布局 -->
     <div class="reactions-row">
-      <!-- 固定入口按钮组：左侧始终是表情入口，右侧是展开箭头 -->
       <div class="reaction-launcher-group">
         <button
           @click="toggleEmojiPicker"
           class="reaction-launcher-btn"
           :class="{ active: showEmojiPicker }"
-          :title="isLoggedIn ? '选择表情' : '请先登录后选择表情'"
+          :title="isLoggedIn ? t('forum.reactions.pickEmoji') : t('forum.reactions.loginToReact')"
         >
           <span class="emoji">
             <iconify-icon
@@ -23,13 +21,12 @@
           @click="toggleEmojiPicker"
           class="expand-btn"
           :class="{ active: showEmojiPicker }"
-          title="更多表情"
+          :title="t('forum.reactions.moreEmojis')"
         >
           <ForumUiIcon name="chevron-down" class="chevron-icon" :class="{ rotated: showEmojiPicker }" />
         </button>
       </div>
 
-      <!-- 所有已存在的表情反应都平级展示，包括爱心 -->
       <button
         v-for="(reaction, emojiId) in displayedReactions"
         :key="emojiId"
@@ -49,15 +46,13 @@
       </button>
     </div>
 
-    <!-- 表情选择器 - 紧贴默认按钮组 -->
     <div v-if="showEmojiPicker" class="emoji-picker" @click.stop>
       <div class="emoji-categories">
         <div class="emoji-category">
           <div class="category-title">
-            可用表情 ({{ availableEmojis.length }} 个)
+            {{ t("forum.reactions.availableCount", { count: availableEmojis.length }) }}
           </div>
 
-          <!-- 表情网格 -->
           <div v-if="availableEmojis.length > 0" class="emoji-grid">
             <button
               v-for="(emoji, index) in availableEmojis"
@@ -73,18 +68,13 @@
             </button>
           </div>
 
-          <!-- 无表情状态 -->
           <div v-else class="no-emojis">
             <p class="no-emojis__title">
               <ForumUiIcon name="info" class="no-emojis__icon" />
-              <span>暂无可用表情</span>
-            </p>
-            <p style="font-size: 0.75rem; color: #999">
-              数组长度: {{ availableEmojis.length }}<br />
-              数据: {{ availableEmojis }}
+              <span>{{ t("forum.reactions.noAvailable") }}</span>
             </p>
             <button @click="fetchAvailableEmojis" class="retry-btn">
-              重新获取
+              {{ t("forum.reactions.retryLoad") }}
             </button>
           </div>
         </div>
@@ -95,6 +85,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useI18n } from "#imports";
 import { useAuth } from "~/composables/useAuth";
 import { useApi } from "~/composables/useApi";
 import {
@@ -113,6 +104,7 @@ const props = defineProps({
   },
 });
 
+const { t } = useI18n();
 const { isLoggedIn, user } = useAuth();
 const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 
@@ -223,7 +215,7 @@ const removeUserOtherReactions = async (newEmojiId) => {
 };
 const toggleEmojiPicker = async () => {
   if (!isLoggedIn.value) {
-    alert("请先登录后再进行表情反应");
+    alert(t("forum.reactions.loginToReact"));
     return;
   }
 

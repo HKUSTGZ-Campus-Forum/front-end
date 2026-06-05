@@ -1,22 +1,1429 @@
-
 {
+  "common": {
+    "appName": "UniKorn",
+    "appTitle": "UniKorn Campus Forum",
+    "description": "A multilingual campus community for students, courses, and collaboration.",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "back": "Back",
+    "backToList": "Back to list",
+    "unknownAuthor": "Anonymous user",
+    "emptyState": "Nothing to show yet.",
+    "searching": "Searching...",
+    "history": "Recent searches",
+    "clear": "Clear",
+    "viewAllResults": "View all {count} results",
+    "noResults": "No matching results found",
+    "close": "Close",
+    "user": "User",
+    "date": {
+      "empty": "",
+      "invalid": "Invalid date"
+    },
+    "locale": {
+      "label": "Language",
+      "zh": "中文",
+      "en": "EN"
+    },
+    "show": "Show",
+    "hide": "Hide"
+  },
+  "actions": {
+    "login": "Login",
+    "logout": "Log out",
+    "register": "Register",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "send": "Send",
+    "sending": "Sending...",
+    "saving": "Saving...",
+    "resend": "Resend",
+    "save": "Save",
+    "goToPost": "Create post"
+  },
+  "nav": {
+    "home": "Home",
+    "forum": "Forum",
+    "community": "Community",
+    "feedback": "Feedback",
+    "admin": "Admin",
+    "courses": "Courses",
+    "academicMap": "Academic Map",
+    "activity": "Activities",
+    "teamMatching": "Form a team",
+    "users": "Users",
+    "scheduler": "Scheduling Assistant",
+    "wiki": "HKUST-GZ Wiki",
+    "contest": "Cash Prize Challenge"
+  },
+  "layout": {
+    "accountCenter": "Account center",
+    "accountSettings": "Account settings",
+    "identityVerification": "Identity verification",
+    "themeSettings": "Theme settings",
+    "loggingOut": "Logging out..."
+  },
+  "community": {
+    "title": "Community",
+    "metaDescription": "Browse forum posts, feedback collaboration, and activities from one unified community entry.",
+    "sections": {
+      "forum": "Forum Posts",
+      "feedback": "Feedback",
+      "activity": "Activities"
+    },
+    "activity": {
+      "cta": "Post activity",
+      "badge": "Club activity",
+      "empty": "No club activities are public yet. Be the first to share one.",
+      "errors": {
+        "loadFailed": "Failed to load club activities.",
+        "retryable": "Failed to load club activities. Please try again later."
+      }
+    }
+  },
+  "adminShell": {
+    "title": "Site Administration",
+    "description": "Manage feedback reviews, identity verification, and future moderation tools from one shared admin surface.",
+    "nav": {
+      "overview": "Overview",
+      "feedback": "Feedback review",
+      "identity": "Identity"
+    }
+  },
+  "adminOverview": {
+    "title": "Admin overview",
+    "description": "Track the moderation queues that need attention and jump into each admin workspace.",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing..."
+    },
+    "metrics": {
+      "pendingFeedback": "Pending feedback",
+      "pendingMerge": "Pending merge reviews",
+      "pendingIdentity": "Pending identity",
+      "feedbackTotal": "Published feedback"
+    },
+    "status": {
+      "loadFailed": "Some admin counts could not be loaded.",
+      "moduleError": "Count unavailable"
+    },
+    "modulesTitle": "Admin modules",
+    "cards": {
+      "feedback": {
+        "title": "Feedback review",
+        "description": "Review pending feedback, finalize accepted merge proposals, and manage published feedback discussion state.",
+        "action": "Open feedback review"
+      },
+      "identity": {
+        "title": "Identity verification",
+        "description": "Review pending verification requests and inspect approved, rejected, or revoked identity records.",
+        "action": "Open identity review"
+      }
+    }
+  },
+  "adminIdentity": {
+    "title": "Identity Verification",
+    "description": "Review identity verification requests, inspect historical statuses, and handle records that need revocation or another decision.",
+    "metrics": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "total": "Total"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Identity type",
+      "sort": "Sort",
+      "allStatuses": "All statuses",
+      "allTypes": "All types"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "priority": "Review priority"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "revoked": "Revoked"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "selectPage": "Select page",
+      "clearPage": "Clear page",
+      "selectOne": "Select request",
+      "approve": "Approve",
+      "reject": "Reject",
+      "revoke": "Revoke",
+      "bulkApprove": "Approve {count}",
+      "bulkReject": "Reject {count}"
+    },
+    "user": {
+      "noEmail": "No email provided"
+    },
+    "requestedAt": "Requested {date}",
+    "processed": "Processed",
+    "processedAt": "Processed {date}",
+    "documents": {
+      "title": "Documents",
+      "unnamed": "Untitled document",
+      "noDate": "No upload date"
+    },
+    "notes": "Notes:",
+    "rejectionReason": "Rejection reason:",
+    "approve": {
+      "title": "Approve identity",
+      "message": "Approve {user}'s {type} verification request?"
+    },
+    "reject": {
+      "title": "Reject request",
+      "message": "Add a clear rejection reason for {user}'s request.",
+      "reason": "Rejection reason",
+      "notes": "Admin notes (optional)"
+    },
+    "revoke": {
+      "title": "Revoke identity",
+      "message": "Revoke {user}'s {type} verification?",
+      "defaultReason": "Revoked by admin"
+    },
+    "bulkApprove": {
+      "title": "Approve selected requests",
+      "message": "Approve the selected {count} verification requests?"
+    },
+    "bulkReject": {
+      "title": "Reject selected requests",
+      "message": "Add one shared reason for rejecting the selected {count} requests."
+    },
+    "messages": {
+      "approved": "Request approved.",
+      "rejected": "Request rejected.",
+      "revoked": "Identity revoked.",
+      "bulkApproved": "Approved {count} requests.",
+      "bulkRejected": "Rejected {count} requests."
+    },
+    "errors": {
+      "title": "Load failed",
+      "loadFailed": "Failed to load identity verification requests.",
+      "approveFailed": "Failed to approve request.",
+      "rejectFailed": "Failed to reject request.",
+      "revokeFailed": "Failed to revoke identity.",
+      "bulkFailed": "Bulk action failed."
+    },
+    "empty": {
+      "title": "No requests",
+      "description": "No identity verification requests match the current filters."
+    },
+    "pagination": {
+      "label": "Identity request pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    }
+  },
+  "adminFeedback": {
+    "title": "Feedback Review",
+    "description": "Handle pending feedback publication, accepted merge proposals, and discussion controls for published feedback.",
+    "metrics": {
+      "pendingFeedback": "Pending feedback",
+      "pendingMerge": "Pending merge reviews",
+      "feedbackTotal": "Feedback total",
+      "mergeTotal": "Merge total"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "publish": "Publish",
+      "reject": "Reject",
+      "merge": "Approve and merge",
+      "view": "View details",
+      "closeFeedback": "Close feedback",
+      "reopenFeedback": "Reopen",
+      "endComments": "End comments",
+      "resumeComments": "Resume comments"
+    },
+    "filters": {
+      "feedbackStatus": "Feedback status",
+      "mergeStatus": "Merge status",
+      "allFeedback": "All feedback",
+      "allMerge": "All merge proposals"
+    },
+    "pendingFeedback": {
+      "title": "Pending feedback",
+      "emptyTitle": "No pending feedback",
+      "emptyDescription": "New user feedback submissions will appear here."
+    },
+    "pendingMerge": {
+      "title": "Pending merge reviews",
+      "emptyTitle": "No pending merge reviews",
+      "emptyDescription": "Author-accepted edit proposals will appear here."
+    },
+    "feedbackHistory": {
+      "title": "Feedback records"
+    },
+    "mergeHistory": {
+      "title": "Merge records"
+    },
+    "approveFeedback": {
+      "title": "Publish feedback",
+      "message": "Publish this feedback so it becomes visible to everyone?"
+    },
+    "rejectFeedback": {
+      "title": "Reject feedback",
+      "message": "Add a clear review note before rejecting this feedback."
+    },
+    "approveMerge": {
+      "title": "Approve merge proposal",
+      "message": "Apply this proposal to the published feedback body?"
+    },
+    "rejectMerge": {
+      "title": "Reject merge proposal",
+      "message": "Add a review note before rejecting this proposal."
+    },
+    "messages": {
+      "feedbackApproved": "Feedback published.",
+      "feedbackRejected": "Feedback rejected.",
+      "mergeApproved": "Merge proposal approved.",
+      "mergeRejected": "Merge proposal rejected.",
+      "feedbackClosed": "Feedback closed.",
+      "feedbackReopened": "Feedback reopened.",
+      "commentsEnded": "Comments ended.",
+      "commentsResumed": "Comments resumed."
+    },
+    "errors": {
+      "title": "Load failed",
+      "loadFailed": "Failed to load feedback admin data.",
+      "actionFailed": "Action failed."
+    },
+    "author": "Author: {name}",
+    "feedbackId": "Feedback #{id}",
+    "commentsEnded": "Comments ended",
+    "emptyExcerpt": "No content preview available.",
+    "notePlaceholder": "Admin review note"
+  },
+  "footer": {
+    "title": "UniKorn",
+    "tagline": "Make learning feel more connected",
+    "wechatAlt": "UniKorn official WeChat QR code",
+    "wechatLabel": "Official WeChat",
+    "navigation": "Navigation",
+    "help": "Help",
+    "guide": "User guide",
+    "rules": "Community rules",
+    "privacy": "Privacy policy",
+    "contact": "Contact",
+    "feedback": "Feedback",
+    "campusCollab": "Campus collaboration",
+    "icpRecord": "Beijing ICP Record No. 2023006922-1"
+  },
+  "modals": {
+    "confirm": {
+      "title": "Confirm action",
+      "message": "Are you sure you want to continue?"
+    },
+    "error": {
+      "title": "Action failed",
+      "message": "The action could not be completed. Please try again."
+    },
+    "success": {
+      "title": "Action completed",
+      "message": "The action completed successfully."
+    }
+  },
+  "search": {
+    "placeholder": "Search posts, users, and courses...",
+    "tabs": {
+      "posts": "Posts",
+      "users": "Users",
+      "tags": "Tags",
+      "courses": "Courses"
+    },
+    "tagPostCount": "{count} posts"
+  },
+  "searchPage": {
+    "pageTitle": "Search Results",
+    "metaDescription": "Browse search results for posts, users, tags, and courses across UniKorn.",
+    "title": "Search",
+    "keywordLabel": "Keyword: ",
+    "loading": "Searching...",
+    "empty": "No matching results were found.",
+    "placeholder": "Enter keywords to start searching",
+    "userFallbackBio": "No bio yet",
+    "sort": {
+      "label": "Sort:",
+      "relevance": "Relevance",
+      "date": "Newest",
+      "popularity": "Most popular"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "errors": {
+      "global": "Search failed. Please try again later.",
+      "posts": "Failed to load post search results.",
+      "users": "Failed to load user search results.",
+      "tags": "Failed to load tag search results.",
+      "courses": "Failed to load course search results.",
+      "network": "A network error occurred. Please try again."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "markingAllRead": "Marking...",
+    "viewAll": "View all",
+    "loading": "Loading...",
+    "loadFailed": "Failed to load: {error}",
+    "empty": "No notifications yet."
+  },
+  "imageModal": {
+    "defaultAlt": "Image preview",
+    "loadFailed": "Unable to load the image",
+    "fitToScreen": "Fit to screen"
+  },
+  "avatar": {
+    "user": {
+      "alt": "{username}'s avatar"
+    },
+    "upload": {
+      "title": "Profile avatar",
+      "description": "Recommended size: 200x200 pixels. JPG and PNG are supported.",
+      "uploading": "Uploading...",
+      "prompt": "Click or drag an image here to upload",
+      "restrictions": "Supports JPG and PNG, up to 5 MB",
+      "selectImage": "Choose image",
+      "removeImage": "Remove avatar",
+      "success": "Avatar uploaded successfully.",
+      "errors": {
+        "invalidType": "Please choose a JPG or PNG image.",
+        "invalidSize": "Image size must be 5 MB or smaller.",
+        "validationFailed": "File validation failed.",
+        "missingFileId": "Upload failed: no file ID was returned.",
+        "uploadFailed": "Upload failed. Please try again.",
+        "removeFailed": "Failed to remove avatar. Please try again."
+      }
+    }
+  },
+  "userProfile": {
+    "pageTitle": "{username} - Profile",
+    "metaDescription": "View {username}'s profile and activity statistics.",
+    "uid": "UID: {uid}",
+    "joinDate": "Joined: {date}",
+    "actions": {
+      "edit": "Edit",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "states": {
+      "loading": "Loading...",
+      "retry": "Retry",
+      "unknownDate": "Unknown",
+      "invalidDate": "Invalid date",
+      "invalidUserId": "Invalid user ID"
+    },
+    "errors": {
+      "userNotFound": "User not found",
+      "loginRequired": "Please log in to view this profile.",
+      "forbidden": "You do not have permission to view this profile.",
+      "loadUserFailed": "Failed to load user profile.",
+      "loadUserFailedWithStatus": "Failed to load user profile ({status}).",
+      "loadPostsFailed": "Failed to load posts.",
+      "loadPostsFailedWithStatus": "Failed to load posts ({status}).",
+      "updateUsernameFailed": "Failed to update username. Please try again later.",
+      "updateUsernameFailedWithStatus": "Failed to update username ({status})."
+    },
+    "validation": {
+      "usernameRequired": "Username is required.",
+      "usernameTooShort": "Username must be at least 2 characters.",
+      "usernameTooLong": "Username cannot exceed 50 characters.",
+      "usernameInvalidCharacters": "Username cannot contain special symbols."
+    },
+    "stats": {
+      "title": "Statistics",
+      "posts": "Posts",
+      "comments": "Comments",
+      "likes": "Likes",
+      "views": "Views",
+      "score": "Score"
+    },
+    "recentPosts": {
+      "title": "Recent Posts",
+      "loading": "Loading posts...",
+      "empty": "This user has not published any posts yet.",
+      "noContent": "No content yet",
+      "untitled": "Untitled"
+    }
+  },
+  "pwa": {
+    "update": {
+      "badge": "New version",
+      "title": "A new frontend version is available",
+      "description": "Update now to switch to the latest page without clearing cache or forcing a refresh.",
+      "versionLabel": "Version: {version}",
+      "apply": "Update now",
+      "updating": "Updating...",
+      "later": "Later"
+    },
+    "install": {
+      "floatButton": "Install app",
+      "title": "Install the UniKorn app",
+      "description": "Get a smoother experience with offline support.",
+      "primaryAction": "Install now",
+      "dontShowAgain": "Don't show again",
+      "platforms": {
+        "chrome": {
+          "step1": "Click the install icon on the right side of the address bar",
+          "step2": "Or open the three-dot menu in the top-right corner",
+          "step3": "Choose “Install UniKorn”",
+          "step4": "Confirm the installation and start using the app"
+        },
+        "safari": {
+          "step1": "Tap the share button at the bottom",
+          "step2": "Scroll to “Add to Home Screen”",
+          "step3": "Tap “Add to Home Screen”",
+          "step4": "Confirm and the app will be added to your home screen"
+        },
+        "edge": {
+          "step1": "Click the app icon on the right side of the address bar",
+          "step2": "Or open the three-dot menu in the top-right corner",
+          "step3": "Choose “Install this site as an app”",
+          "step4": "Click “Install” to finish setup"
+        }
+      }
+    }
+  },
+  "homePage": {
+    "pageTitle": "Home - UniKorn",
+    "metaDescription": "Browse trending posts, campus shortcuts, and the latest gugu messages.",
+    "relatedLinks": {
+      "title": "Related links",
+      "wiki": "HKUST-GZ Wiki",
+      "portal": "myPortal",
+      "canvas": "Canvas"
+    },
+    "carousel": {
+      "previousSlide": "Previous slide",
+      "nextSlide": "Next slide",
+      "slideLabel": "Slide {index}",
+      "slides": {
+        "contestAlt": "Cash prize challenge banner",
+        "welcomeZhAlt": "UniKorn welcome banner in Chinese",
+        "welcomeEnAlt": "UniKorn welcome banner in English"
+      }
+    },
+    "popularPosts": {
+      "title": "Trending posts",
+      "viewAll": "View all →",
+      "commentCountTitle": "Comments",
+      "reactionCountTitle": "Reactions"
+    },
+    "chat": {
+      "title": "What’s fresh? Drop a gugu",
+      "replyingTo": "Replying to {name}",
+      "replyPlaceholder": "Reply to {name}...",
+      "placeholder": "Share what’s on your mind...",
+      "send": "Send a gugu",
+      "loading": "Loading messages...",
+      "empty": "No messages yet. Be the first to post.",
+      "replyAction": "Reply",
+      "quoteReplyTo": "Replying to {name}",
+      "loadMore": "Load more history",
+      "noMore": "All history is loaded",
+      "replyUnavailable": "The original message is no longer available"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to UniKorn",
+      "usernameLabel": "Username or email",
+      "usernamePlaceholder": "Enter your username or email",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Login",
+      "submitting": "Logging in...",
+      "noAccount": "Don’t have an account yet?",
+      "registerNow": "Create one",
+      "errors": {
+        "required": "Please enter both username and password.",
+        "invalid": "Incorrect username or password. Please try again."
+      }
+    },
+    "register": {
+      "title": "Join us",
+      "subtitle": "Create your UniKorn account",
+      "hasAccount": "Already have an account?",
+      "loginNow": "Log in now",
+      "username": "Username",
+      "usernamePlaceholder": "Choose a username",
+      "email": "Email",
+      "emailPlaceholder": "Enter your HKUST-GZ email",
+      "emailHintTitle": "Only HKUST-GZ email domains are allowed:",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Enter your password again",
+      "submit": "Register",
+      "submitting": "Creating account...",
+      "verificationNotice": "We will send a verification code to your email after registration. Please make sure the address is correct.",
+      "verificationWarningTitle": "Important:",
+      "verificationWarningBody": "If you cannot find the verification email, please check your spam or junk folders.",
+      "success": "Email verification succeeded. Your account is now ready to use.",
+      "errors": {
+        "usernameRequired": "Please enter a username.",
+        "usernameMin": "Username must be at least 2 characters.",
+        "usernameMax": "Username must be at most 50 characters.",
+        "usernameForbidden": "Username cannot include reserved special symbols. Please use letters, numbers, underscores, or standard characters.",
+        "usernameTaken": "This username is already in use.",
+        "emailRequired": "Please enter your email address.",
+        "emailInvalid": "Please enter a valid email address.",
+        "emailDomain": "Only HKUST-GZ email addresses are allowed. The domain must be connect.hkust-gz.edu.cn or hkust-gz.edu.cn.",
+        "emailTaken": "This email has already been registered.",
+        "passwordRequired": "Please enter a password.",
+        "passwordMin": "Password must be at least 6 characters.",
+        "confirmRequired": "Please confirm your password.",
+        "confirmMismatch": "The two passwords do not match.",
+        "registerFailed": "Registration failed. Please try again later."
+      }
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we will send you a password reset link.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "Enter your HKUST-GZ email",
+      "emailHint": "Please use the HKUST-GZ email address linked to your account.",
+      "sendLink": "Send reset link",
+      "sentTitle": "Reset link sent",
+      "sentDescription": "We have sent a password reset link to {email}.",
+      "nextSteps": "What to do next",
+      "stepOne": "Check your inbox, including the spam folder.",
+      "stepTwo": "Open the reset link from the email.",
+      "stepThree": "Set a new password.",
+      "noMail": "Didn’t receive the email?",
+      "resendAvailableIn": "Resend available in {seconds}s",
+      "backToLogin": "Back to login",
+      "goToRegister": "Don’t have an account? Register now",
+      "errors": {
+        "emailInvalid": "Please enter a valid HKUST-GZ email address.",
+        "sendFailed": "Failed to send the reset email. Please try again.",
+        "resendFailed": "Failed to resend the email. Please try again."
+      },
+      "success": {
+        "resent": "The reset link has been sent again. Please check your inbox."
+      }
+    },
+    "resetPassword": {
+      "pageTitle": "Reset password"
+    }
+  },
+  "profileRedirect": {
+    "pageTitle": "Redirecting to your profile",
+    "missingAuth": "We could not find your login information. Redirecting to the login page...",
+    "redirecting": "Opening your profile..."
+  },
+  "help": {
+    "guide": {
+      "title": "User guide",
+      "summary": "This page will gradually document UniKorn's core features so new users can get started quickly.",
+      "sectionOneTitle": "What you can do here",
+      "sectionOneBody": "Browse the forum, search course reviews, join activities, form teams, and manage your campus identity and profile.",
+      "sectionTwoTitle": "About multilingual support",
+      "sectionTwoBody": "Chinese remains the default language, while English pages are available under the /en prefix. New pages will follow the same approach."
+    },
+    "rules": {
+      "title": "Community rules",
+      "summary": "Please follow these basic rules to keep the community welcoming and useful.",
+      "sectionOneTitle": "Respect others",
+      "sectionOneBody": "Do not post harassment, discrimination, personal attacks, privacy violations, or intentionally inflammatory content.",
+      "sectionTwoTitle": "Stay accurate and clear",
+      "sectionTwoBody": "Course reviews, team-matching posts, and requests for help should be as truthful and clear as possible to avoid misleading others."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "summary": "UniKorn tries to collect only the data needed to run the platform and respects your visibility settings.",
+      "sectionOneTitle": "What we store",
+      "sectionOneBody": "Account details, avatars, posts, comments, notifications, and required identity-verification data are used to provide platform features.",
+      "sectionTwoTitle": "What you can control",
+      "sectionTwoBody": "You can manage your public profile, contact details, and some notification settings. A fuller privacy policy can be added later."
+    }
+  },
+  "courseUniverse": {
+    "title": "Course Universe",
+    "hubTitle": "Course Graph",
+    "hubSubtitle": "Start here to read course relationships, reviews, schedules, and degree progress.",
+    "subtitle": "Find your next course through relationships, reviews, schedules, and degree progress.",
+    "searchPlaceholder": "Search course code, title, or requirement...",
+    "selectedSemester": "Current semester",
+    "targetMajor": "Target major",
+    "loading": "Loading Course Universe...",
+    "empty": "No course graph data yet.",
+    "selectCourse": "Select a course to inspect it",
+    "modes": {
+      "universe": "Universe",
+      "explore": "Explore",
+      "planner": "Planner",
+      "academicMap": "Academic Map"
+    },
+    "legend": {
+      "completed": "Completed",
+      "inProgress": "In progress",
+      "notTaken": "Not taken",
+      "interested": "Want to take",
+      "prerequisite": "Prerequisite",
+      "corequisite": "Corequisite (take together)",
+      "exclusion": "Exclusion (cannot take together)",
+      "hollowLogic": "Hollow: choose one",
+      "solidLogic": "Solid: need all"
+    },
+    "statusShort": {
+      "completed": "Done",
+      "inProgress": "In prog.",
+      "notTaken": "Not taken",
+      "interested": "Want"
+    },
+    "actions": {
+      "addToPlanner": "Add to planner",
+      "addToPlannerCart": "Add to planner cart",
+      "removeFromPlannerCart": "Remove from planner cart",
+      "openOverview": "Open overview",
+      "openPlanner": "Open planner",
+      "openReviews": "View reviews",
+      "writeReview": "Write review",
+      "openAcademicMap": "Open Academic Map",
+      "markStatus": "Update academic status",
+      "graphControls": "Graph controls",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fitGraph": "Fit graph",
+      "focusSelection": "Focus selected course",
+      "detailsShort": "Details",
+      "showDetails": "Show details"
+    },
+    "detail": {
+      "currentSelection": "Current selection",
+      "overview": "Course overview",
+      "academicStatus": "Academic status",
+      "statusSummary": "Status summary",
+      "emptyCopy": "Select a course in the graph to see its overview, reviews, and planner status here.",
+      "noAcademicStatus": "Not marked",
+      "plannerStatus": "Planner status",
+      "plannerAdded": "Already in this semester's planner cart",
+      "plannerNotAdded": "Not added to this semester's planner yet",
+      "impact": "Impact after adding",
+      "reviewSignal": "What students say",
+      "notAvailable": "Not available"
+    },
+    "errors": {
+      "load": "Course Universe failed to load. Please try again later.",
+      "courseDetail": "Failed to load course detail."
+    }
+  },
+  "courses": {
+    "title": "Course reviews",
+    "subtitle": "Browse and share course experiences",
+    "searchPlaceholder": "Search by course name or code...",
+    "semesterLabel": "Semester",
+    "stage": "Level",
+    "stageAll": "All",
+    "stageUg": "Undergraduate (UG)",
+    "stagePg": "Postgraduate (PG)",
+    "courseType": "Course type",
+    "loading": "Loading courses...",
+    "empty": "No course data yet.",
+    "credits": "{count} credits",
+    "capacity": "Capacity {count}",
+    "statusActive": "Open",
+    "statusInactive": "Closed",
+    "redirecting": "Redirecting to the course home...",
+    "redirectFailed": "Redirect failed",
+    "backToCourses": "Back to courses",
+    "detailMissing": "Course not found or has been removed.",
+    "overview": "Course overview",
+    "overviewEmpty": "No course description yet.",
+    "reviewsEyebrow": "Course reviews",
+    "reviewsTitle": "See reviews for this offering",
+    "reviewsEntry": "Open course reviews",
+    "reviewsCopy": "Ratings and reviews for {offering} are here.",
+    "discussionEyebrow": "Course discussion",
+    "discussionTitle": "Recent discussion",
+    "discussionEmpty": "No discussion yet. Be the first to post.",
+    "discussionLoading": "Loading discussions...",
+    "comments": "Comments {count}",
+    "views": "Views {count}",
+    "homeTitle": "Course home",
+    "homeDescription": "View the course overview, review entry, and discussion area for {offering} {course}.",
+    "overviewPage": {
+      "metaTitle": "Course overview",
+      "metaDescription": "View the course overview, academic status, and offerings for {course}.",
+      "eyebrow": "Course overview",
+      "backToUniverse": "Back to Course Universe",
+      "loadFailed": "Failed to load course overview",
+      "offeringsEyebrow": "Offerings",
+      "offeringsTitle": "Offering terms",
+      "showAll": "Show all {count}",
+      "showRecent": "Recent only",
+      "noOfferings": "No offerings are available for this course yet.",
+      "hiddenOfferings": "{count} older terms are hidden.",
+      "sectionsCount": "{count} sections",
+      "sectionsAndTeachers": "{sections} sections · {teachers}",
+      "teacherTbd": "Instructor TBD",
+      "openOffering": "View term details",
+      "offeringContextTitle": "Term page",
+      "offeringContextCopy": "This page keeps reviews, discussion, and scheduling context for this term. Course-level details and interest live on the course overview.",
+      "rulesEyebrow": "Course rules",
+      "rulesTitle": "Prerequisites, corequisites, and exclusions",
+      "noRules": "No prerequisite, corequisite, or exclusion information yet.",
+      "rules": {
+        "preRequirement": "Prerequisites",
+        "coRequirement": "Corequisites",
+        "exclusion": "Exclusions"
+      },
+      "academicStatusTitle": "My academic status",
+      "academicStatus": {
+        "completed": "Completed",
+        "in_progress": "In progress",
+        "planned": "Planned",
+        "interested": "Want to take",
+        "not_taken": "Not taken"
+      },
+      "noAcademicStatus": "This course is not in your Academic Map yet.",
+      "markInterested": "Mark interested",
+      "cancelInterested": "Cancel interest",
+      "loginToMark": "Log in to mark interest",
+      "interestSaved": "Marked as interested.",
+      "interestRemoved": "Interest removed.",
+      "interestFailed": "Failed to update Academic Map.",
+      "strongStatusNote": "Completed, in-progress, or planned status takes priority over interest and is not edited here yet.",
+      "activePlannerSemester": "Active planner term: {semester}",
+      "plannerLoadFailed": "Planner cart status could not be loaded. Please try again later.",
+      "plannerStatus": {
+        "in_cart": "In planner cart",
+        "available": "Can add to planner cart",
+        "different_semester": "Not the active planner term",
+        "unavailable": "No planner data"
+      },
+      "mapTitle": "See relationships in the graph",
+      "mapCopy": "Open Course Universe to inspect prerequisite, corequisite, and exclusion relationships around this course.",
+      "openInMap": "View in graph"
+    },
+    "offeringMissing": "This offering does not exist for the selected course.",
+    "pageIntro": "This page shows reviews for {courseCode} in {offering}.",
+    "writeReview": "Write a review",
+    "reviewListTitle": "Course reviews ({count})",
+    "publishReviewFor": "Review {offering}",
+    "fixedTags": "Fixed tags",
+    "ratingOptional": "Rating (optional)",
+    "ratingWord": "Rating",
+    "reviewTitleLabel": "Review title",
+    "reviewTitlePlaceholder": "{offering} {course} review",
+    "reviewContentLabel": "Review content *",
+    "reviewContentPlaceholder": "Share your experience with the workload, assignments, exams, and overall learning experience for this offering...",
+    "uploadImages": "Upload images (up to 3)",
+    "uploadDragText": "Click or drag images here to upload",
+    "loginHint": "Please log in before posting a review.",
+    "reviewLoading": "Loading reviews...",
+    "reviewEmpty": "There are no course reviews for this offering yet. Be the first to share your experience.",
+    "reviewDetail": "View details",
+    "reviewPublishSuccess": "Your review has been published.",
+    "reviewPublishFailed": "Failed to publish review",
+    "reviewInputRequired": "Please enter your review content.",
+    "imageUploadFailed": "Image upload failed: {message}",
+    "imageRemoveFailed": "Failed to remove image.",
+    "errors": {
+      "loadCourses": "Failed to load course list.",
+      "loadFilters": "Failed to load course filters.",
+      "loadSemesters": "Failed to load course semesters.",
+      "loadCourse": "Failed to load course details.",
+      "loadDiscussions": "Failed to load discussions.",
+      "loadReviews": "Failed to load reviews.",
+      "submitReview": "Failed to publish the review. Please try again."
+    },
+    "semester": {
+      "spring": "Spring",
+      "summer": "Summer",
+      "fall": "Fall",
+      "winter": "Winter"
+    }
+  },
+  "academicMap": {
+    "metaTitle": "Academic Map - UniKorn",
+    "eyebrow": "Academic Map",
+    "title": "Academic Map",
+    "openCourses": "Go to course reviews",
+    "loading": "Loading academic state...",
+    "cohort": "Cohort",
+    "units": "credits",
+    "login": {
+      "title": "Log in to maintain your Academic Map",
+      "copy": "This information belongs to you. Course records and grades are not public, and they will help future planning suggestions become more precise."
+    },
+    "targetMajors": {
+      "title": "Target majors",
+      "label": "Intended majors (multi-select)"
+    },
+    "metrics": {
+      "totalCredits": "Total credit requirement",
+      "minimum": "{count}",
+      "activeCredits": "{count} credits completed, in progress, or planned",
+      "completedCredits": "{completed} credits completed, {inProgress} credits in progress this term",
+      "mapCompleteness": "Map completeness",
+      "mapCompletenessCopy": "Shows whether future planning has enough context",
+      "importedCourses": "Maintained courses",
+      "importedCoursesCopy": "Course records from paste import or manual confirmation",
+      "unmetRequirements": "Needs review",
+      "unmetRequirementsCopy": "Missing grades, unmatched courses, or statuses to confirm",
+      "prerequisites": "Prerequisite blockers",
+      "prerequisitesCopy": "{blocked} target courses have prerequisite blockers",
+      "prerequisitesNeedsTarget": "Choose a cohort and target major before checking prerequisite blockers",
+      "ocga": "OCGA",
+      "ocgaCopy": "Calculated after grades are uploaded; visible only to you",
+      "mcga": "MCGA · {major}",
+      "mcgaCopy": "Calculated after grades are uploaded; visible only to you",
+      "mcgaNeedsTarget": "Choose a target major before calculating Major CGA",
+      "selectTarget": "Choose target",
+      "notUploaded": "Not uploaded"
+    },
+    "import": {
+      "title": "Import Course History",
+      "copyPrefix": "You can import course history from SIS in one click:",
+      "exampleLink": "example",
+      "placeholder": "Paste something like: AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
+      "parse": "Parse",
+      "parsing": "Parsing...",
+      "save": "Save courses",
+      "saving": "Saving...",
+      "keepGrades": "Upload grades",
+      "keepGradesCopy": "Grades are visible only to you. If you turn this off, GPA calculation and personalized recommendations will no longer work.",
+      "previewTitle": "Preview {count} courses",
+      "exampleTitle": "Example",
+      "example": {
+        "systemName": "GZSISP",
+        "breadcrumb": "Favorites / Main Menu / Student Center",
+        "menuAcademicRequirements": "Academic Requirements",
+        "menuClassSchedule": "Class Schedule",
+        "menuCourseHistory": "Course History",
+        "menuEnrollmentAdd": "Enrollment: Add",
+        "menuGrades": "Grades",
+        "menuTranscript": "Transcript: View Unofficial",
+        "studentCenter": "Student Center",
+        "notEnrolled": "You are not enrolled in classes.",
+        "searchClasses": "Search For Classes",
+        "holds": "Holds",
+        "noHolds": "No Holds.",
+        "enrollmentDates": "Enrollment Dates",
+        "shoppingCart": "Shopping Cart Appointment"
+      },
+      "courseTitle": "Course title",
+      "noTerm": "No term",
+      "remove": "Remove course",
+      "needsReview": "This course needs your confirmation."
+    },
+    "status": {
+      "completed": "Completed",
+      "in_progress": "In progress",
+      "planned": "Planned",
+      "interested": "Interested",
+      "not_interested": "Not interested"
+    },
+    "privacy": {
+      "title": "Grade privacy",
+      "copy": "Grades are never shown publicly. You can keep them for future recommendations or delete them now or later.",
+      "deleteGrades": "Delete all grades",
+      "deleting": "Deleting...",
+      "clearMap": "Clear Academic Map",
+      "clearingMap": "Clearing...",
+      "clearMapConfirm": "Clear course records, cohort, and target majors for the current account? This will not affect other users."
+    },
+    "future": {
+      "title": "Signals for future planning",
+      "copy": "This version does not recommend courses yet. It focuses on building the state map with low effort.",
+      "signals": {
+        "courseHistory": "Course history",
+        "targetMajors": "Target major changes",
+        "statusIntent": "Plans and interest",
+        "privateGrades": "Private grades"
+      }
+    },
+    "requirements": {
+      "title": "Requirement Matrix",
+      "empty": "Choose a cohort and target major to show the requirement matrix here.",
+      "emptyMissingProfile": "Choose a cohort and target major to generate the requirement matrix.",
+      "emptyMissingCatalog": "The backend does not have requirement data for this cohort/major yet. Sync the curriculum requirement materials first.",
+      "minimums": "Minimum {courses} courses / {credits} credits",
+      "more": "+{count} more",
+      "moreCourses": "+{count} more courses",
+      "moreSections": "+{count} more groups",
+      "choicePattern": "{required} of {total}",
+      "unknownTitle": "Course title to confirm",
+      "noProgress": "To confirm",
+      "satisfied": "Satisfied",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "drawerCopy": "Current progress: {progress}.",
+      "sectionProgress": "Progress {progress}",
+      "sectionProgressWithCredits": "Progress {progress} / at least {credits} credits",
+      "currentProgress": "Current {courses} / {requiredCourses} courses · {credits} / {requiredCredits} credits",
+      "currentCourseProgress": "Current {courses} / {requiredCourses} courses",
+      "projectedProgress": "With plan {courses} / {requiredCourses} courses · {credits} / {requiredCredits} credits",
+      "projectedCourseProgress": "With plan {courses} / {requiredCourses} courses",
+      "creditProgress": "Current {credits} / {requiredCredits} credits",
+      "projectedCreditProgress": "With plan {credits} / {requiredCredits} credits",
+      "creditToConfirm": "Credit to confirm",
+      "countedToward": "Counted toward: {section}",
+      "sectionKinds": {
+        "required": "Required",
+        "choice": "Choice",
+        "elective": "Elective"
+      },
+      "status": {
+        "now": "In progress / planned",
+        "done": "Completed",
+        "need": "Not covered",
+        "choice": "Candidate",
+        "more": "Show more",
+        "completed": "Completed",
+        "in_progress": "In progress",
+        "planned": "Planned",
+        "candidate": "Candidate",
+        "excluded_duplicate": "Counted elsewhere",
+        "missing_credit": "Credit to confirm"
+      }
+    },
+    "detail": {
+      "overviewTitle": "Reading the matrix",
+      "overviewCopy": "Click any requirement row to inspect its full course pool; click a top metric card for prerequisite or grade details.",
+      "gradesTitle": "OCGA / MCGA",
+      "gradesCopy": "Grades stay inside your private Academic Map and are calculated only after upload.",
+      "ocgaRule": "Overall CGA: equally weighted average of all grade-point courses.",
+      "mcgaRule": "Major CGA: equally weighted estimate from courses counted toward the active major.",
+      "gradePrivacy": "Grades are not shown publicly and can be deleted anytime. Without uploaded grades, these cards show Not uploaded.",
+      "prerequisitesTitle": "Prerequisite blockers",
+      "prerequisitesCopy": "{blocked} target courses have prerequisite blockers.",
+      "noBlockers": "No priority prerequisite blockers right now.",
+      "missing": "Missing prerequisites:",
+      "rowCopy": "Current progress: {progress}. This panel shows the full course pool for the row.",
+      "minCourses": "Min. {count} courses",
+      "minCredits": "Min. {count} credits"
+    },
+    "records": {
+      "title": "Course status library",
+      "copy": "Mark each course as completed, in progress, planned, or interested so the system can understand your real academic path later.",
+      "empty": "No course records yet. Paste your Course History to import a first batch.",
+      "noTerm": "No term",
+      "untitled": "Untitled course",
+      "privateGrade": "Private grade {grade}",
+      "delete": "Delete course"
+    },
+    "messages": {
+      "profileSaved": "Target majors updated.",
+      "parsed": "Parsed {count} course records. Review and save them when ready.",
+      "importSaved": "Course records saved.",
+      "recordDeleted": "Course record deleted.",
+      "gradesDeleted": "Deleted grades from {count} records.",
+      "recordsCleared": "Cleared {count} course records."
+    },
+    "errors": {
+      "load": "Failed to load Academic Map. Please try again later.",
+      "profile": "Failed to save target majors. Please try again later.",
+      "parse": "Failed to parse the pasted content.",
+      "importSave": "Failed to save course records. Please try again later.",
+      "record": "Failed to update the course record. Please try again later.",
+      "grades": "Failed to delete grades. Please try again later.",
+      "clearRecords": "Failed to clear Academic Map. Please try again later."
+    },
+    "coursesCta": {
+      "title": "Connect course reviews with your Academic Map",
+      "copy": "While browsing courses, open Academic Map to keep completed, in-progress, planned, and interested courses organized.",
+      "action": "Open Academic Map"
+    },
+    "courseDetail": {
+      "title": "Add to my Academic Map",
+      "copy": "Mark this course as planned or interested so it becomes planning context later.",
+      "saved": "Updated in Academic Map.",
+      "saveFailed": "Failed to update Academic Map. Please try again later."
+    }
+  },
+  "matching": {
+    "breadcrumbs": {
+      "ariaLabel": "Team matching breadcrumbs",
+      "root": "Team matching",
+      "profile": "Profile settings",
+      "discover": "Discover projects",
+      "projects": "Projects",
+      "createProject": "Create project",
+      "editProject": "Edit project",
+      "projectDetails": "Project details",
+      "applications": "My applications"
+    },
+    "profileSetup": {
+      "pageTitle": "Profile settings",
+      "title": "Set up your profile",
+      "subtitle": "Introduce the problems you want to work on and add contact details so teammates can reach you.",
+      "problemSectionTitle": "What kind of problems do you want to solve?",
+      "problemInterestLabel": "Describe the problem space you care about *",
+      "problemInterestPlaceholder": "For example: improving some part of campus life, exploring a technical field in depth, or solving a specific social problem...",
+      "helpText": "It does not need to sound overly formal. The system will use AI to understand your interests and match suitable projects and teammates.",
+      "save": "Save profile",
+      "update": "Update profile",
+      "saveAndContinue": "Save and continue to project discovery",
+      "saveFailed": "Failed to save your profile. Please try again."
+    },
+    "contact": {
+      "title": "Contact settings",
+      "description": "Choose the contact methods you want to share so other users can reach you.",
+      "privacyTitle": "Privacy notice",
+      "privacyBody": "Your contact details may appear on your profile and posts. Only share information you are comfortable making public.",
+      "methods": {
+        "email": {
+          "name": "Email",
+          "description": "Reach out by email",
+          "placeholder": "Enter an email address"
+        },
+        "wechat": {
+          "name": "WeChat",
+          "description": "Reach out on WeChat",
+          "placeholder": "WeChat ID or nickname"
+        },
+        "qq": {
+          "name": "QQ",
+          "description": "Reach out on QQ",
+          "placeholder": "QQ number"
+        },
+        "telegram": {
+          "name": "Telegram",
+          "description": "Reach out on Telegram",
+          "placeholder": "Telegram username or handle"
+        },
+        "discord": {
+          "name": "Discord",
+          "description": "Reach out on Discord",
+          "placeholder": "username#1234"
+        },
+        "phone": {
+          "name": "Phone",
+          "description": "Reach out by phone",
+          "placeholder": "+86 138 0000 0000"
+        }
+      }
+    }
+  },
   "welcome": "Welcome",
   "login": "Login",
   "logout": "Logout",
   "settings": "Settings",
-  "forum": "Forum",
+  "forum": {
+    "label": "Forum",
+    "list": {
+      "pageTitle": "Forum - UniKorn",
+      "metaDescription": "Browse the latest posts, trending discussions, and course-related conversations on campus.",
+      "title": "Forum",
+      "createPost": "Create post",
+      "loading": "Loading...",
+      "loadMore": "Loading more...",
+      "endReached": "All posts have been loaded",
+      "empty": "No posts yet. Be the first to start the conversation.",
+      "sort": {
+        "latest": "Latest",
+        "hot": "Hot",
+        "oldest": "Oldest"
+      },
+      "errors": {
+        "loadFailed": "Failed to load the post list.",
+        "retryable": "Failed to load the post list. Please try again later."
+      }
+    },
+    "detail": {
+      "pageTitle": "Post Details",
+      "metaDescription": "Read the full post, preview attachments, and browse comments.",
+      "backToForum": "Back to forum",
+      "share": "Share",
+      "copied": "Copied",
+      "downloadAttachment": "Download attachment",
+      "previewLoading": "Loading preview...",
+      "deleteConfirmTitle": "Confirm deletion",
+      "deleteConfirmMessage": "Are you sure you want to delete this post? This action cannot be undone.",
+      "deleteSuccessMessage": "The post was deleted successfully.",
+      "fileSections": {
+        "pdf": "PDF",
+        "docx": "Word (.docx)",
+        "doc": "Word (.doc)",
+        "downloads": "Attachment downloads"
+      },
+      "fileFallbacks": {
+        "attachment": "Attachment",
+        "pdf": "PDF attachment",
+        "word": "Word attachment"
+      },
+      "imageKinds": {
+        "image": "Image",
+        "photo": "Photo",
+        "png": "PNG image",
+        "gif": "GIF",
+        "webp": "WebP image"
+      },
+      "imageSequence": "{type} {index}/{total}",
+      "errors": {
+        "deleteNoPermission": "You do not have permission to delete this post.",
+        "deleteFailedStatus": "Delete failed ({status})",
+        "network": "The network request failed. Please check your connection and try again.",
+        "deletePermission": "You do not have permission to perform this action.",
+        "deleteFailed": "Failed to delete the post. Please try again later.",
+        "copyFailed": "Copy failed. Please copy the link manually.",
+        "fetchFailed": "Failed to load the post ({status}): {error}",
+        "fetchNetwork": "Unable to reach the server. Please try again later."
+      }
+    },
+    "create": {
+      "pageTitle": "Create Post - UniKorn",
+      "metaDescription": "Create a new post, add tags, and upload attachments.",
+      "title": "Create post",
+      "backToCourse": "Back to course page"
+    },
+    "postCard": {
+      "reactions": "Reactions",
+      "comments": "Comments",
+      "views": "Views",
+      "readMore": "Read more",
+      "noExcerpt": "No excerpt yet..."
+    },
+    "comments": {
+      "title": "Comments ({count})",
+      "loginPromptPrefix": "Please",
+      "loginPromptSuffix": "to join the discussion.",
+      "empty": "No comments yet. Be the first to reply.",
+      "fetchFailed": "Failed to load comments.",
+      "reply": "Reply",
+      "delete": "Delete",
+      "replyPlaceholder": "Reply to this comment...",
+      "deleteConfirmTitle": "Delete comment",
+      "deleteConfirmMessage": "Are you sure you want to delete this comment? This action cannot be undone.",
+      "deleteSuccessTitle": "Deleted",
+      "deleteSuccessMessage": "The comment was deleted successfully.",
+      "deleteErrorTitle": "Delete failed",
+      "deleteNoPermission": "You do not have permission to delete this comment.",
+      "deleteFailedStatus": "Delete failed: {status}",
+      "deleteRetry": "Delete failed. Please try again.",
+      "userFallback": "User {id}",
+      "form": {
+        "placeholder": "Write your comment...",
+        "submit": "Post comment",
+        "submitting": "Posting...",
+        "loginRequired": "Please log in first.",
+        "emptyContent": "Comment content cannot be empty.",
+        "submitFailed": "Failed to submit the comment.",
+        "submitRetry": "Submission failed. Please try again."
+      }
+    },
+    "reactions": {
+      "statTitle": "{count} {label} reactions",
+      "pickEmoji": "Choose an emoji",
+      "loginToReact": "Please log in before reacting",
+      "moreEmojis": "More emojis",
+      "availableCount": "Available emojis ({count})",
+      "noAvailable": "No emojis available",
+      "retryLoad": "Retry"
+    }
+  },
+  "feedbackModule": {
+    "index": {
+      "pageTitle": "Feedback - UniKorn",
+      "metaDescription": "Browse published feedback, submit new suggestions, and keep improving public entries together.",
+      "title": "Feedback",
+      "cta": "Submit feedback",
+      "filters": {
+        "public": "Published {count}",
+        "mine": "My feedback {count}"
+      },
+      "errors": {
+        "publicLoadFailed": "Failed to load published feedback.",
+        "myLoadFailed": "Failed to load your feedback."
+      },
+      "emptyStates": {
+        "public": "No published feedback yet.",
+        "mineTitle": "You have not submitted any feedback yet",
+        "mineHint": "If something on the site felt unclear or frustrating, this is the right place to record it and suggest a better direction."
+      }
+    },
+    "card": {
+      "emptyExcerpt": "This feedback does not have a body yet.",
+      "authorFallback": "User #{id}",
+      "author": "Author: {author}",
+      "version": "Version {count}",
+      "comments": "{count} comments",
+      "mergeRequests": "{count} proposals"
+    },
+    "create": {
+      "pageTitle": "Submit Feedback - UniKorn",
+      "metaDescription": "Submit new feedback and help UniKorn improve the site experience.",
+      "back": "Back to feedback",
+      "title": "Submit feedback",
+      "subtitle": "A clearer description makes review faster and gives later collaborators a stronger starting point.",
+      "noteTitle": "Before you submit",
+      "noteBody": "Your feedback first enters a review queue. After admins confirm it is ready for public discussion, it will appear in the feedback hub with comments and version history preserved.",
+      "tips": {
+        "context": "Explain where the issue happened, what page or flow it came from, and what you expected instead.",
+        "impact": "If it affected the experience, mention who it impacts or how often it happens.",
+        "followUp": "After publication, other students can comment or propose collaborative edits to improve the write-up together."
+      }
+    },
+    "form": {
+      "titleLabel": "Feedback title",
+      "titlePlaceholder": "Summarize the issue in one sentence",
+      "contentLabel": "Feedback body (Markdown)",
+      "contentHint": "Include the context, what happened, what you expected, and any possible fix ideas if you have them.",
+      "submit": "Submit feedback",
+      "submitting": "Submitting...",
+      "titleRequired": "Please enter a feedback title.",
+      "contentRequired": "Please enter the feedback body.",
+      "submitFailed": "Submission failed. Please try again later."
+    },
+    "status": {
+      "published": "Published",
+      "closed": "Closed",
+      "pending_review": "Pending review",
+      "rejected": "Rejected"
+    },
+    "api": {
+      "listFailed": "Failed to load feedback.",
+      "listMineFailed": "Failed to load your feedback.",
+      "detailFailed": "Failed to load feedback details.",
+      "versionsFailed": "Failed to load version history.",
+      "createFailed": "Failed to submit feedback.",
+      "commentCreateFailed": "Failed to post the comment.",
+      "mergeRequestCreateFailed": "Failed to create the merge proposal.",
+      "mergeRequestDetailFailed": "Failed to load the merge proposal.",
+      "mergeRequestUpdateFailed": "Failed to update the merge proposal body.",
+      "mergeCommentCreateFailed": "Failed to post the merge discussion comment.",
+      "authorRequestChangesFailed": "Failed to request changes.",
+      "authorRejectFailed": "Failed to reject the merge proposal.",
+      "authorAcceptFailed": "Failed to submit the proposal for admin review."
+    },
+    "adminApi": {
+      "listFeedbacksFailed": "Failed to load feedback records.",
+      "listPendingFeedbackFailed": "Failed to load pending feedback.",
+      "listMergeRequestsFailed": "Failed to load merge proposal records.",
+      "listPendingMergeRequestsFailed": "Failed to load pending merge proposals.",
+      "approveFeedbackFailed": "Failed to publish the feedback.",
+      "rejectFeedbackFailed": "Failed to reject the feedback.",
+      "closeFeedbackFailed": "Failed to close the feedback.",
+      "reopenFeedbackFailed": "Failed to reopen the feedback.",
+      "endCommentsFailed": "Failed to end comments.",
+      "resumeCommentsFailed": "Failed to resume comments.",
+      "approveMergeRequestFailed": "Failed to approve the merge proposal.",
+      "rejectMergeRequestFailed": "Failed to reject the merge proposal.",
+      "hideCommentFailed": "Failed to hide the comment."
+    },
+    "comments": {
+      "title": "Discussion",
+      "closed": "Comments are closed for this feedback.",
+      "placeholder": "Share your thoughts on this feedback...",
+      "disabledPlaceholder": "Comments are closed",
+      "submit": "Post comment",
+      "login": "Log in to join the discussion on this feedback.",
+      "empty": "No comments yet. Start the conversation.",
+      "hidden": "This comment has been hidden by moderation.",
+      "hiddenNote": "This comment was handled by an admin.",
+      "userFallback": "User #{id}"
+    },
+    "versionHistory": {
+      "title": "Version history",
+      "version": "V{count}",
+      "empty": "No historical versions yet."
+    },
+    "detail": {
+      "pageTitle": "Feedback Details - UniKorn",
+      "metaDescription": "Review the current feedback body, version history, merge proposals, and discussion.",
+      "back": "Back to feedback",
+      "subtitle": "This page keeps the current body, collaborative proposals, and discussion in one place so the same feedback can keep evolving.",
+      "updatedAt": "Last updated {date}",
+      "currentBodyTitle": "Current body",
+      "currentBodyHint": "This is the version currently shown to everyone. Accepted proposals will continue to roll into this body.",
+      "mergeTitle": "Public merge proposals",
+      "mergeHint": "After submission, proposals stay public so the feedback author can revise them further and decide whether to send them to admin review.",
+      "noMerges": "No merge proposals yet.",
+      "mergeSummaryLabel": "Change summary",
+      "mergeSummaryPlaceholder": "Summarize what you want to improve in one sentence",
+      "mergeBodyLabel": "Proposal body (pre-filled with the current Markdown)",
+      "mergeSubmit": "Create proposal",
+      "mergeSubmitting": "Submitting...",
+      "mergeSuccess": "The proposal has been submitted and the feedback author will be notified.",
+      "mergeLogin": "Log in to create a merge proposal.",
+      "sidebarTitle": "Feedback overview",
+      "feedbackId": "Feedback ID",
+      "statusLabel": "Status",
+      "versionCountLabel": "Versions",
+      "commentCountLabel": "Comments",
+      "errors": {
+        "loadFailed": "Failed to load feedback details.",
+        "commentFailed": "Failed to post the comment.",
+        "mergeBodyRequired": "Please enter the proposal body.",
+        "mergeSubmitFailed": "Failed to create the proposal."
+      }
+    },
+    "mergeRequest": {
+      "pageTitle": "Proposal Details - UniKorn",
+      "metaDescription": "Review a merge proposal, author decisions, and discussion history.",
+      "back": "Back to feedback details",
+      "feedbackLinkLabel": "From feedback #{id}",
+      "summaryFallback": "This proposal does not include an additional summary.",
+      "proposer": "Proposer: User #{id}",
+      "baseVersion": "Base version: V{version}",
+      "bodyTitle": "Proposal body",
+      "bodyHint": "Every change remains attached to this proposal. If the author accepts it, it moves on to admin review.",
+      "reviewTitle": "Author review area",
+      "reviewHint": "You can revise the proposal body first, then request changes, reject it, or send it to admin review.",
+      "notePlaceholder": "Leave a note for the proposer or admins (optional)",
+      "saveDraft": "Save body first",
+      "saving": "Processing...",
+      "requestChanges": "Request changes",
+      "reject": "Reject",
+      "submitForAdmin": "Submit for admin review",
+      "sidebarTitle": "Proposal status",
+      "statusLabel": "Current status",
+      "createdAt": "Created on: {date}",
+      "authorNote": "Author note: {note}",
+      "adminNote": "Admin note: {note}",
+      "backToHub": "Back to feedback hub",
+      "status": {
+        "open": "Open",
+        "author_changes_requested": "Changes requested by author",
+        "author_rejected": "Rejected by author",
+        "author_accepted_pending_admin": "Pending admin review",
+        "admin_rejected": "Rejected by admin",
+        "merged": "Merged",
+        "withdrawn": "Withdrawn"
+      },
+      "success": {
+        "draftSaved": "The proposal body has been updated.",
+        "requestChanges": "Changes have been requested for this proposal.",
+        "rejected": "You rejected this proposal.",
+        "submittedForAdmin": "This proposal has been sent for admin review."
+      },
+      "errors": {
+        "loadFailed": "Failed to load the proposal details.",
+        "saveFailed": "Failed to save the proposal body.",
+        "actionFailed": "Failed to process the proposal.",
+        "commentFailed": "Failed to post the discussion comment."
+      }
+    }
+  },
   "home": "Home",
   "users": "Users",
   "activity": "Activity",
-  "Search for posts, users, courses..." : "Search for posts, users, courses...",
-  "Visitor user" : "Visitor user",
-  "register" : "Register",
-  "courses": "Courses",
+  "Search for posts, users, courses...": "Search for posts, users, courses...",
+  "Visitor user": "Visitor user",
+  "register": "Register",
   "gugu": "Chat",
   "Form a team": "Form a team",
   "Scheduler": "Scheduling Assistant",
-  "Contact information Settings" : "Contact information Settings",
-  "Set your public contact information, other users can contact you through these methods": "Set your public contact information, other users can contact you through these methods",
+  "Contact information Settings": "Contact information settings",
+  "Set your public contact information, other users can contact you through these methods": "Set your public contact information so other users can reach you through these methods.",
   "Email": "Email",
   "Contact via email": "Contact via email",
   "WeChat": "WeChat",
@@ -28,20 +1435,20 @@
   "Discord": "Discord",
   "Contact via Discord": "Contact via Discord",
   "Phone": "Phone",
-  "Contact via Phone": "Contact via Phone",
-  "Privacy Notice": "Privacy Notice",
-  "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.": "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.",
-  "Team Matching": "Team Matching",
-  "Profile Settings": "Profile Settings",
-  "Discover Projects": "Discover Projects",
+  "Contact via Phone": "Contact via phone",
+  "Privacy Notice": "Privacy notice",
+  "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.": "Your contact information will be visible on your profile and posts. Please share only what you are comfortable making public.",
+  "Team Matching": "Team matching",
+  "Profile Settings": "Profile settings",
+  "Discover Projects": "Discover projects",
   "Projects": "Projects",
-  "Create Project": "Create Project",
-  "Edit Project": "Edit Project",
-  "Project Title": "Project Title",
-  "Project Description": "Project Description",
-  "My Projects": "My Projects",
-  "My Applications": "My Applications",
-  "Project Link": "Project Link",
+  "Create Project": "Create project",
+  "Edit Project": "Edit project",
+  "Project Title": "Project title",
+  "Project Description": "Project description",
+  "My Projects": "My projects",
+  "My Applications": "My applications",
+  "Project Link": "Project link",
   "Profile is complete": "Profile is complete",
   "Required": "Required",
   "Completed": "Completed",
@@ -49,5 +1456,91 @@
   "Let's get to know you": "Let's get to know you",
   "Add your skills": "Add your skills",
   "Setup complete! Start matching": "Setup complete! Start matching",
-  "Find partners and interesting projects": "Find partners and interesting projects"
+  "Find partners and interesting projects": "Find partners and interesting projects",
+  "scheduler": {
+    "title": "Scheduling Assistant",
+    "dashboard": "Dashboard",
+    "map": "Course Map",
+    "cart": "Course Cart",
+    "search": "Search courses",
+    "add": "Add",
+    "addCourse": "Add course",
+    "remove": "Remove",
+    "noResults": "No courses found",
+    "noResultsDescription": "Try another course code, title keyword, or common subject.",
+    "emptyCart": "Your cart is empty",
+    "emptyCartDescription": "Add courses you want to compare, and the planner will generate valid schedules.",
+    "noSolution": "No valid solution found",
+    "plan": "Plan",
+    "filter": "Filter",
+    "display": "Display",
+    "loginHint": "Log in to save your course selections",
+    "guestHint": "Log in to save your cart across devices. You can still explore schedules as a guest.",
+    "loading": "Loading...",
+    "loadingMap": "Loading map...",
+    "searching": "Searching...",
+    "searchPlaceholder": "Search by course code or title...",
+    "plannerEyebrow": "Course tool",
+    "plannerSubtitle": "Choose a semester, add courses, compare section combinations, and find schedules without conflicts.",
+    "openLatest": "Open latest semester",
+    "availableSemesters": "Semesters",
+    "availableSections": "Sections",
+    "latestSemester": "Latest semester",
+    "enterPlanner": "Open planner",
+    "backToSemesters": "Back to semesters",
+    "workspaceSubtitle": "Add courses, switch between plans, block unavailable time, and choose what details appear on the timetable.",
+    "selectedCourses": "Courses",
+    "planCount": "Plans",
+    "totalCredits": "Credits",
+    "cartSubtitle": "Search by course code or title, or start from a common subject.",
+    "cartSearchEmptyTitle": "Search courses for your cart",
+    "cartSearchEmptyDescription": "Enter a course code, course title, or pick one of the common subject chips above.",
+    "emptyTimetableTitle": "No courses on the timetable yet",
+    "emptyTimetableDescription": "Add courses from the course cart, and generated class times will appear here.",
+    "firstPlan": "First plan",
+    "previousPlan": "Previous plan",
+    "nextPlan": "Next plan",
+    "lastPlan": "Last plan",
+    "mapSearchPlaceholder": "Search the course map...",
+    "searchFailed": "Course search failed. Please try again.",
+    "cartFailed": "The course cart could not be updated. Please try again.",
+    "cartAdded": "{course} has been added to the {semester} planner cart.",
+    "cartRemoved": "{course} has been removed from the {semester} planner cart.",
+    "cartAlreadyAdded": "{course} is already in the {semester} planner cart.",
+    "cartCourseUnavailable": "{course} is not offered in the active scheduling semester {semester}, so it cannot be added.",
+    "mapFailed": "Course map failed to load. Please try again.",
+    "noSemesters": "No semesters are available yet.",
+    "sections": "{count} sections",
+    "credits": "{count} credits",
+    "creditsShort": "{count} cr",
+    "main": "Main",
+    "klms": "KLMS",
+    "layer": "Layer {layer}",
+    "all": "All",
+    "none": "None",
+    "details": "Details",
+    "emptyCartHint": "Add courses from the cart to start building a schedule.",
+    "allDisabled": "Enable at least one course to build a schedule.",
+    "unavailableLayer": "One selected course layer has no available sections.",
+    "close": "Close",
+    "description": "Description",
+    "prerequisites": "Prerequisites",
+    "corequisites": "Corequisites",
+    "exclusions": "Exclusions",
+    "notAvailable": "Not available",
+    "displayName": "Course name",
+    "displaySection": "Section",
+    "displayLocation": "Location",
+    "displayInstructor": "Instructor",
+    "displayDuration": "Time",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  }
 }

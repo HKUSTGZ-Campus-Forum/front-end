@@ -1,11 +1,14 @@
 <script setup>
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useHead, useI18n, useLocalePath } from "#imports";
 import PostMessage from "~/components/forum/PostMessage.vue";
 import { getSingleQueryValue } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
 
+const { t } = useI18n();
+const localePath = useLocalePath();
 const route = useRoute();
 const router = useRouter();
 const lockedTags = computed(() => {
@@ -16,10 +19,15 @@ const lockedTags = computed(() => {
 });
 const returnTo = computed(() => getSingleQueryValue(route.query.returnTo) || null);
 
+useHead(() => ({
+  title: t("forum.create.pageTitle"),
+  meta: [{ name: "description", content: t("forum.create.metaDescription") }],
+}));
+
 const handlePostSuccess = (postId) => {
   if (returnTo.value) return;
   setTimeout(() => {
-    router.push(`/forum/posts/${postId}`);
+    router.push(localePath(`/forum/posts/${postId}`));
   }, 1000);
 };
 </script>
@@ -27,13 +35,13 @@ const handlePostSuccess = (postId) => {
 <template>
   <div class="kg-post-message">
     <div class="kg-back-bar">
-      <NuxtLink :to="returnTo || '/forum'" class="kg-back-link">
+      <NuxtLink :to="returnTo || localePath('/forum')" class="kg-back-link">
         <ForumUiIcon name="back" class="kg-back-link__icon" />
-        <span>{{ returnTo ? '返回课程页面' : '返回论坛' }}</span>
+        <span>{{ returnTo ? t("forum.create.backToCourse") : t("forum.detail.backToForum") }}</span>
       </NuxtLink>
     </div>
     <div class="kg-card">
-      <h1 class="kg-page-title">发布帖子</h1>
+      <h1 class="kg-page-title">{{ t("forum.create.title") }}</h1>
       <PostMessage
         :locked-tags="lockedTags"
         :return-to="returnTo"

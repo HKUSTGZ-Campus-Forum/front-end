@@ -41,9 +41,16 @@ export default defineNuxtConfig({
       },
     ],
     defaultLocale: "zh",
-    strategy: "no_prefix",
-    langDir: "locales/",
+    strategy: "prefix_except_default",
     lazy: true,
+    langDir: "locales",
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: "unikorn_locale",
+      redirectOn: "root",
+      alwaysRedirect: false,
+      fallbackLocale: "zh",
+    },
     bundle: {
       optimizeTranslationDirective: false
     }
@@ -110,6 +117,12 @@ export default defineNuxtConfig({
       ],
     },
   },
+  routeRules: {
+    "/admin": { ssr: false, prerender: false },
+    "/admin/**": { ssr: false, prerender: false },
+    "/en/admin": { ssr: false, prerender: false },
+    "/en/admin/**": { ssr: false, prerender: false },
+  },
   css: [
     "~/assets/css/variables.scss",
     "~/assets/css/global.scss",
@@ -132,10 +145,20 @@ export default defineNuxtConfig({
       ignore: [
         // 忽略特定路径，不进行预渲染
         "/profile", // 当前登录用户主页（会重定向）
+        "/en/profile",
         "/user", // 排除用户相关页面
         "/user/**", // 排除用户相关的所有子路径
         "/users/**", // 排除动态用户主页
-        // "/admin/**", // 排除管理员路径
+        "/admin/**", // 排除管理员路径
+        "/en/admin/**",
+        "/admin/identity-management",
+        "/en/admin/identity-management",
+        "/notifications",
+        "/en/notifications",
+        "/contest/admin",
+        "/en/contest/admin",
+        "/setting/identity",
+        "/en/setting/identity",
         "/setting/**", // 排除设置页面
       ],
     },
@@ -145,7 +168,11 @@ export default defineNuxtConfig({
     public: {
       appVersion: pkg.version,
       appBuildVersion,
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? "http://127.0.0.1:3000" : "https://unikorn.axfff.com"),
+      apiBaseUrl:
+        process.env.NUXT_PUBLIC_API_BASE_URL ||
+        (process.env.NODE_ENV === "development"
+          ? "http://localhost:3000"
+          : "https://unikorn.axfff.com"),
     },
   },
   ssr: true,

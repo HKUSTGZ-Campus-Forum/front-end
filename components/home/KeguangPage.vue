@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useApi } from "~/composables/useApi";
 import CarouselBanner from "~/components/home/CarouselBanner.vue";
@@ -9,11 +9,12 @@ import UserAvatar from "~/components/user/UserAvatar.vue";
 const router = useRouter();
 const { fetchWithAuth, fetchPublic } = useApi();
 const { isLoggedIn } = useAuth();
+const { t, locale } = useI18n();
+const { getLocalePath } = useAppLocale();
+const { formatRelativeTime } = useDateFormat();
 
 const GUGU_INITIAL_LIMIT = 6;
 const GUGU_PAGE_LIMIT = 20;
-
-// ── 热门帖子 ───────────────────────────────────────────────────────
 const hotPosts = ref([]);
 const isLoading = ref(true);
 
@@ -28,13 +29,11 @@ const fetchHotPosts = async () => {
       hotPosts.value = data.hot_posts || [];
     }
   } catch {
-    // 静默失败，保留空列表
   } finally {
     isLoading.value = false;
   }
 };
 
-// ── 咕咕消息 ──────────────────────────────────────────────────────
 const kgAllGuguMessages = ref<any[]>([]);
 const kgGuguLoading = ref(false);
 const kgGuguLoadingOlder = ref(false);
@@ -44,10 +43,28 @@ const kgGuguSending = ref(false);
 const kgChatInputRef = ref<HTMLTextAreaElement | null>(null);
 const kgReplyTarget = ref<any | null>(null);
 
-const getReplyDisplayName = (message: any) => message?.author || '匿名用户';
+const relatedLinks = computed(() => [
+  {
+    key: "wiki",
+    label: t("homePage.relatedLinks.wiki"),
+    href: locale.value === "en" ? "https://wiki.hkust-gz.top/en/home" : "https://wiki.hkust-gz.top",
+  },
+  {
+    key: "portal",
+    label: t("homePage.relatedLinks.portal"),
+    href: "https://myportal.hkust-gz.edu.cn",
+  },
+  {
+    key: "canvas",
+    label: t("homePage.relatedLinks.canvas"),
+    href: "https://hkust-gz.instructure.com",
+  },
+]);
+
+const getReplyDisplayName = (message: any) => message?.author || t("common.unknownAuthor");
 const getReplyPreview = (message: any, maxLength = 60) => {
   const raw = String(message?.content || '').replace(/\s+/g, ' ').trim();
-  if (!raw) return '原消息已不可用';
+  if (!raw) return t("homePage.chat.replyUnavailable");
   return raw.length > maxLength ? `${raw.slice(0, maxLength)}...` : raw;
 };
 
@@ -97,7 +114,6 @@ const fetchKgGuguOlderPage = async () => {
       kgGuguHasMoreOlder.value = Boolean(data.has_more);
     }
   } catch {
-    // 保留已加载列表，不关闭 has_more，便于用户重试
   } finally {
     kgGuguLoadingOlder.value = false;
   }
@@ -108,7 +124,7 @@ const sendKgGuguMessage = async () => {
   if (!text) return;
 
   if (!isLoggedIn.value) {
-    router.push('/login');
+    router.push(getLocalePath("/login"));
     return;
   }
 
@@ -132,7 +148,7 @@ const sendKgGuguMessage = async () => {
       }
     }
   } catch (err) {
-    console.error('发送咕咕消息失败', err);
+    console.error("Failed to send gugu message", err);
   } finally {
     kgGuguSending.value = false;
   }
@@ -155,23 +171,11 @@ const clearKgReplyTarget = () => {
 
 const goToKgUserProfile = (userId?: number | string) => {
   if (!userId) return;
-  router.push(`/users/${userId}`);
+  router.push(getLocalePath(`/users/${userId}`));
 };
 
-// ── 工具函数 ──────────────────────────────────────────────────────
 const formatTimeAgo = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "刚刚";
-  if (diffMins < 60) return `${diffMins}分钟前`;
-  if (diffHours < 24) return `${diffHours}小时前`;
-  if (diffDays < 7) return `${diffDays}天前`;
-  return date.toLocaleDateString("zh-CN");
+  return formatRelativeTime(dateString);
 };
 
 onMounted(() => {
@@ -182,36 +186,38 @@ onMounted(() => {
 
 <template>
   <div class="kg-home">
-
-    <!-- Section 1：轮播横幅 + 相关链接 -->
     <div class="kg-card kg-top-card">
       <div class="kg-banner-row">
         <div class="kg-carousel-wrap">
           <CarouselBanner />
         </div>
         <div class="kg-links-panel">
-          <p class="kg-links-title">相关链接</p>
-          <a href="https://wiki.hkust-gz.top/en/home" target="_blank" class="kg-link-btn">科广Wiki</a>
-          <a href="https://myportal.hkust-gz.edu.cn" target="_blank" class="kg-link-btn">myPortal</a>
-          <a href="https://hkust-gz.instructure.com" target="_blank" class="kg-link-btn">Canvas</a>
+          <p class="kg-links-title">{{ t("homePage.relatedLinks.title") }}</p>
+          <a
+            v-for="link in relatedLinks"
+            :key="link.key"
+            :href="link.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="kg-link-btn"
+          >
+            {{ link.label }}
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Section 2：热门帖子卡片网格 -->
     <div class="kg-card kg-posts-card">
       <PostCardGrid :posts="hotPosts.slice(0, 3)" :loading="isLoading" />
     </div>
 
-    <!-- Section 3：咕咕聊天预览（内嵌展示） -->
     <div class="kg-card kg-chat-card">
-      <h2 class="kg-chat-title">聊聊新鲜事儿～咕咕</h2>
+      <h2 class="kg-chat-title">{{ t("homePage.chat.title") }}</h2>
 
-      <!-- 输入区 -->
       <div v-if="kgReplyTarget" class="kg-chat-reply-banner">
         <div class="kg-chat-reply-banner__content">
           <span class="kg-chat-reply-banner__label">
-            正在回复 {{ getReplyDisplayName(kgReplyTarget) }}
+            {{ t("homePage.chat.replyingTo", { name: getReplyDisplayName(kgReplyTarget) }) }}
           </span>
           <span class="kg-chat-reply-banner__text">
             {{ getReplyPreview(kgReplyTarget) }}
@@ -222,7 +228,7 @@ onMounted(() => {
           class="kg-chat-reply-banner__clear"
           @click="clearKgReplyTarget"
         >
-          取消
+          {{ t("actions.cancel") }}
         </button>
       </div>
       <div class="kg-chat-input-row">
@@ -230,7 +236,9 @@ onMounted(() => {
           ref="kgChatInputRef"
           class="kg-chat-input"
           v-model="kgGuguInputText"
-          :placeholder="kgReplyTarget ? `回复 ${getReplyDisplayName(kgReplyTarget)}......` : '写下你想说的话吧......'"
+          :placeholder="kgReplyTarget
+            ? t('homePage.chat.replyPlaceholder', { name: getReplyDisplayName(kgReplyTarget) })
+            : t('homePage.chat.placeholder')"
           rows="2"
           @keydown.enter.exact.prevent="sendKgGuguMessage"
           @keydown.enter.shift.exact="() => {}"
@@ -239,14 +247,15 @@ onMounted(() => {
           class="kg-chat-send-btn"
           @click="sendKgGuguMessage"
           :disabled="kgGuguSending"
-        >咕了个咕～</button>
+        >
+          {{ kgGuguSending ? t("actions.sending") : t("homePage.chat.send") }}
+        </button>
       </div>
 
-      <!-- 消息列表：时间降序，最新在上 -->
       <div class="kg-messages-list">
-        <div v-if="kgGuguLoading" class="kg-msg-placeholder">加载消息中...</div>
+        <div v-if="kgGuguLoading" class="kg-msg-placeholder">{{ t("homePage.chat.loading") }}</div>
         <div v-else-if="kgAllGuguMessages.length === 0" class="kg-msg-placeholder">
-          还没有消息，快来发第一条吧！
+          {{ t("homePage.chat.empty") }}
         </div>
         <template v-else>
           <div
@@ -257,7 +266,7 @@ onMounted(() => {
             <div class="kg-msg-avatar">
               <UserAvatar
                 :avatar-url="msg.author_avatar"
-                :username="msg.author || '匿名用户'"
+                :username="msg.author || t('common.unknownAuthor')"
                 :user-id="msg.author_id"
                 size="md"
                 :clickable="Boolean(msg.author_id)"
@@ -267,14 +276,14 @@ onMounted(() => {
             </div>
             <div class="kg-msg-body">
               <div class="kg-msg-meta">
-                <span class="kg-msg-author">{{ msg.author || '匿名用户' }}</span>
+                <span class="kg-msg-author">{{ msg.author || t("common.unknownAuthor") }}</span>
                 <span class="kg-msg-time">{{ formatTimeAgo(msg.created_at) }}</span>
-                <span class="kg-msg-reply" @click="replyToKgMessage(msg)">回复</span>
+                <span class="kg-msg-reply" @click="replyToKgMessage(msg)">{{ t("homePage.chat.replyAction") }}</span>
               </div>
               <div class="kg-msg-text">
                 <div v-if="msg.reply_to" class="kg-msg-quote">
                   <div class="kg-msg-quote__author">
-                    回复 {{ getReplyDisplayName(msg.reply_to) }}
+                    {{ t("homePage.chat.quoteReplyTo", { name: getReplyDisplayName(msg.reply_to) }) }}
                   </div>
                   <div class="kg-msg-quote__text">
                     {{ getReplyPreview(msg.reply_to, 100) }}
@@ -291,18 +300,16 @@ onMounted(() => {
             :class="{ 'kg-view-more-chat--disabled': kgGuguLoadingOlder }"
             @click="fetchKgGuguOlderPage"
           >
-            {{ kgGuguLoadingOlder ? '加载中…' : '查看更多历史消息' }}
+            {{ kgGuguLoadingOlder ? t("common.loading") : t("homePage.chat.loadMore") }}
           </div>
-          <div v-else class="kg-no-more-chat">已显示全部历史消息</div>
+          <div v-else class="kg-no-more-chat">{{ t("homePage.chat.noMore") }}</div>
         </template>
       </div>
     </div>
-
-  </div><!-- /.kg-home -->
+  </div>
 </template>
 
 <style lang="scss" scoped>
-// ── 页面容器 ──────────────────────────────────────────────────────
 .kg-home {
   width: 100%;
   max-width: 1160px;
@@ -313,16 +320,12 @@ onMounted(() => {
   gap: 14px;
 }
 
-// ── 公用卡片壳 ───────────────────────────────────────────────────
 .kg-card {
   background: #FFFFFF;
   border-radius: 16px;
   box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
 }
 
-// ═══════════════════════════════════════════
-// Section 1：轮播横幅 + 相关链接
-// ═══════════════════════════════════════════
 .kg-top-card {
   padding: 20px;
 }
@@ -391,16 +394,10 @@ onMounted(() => {
   }
 }
 
-// ═══════════════════════════════════════════
-// Section 2：热门帖子
-// ═══════════════════════════════════════════
 .kg-posts-card {
   padding: 20px 20px 16px;
 }
 
-// ═══════════════════════════════════════════
-// Section 3：咕咕聊天
-// ═══════════════════════════════════════════
 .kg-chat-card {
   padding: 20px;
 }

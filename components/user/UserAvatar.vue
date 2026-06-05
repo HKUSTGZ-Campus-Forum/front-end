@@ -8,7 +8,7 @@
     <img
       v-if="currentAvatarUrl && !imageError"
       :src="currentAvatarUrl"
-      :alt="`${resolvedUsername}的头像`"
+      :alt="t('avatar.user.alt', { username: resolvedUsername })"
       class="avatar-image"
       @error="handleImageError"
       @load="handleImageLoad"
@@ -58,7 +58,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  username: '用户',
+  username: '',
   size: 'md',
   clickable: false,
   showTooltip: true,
@@ -69,6 +69,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+const { t } = useI18n()
 const { fetchPublic, getApiUrl } = useApi()
 
 const imageError = ref(false)
@@ -97,7 +98,7 @@ const normalizedSize = computed<AvatarSize>(() => {
 })
 
 const resolvedUsername = computed(() => {
-  return props.username || props.user?.username || '用户'
+  return props.username || props.user?.username || t('common.user')
 })
 
 const resolvedUserId = computed(() => {
@@ -267,7 +268,7 @@ const proactiveRefresh = async () => {
 
 const initials = computed(() => {
   const name = resolvedUsername.value.trim()
-  if (!name) return '用'
+  if (!name) return 'U'
 
   if (/[\u4e00-\u9fff]/.test(name)) {
     return name.charAt(0)

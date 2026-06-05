@@ -19,13 +19,30 @@ export function useApi() {
   // Helper function to get full API URL
   function getApiUrl(url: string): string {
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    const baseUrl = String(config.public.apiBaseUrl || '').replace(/\/$/, '');
 
     // 相对路径：浏览器走同源 /api/...；SSR 拼上配置的绝对 base
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       if (import.meta.client) {
+        if (typeof window !== 'undefined' && baseUrl) {
+          try {
+            const base = new URL(baseUrl);
+            const loc = window.location;
+            const isLocalDevOrigin =
+              import.meta.dev &&
+              (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1');
+            if (isLocalDevOrigin && cleanUrl.startsWith('/api')) {
+              return cleanUrl;
+            }
+            if (base.origin !== window.location.origin) {
+              return `${baseUrl}${cleanUrl}`;
+            }
+          } catch {
+            /* ignore malformed base url */
+          }
+        }
         return cleanUrl;
       }
-      const baseUrl = String(config.public.apiBaseUrl || '').replace(/\/$/, '');
       return baseUrl ? `${baseUrl}${cleanUrl}` : cleanUrl;
     }
 

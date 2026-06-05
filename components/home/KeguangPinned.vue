@@ -8,6 +8,7 @@ import UserAvatar from '~/components/user/UserAvatar.vue'
 const { t } = useI18n()
 const router = useRouter()
 const { isLoggedIn, logout, user } = useAuth()
+const { locale, availableLocales, getLocalePath, switchToLocale } = useAppLocale()
 
 const props = defineProps<{
   sidebarExpanded?: boolean
@@ -23,12 +24,12 @@ const isLoggingOut = ref(false)
 
 const handleSearch = (query: string) => {
   if (query.trim()) {
-    router.push({ path: '/search', query: { q: query.trim() } })
+    router.push({ path: getLocalePath('/search'), query: { q: query.trim() } })
   }
 }
 
 const handleLoginOrLogout = () => {
-  navigateTo('/login')
+  navigateTo(getLocalePath('/login'))
 }
 
 const handleMenuLogout = async () => {
@@ -37,7 +38,7 @@ const handleMenuLogout = async () => {
   try {
     await logout()
   } catch {
-    // logout 内部已处理清理与跳转
+    // logout already handles cleanup and redirect
   } finally {
     isLoggingOut.value = false
   }
@@ -46,25 +47,37 @@ const handleMenuLogout = async () => {
 
 <template>
   <nav class="kg-topnav" :style="navStyle">
-    <a class="kg-topnav__brand" href="/">
+    <NuxtLink class="kg-topnav__brand" :to="getLocalePath('/')">
       <div class="kg-topnav__brand-logo">
         <img src="/icons/topbar_logo.svg" alt="uniKorn" />
       </div>
-    </a>
+    </NuxtLink>
 
     <div class="kg-topnav__right">
       <div class="kg-topnav__search">
         <SearchDropdown
           v-model="searchQuery"
-          :placeholder="t('Search for posts, users, courses...')"
+          :placeholder="t('search.placeholder')"
           :show-history="true"
           @search="handleSearch"
         />
       </div>
 
+      <div class="kg-topnav__locale-switch">
+        <button
+          v-for="item in availableLocales"
+          :key="item.code"
+          type="button"
+          :class="['kg-topnav__locale-btn', { active: locale === item.code }]"
+          @click="switchToLocale(item.code)"
+        >
+          {{ item.code === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}
+        </button>
+      </div>
+
       <div class="kg-topnav__user">
         <div v-if="isLoggedIn && user" class="kg-topnav__user-menu">
-          <NuxtLink :to="`/users/${user.id}`" class="kg-topnav__avatar-link">
+          <NuxtLink :to="getLocalePath(`/users/${user.id}`)" class="kg-topnav__avatar-link">
             <UserAvatar
               :avatar-url="user.profile_picture_url"
               :username="user.username"
@@ -77,21 +90,21 @@ const handleMenuLogout = async () => {
           <div class="kg-topnav__menu-panel">
             <div class="kg-topnav__menu-header">
               <span class="kg-topnav__menu-name">{{ user.username }}</span>
-              <span class="kg-topnav__menu-subtitle">账号管理</span>
+              <span class="kg-topnav__menu-subtitle">{{ t('layout.accountCenter') }}</span>
             </div>
 
             <div class="kg-topnav__menu-list">
-              <NuxtLink to="/setting/account" class="kg-topnav__menu-item">
-                <span class="kg-topnav__menu-icon">⚙️</span>
-                <span>账号设置</span>
+              <NuxtLink :to="getLocalePath('/setting/account')" class="kg-topnav__menu-item">
+                <ForumUiIcon name="settings" class="kg-topnav__menu-icon" />
+                <span>{{ t('layout.accountSettings') }}</span>
               </NuxtLink>
-              <NuxtLink to="/setting/identity" class="kg-topnav__menu-item">
-                <span class="kg-topnav__menu-icon">🎓</span>
-                <span>身份认证</span>
+              <NuxtLink :to="getLocalePath('/setting/identity')" class="kg-topnav__menu-item">
+                <ForumUiIcon name="academic-cap" class="kg-topnav__menu-icon" />
+                <span>{{ t('layout.identityVerification') }}</span>
               </NuxtLink>
-              <NuxtLink to="/setting/theme" class="kg-topnav__menu-item">
-                <span class="kg-topnav__menu-icon">🎨</span>
-                <span>主题设置</span>
+              <NuxtLink :to="getLocalePath('/setting/theme')" class="kg-topnav__menu-item">
+                <ForumUiIcon name="palette" class="kg-topnav__menu-icon" />
+                <span>{{ t('layout.themeSettings') }}</span>
               </NuxtLink>
               <button
                 type="button"
@@ -99,14 +112,14 @@ const handleMenuLogout = async () => {
                 :disabled="isLoggingOut"
                 @click="handleMenuLogout"
               >
-                <span class="kg-topnav__menu-icon">🚪</span>
-                <span>{{ isLoggingOut ? '正在退出…' : '退出登录' }}</span>
+                <ForumUiIcon name="logout" class="kg-topnav__menu-icon" />
+                <span>{{ isLoggingOut ? t('layout.loggingOut') : t('actions.logout') }}</span>
               </button>
             </div>
           </div>
         </div>
         <button type="button" v-else class="login-btn-text" @click="handleLoginOrLogout">
-          {{ t('login') }}
+          {{ t('actions.login') }}
         </button>
       </div>
     </div>
@@ -119,8 +132,8 @@ const handleMenuLogout = async () => {
   top: 0;
   right: 0;
   height: 84px;
-  background: #FFFFFF;
-  box-shadow: 0 1px 4px rgba(40, 57, 101, 0.08);
+  background: var(--surface-primary);
+  box-shadow: var(--topbar-shadow);
   display: flex;
   align-items: center;
   padding: 0 32px 0 28px;
@@ -151,6 +164,32 @@ const handleMenuLogout = async () => {
   align-items: center;
   gap: 1.5rem;
   margin-left: auto;
+}
+
+.kg-topnav__locale-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kg-topnav__locale-btn {
+  min-width: 48px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-secondary);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active,
+  &:hover {
+    color: var(--interactive-active);
+    border-color: var(--border-focus);
+    background: var(--bg-secondary);
+  }
 }
 
 .kg-topnav__search {
@@ -194,14 +233,14 @@ const handleMenuLogout = async () => {
   text-decoration: none;
 
   .topbar-user-avatar {
-    border: 2px solid #c8dff8;
+    border: 2px solid var(--border-primary);
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.2s ease, border-color 0.2s;
 
     &:hover {
       transform: scale(1.08);
-      border-color: #26a4ff;
+      border-color: var(--interactive-primary);
     }
   }
 }
@@ -213,9 +252,9 @@ const handleMenuLogout = async () => {
   min-width: 220px;
   padding: 12px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #dbe9fb;
-  box-shadow: 0 18px 40px rgba(40, 57, 101, 0.16);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-secondary);
+  box-shadow: var(--modal-shadow);
   opacity: 0;
   visibility: hidden;
   transform: translateY(-6px);
@@ -230,9 +269,9 @@ const handleMenuLogout = async () => {
     right: 18px;
     width: 12px;
     height: 12px;
-    background: rgba(255, 255, 255, 0.98);
-    border-left: 1px solid #dbe9fb;
-    border-top: 1px solid #dbe9fb;
+    background: var(--surface-overlay);
+    border-left: 1px solid var(--border-secondary);
+    border-top: 1px solid var(--border-secondary);
     transform: rotate(45deg);
   }
 }
@@ -243,18 +282,18 @@ const handleMenuLogout = async () => {
   gap: 2px;
   padding: 4px 6px 10px;
   margin-bottom: 8px;
-  border-bottom: 1px solid #edf4ff;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .kg-topnav__menu-name {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
 }
 
 .kg-topnav__menu-subtitle {
   font-size: 0.76rem;
-  color: #8ca0bb;
+  color: var(--text-muted);
 }
 
 .kg-topnav__menu-list {
@@ -271,16 +310,16 @@ const handleMenuLogout = async () => {
   padding: 10px 12px;
   border-radius: 12px;
   text-decoration: none;
-  color: #294066;
+  color: var(--text-primary);
   font-size: 0.87rem;
   font-weight: 500;
-  background: #f6fbff;
+  background: var(--surface-secondary);
   border: 1px solid transparent;
   transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 
   &:hover {
-    background: #eef6ff;
-    border-color: #d6e7ff;
+    background: var(--bg-secondary);
+    border-color: var(--border-primary);
     transform: translateX(2px);
   }
 }
@@ -291,28 +330,29 @@ const handleMenuLogout = async () => {
 }
 
 .kg-topnav__menu-icon {
-  width: 20px;
-  text-align: center;
+  width: 18px;
+  height: 18px;
+  color: currentColor;
   flex-shrink: 0;
 }
 
 .login-btn-text {
-  background: #bfd7fb;
-  border: 1px solid #26a4ff;
+  background: var(--interactive-secondary);
+  border: 1px solid var(--interactive-primary);
   border-radius: 20px;
   padding: 0.375rem 0.75rem;
   min-height: 36px;
   display: flex;
   align-items: center;
-  color: #1a2a4a;
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s ease;
 
   &:hover {
-    background: #26a4ff;
-    color: white;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
   }
 }
 

@@ -1,40 +1,36 @@
 <template>
   <div v-if="showGuide" class="install-guide-container">
-    <!-- Floating Install Button -->
     <div 
       v-if="!isExpanded && showGuide" 
       class="install-float-btn"
       @click="isExpanded = true"
     >
       <span class="install-icon">📱</span>
-      <span class="install-text">安装应用</span>
+      <span class="install-text">{{ t("pwa.install.floatButton") }}</span>
     </div>
 
-    <!-- Expanded Install Guide -->
     <Transition name="slide-up">
       <div v-if="isExpanded" class="install-guide-card">
         <div class="guide-header">
           <div class="guide-title">
             <span class="guide-icon">🚀</span>
-            <h3>安装 UniKorn 应用</h3>
+            <h3>{{ t("pwa.install.title") }}</h3>
           </div>
-          <button @click="closeGuide" class="close-btn" aria-label="关闭">✕</button>
+          <button @click="closeGuide" class="close-btn" :aria-label="t('common.close')">✕</button>
         </div>
 
         <div class="guide-content">
-          <p class="guide-description">获得更好的使用体验，支持离线访问</p>
+          <p class="guide-description">{{ t("pwa.install.description") }}</p>
           
-          <!-- Install Button for supported browsers -->
           <button 
             v-if="canInstall" 
             @click="installApp" 
             class="install-btn-primary"
           >
             <span class="btn-icon">📲</span>
-            一键安装应用
+            {{ t("pwa.install.primaryAction") }}
           </button>
 
-          <!-- Manual Instructions -->
           <div class="manual-instructions">
             <div class="instruction-tabs">
               <button 
@@ -62,14 +58,13 @@
           <div class="guide-footer">
             <label class="dont-show-again">
               <input v-model="dontShowAgain" type="checkbox">
-              <span>不再显示</span>
+              <span>{{ t("pwa.install.dontShowAgain") }}</span>
             </label>
           </div>
         </div>
       </div>
     </Transition>
 
-    <!-- Backdrop -->
     <div 
       v-if="isExpanded" 
       class="install-guide-backdrop"
@@ -81,6 +76,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
+const { t } = useI18n()
+const route = useRoute()
 const isExpanded = ref(false)
 const canInstall = ref(false)
 const selectedPlatform = ref('chrome')
@@ -89,30 +86,23 @@ const deferredPrompt = ref<any>(null)
 
 const showGuide = computed(() => {
   if (process.server) return false
-  
-  // Don't show if user dismissed permanently
+  if (route.path.includes('/courses/planner')) return false
   if (localStorage.getItem('pwa-install-dismissed') === 'true') return false
-  
-  // Don't show if already installed
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false
-  
-  // Don't show if dismissed for current session
   if (sessionStorage.getItem('pwa-install-session-dismissed') === 'true') return false
-  
-  // Always show the manual guide (don't wait for install prompt)
   return true
 })
 
-const platforms = [
+const platforms = computed(() => [
   {
     id: 'chrome',
     name: 'Chrome',
     icon: '🌐',
     instructions: [
-      { id: 1, text: '点击地址栏右侧的安装图标', icon: '⬇️' },
-      { id: 2, text: '或点击右上角三个点菜单', icon: '⋮' },
-      { id: 3, text: '选择"安装 UniKorn"', icon: '📲' },
-      { id: 4, text: '确认安装，享受应用体验！', icon: '✨' }
+      { id: 1, text: t('pwa.install.platforms.chrome.step1'), icon: '⬇️' },
+      { id: 2, text: t('pwa.install.platforms.chrome.step2'), icon: '⋮' },
+      { id: 3, text: t('pwa.install.platforms.chrome.step3'), icon: '📲' },
+      { id: 4, text: t('pwa.install.platforms.chrome.step4'), icon: '✨' }
     ]
   },
   {
@@ -120,10 +110,10 @@ const platforms = [
     name: 'Safari',
     icon: '🧭',
     instructions: [
-      { id: 1, text: '点击底部分享按钮', icon: '📤' },
-      { id: 2, text: '滑动找到"添加到主屏幕"', icon: '📱' },
-      { id: 3, text: '点击"添加到主屏幕"', icon: '➕' },
-      { id: 4, text: '确认添加，应用已安装到桌面', icon: '🎉' }
+      { id: 1, text: t('pwa.install.platforms.safari.step1'), icon: '📤' },
+      { id: 2, text: t('pwa.install.platforms.safari.step2'), icon: '📱' },
+      { id: 3, text: t('pwa.install.platforms.safari.step3'), icon: '➕' },
+      { id: 4, text: t('pwa.install.platforms.safari.step4'), icon: '🎉' }
     ]
   },
   {
@@ -131,16 +121,16 @@ const platforms = [
     name: 'Edge',
     icon: '🔷',
     instructions: [
-      { id: 1, text: '点击地址栏右侧的应用图标', icon: '📱' },
-      { id: 2, text: '或点击右上角三个点菜单', icon: '⋯' },
-      { id: 3, text: '选择"将此站点安装为应用"', icon: '🔽' },
-      { id: 4, text: '点击"安装"完成设置', icon: '☑️' }
+      { id: 1, text: t('pwa.install.platforms.edge.step1'), icon: '📱' },
+      { id: 2, text: t('pwa.install.platforms.edge.step2'), icon: '⋯' },
+      { id: 3, text: t('pwa.install.platforms.edge.step3'), icon: '🔽' },
+      { id: 4, text: t('pwa.install.platforms.edge.step4'), icon: '☑️' }
     ]
   }
-]
+])
 
 const currentInstructions = computed(() => {
-  const platform = platforms.find(p => p.id === selectedPlatform.value)
+  const platform = platforms.value.find((item) => item.id === selectedPlatform.value)
   return platform?.instructions || []
 })
 
@@ -150,7 +140,6 @@ const installApp = async () => {
     const { outcome } = await deferredPrompt.value.userChoice
     
     if (outcome === 'accepted') {
-      console.log('User accepted the install prompt')
       closeGuide()
     }
     
@@ -165,7 +154,6 @@ const closeGuide = () => {
   if (dontShowAgain.value) {
     localStorage.setItem('pwa-install-dismissed', 'true')
   } else {
-    // Hide for this session
     sessionStorage.setItem('pwa-install-session-dismissed', 'true')
   }
 }
@@ -177,7 +165,6 @@ const handleBeforeInstallPrompt = (e: Event) => {
 }
 
 const handleAppInstalled = () => {
-  console.log('PWA was installed')
   canInstall.value = false
   deferredPrompt.value = null
   closeGuide()
@@ -199,31 +186,11 @@ const detectPlatform = () => {
 
 onMounted(() => {
   if (process.client) {
-    // Clear any session dismissal for debugging
     sessionStorage.removeItem('pwa-install-session-dismissed')
-    
-    // Debug logging
-    console.log('[PWA] Install Guide Debug:', {
-      showGuide: showGuide.value,
-      isExpanded: isExpanded.value,
-      canInstall: canInstall.value,
-      permanentlyDismissed: localStorage.getItem('pwa-install-dismissed'),
-      sessionDismissed: sessionStorage.getItem('pwa-install-session-dismissed'),
-      isStandalone: window.matchMedia && window.matchMedia('(display-mode: standalone)').matches,
-      userAgent: navigator.userAgent
-    })
-    
     detectPlatform()
     
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
-    
-    // Auto-show after a delay
-    setTimeout(() => {
-      if (!isExpanded.value && showGuide.value) {
-        console.log('[PWA] Auto-showing install guide')
-      }
-    }, 2000)
   }
 })
 
@@ -238,33 +205,33 @@ onUnmounted(() => {
 <style scoped>
 .install-guide-container {
   position: relative;
-  z-index: 1000;
+  z-index: 960;
 }
 
 /* Floating Install Button */
 .install-float-btn {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
-  padding: 12px 16px;
+  bottom: 84px;
+  right: 24px;
+  background: var(--interactive-primary);
+  color: var(--text-inverse, #ffffff);
+  padding: 10px 14px;
   border-radius: 24px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-medium, 0 4px 12px rgba(38, 164, 255, 0.18));
   transition: all 0.3s ease;
   font-size: 14px;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
+  font-weight: 700;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .install-float-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+  background: var(--interactive-hover);
+  box-shadow: var(--shadow-large, 0 10px 24px rgba(38, 164, 255, 0.16));
 }
 
 .install-icon {
@@ -279,17 +246,18 @@ onUnmounted(() => {
   right: 0;
   background: var(--surface-primary, white);
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--modal-shadow, 0 -4px 32px rgba(0, 0, 0, 0.1));
   max-height: 80vh;
   overflow-y: auto;
-  border: 1px solid var(--border-light, #e5e7eb);
+  border: 1px solid var(--border-secondary, #e5e7eb);
+  z-index: 1130;
 }
 
 @media (min-width: 768px) {
   .install-guide-card {
     position: fixed;
-    bottom: 80px;
-    right: 20px;
+    bottom: 140px;
+    right: 24px;
     left: auto;
     width: 380px;
     border-radius: 16px;
@@ -303,9 +271,9 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--modal-backdrop, rgba(26, 42, 74, 0.45));
   backdrop-filter: blur(4px);
-  z-index: -1;
+  z-index: 1120;
 }
 
 .guide-header {
@@ -313,7 +281,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 20px 16px;
-  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  border-bottom: 1px solid var(--border-secondary, #f1f5f9);
 }
 
 .guide-title {
@@ -362,8 +330,8 @@ onUnmounted(() => {
 /* Primary Install Button */
 .install-btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  color: white;
+  background: var(--interactive-primary, #26a4ff);
+  color: var(--text-inverse, #ffffff);
   border: none;
   padding: 12px 16px;
   border-radius: 12px;
@@ -380,7 +348,8 @@ onUnmounted(() => {
 
 .install-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  background: var(--interactive-hover, #1a8fe0);
+  box-shadow: var(--shadow-medium, 0 4px 12px rgba(38, 164, 255, 0.18));
 }
 
 .btn-icon {
@@ -389,7 +358,7 @@ onUnmounted(() => {
 
 /* Manual Instructions */
 .manual-instructions {
-  border-top: 1px solid var(--border-light, #f1f5f9);
+  border-top: 1px solid var(--border-secondary, #f1f5f9);
   padding-top: 20px;
 }
 
@@ -416,9 +385,9 @@ onUnmounted(() => {
 }
 
 .tab-btn.active {
-  background: var(--primary-color, #4f46e5);
-  color: white;
-  border-color: var(--primary-color, #4f46e5);
+  background: var(--interactive-primary, #26a4ff);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--interactive-primary, #26a4ff);
 }
 
 .tab-icon {
@@ -440,8 +409,8 @@ onUnmounted(() => {
 .step-number {
   width: 24px;
   height: 24px;
-  background: var(--primary-color, #4f46e5);
-  color: white;
+  background: var(--interactive-primary, #26a4ff);
+  color: var(--text-inverse, #ffffff);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -472,7 +441,7 @@ onUnmounted(() => {
 .guide-footer {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid var(--border-light, #f1f5f9);
+  border-top: 1px solid var(--border-secondary, #f1f5f9);
 }
 
 .dont-show-again {
@@ -529,7 +498,7 @@ onUnmounted(() => {
 /* Mobile optimizations */
 @media (max-width: 767px) {
   .install-float-btn {
-    bottom: 16px;
+    bottom: 84px;
     right: 16px;
     padding: 10px 14px;
     font-size: 13px;

@@ -4,7 +4,9 @@ import type {
   IdentityType, 
   UserIdentity, 
   IdentityVerificationRequest,
-  IdentityManagementItem 
+  IdentityManagementItem,
+  IdentityAdminListQuery,
+  IdentityAdminListResponse,
 } from '~/types/identity'
 
 export function useIdentity() {
@@ -16,6 +18,11 @@ export function useIdentity() {
   const pendingRequests = ref<IdentityManagementItem[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const readErrorMessage = async (response: Response, fallback: string) => {
+    const data = await response.json().catch(() => null)
+    return data?.message || data?.error || fallback
+  }
 
   // Computed
   const activeIdentityTypes = computed(() => 
@@ -163,18 +170,47 @@ export function useIdentity() {
   }
 
   // Admin methods
+  const fetchAdminIdentityRequests = async (
+    query: IdentityAdminListQuery = {}
+  ): Promise<IdentityAdminListResponse> => {
+    try {
+      loading.value = true
+      error.value = null
+
+      const params = new URLSearchParams()
+      if (query.status) params.set('status', query.status)
+      if (query.identity_type_id) params.set('identity_type_id', String(query.identity_type_id))
+      if (query.page) params.set('page', String(query.page))
+      if (query.per_page) params.set('per_page', String(query.per_page))
+      if (query.sort) params.set('sort', query.sort)
+
+      const suffix = params.toString() ? `?${params.toString()}` : ''
+      const response = await fetchWithAuth(`/api/identities/admin/requests${suffix}`)
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response, `Failed to fetch identity requests: ${response.status}`))
+      }
+
+      return await response.json()
+
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const fetchPendingRequests = async (): Promise<IdentityManagementItem[]> => {
     try {
       loading.value = true
       error.value = null
 
-      const response = await fetchWithAuth('/api/identities/admin/pending')
-      if (!response.ok) {
-        throw new Error(`Failed to fetch pending requests: ${response.status}`)
-      }
-
-      const data = await response.json()
-      pendingRequests.value = data.pending_verifications || []
+      const data = await fetchAdminIdentityRequests({
+        status: 'pending',
+        per_page: 100,
+        sort: 'oldest'
+      })
+      pendingRequests.value = data.requests || []
       return pendingRequests.value
 
     } catch (err) {
@@ -334,6 +370,7 @@ export function useIdentity() {
     withdrawRequest,
 
     // Admin methods
+    fetchAdminIdentityRequests,
     fetchPendingRequests,
     approveIdentityRequest,
     rejectIdentityRequest,

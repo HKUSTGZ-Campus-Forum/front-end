@@ -1,17 +1,1424 @@
-
 {
+  "common": {
+    "appName": "UniKorn 科广汇",
+    "appTitle": "UniKorn 科广汇",
+    "description": "一个支持多语言的校园社区，帮助学生交流课程、论坛和协作机会。",
+    "loading": "加载中...",
+    "retry": "重试",
+    "back": "返回",
+    "backToList": "返回列表",
+    "unknownAuthor": "匿名用户",
+    "emptyState": "暂时还没有内容。",
+    "searching": "搜索中...",
+    "history": "最近搜索",
+    "clear": "清除",
+    "viewAllResults": "查看全部 {count} 个结果",
+    "noResults": "没有找到相关结果",
+    "close": "关闭",
+    "user": "用户",
+    "date": {
+      "empty": "",
+      "invalid": "日期格式错误"
+    },
+    "locale": {
+      "label": "语言",
+      "zh": "中文",
+      "en": "EN"
+    },
+    "show": "显示",
+    "hide": "隐藏"
+  },
+  "actions": {
+    "login": "登录",
+    "logout": "退出登录",
+    "register": "注册",
+    "submit": "提交",
+    "cancel": "取消",
+    "publish": "发布",
+    "publishing": "发布中...",
+    "send": "发送",
+    "sending": "发送中...",
+    "saving": "保存中...",
+    "resend": "重新发送",
+    "save": "保存",
+    "goToPost": "去发帖"
+  },
+  "nav": {
+    "home": "首页",
+    "forum": "论坛",
+    "community": "社区",
+    "feedback": "反馈",
+    "admin": "管理员",
+    "courses": "课程",
+    "academicMap": "学业地图",
+    "activity": "活动",
+    "teamMatching": "组队",
+    "users": "用户",
+    "scheduler": "排课助手",
+    "wiki": "HKUST-GZ Wiki",
+    "contest": "百块奖金大赛"
+  },
+  "layout": {
+    "accountCenter": "账号管理",
+    "accountSettings": "账号设置",
+    "identityVerification": "身份认证",
+    "themeSettings": "主题设置",
+    "loggingOut": "正在退出…"
+  },
+  "community": {
+    "title": "社区",
+    "metaDescription": "浏览论坛帖子、反馈协作与社团活动，并在一个统一社区入口中切换。",
+    "sections": {
+      "forum": "论坛帖子",
+      "feedback": "反馈协作",
+      "activity": "社团活动"
+    },
+    "activity": {
+      "cta": "发布活动",
+      "badge": "社团活动",
+      "empty": "还没有公开的社团活动，先来发布第一条吧。",
+      "errors": {
+        "loadFailed": "获取社团活动失败",
+        "retryable": "获取社团活动失败，请稍后重试。"
+      }
+    }
+  },
+  "adminShell": {
+    "title": "站点管理后台",
+    "description": "统一处理反馈审核、身份认证和后续站务工具，先把入口和导航搭稳，后面的反馈审核页就能直接接进来。",
+    "nav": {
+      "overview": "概览",
+      "feedback": "反馈审核",
+      "identity": "身份认证"
+    }
+  },
+  "adminOverview": {
+    "title": "管理概览",
+    "description": "汇总当前需要处理的后台队列，并快速进入对应管理工作台。",
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中..."
+    },
+    "metrics": {
+      "pendingFeedback": "待公开反馈",
+      "pendingMerge": "待终审 Merge",
+      "pendingIdentity": "待审核身份",
+      "feedbackTotal": "已公开反馈"
+    },
+    "status": {
+      "loadFailed": "部分后台统计加载失败。",
+      "moduleError": "统计暂不可用"
+    },
+    "modulesTitle": "后台模块",
+    "cards": {
+      "feedback": {
+        "title": "反馈审核",
+        "description": "审核待公开反馈，终审作者已接受的修改提案，并管理已发布反馈的讨论状态。",
+        "action": "打开反馈审核"
+      },
+      "identity": {
+        "title": "身份认证",
+        "description": "审核待处理认证申请，并查看已认证、已拒绝或已撤销的身份记录。",
+        "action": "打开身份认证"
+      }
+    }
+  },
+  "adminIdentity": {
+    "title": "身份认证管理",
+    "description": "审核用户身份认证申请，查看历史状态，并处理需要撤销或重新判断的记录。",
+    "metrics": {
+      "pending": "待审核",
+      "approved": "已认证",
+      "rejected": "已拒绝",
+      "total": "总申请"
+    },
+    "filters": {
+      "status": "状态",
+      "type": "身份类型",
+      "sort": "排序",
+      "allStatuses": "全部状态",
+      "allTypes": "全部类型"
+    },
+    "sort": {
+      "newest": "最新申请",
+      "oldest": "最早申请",
+      "priority": "优先审核"
+    },
+    "status": {
+      "pending": "待审核",
+      "approved": "已认证",
+      "rejected": "已拒绝",
+      "revoked": "已撤销"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "selectPage": "选择本页",
+      "clearPage": "清除本页",
+      "selectOne": "选择申请",
+      "approve": "通过",
+      "reject": "拒绝",
+      "revoke": "撤销认证",
+      "bulkApprove": "批量通过 {count}",
+      "bulkReject": "批量拒绝 {count}"
+    },
+    "user": {
+      "noEmail": "未提供邮箱"
+    },
+    "requestedAt": "申请于 {date}",
+    "processed": "已处理",
+    "processedAt": "处理于 {date}",
+    "documents": {
+      "title": "证明材料",
+      "unnamed": "未命名材料",
+      "noDate": "无上传日期"
+    },
+    "notes": "申请说明：",
+    "rejectionReason": "拒绝原因：",
+    "approve": {
+      "title": "通过身份认证",
+      "message": "确定通过 {user} 的 {type} 认证申请吗？"
+    },
+    "reject": {
+      "title": "拒绝认证申请",
+      "message": "请为 {user} 的申请填写明确的拒绝原因。",
+      "reason": "拒绝原因",
+      "notes": "管理员备注（可选）"
+    },
+    "revoke": {
+      "title": "撤销身份认证",
+      "message": "确定撤销 {user} 的 {type} 认证吗？",
+      "defaultReason": "管理员撤销"
+    },
+    "bulkApprove": {
+      "title": "批量通过申请",
+      "message": "确定通过已选择的 {count} 个认证申请吗？"
+    },
+    "bulkReject": {
+      "title": "批量拒绝申请",
+      "message": "请填写拒绝已选择 {count} 个申请的统一原因。"
+    },
+    "messages": {
+      "approved": "申请已通过。",
+      "rejected": "申请已拒绝。",
+      "revoked": "认证已撤销。",
+      "bulkApproved": "已通过 {count} 个申请。",
+      "bulkRejected": "已拒绝 {count} 个申请。"
+    },
+    "errors": {
+      "title": "加载失败",
+      "loadFailed": "加载身份认证申请失败。",
+      "approveFailed": "通过申请失败。",
+      "rejectFailed": "拒绝申请失败。",
+      "revokeFailed": "撤销认证失败。",
+      "bulkFailed": "批量操作失败。"
+    },
+    "empty": {
+      "title": "暂无申请",
+      "description": "当前筛选条件下没有身份认证申请。"
+    },
+    "pagination": {
+      "label": "身份认证申请分页",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {page} / {pages} 页，共 {total} 条"
+    }
+  },
+  "adminFeedback": {
+    "title": "反馈审核工作台",
+    "description": "处理待公开反馈、作者已接受的 merge 提案，并管理已发布反馈的讨论状态。",
+    "metrics": {
+      "pendingFeedback": "待公开反馈",
+      "pendingMerge": "待终审 Merge",
+      "feedbackTotal": "反馈总数",
+      "mergeTotal": "Merge 总数"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "publish": "公开反馈",
+      "reject": "驳回",
+      "merge": "通过并合并",
+      "view": "查看详情",
+      "closeFeedback": "关闭反馈",
+      "reopenFeedback": "重新打开",
+      "endComments": "结束评论",
+      "resumeComments": "恢复评论"
+    },
+    "filters": {
+      "feedbackStatus": "反馈状态",
+      "mergeStatus": "Merge 状态",
+      "allFeedback": "全部反馈",
+      "allMerge": "全部 Merge"
+    },
+    "pendingFeedback": {
+      "title": "待公开反馈",
+      "emptyTitle": "没有待公开反馈",
+      "emptyDescription": "新的用户反馈提交后会出现在这里。"
+    },
+    "pendingMerge": {
+      "title": "待终审 Merge",
+      "emptyTitle": "没有待终审 Merge",
+      "emptyDescription": "作者接受后的修改提案会进入这里。"
+    },
+    "feedbackHistory": {
+      "title": "反馈记录"
+    },
+    "mergeHistory": {
+      "title": "Merge 记录"
+    },
+    "approveFeedback": {
+      "title": "公开反馈",
+      "message": "确定公开“{title}”吗？"
+    },
+    "rejectFeedback": {
+      "title": "驳回反馈",
+      "message": "确定驳回“{title}”吗？可在卡片备注中填写说明。"
+    },
+    "approveMerge": {
+      "title": "合并提案",
+      "message": "确定通过并合并“{title}”吗？"
+    },
+    "rejectMerge": {
+      "title": "驳回 Merge",
+      "message": "确定驳回“{title}”吗？可在卡片备注中填写说明。"
+    },
+    "messages": {
+      "feedbackApproved": "反馈已公开。",
+      "feedbackRejected": "反馈已驳回。",
+      "mergeApproved": "Merge 已合并。",
+      "mergeRejected": "Merge 已驳回。",
+      "feedbackClosed": "反馈已关闭。",
+      "feedbackReopened": "反馈已重新打开。",
+      "commentsEnded": "评论已结束。",
+      "commentsResumed": "评论已恢复。"
+    },
+    "errors": {
+      "title": "加载失败",
+      "loadFailed": "加载反馈审核工作台失败。",
+      "actionFailed": "处理反馈审核操作失败。"
+    },
+    "author": "用户 #{id}",
+    "feedbackId": "反馈 #{id}",
+    "commentsEnded": "评论已结束",
+    "emptyExcerpt": "暂无正文",
+    "notePlaceholder": "给用户或内部审核留下说明（可选）"
+  },
+  "footer": {
+    "title": "UniKorn 科广汇",
+    "tagline": "让学习更有温度",
+    "wechatAlt": "UniKorn 官方公众号二维码",
+    "wechatLabel": "微信公众号",
+    "navigation": "导航",
+    "help": "帮助",
+    "guide": "使用指南",
+    "rules": "社区规则",
+    "privacy": "隐私政策",
+    "contact": "联系",
+    "feedback": "意见反馈",
+    "campusCollab": "校园合作",
+    "icpRecord": "京ICP备2023006922号-1"
+  },
+  "modals": {
+    "confirm": {
+      "title": "确认操作",
+      "message": "您确定要执行此操作吗？"
+    },
+    "error": {
+      "title": "操作失败",
+      "message": "操作执行失败，请重试。"
+    },
+    "success": {
+      "title": "操作成功",
+      "message": "操作已成功完成！"
+    }
+  },
+  "search": {
+    "placeholder": "搜索帖子、用户、课程...",
+    "tabs": {
+      "posts": "帖子",
+      "users": "用户",
+      "tags": "标签",
+      "courses": "课程"
+    },
+    "tagPostCount": "{count} 个帖子"
+  },
+  "searchPage": {
+    "pageTitle": "搜索结果",
+    "metaDescription": "浏览 UniKorn 校园论坛中的帖子、用户、标签和课程搜索结果。",
+    "title": "搜索",
+    "keywordLabel": "关键词：",
+    "loading": "搜索中...",
+    "empty": "没有找到相关内容",
+    "placeholder": "输入关键词开始搜索",
+    "userFallbackBio": "暂无简介",
+    "sort": {
+      "label": "排序：",
+      "relevance": "相关性",
+      "date": "最新发布",
+      "popularity": "热门程度"
+    },
+    "pagination": {
+      "previous": "上一页",
+      "next": "下一页"
+    },
+    "errors": {
+      "global": "搜索失败，请稍后重试",
+      "posts": "获取帖子搜索结果失败",
+      "users": "获取用户搜索结果失败",
+      "tags": "获取标签搜索结果失败",
+      "courses": "获取课程搜索结果失败",
+      "network": "网络异常，请检查连接后重试"
+    }
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部已读",
+    "markingAllRead": "标记中...",
+    "viewAll": "查看全部",
+    "loading": "加载中...",
+    "loadFailed": "加载失败：{error}",
+    "empty": "暂无通知"
+  },
+  "imageModal": {
+    "defaultAlt": "图片预览",
+    "loadFailed": "无法加载图片",
+    "fitToScreen": "适应屏幕"
+  },
+  "avatar": {
+    "user": {
+      "alt": "{username}的头像"
+    },
+    "upload": {
+      "title": "个人头像",
+      "description": "建议尺寸：200x200 像素，支持 JPG、PNG 格式",
+      "uploading": "正在上传...",
+      "prompt": "点击或拖拽图片到此处上传",
+      "restrictions": "支持 JPG、PNG 格式，最大 5MB",
+      "selectImage": "选择图片",
+      "removeImage": "移除头像",
+      "success": "头像上传成功！",
+      "errors": {
+        "invalidType": "请选择 JPG 或 PNG 格式的图片",
+        "invalidSize": "图片大小不能超过 5MB",
+        "validationFailed": "文件验证失败",
+        "missingFileId": "上传失败：未收到文件 ID",
+        "uploadFailed": "上传失败，请重试",
+        "removeFailed": "移除头像失败，请重试"
+      }
+    }
+  },
+  "userProfile": {
+    "pageTitle": "{username} - 个人信息",
+    "metaDescription": "查看 {username} 的个人信息和统计数据",
+    "uid": "UID: {uid}",
+    "joinDate": "加入时间：{date}",
+    "actions": {
+      "edit": "编辑",
+      "save": "保存",
+      "saving": "保存..."
+    },
+    "states": {
+      "loading": "加载中...",
+      "retry": "重试",
+      "unknownDate": "未知",
+      "invalidDate": "日期格式错误",
+      "invalidUserId": "无效的用户ID"
+    },
+    "errors": {
+      "userNotFound": "用户不存在",
+      "loginRequired": "需要登录才能查看此用户信息",
+      "forbidden": "没有权限查看此用户信息",
+      "loadUserFailed": "获取用户信息失败",
+      "loadUserFailedWithStatus": "获取用户信息失败 ({status})",
+      "loadPostsFailed": "加载帖子失败",
+      "loadPostsFailedWithStatus": "加载帖子失败 ({status})",
+      "updateUsernameFailed": "更新用户名失败，请稍后重试",
+      "updateUsernameFailedWithStatus": "更新失败 ({status})"
+    },
+    "validation": {
+      "usernameRequired": "用户名不能为空",
+      "usernameTooShort": "用户名至少需要2个字符",
+      "usernameTooLong": "用户名不能超过50个字符",
+      "usernameInvalidCharacters": "用户名不能包含特殊符号"
+    },
+    "stats": {
+      "title": "数据统计",
+      "posts": "发帖数",
+      "comments": "评论数",
+      "likes": "获赞数",
+      "views": "被浏览数",
+      "score": "积分"
+    },
+    "recentPosts": {
+      "title": "最近帖子",
+      "loading": "正在加载帖子...",
+      "empty": "该用户暂时还没有发布帖子",
+      "noContent": "暂无内容",
+      "untitled": "无标题"
+    }
+  },
+  "pwa": {
+    "update": {
+      "badge": "新版本",
+      "title": "发现新前端版本",
+      "description": "点击更新即可切换到最新页面，不需要手动清缓存或强制刷新。",
+      "versionLabel": "版本标识：{version}",
+      "apply": "立即更新",
+      "updating": "更新中...",
+      "later": "稍后"
+    },
+    "install": {
+      "floatButton": "安装应用",
+      "title": "安装 UniKorn 应用",
+      "description": "获得更好的使用体验，并支持离线访问。",
+      "primaryAction": "一键安装应用",
+      "dontShowAgain": "不再显示",
+      "platforms": {
+        "chrome": {
+          "step1": "点击地址栏右侧的安装图标",
+          "step2": "或点击右上角三个点菜单",
+          "step3": "选择“安装 UniKorn”",
+          "step4": "确认安装，享受应用体验"
+        },
+        "safari": {
+          "step1": "点击底部分享按钮",
+          "step2": "滑动找到“添加到主屏幕”",
+          "step3": "点击“添加到主屏幕”",
+          "step4": "确认添加，应用已安装到桌面"
+        },
+        "edge": {
+          "step1": "点击地址栏右侧的应用图标",
+          "step2": "或点击右上角三个点菜单",
+          "step3": "选择“将此站点安装为应用”",
+          "step4": "点击“安装”完成设置"
+        }
+      }
+    }
+  },
+  "homePage": {
+    "pageTitle": "首页 - UniKorn 科广汇",
+    "metaDescription": "查看热门帖子、校园快捷入口和最新咕咕消息。",
+    "relatedLinks": {
+      "title": "相关链接",
+      "wiki": "科广 Wiki",
+      "portal": "myPortal",
+      "canvas": "Canvas"
+    },
+    "carousel": {
+      "previousSlide": "上一张",
+      "nextSlide": "下一张",
+      "slideLabel": "第 {index} 张",
+      "slides": {
+        "contestAlt": "百块奖金大赛横幅",
+        "welcomeZhAlt": "UniKorn 中文欢迎横幅",
+        "welcomeEnAlt": "UniKorn 英文欢迎横幅"
+      }
+    },
+    "popularPosts": {
+      "title": "热门帖子",
+      "viewAll": "查看全部 →",
+      "commentCountTitle": "评论数",
+      "reactionCountTitle": "表情反应总数"
+    },
+    "chat": {
+      "title": "聊聊新鲜事儿，咕咕一下",
+      "replyingTo": "正在回复 {name}",
+      "replyPlaceholder": "回复 {name}......",
+      "placeholder": "写下你想说的话吧......",
+      "send": "咕了个咕～",
+      "loading": "加载消息中...",
+      "empty": "还没有消息，快来发第一条吧！",
+      "replyAction": "回复",
+      "quoteReplyTo": "回复 {name}",
+      "loadMore": "查看更多历史消息",
+      "noMore": "已显示全部历史消息",
+      "replyUnavailable": "原消息已不可用"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "欢迎回来",
+      "subtitle": "登录到 UniKorn 科广汇",
+      "usernameLabel": "用户名或邮箱",
+      "usernamePlaceholder": "请输入用户名或邮箱",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "rememberMe": "记住我",
+      "forgotPassword": "忘记密码?",
+      "submit": "登录",
+      "submitting": "登录中...",
+      "noAccount": "还没有账号？",
+      "registerNow": "立即注册",
+      "errors": {
+        "required": "请输入用户名和密码",
+        "invalid": "用户名或密码错误，请重试"
+      }
+    },
+    "register": {
+      "title": "加入我们",
+      "subtitle": "创建您的 UniKorn 科广汇账号",
+      "hasAccount": "已有账号？",
+      "loginNow": "立即登录",
+      "username": "用户名",
+      "usernamePlaceholder": "请设置用户名",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入HKUST-GZ邮箱",
+      "emailHintTitle": "只允许使用 HKUST-GZ 邮箱注册：",
+      "password": "密码",
+      "passwordPlaceholder": "请设置密码",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "请再次输入密码",
+      "submit": "注册",
+      "submitting": "注册中...",
+      "verificationNotice": "注册后我们将向您的邮箱发送验证码，请确保邮箱地址正确",
+      "verificationWarningTitle": "重要提醒：",
+      "verificationWarningBody": "如果没有收到验证邮件，请检查您的垃圾邮件箱（垃圾邮件/废纸篓/杂件箱）",
+      "success": "邮箱验证成功！您现在可以正常使用论坛了。",
+      "errors": {
+        "usernameRequired": "请输入用户名",
+        "usernameMin": "用户名至少需要2个字符",
+        "usernameMax": "用户名不能超过50个字符",
+        "usernameForbidden": "用户名不能包含保留特殊符号，请使用字母、数字、下划线或常规字符",
+        "usernameTaken": "该用户名已被使用，请选择其他用户名",
+        "emailRequired": "请输入邮箱地址",
+        "emailInvalid": "请输入有效的邮箱地址",
+        "emailDomain": "只允许使用 HKUST-GZ 邮箱注册，邮箱域名需为 connect.hkust-gz.edu.cn 或 hkust-gz.edu.cn",
+        "emailTaken": "该邮箱已被注册，请使用其他邮箱",
+        "passwordRequired": "请设置密码",
+        "passwordMin": "密码至少需要6个字符",
+        "confirmRequired": "请确认密码",
+        "confirmMismatch": "两次输入的密码不一致",
+        "registerFailed": "注册失败，请稍后再试"
+      }
+    },
+    "forgotPassword": {
+      "title": "忘记密码",
+      "subtitle": "输入您的邮箱地址，我们将向您发送重置密码的链接",
+      "emailLabel": "邮箱地址",
+      "emailPlaceholder": "请输入您的HKUST-GZ邮箱",
+      "emailHint": "请使用注册时填写的HKUST-GZ邮箱地址",
+      "sendLink": "发送重置链接",
+      "sentTitle": "重置链接已发送",
+      "sentDescription": "我们已向 {email} 发送了密码重置链接",
+      "nextSteps": "接下来的步骤：",
+      "stepOne": "检查您的邮箱（包括垃圾邮件箱）",
+      "stepTwo": "点击邮件中的重置链接",
+      "stepThree": "设置新的密码",
+      "noMail": "没有收到邮件？",
+      "resendAvailableIn": "{seconds}秒后可重新发送",
+      "backToLogin": "返回登录",
+      "goToRegister": "还没有账号？立即注册",
+      "errors": {
+        "emailInvalid": "请输入有效的HKUST-GZ邮箱地址",
+        "sendFailed": "发送重置邮件失败，请重试",
+        "resendFailed": "重新发送失败，请重试"
+      },
+      "success": {
+        "resent": "重置链接已重新发送，请查收邮件"
+      }
+    },
+    "resetPassword": {
+      "pageTitle": "重置密码"
+    }
+  },
+  "profileRedirect": {
+    "pageTitle": "个人主页跳转中",
+    "missingAuth": "未获取到登录信息，正在跳转到登录页...",
+    "redirecting": "正在进入你的个人主页..."
+  },
+  "help": {
+    "guide": {
+      "title": "使用指南",
+      "summary": "这里会逐步整理 UniKorn 的核心功能说明，帮助新用户快速上手。",
+      "sectionOneTitle": "你可以在这里做什么",
+      "sectionOneBody": "浏览论坛、搜索课程评价、加入活动、参与组队，并维护自己的校园身份和个人资料。",
+      "sectionTwoTitle": "多语言说明",
+      "sectionTwoBody": "中文是默认语言，英文页面会通过 /en 前缀提供。后续新页面也会沿用这套机制。"
+    },
+    "rules": {
+      "title": "社区规则",
+      "summary": "为了让社区保持友好和高质量，请遵守以下基本规则。",
+      "sectionOneTitle": "尊重他人",
+      "sectionOneBody": "不要发布人身攻击、骚扰、歧视、恶意引战或侵犯隐私的内容。",
+      "sectionTwoTitle": "保持真实和清晰",
+      "sectionTwoBody": "课程评价、组队信息和求助内容应尽量真实、清楚，避免误导其他同学。"
+    },
+    "privacy": {
+      "title": "隐私政策",
+      "summary": "UniKorn 会尽量只收集支撑社区功能所必需的数据，并尊重你的可见性设置。",
+      "sectionOneTitle": "我们会保存什么",
+      "sectionOneBody": "账号、头像、发帖、评论、通知和必要的身份认证信息会用于提供平台功能。",
+      "sectionTwoTitle": "你能控制什么",
+      "sectionTwoBody": "你可以管理公开资料、联系方式和部分通知设置。后续我们会补充更完整的隐私说明。"
+    }
+  },
+  "courseUniverse": {
+    "title": "课程宇宙",
+    "hubTitle": "课程图谱",
+    "hubSubtitle": "查课程关系、看评价、排课和管理学业进度都从这里开始。",
+    "subtitle": "从课程关系、评价、课表和毕业进度里找到下一门课。",
+    "searchPlaceholder": "搜索课程代码、名称或要求...",
+    "selectedSemester": "当前学期",
+    "targetMajor": "目标专业",
+    "loading": "正在加载课程宇宙...",
+    "empty": "暂无课程图谱数据。",
+    "selectCourse": "选择一门课程查看详情",
+    "modes": {
+      "universe": "图谱",
+      "explore": "探索",
+      "planner": "排课",
+      "academicMap": "学业地图"
+    },
+    "legend": {
+      "completed": "已修",
+      "inProgress": "在修",
+      "notTaken": "未修",
+      "interested": "想修",
+      "prerequisite": "先修关系",
+      "corequisite": "共修关系（需同时修）",
+      "exclusion": "互斥关系（不可同修）",
+      "hollowLogic": "空心：任选其一",
+      "solidLogic": "实心：需全部满足"
+    },
+    "statusShort": {
+      "completed": "已修",
+      "inProgress": "在修",
+      "notTaken": "未修",
+      "interested": "想修"
+    },
+    "actions": {
+      "addToPlanner": "加入排课",
+      "addToPlannerCart": "加入排课车",
+      "removeFromPlannerCart": "移出排课车",
+      "openOverview": "打开课程总览",
+      "openPlanner": "打开排课",
+      "openReviews": "查看评价",
+      "writeReview": "写评价",
+      "openAcademicMap": "打开学业地图",
+      "markStatus": "更新学业状态",
+      "graphControls": "图谱控制",
+      "zoomIn": "放大图谱",
+      "zoomOut": "缩小图谱",
+      "fitGraph": "适配全图",
+      "focusSelection": "定位选中课程",
+      "detailsShort": "详情",
+      "showDetails": "显示详情"
+    },
+    "detail": {
+      "currentSelection": "当前选择",
+      "overview": "课程概览",
+      "academicStatus": "学业状态",
+      "statusSummary": "状态摘要",
+      "emptyCopy": "在左侧图谱中点选课程后，这里会显示课程入口、评价和排课状态。",
+      "noAcademicStatus": "未标记",
+      "plannerStatus": "排课状态",
+      "plannerAdded": "已在本学期排课车",
+      "plannerNotAdded": "还未加入本学期排课",
+      "impact": "加入后的影响",
+      "reviewSignal": "同学怎么说",
+      "notAvailable": "暂无信息"
+    },
+    "errors": {
+      "load": "课程宇宙加载失败，请稍后重试。",
+      "courseDetail": "课程详情加载失败。"
+    }
+  },
+  "courses": {
+    "title": "课程评价",
+    "subtitle": "查看并分享课程体验",
+    "searchPlaceholder": "搜索课程名称或代码...",
+    "semesterLabel": "学期",
+    "stage": "阶段",
+    "stageAll": "全部",
+    "stageUg": "本科 (UG)",
+    "stagePg": "研究生 (PG)",
+    "courseType": "课程类型",
+    "loading": "加载中...",
+    "empty": "暂无课程数据",
+    "credits": "{count} 学分",
+    "capacity": "容量 {count}",
+    "statusActive": "开放中",
+    "statusInactive": "已结束",
+    "redirecting": "正在跳转到课程主页...",
+    "redirectFailed": "跳转失败",
+    "backToCourses": "返回课程列表",
+    "detailMissing": "课程不存在或已被删除",
+    "overview": "课程简介",
+    "overviewEmpty": "暂无课程描述",
+    "reviewsEyebrow": "课程评价",
+    "reviewsTitle": "查看这个学期的课程评价",
+    "reviewsEntry": "进入课程评价",
+    "reviewsCopy": "{offering} 的评价和打分都在这里。",
+    "discussionEyebrow": "课程讨论区",
+    "discussionTitle": "最近讨论",
+    "discussionEmpty": "还没有讨论，来发第一条吧。",
+    "discussionLoading": "加载讨论中...",
+    "comments": "评论 {count}",
+    "views": "浏览 {count}",
+    "homeTitle": "课程主页",
+    "homeDescription": "查看 {offering} {course} 的课程简介、评价入口和讨论区。",
+    "overviewPage": {
+      "metaTitle": "课程总览",
+      "metaDescription": "查看 {course} 的课程总览、学业状态和相关开课记录。",
+      "eyebrow": "课程总览",
+      "backToUniverse": "返回课程宇宙",
+      "loadFailed": "课程总览加载失败",
+      "offeringsEyebrow": "开课记录",
+      "offeringsTitle": "开课学期",
+      "showAll": "展开全部 {count} 个",
+      "showRecent": "只看最近",
+      "noOfferings": "暂时没有这门课的开课记录。",
+      "hiddenOfferings": "还有 {count} 个较早学期未展示。",
+      "sectionsCount": "{count} 个班别",
+      "sectionsAndTeachers": "{sections} 个班别 · {teachers}",
+      "teacherTbd": "教师待定",
+      "openOffering": "查看学期详情",
+      "offeringContextTitle": "学期主页",
+      "offeringContextCopy": "本页集中展示该学期的评价、讨论和排课信息；课程级信息和感兴趣状态在课程总览中维护。",
+      "rulesEyebrow": "课程规则",
+      "rulesTitle": "先修、共修与互斥",
+      "noRules": "暂无先修、共修或互斥信息。",
+      "rules": {
+        "preRequirement": "先修要求",
+        "coRequirement": "共修要求",
+        "exclusion": "互斥课程"
+      },
+      "academicStatusTitle": "我的学业状态",
+      "academicStatus": {
+        "completed": "已修",
+        "in_progress": "在修",
+        "planned": "计划中",
+        "interested": "想修",
+        "not_taken": "未修"
+      },
+      "noAcademicStatus": "这门课还没有加入你的学业地图。",
+      "markInterested": "标记感兴趣",
+      "cancelInterested": "取消感兴趣",
+      "loginToMark": "登录后标记感兴趣",
+      "interestSaved": "已标记为感兴趣。",
+      "interestRemoved": "已取消感兴趣。",
+      "interestFailed": "更新学业地图失败。",
+      "strongStatusNote": "已修、在修或已规划状态优先于感兴趣，当前阶段暂不在这里编辑。",
+      "activePlannerSemester": "当前排课学期：{semester}",
+      "plannerLoadFailed": "排课车状态加载失败，请稍后重试。",
+      "plannerStatus": {
+        "in_cart": "已在排课车",
+        "available": "可加入排课车",
+        "different_semester": "非当前排课学期",
+        "unavailable": "暂无排课数据"
+      },
+      "mapTitle": "回到图谱查看关系",
+      "mapCopy": "在课程宇宙中查看这门课与先修、共修、互斥课程之间的关系。",
+      "openInMap": "在图谱中查看"
+    },
+    "offeringMissing": "当前学期不存在或未开设这门课",
+    "pageIntro": "这里展示的是 {offering} 学期 {courseCode} 的课程评价",
+    "writeReview": "写评价",
+    "reviewListTitle": "课程评价 ({count})",
+    "publishReviewFor": "发表 {offering} 的课程评价",
+    "fixedTags": "固定标签",
+    "ratingOptional": "评分（可选）",
+    "ratingWord": "评分",
+    "reviewTitleLabel": "评价标题",
+    "reviewTitlePlaceholder": "{offering} {course} 课程评价",
+    "reviewContentLabel": "评价内容 *",
+    "reviewContentPlaceholder": "分享这门课在这个学期的学习体验、作业负担、考试感受等...",
+    "uploadImages": "上传图片（最多3张）",
+    "uploadDragText": "点击或拖拽图片到此处上传",
+    "loginHint": "请先登录后发表评价",
+    "reviewLoading": "加载评价...",
+    "reviewEmpty": "这个开课学期还没有课程评价，欢迎成为第一个分享体验的人。",
+    "reviewDetail": "查看详情",
+    "reviewPublishSuccess": "评价发布成功！",
+    "reviewPublishFailed": "发布失败",
+    "reviewInputRequired": "请输入评价内容",
+    "imageUploadFailed": "图片上传失败: {message}",
+    "imageRemoveFailed": "图片删除失败",
+    "errors": {
+      "loadCourses": "获取课程列表失败",
+      "loadFilters": "获取筛选数据失败",
+      "loadSemesters": "获取课程学期失败",
+      "loadCourse": "获取课程详情失败",
+      "loadDiscussions": "获取讨论区失败",
+      "loadReviews": "获取评价失败",
+      "submitReview": "发布失败，请稍后重试"
+    },
+    "semester": {
+      "spring": "春",
+      "summer": "夏",
+      "fall": "秋",
+      "winter": "冬"
+    }
+  },
+  "academicMap": {
+    "metaTitle": "学业地图 - UniKorn",
+    "eyebrow": "Academic Map",
+    "title": "学业地图",
+    "openCourses": "去课程评价",
+    "loading": "正在加载学业状态...",
+    "cohort": "入学年份",
+    "units": "学分",
+    "login": {
+      "title": "登录后维护你的学业地图",
+      "copy": "这些信息只属于你。课程记录和成绩不会公开展示，后续会用于更精准的学业规划建议。"
+    },
+    "targetMajors": {
+      "title": "目标专业",
+      "label": "意向专业（可多选）"
+    },
+    "metrics": {
+      "totalCredits": "总学分要求",
+      "minimum": "{count}",
+      "activeCredits": "已修、在修、计划共 {count} 学分",
+      "completedCredits": "已修{completed}学分，本学期正在修{inProgress}学分",
+      "mapCompleteness": "地图完整度",
+      "mapCompletenessCopy": "用于判断后续规划建议是否有足够上下文",
+      "importedCourses": "已维护课程",
+      "importedCoursesCopy": "来自粘贴导入或手动确认的课程记录",
+      "unmetRequirements": "需要确认",
+      "unmetRequirementsCopy": "缺少成绩、未匹配课程库或状态待确认",
+      "prerequisites": "先修卡点",
+      "prerequisitesCopy": "{blocked} 门目标课有先修卡点",
+      "prerequisitesNeedsTarget": "先选择入学年份和目标专业后再判断先修卡点",
+      "ocga": "OCGA",
+      "ocgaCopy": "上传成绩后计算；仅自己可见",
+      "mcga": "MCGA · {major}",
+      "mcgaCopy": "上传成绩后计算；仅自己可见",
+      "mcgaNeedsTarget": "先选择目标专业后再计算 Major CGA",
+      "selectTarget": "待选择",
+      "notUploaded": "未上传"
+    },
+    "import": {
+      "title": "导入课程历史",
+      "copyPrefix": "你可以从SIS系统中一键导入课程历史：",
+      "exampleLink": "示意图",
+      "placeholder": "粘贴类似：AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
+      "parse": "解析",
+      "parsing": "解析中...",
+      "save": "保存课程",
+      "saving": "保存中...",
+      "keepGrades": "上传成绩",
+      "keepGradesCopy": "成绩仅你自己可见，取消后GPA计算、个性化推荐等功能将无法使用。",
+      "previewTitle": "预览 {count} 门课程",
+      "exampleTitle": "示意图",
+      "example": {
+        "systemName": "GZSISP",
+        "breadcrumb": "Favorites / Main Menu / Student Center",
+        "menuAcademicRequirements": "Academic Requirements",
+        "menuClassSchedule": "Class Schedule",
+        "menuCourseHistory": "Course History",
+        "menuEnrollmentAdd": "Enrollment: Add",
+        "menuGrades": "Grades",
+        "menuTranscript": "Transcript: View Unofficial",
+        "studentCenter": "Student Center",
+        "notEnrolled": "You are not enrolled in classes.",
+        "searchClasses": "Search For Classes",
+        "holds": "Holds",
+        "noHolds": "No Holds.",
+        "enrollmentDates": "Enrollment Dates",
+        "shoppingCart": "Shopping Cart Appointment"
+      },
+      "courseTitle": "课程名称",
+      "noTerm": "未填写学期",
+      "remove": "移除课程",
+      "needsReview": "这门课需要你确认状态或匹配结果。"
+    },
+    "status": {
+      "completed": "已修",
+      "in_progress": "在修",
+      "planned": "计划",
+      "interested": "感兴趣",
+      "not_interested": "不考虑"
+    },
+    "privacy": {
+      "title": "成绩隐私",
+      "copy": "成绩默认不会公开展示。你可以保留用于后续推荐，也可以现在或之后删除。",
+      "deleteGrades": "删除所有成绩",
+      "deleting": "删除中...",
+      "clearMap": "清空学业地图",
+      "clearingMap": "清空中...",
+      "clearMapConfirm": "确定要清空当前账号的课程记录、入学年份和目标专业吗？这个操作不会影响其他用户。"
+    },
+    "future": {
+      "title": "为未来规划系统收集的信号",
+      "copy": "当前版本不做推荐，重点是低负担地建立状态图。",
+      "signals": {
+        "courseHistory": "已修/在修记录",
+        "targetMajors": "目标专业变化",
+        "statusIntent": "计划与兴趣",
+        "privateGrades": "私密成绩"
+      }
+    },
+    "requirements": {
+      "title": "Requirement Matrix",
+      "empty": "选择入学年份和目标专业后，这里会显示专业要求矩阵。",
+      "emptyMissingProfile": "请选择入学年份和目标专业后生成专业要求矩阵。",
+      "emptyMissingCatalog": "当前后端还没有这个入学年份/专业的要求数据，请先同步专业要求材料。",
+      "minimums": "最低 {courses} 门 / {credits} 学分",
+      "more": "+{count} 更多",
+      "moreCourses": "+{count} 更多课程",
+      "moreSections": "+{count} 更多分组",
+      "choicePattern": "{total}选{required}",
+      "unknownTitle": "课程名称待确认",
+      "noProgress": "待确认",
+      "satisfied": "已满足",
+      "expand": "展开",
+      "collapse": "收起",
+      "drawerCopy": "当前进度：{progress}。",
+      "sectionProgress": "进度 {progress}",
+      "sectionProgressWithCredits": "进度 {progress} / 至少 {credits} 学分",
+      "currentProgress": "当前 {courses} / {requiredCourses} 门 · {credits} / {requiredCredits} 学分",
+      "currentCourseProgress": "当前 {courses} / {requiredCourses} 门",
+      "projectedProgress": "计划后 {courses} / {requiredCourses} 门 · {credits} / {requiredCredits} 学分",
+      "projectedCourseProgress": "计划后 {courses} / {requiredCourses} 门",
+      "creditProgress": "当前 {credits} / {requiredCredits} 学分",
+      "projectedCreditProgress": "计划后 {credits} / {requiredCredits} 学分",
+      "creditToConfirm": "学分待核对",
+      "countedToward": "已计入：{section}",
+      "sectionKinds": {
+        "required": "必修",
+        "choice": "选项",
+        "elective": "选修"
+      },
+      "status": {
+        "now": "在修 / 计划",
+        "done": "已修",
+        "need": "未覆盖",
+        "choice": "候选",
+        "more": "展开更多",
+        "completed": "已修",
+        "in_progress": "在修",
+        "planned": "计划",
+        "candidate": "候选",
+        "excluded_duplicate": "已计入其他要求",
+        "missing_credit": "学分待核对"
+      }
+    },
+    "detail": {
+      "overviewTitle": "怎么看这张矩阵",
+      "overviewCopy": "点击任意要求行可以查看完整课程列表；点击顶部先修或成绩卡片可以看对应解释。",
+      "gradesTitle": "OCGA / MCGA",
+      "gradesCopy": "成绩只用于你的私密学业地图，上传后才会计算。",
+      "ocgaRule": "Overall CGA：所有计 grade point 的课程等权平均。",
+      "mcgaRule": "Major CGA：按当前专业要求中计入的课程估算，等权平均。",
+      "gradePrivacy": "成绩默认不公开展示，也可以随时删除；没有上传成绩时显示未上传。",
+      "prerequisitesTitle": "先修卡点",
+      "prerequisitesCopy": "{blocked} 门目标课有先修卡点。",
+      "noBlockers": "暂时没有需要优先处理的先修卡点。",
+      "missing": "缺少先修：",
+      "rowCopy": "当前进度 {progress}。这里展示这一行的完整课程池。",
+      "minCourses": "最低 {count} 门",
+      "minCredits": "最低 {count} 学分"
+    },
+    "records": {
+      "title": "课程状态库",
+      "copy": "把每门课标成已修、在修、计划或感兴趣，之后系统才能理解你真正的学业路径。",
+      "empty": "还没有课程记录。先从 Course History 粘贴导入一批课程吧。",
+      "noTerm": "未分配学期",
+      "untitled": "未填写课程名称",
+      "privateGrade": "私密成绩 {grade}",
+      "delete": "删除课程"
+    },
+    "messages": {
+      "profileSaved": "目标专业已更新。",
+      "parsed": "已解析 {count} 条课程记录，请确认后保存。",
+      "importSaved": "课程记录已保存。",
+      "recordDeleted": "课程记录已删除。",
+      "gradesDeleted": "已删除 {count} 条成绩记录。",
+      "recordsCleared": "已清空 {count} 条课程记录。"
+    },
+    "errors": {
+      "load": "学业地图加载失败，请稍后重试。",
+      "profile": "保存目标专业失败，请稍后重试。",
+      "parse": "解析失败，请检查粘贴内容。",
+      "importSave": "保存课程记录失败，请稍后重试。",
+      "record": "更新课程记录失败，请稍后重试。",
+      "grades": "删除成绩失败，请稍后重试。",
+      "clearRecords": "清空学业地图失败，请稍后重试。"
+    },
+    "coursesCta": {
+      "title": "把课程评价和学业地图连起来",
+      "copy": "查课时可以顺手打开学业地图，把想修、在修、已修的状态维护起来。",
+      "action": "打开学业地图"
+    },
+    "courseDetail": {
+      "title": "加入我的学业地图",
+      "copy": "把这门课标成计划或感兴趣，之后会成为规划推荐的上下文。",
+      "saved": "已更新到学业地图。",
+      "saveFailed": "更新学业地图失败，请稍后重试。"
+    }
+  },
+  "matching": {
+    "breadcrumbs": {
+      "ariaLabel": "团队匹配导航路径",
+      "root": "团队匹配",
+      "profile": "个人资料设置",
+      "discover": "发现项目",
+      "projects": "项目",
+      "createProject": "创建项目",
+      "editProject": "编辑项目",
+      "projectDetails": "项目详情",
+      "applications": "我的申请"
+    },
+    "profileSetup": {
+      "pageTitle": "个人资料设置",
+      "title": "设置个人资料",
+      "subtitle": "简单介绍你感兴趣的问题领域并设置联系方式，以便队友能够联系到你。",
+      "problemSectionTitle": "你感兴趣解决什么问题？",
+      "problemInterestLabel": "描述你感兴趣的问题领域 *",
+      "problemInterestPlaceholder": "例如：想改善校园生活的某个方面，或对某个技术领域很好奇，或想解决一个具体的社会问题...",
+      "helpText": "不用担心描述得不够专业，系统会通过 AI 理解你的兴趣并匹配合适的项目和队友。",
+      "save": "保存资料",
+      "update": "更新资料",
+      "saveAndContinue": "保存并继续到项目发现",
+      "saveFailed": "保存资料失败，请稍后重试"
+    },
+    "contact": {
+      "title": "联系信息设置",
+      "description": "设置你的公开联系方式，其他用户可以通过这些方式联系你。",
+      "privacyTitle": "隐私提醒",
+      "privacyBody": "你的联系方式会显示在个人资料和帖子中，请仅填写你愿意公开分享的信息。",
+      "methods": {
+        "email": {
+          "name": "邮箱",
+          "description": "通过邮箱联系",
+          "placeholder": "请输入邮箱地址"
+        },
+        "wechat": {
+          "name": "微信",
+          "description": "通过微信联系",
+          "placeholder": "微信号或昵称"
+        },
+        "qq": {
+          "name": "QQ",
+          "description": "通过 QQ 联系",
+          "placeholder": "QQ 号码"
+        },
+        "telegram": {
+          "name": "Telegram",
+          "description": "通过 Telegram 联系",
+          "placeholder": "用户名或 Telegram handle"
+        },
+        "discord": {
+          "name": "Discord",
+          "description": "通过 Discord 联系",
+          "placeholder": "username#1234"
+        },
+        "phone": {
+          "name": "电话",
+          "description": "通过电话联系",
+          "placeholder": "+86 138 0000 0000"
+        }
+      }
+    }
+  },
   "welcome": "欢迎",
   "login": "登录",
   "logout": "退出登录",
   "settings": "设置",
-  "forum": "论坛",
+  "forum": {
+    "label": "论坛",
+    "list": {
+      "pageTitle": "论坛 - UniKorn 科广汇",
+      "metaDescription": "浏览校园论坛中的最新帖子、热门讨论和课程相关分享。",
+      "title": "论坛",
+      "createPost": "发帖",
+      "loading": "加载中...",
+      "loadMore": "加载更多...",
+      "endReached": "已加载全部内容",
+      "empty": "暂时还没有帖子，来发第一篇吧。",
+      "sort": {
+        "latest": "最新",
+        "hot": "最热",
+        "oldest": "最早"
+      },
+      "errors": {
+        "loadFailed": "获取文章列表失败",
+        "retryable": "获取文章列表失败，请稍后重试"
+      }
+    },
+    "detail": {
+      "pageTitle": "帖子详情",
+      "metaDescription": "阅读帖子全文、附件预览和评论内容。",
+      "backToForum": "返回论坛",
+      "share": "分享",
+      "copied": "已复制",
+      "downloadAttachment": "下载附件",
+      "previewLoading": "预览加载中...",
+      "deleteConfirmTitle": "确认删除",
+      "deleteConfirmMessage": "确定要删除这篇帖子吗？此操作无法撤销。",
+      "deleteSuccessMessage": "帖子已成功删除",
+      "fileSections": {
+        "pdf": "PDF",
+        "docx": "Word (.docx)",
+        "doc": "Word (.doc)",
+        "downloads": "附件下载"
+      },
+      "fileFallbacks": {
+        "attachment": "附件",
+        "pdf": "PDF 附件",
+        "word": "Word 附件"
+      },
+      "imageKinds": {
+        "image": "图片",
+        "photo": "照片",
+        "png": "PNG 图片",
+        "gif": "GIF 动图",
+        "webp": "WebP 图片"
+      },
+      "imageSequence": "{type} {index}/{total}",
+      "errors": {
+        "deleteNoPermission": "您没有权限删除此帖子",
+        "deleteFailedStatus": "删除失败 ({status})",
+        "network": "网络连接失败，请检查您的网络设置后重试",
+        "deletePermission": "您没有权限执行此操作，请联系管理员获取相应权限",
+        "deleteFailed": "删除失败，请稍后重试",
+        "copyFailed": "复制失败，请手动复制链接",
+        "fetchFailed": "获取帖子失败 ({status}): {error}",
+        "fetchNetwork": "无法连接到服务器，请稍后重试"
+      }
+    },
+    "create": {
+      "pageTitle": "发布帖子 - UniKorn 科广汇",
+      "metaDescription": "发布新帖子、添加标签和上传附件。",
+      "title": "发布帖子",
+      "backToCourse": "返回课程页面"
+    },
+    "postCard": {
+      "reactions": "点赞",
+      "comments": "评论",
+      "views": "浏览",
+      "readMore": "阅读更多",
+      "noExcerpt": "暂无内容摘要..."
+    },
+    "comments": {
+      "title": "评论 ({count})",
+      "loginPromptPrefix": "请先",
+      "loginPromptSuffix": "后发表评论",
+      "empty": "暂无评论，来发表第一条评论吧！",
+      "fetchFailed": "获取评论失败",
+      "reply": "回复",
+      "delete": "删除",
+      "replyPlaceholder": "回复评论...",
+      "deleteConfirmTitle": "删除评论确认",
+      "deleteConfirmMessage": "确定要删除这条评论吗？此操作无法撤销。",
+      "deleteSuccessTitle": "删除成功",
+      "deleteSuccessMessage": "评论已成功删除！",
+      "deleteErrorTitle": "删除失败",
+      "deleteNoPermission": "您没有权限删除此评论",
+      "deleteFailedStatus": "删除失败: {status}",
+      "deleteRetry": "删除失败，请重试",
+      "userFallback": "用户{id}",
+      "form": {
+        "placeholder": "写下你的评论...",
+        "submit": "提交评论",
+        "submitting": "提交中...",
+        "loginRequired": "请先登录",
+        "emptyContent": "评论内容不能为空",
+        "submitFailed": "提交评论失败",
+        "submitRetry": "提交失败，请重试"
+      }
+    },
+    "reactions": {
+      "statTitle": "{count} 个 {label} 反应",
+      "pickEmoji": "选择表情",
+      "loginToReact": "请先登录后选择表情",
+      "moreEmojis": "更多表情",
+      "availableCount": "可用表情 ({count} 个)",
+      "noAvailable": "暂无可用表情",
+      "retryLoad": "重新获取"
+    }
+  },
+  "feedbackModule": {
+    "index": {
+      "pageTitle": "意见反馈 - UniKorn 科广汇",
+      "metaDescription": "查看公开反馈、提交新建议，并围绕已公开的反馈继续讨论与协作修改。",
+      "title": "反馈",
+      "cta": "提交反馈",
+      "filters": {
+        "public": "公开反馈 {count}",
+        "mine": "我的反馈 {count}"
+      },
+      "errors": {
+        "publicLoadFailed": "加载公开反馈失败。",
+        "myLoadFailed": "加载我的反馈失败。"
+      },
+      "emptyStates": {
+        "public": "暂时还没有公开反馈。",
+        "mineTitle": "你还没有提交过反馈",
+        "mineHint": "如果最近在站内遇到体验问题，或者有想补充的新功能，现在就可以直接提交。"
+      }
+    },
+    "card": {
+      "emptyExcerpt": "这条反馈还没有正文。",
+      "authorFallback": "用户 #{id}",
+      "author": "反馈人：{author}",
+      "version": "版本 {count}",
+      "comments": "{count} 条评论",
+      "mergeRequests": "{count} 个协作提案"
+    },
+    "create": {
+      "pageTitle": "提交反馈 - UniKorn 科广汇",
+      "metaDescription": "提交新的意见反馈，帮助 UniKorn 持续改进站内体验。",
+      "back": "返回反馈列表",
+      "title": "提交建议反馈",
+      "subtitle": "把问题描述清楚、把背景写完整，会让后续审核和协作修改都更顺畅。",
+      "noteTitle": "提交前提醒",
+      "noteBody": "你的反馈会先进入待审核队列。管理员确认内容适合公开后，它才会出现在反馈列表中，后续也会保留评论和版本记录。",
+      "tips": {
+        "context": "尽量写清楚问题出现的场景、入口和预期行为。",
+        "impact": "如果影响了使用体验，可以补充受影响的人群或频率。",
+        "followUp": "公开后其他同学可以评论或发起协作提案，一起把正文补充完整。"
+      }
+    },
+    "form": {
+      "titleLabel": "反馈标题",
+      "titlePlaceholder": "一句话概括你想反馈的问题",
+      "contentLabel": "反馈正文（Markdown）",
+      "contentHint": "建议补充背景、问题现象、理想结果和可选方案，方便后续审核与讨论。",
+      "submit": "提交反馈",
+      "submitting": "提交中...",
+      "titleRequired": "请输入反馈标题。",
+      "contentRequired": "请输入反馈正文。",
+      "submitFailed": "提交失败，请稍后重试。"
+    },
+    "status": {
+      "published": "公开中",
+      "closed": "已关闭",
+      "pending_review": "待审核",
+      "rejected": "未通过"
+    },
+    "api": {
+      "listFailed": "获取反馈列表失败。",
+      "listMineFailed": "获取我的反馈失败。",
+      "detailFailed": "获取反馈详情失败。",
+      "versionsFailed": "获取版本历史失败。",
+      "createFailed": "提交反馈失败。",
+      "commentCreateFailed": "发布评论失败。",
+      "mergeRequestCreateFailed": "发起协作提案失败。",
+      "mergeRequestDetailFailed": "获取协作提案详情失败。",
+      "mergeRequestUpdateFailed": "更新协作提案正文失败。",
+      "mergeCommentCreateFailed": "发布协作讨论评论失败。",
+      "authorRequestChangesFailed": "要求继续修改失败。",
+      "authorRejectFailed": "拒绝协作提案失败。",
+      "authorAcceptFailed": "提交管理员终审失败。"
+    },
+    "adminApi": {
+      "listFeedbacksFailed": "获取反馈记录失败。",
+      "listPendingFeedbackFailed": "获取待审核反馈失败。",
+      "listMergeRequestsFailed": "获取协作提案记录失败。",
+      "listPendingMergeRequestsFailed": "获取待终审协作提案失败。",
+      "approveFeedbackFailed": "公开反馈失败。",
+      "rejectFeedbackFailed": "驳回反馈失败。",
+      "closeFeedbackFailed": "关闭反馈失败。",
+      "reopenFeedbackFailed": "重新打开反馈失败。",
+      "endCommentsFailed": "结束评论失败。",
+      "resumeCommentsFailed": "恢复评论失败。",
+      "approveMergeRequestFailed": "通过协作提案失败。",
+      "rejectMergeRequestFailed": "驳回协作提案失败。",
+      "hideCommentFailed": "隐藏评论失败。"
+    },
+    "comments": {
+      "title": "评论区",
+      "closed": "该反馈评论已结束",
+      "placeholder": "写下你对这条反馈的想法...",
+      "disabledPlaceholder": "评论功能已关闭",
+      "submit": "发表评论",
+      "login": "登录后可以参与这条反馈的讨论。",
+      "empty": "还没有评论，来发第一条吧。",
+      "hidden": "该评论因管理原因已被隐藏。",
+      "hiddenNote": "该评论已被管理员处理。",
+      "userFallback": "用户 #{id}"
+    },
+    "versionHistory": {
+      "title": "版本历史",
+      "version": "V{count}",
+      "empty": "还没有历史版本。"
+    },
+    "detail": {
+      "pageTitle": "反馈详情 - UniKorn 科广汇",
+      "metaDescription": "查看反馈正文、版本历史、协作提案与评论讨论。",
+      "back": "返回反馈分区",
+      "subtitle": "这里收录当前正文、协作提案和评论讨论，方便大家围绕同一条反馈持续补充和修改。",
+      "updatedAt": "最后更新于 {date}",
+      "currentBodyTitle": "当前正文",
+      "currentBodyHint": "这是当前对外展示的反馈正文版本，后续接受的协作提案会继续沉淀到这里。",
+      "mergeTitle": "公开协作提案",
+      "mergeHint": "发起后会公开展示，反馈作者可在此基础上继续修改，并决定是否提交管理员终审。",
+      "noMerges": "还没有协作提案。",
+      "mergeSummaryLabel": "变更摘要",
+      "mergeSummaryPlaceholder": "一句话概括你想改什么",
+      "mergeBodyLabel": "协作提案正文（默认带出原文 Markdown）",
+      "mergeSubmit": "发起协作提案",
+      "mergeSubmitting": "提交中...",
+      "mergeSuccess": "协作提案已经发出，反馈作者后续会收到通知。",
+      "mergeLogin": "登录后可以发起协作提案。",
+      "sidebarTitle": "反馈概览",
+      "feedbackId": "反馈编号",
+      "statusLabel": "当前状态",
+      "versionCountLabel": "版本数",
+      "commentCountLabel": "评论数",
+      "errors": {
+        "loadFailed": "加载反馈详情失败。",
+        "commentFailed": "发表评论失败。",
+        "mergeBodyRequired": "请输入协作提案正文。",
+        "mergeSubmitFailed": "发起协作提案失败。"
+      }
+    },
+    "mergeRequest": {
+      "pageTitle": "协作提案详情 - UniKorn 科广汇",
+      "metaDescription": "查看协作提案正文、作者处理状态和讨论记录。",
+      "back": "返回反馈详情",
+      "feedbackLinkLabel": "来自反馈 #{id}",
+      "summaryFallback": "这条协作提案没有额外摘要。",
+      "proposer": "提案人：用户 #{id}",
+      "baseVersion": "基于版本：V{version}",
+      "bodyTitle": "提案正文",
+      "bodyHint": "所有更改都会以这条协作提案为单位留痕，作者接受后再进入管理员终审。",
+      "reviewTitle": "作者处理区",
+      "reviewHint": "你可以先继续修改这条提案正文，再决定要求修改、拒绝，或提交管理员终审。",
+      "notePlaceholder": "给提案人或管理员留下一句说明（可选）",
+      "saveDraft": "先保存正文",
+      "saving": "处理中...",
+      "requestChanges": "要求修改",
+      "reject": "拒绝",
+      "submitForAdmin": "提交管理员终审",
+      "sidebarTitle": "提案状态",
+      "statusLabel": "当前状态",
+      "createdAt": "创建于：{date}",
+      "authorNote": "作者说明：{note}",
+      "adminNote": "管理员说明：{note}",
+      "backToHub": "返回反馈分区",
+      "status": {
+        "open": "讨论中",
+        "author_changes_requested": "作者要求修改",
+        "author_rejected": "作者已拒绝",
+        "author_accepted_pending_admin": "待管理员终审",
+        "admin_rejected": "管理员已拒绝",
+        "merged": "已合并",
+        "withdrawn": "已撤回"
+      },
+      "success": {
+        "draftSaved": "提案正文已更新。",
+        "requestChanges": "已要求继续修改这条协作提案。",
+        "rejected": "你已经拒绝这条协作提案。",
+        "submittedForAdmin": "这条协作提案已提交给管理员终审。"
+      },
+      "errors": {
+        "loadFailed": "加载协作提案详情失败。",
+        "saveFailed": "保存提案正文失败。",
+        "actionFailed": "处理协作提案失败。",
+        "commentFailed": "发布讨论评论失败。"
+      }
+    }
+  },
   "home": "首页",
   "users": "用户",
   "activity": "活动",
-  "Search for posts, users, courses..." : "搜索帖子、用户、课程...",
-  "Visitor user" : "访客用户",
-  "register" : "注册",
-  "courses": "课程",
+  "Search for posts, users, courses...": "搜索帖子、用户、课程...",
+  "Visitor user": "访客用户",
+  "register": "注册",
   "gugu": "咕咕",
   "Form a team": "组队",
   "Scheduler": "排课助手",
@@ -30,7 +1437,7 @@
   "Phone": "电话",
   "Contact via Phone": "通过电话联系",
   "Privacy Notice": "隐私提醒",
-  "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.": "您填写的联系方式将在您的个人资料中公开显示，所有查看您资料的用户都能看到。请谨慎填写个人信息。",
+  "Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.": "您填写的联系方式将在您的个人资料和帖子中公开显示，请谨慎分享。",
   "Team Matching": "团队匹配",
   "Profile Settings": "个人资料设置",
   "Discover Projects": "发现项目",
@@ -49,6 +1456,91 @@
   "Let's get to know you": "让我们了解一下你",
   "Add your skills": "添加你的技能",
   "Setup complete! Start matching": "设置完成！开始匹配",
-  "Find partners and interesting projects": "找到合作伙伴和有趣的项目"
-  
+  "Find partners and interesting projects": "找到合作伙伴和有趣的项目",
+  "scheduler": {
+    "title": "排课助手",
+    "dashboard": "排课面板",
+    "map": "课程地图",
+    "cart": "课程购物车",
+    "search": "搜索课程",
+    "add": "添加",
+    "addCourse": "添加课程",
+    "remove": "移除",
+    "noResults": "未找到课程",
+    "noResultsDescription": "换一个课程代码、标题关键词或常用学科再试试。",
+    "emptyCart": "购物车为空",
+    "emptyCartDescription": "先添加想比较的课程，排课助手会自动生成可行方案。",
+    "noSolution": "未找到可行方案",
+    "plan": "方案",
+    "filter": "筛选",
+    "display": "显示",
+    "loginHint": "登录后可保存你的课程选择",
+    "guestHint": "登录后可跨设备保存购物车；未登录时仍可临时使用排课功能。",
+    "loading": "加载中...",
+    "loadingMap": "课程地图加载中...",
+    "searching": "搜索中...",
+    "searchPlaceholder": "按课程代码或标题搜索...",
+    "plannerEyebrow": "课程工具",
+    "plannerSubtitle": "选择一个学期，添加课程并比较不同班别组合，快速找到不冲突的课表。",
+    "openLatest": "打开最新学期",
+    "availableSemesters": "可排学期",
+    "availableSections": "可用班别",
+    "latestSemester": "最新学期",
+    "enterPlanner": "进入排课",
+    "backToSemesters": "返回学期",
+    "workspaceSubtitle": "添加课程后可切换方案、启用筛选时段，并调整课表中显示的信息。",
+    "selectedCourses": "已选课程",
+    "planCount": "可行方案",
+    "totalCredits": "总学分",
+    "cartSubtitle": "搜索课程代码或标题，也可以从常用学科开始筛选。",
+    "cartSearchEmptyTitle": "搜索课程加入排课车",
+    "cartSearchEmptyDescription": "输入课程代码、课程标题，或点击上方常用学科标签开始。",
+    "emptyTimetableTitle": "课表还没有课程",
+    "emptyTimetableDescription": "从课程购物车添加课程后，这里会显示自动组合出的上课时间。",
+    "firstPlan": "第一个方案",
+    "previousPlan": "上一个方案",
+    "nextPlan": "下一个方案",
+    "lastPlan": "最后一个方案",
+    "mapSearchPlaceholder": "搜索课程地图...",
+    "searchFailed": "课程搜索失败，请稍后重试。",
+    "cartFailed": "课程购物车更新失败，请稍后重试。",
+    "cartAdded": "{course} 已加入 {semester} 排课车。",
+    "cartRemoved": "{course} 已从 {semester} 排课车移出。",
+    "cartAlreadyAdded": "{course} 已经在 {semester} 排课车中。",
+    "cartCourseUnavailable": "{course} 在当前排课学期 {semester} 未开设，无法加入排课车。",
+    "mapFailed": "课程地图加载失败，请稍后重试。",
+    "noSemesters": "暂时没有可用学期。",
+    "sections": "{count} 个班别",
+    "credits": "{count} 学分",
+    "creditsShort": "{count} 学分",
+    "main": "主课表",
+    "klms": "KLMS",
+    "layer": "第 {layer} 层",
+    "all": "全选",
+    "none": "全不选",
+    "details": "详情",
+    "emptyCartHint": "请先从课程购物车添加课程，再开始生成课表。",
+    "allDisabled": "请至少启用一门课程后再生成课表。",
+    "unavailableLayer": "有课程层级未启用任何可用班别。",
+    "close": "关闭",
+    "description": "课程简介",
+    "prerequisites": "先修要求",
+    "corequisites": "共修要求",
+    "exclusions": "互斥课程",
+    "notAvailable": "暂无信息",
+    "displayName": "课程名称",
+    "displaySection": "班别",
+    "displayLocation": "地点",
+    "displayInstructor": "教师",
+    "displayDuration": "时间",
+    "days": {
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六",
+      "sun": "周日"
+    }
+  }
 }

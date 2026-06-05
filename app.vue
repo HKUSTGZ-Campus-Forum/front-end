@@ -7,27 +7,22 @@
 
 <script setup lang="ts">
 import { useAuth } from "~/composables/useAuth";
-import { useHead } from "#imports";
+import { useHead, useI18n } from "#imports";
 
-// 获取认证功能
 const { init } = useAuth();
+const { t } = useI18n();
 
-// 确保应用启动时检查登录状态
 onMounted(() => {
   if (process.client) {
     init();
   }
 });
 
-useHead({
-  title: 'UniKorn 科广汇',
-  meta: [
-    { name: 'description', content: 'uniKonwn - Campus Forum' }
-  ],
-  link: [
-    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-  ]
-})
+useHead(() => ({
+  title: t("common.appTitle"),
+  meta: [{ name: "description", content: t("common.description") }],
+  link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+}));
 </script>
 
 <!-- this is an example module -->

@@ -18,35 +18,31 @@ definePageMeta({ layout: 'keguang-auth' })
 const route = useRoute()
 const router = useRouter()
 const resetToken = ref('')
+const { t } = useI18n()
+const { getLocalePath } = useAppLocale()
 
 onMounted(() => {
-  // Get token from URL parameters
   const token = route.query.token as string
   if (token) {
     resetToken.value = token
   } else {
-    // If no token, redirect to login
-    router.push('/login')
+    router.push(getLocalePath('/login'))
   }
 })
 
-// Handle successful password reset
 function handleResetSuccess() {
-  // Redirect to login page after successful reset
   setTimeout(() => {
-    router.push('/login')
+    router.push(getLocalePath('/login'))
   }, 2000)
 }
 
-// Go to login page
 function goToLogin() {
-  router.push('/login')
+  router.push(getLocalePath('/login'))
 }
 
-// Set page title
-useHead({
-  title: '重置密码 - uniKorn 校园论坛'
-})
+useHead(() => ({
+  title: `${t('auth.resetPassword.pageTitle')} - UniKorn Campus`,
+}))
 </script>
 
 <style lang="scss" scoped>

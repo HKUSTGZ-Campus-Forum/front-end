@@ -1,19 +1,18 @@
 <!-- components/ui/ErrorModal.vue -->
 <template>
   <teleport to="body">
-    <div v-if="show" class="error-overlay" @click="handleClose">
+      <div v-if="show" class="error-overlay" @click="handleClose">
       <div class="error-container" @click.stop>
         <div class="error-icon-wrapper">
-          <!-- 错误动画效果 -->
           <div class="error-loader"></div>
         </div>
 
-        <h3 class="error-title">{{ title }}</h3>
-        <p class="error-message">{{ message }}</p>
+        <h3 class="error-title">{{ resolvedTitle }}</h3>
+        <p class="error-message">{{ resolvedMessage }}</p>
 
         <div class="error-footer">
           <button class="btn btn-error" @click="handleClose">
-            {{ buttonText }}
+            {{ resolvedButtonText }}
           </button>
         </div>
       </div>
@@ -22,7 +21,9 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from "vue";
+import { computed } from "vue";
+
+const { t } = useI18n();
 
 const props = defineProps({
   show: {
@@ -31,19 +32,22 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: "操作失败",
+    default: "",
   },
   message: {
     type: String,
-    default: "操作执行失败，请重试。",
+    default: "",
   },
   buttonText: {
     type: String,
-    default: "确定",
+    default: "",
   },
 });
 
 const emit = defineEmits(["close"]);
+const resolvedTitle = computed(() => props.title || t("modals.error.title"));
+const resolvedMessage = computed(() => props.message || t("modals.error.message"));
+const resolvedButtonText = computed(() => props.buttonText || t("actions.submit"));
 
 const handleClose = () => {
   emit("close");
@@ -83,7 +87,6 @@ const handleClose = () => {
   justify-content: center;
 }
 
-// 错误动画效果
 .error-loader {
   position: relative;
   width: 80px;
@@ -94,7 +97,6 @@ const handleClose = () => {
   animation: error_animation_collect 1s linear 1 both;
 }
 
-// 错误圆圈旋转动画
 @keyframes error_animation_collect {
   0% {
     transform: rotate(270deg);
@@ -115,7 +117,6 @@ const handleClose = () => {
   }
 }
 
-// 叉号动画 - 第一条线
 .error-loader::before {
   position: absolute;
   content: '';
@@ -130,7 +131,6 @@ const handleClose = () => {
   opacity: 0;
 }
 
-// 叉号动画 - 第二条线
 .error-loader::after {
   position: absolute;
   content: '';
@@ -145,7 +145,6 @@ const handleClose = () => {
   opacity: 0;
 }
 
-// 第一条线动画
 @keyframes error_line1 {
   0% {
     opacity: 0;
@@ -157,7 +156,6 @@ const handleClose = () => {
   }
 }
 
-// 第二条线动画
 @keyframes error_line2 {
   0% {
     opacity: 0;
@@ -207,7 +205,6 @@ const handleClose = () => {
   }
 }
 
-// 弹窗进入动画
 @keyframes fadeIn {
   from {
     opacity: 0;

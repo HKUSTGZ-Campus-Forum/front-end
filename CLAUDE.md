@@ -1,5 +1,8 @@
 # Frontend Development Notes
 
+## Instruction Priority
+在 `front-end` 目录内工作时，除遵守本文件外，也需要同时遵守仓库根目录的 `AGENTS.md`。如果两者有冲突，优先遵守更具体的前端目录规则；如果不冲突，则两者同时生效。
+
 ## Project Overview
 **UniKorn Campus Forum** - A modern campus forum application built with Nuxt 3/Vue.js frontend and Flask backend.
 

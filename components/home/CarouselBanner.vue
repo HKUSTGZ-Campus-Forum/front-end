@@ -33,17 +33,22 @@
       </div>
     </div>
 
-    <!-- 左箭头 -->
-    <button class="arrow arrow-left" @click="prev" aria-label="上一张">
+    <button
+      class="arrow arrow-left"
+      @click="prev"
+      :aria-label="t('homePage.carousel.previousSlide')"
+    >
       <span class="chevron chevron-left"></span>
     </button>
 
-    <!-- 右箭头 -->
-    <button class="arrow arrow-right" @click="next" aria-label="下一张">
+    <button
+      class="arrow arrow-right"
+      @click="next"
+      :aria-label="t('homePage.carousel.nextSlide')"
+    >
       <span class="chevron chevron-right"></span>
     </button>
 
-    <!-- 指示点 -->
     <div class="dots">
       <button
         v-for="(_, idx) in slides"
@@ -51,69 +56,78 @@
         class="dot"
         :class="{ active: current === idx }"
         @click="goTo(idx)"
-        :aria-label="`第${idx + 1}张`"
+        :aria-label="t('homePage.carousel.slideLabel', { index: idx + 1 })"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
-/** 可选 href：站内路径（如 /contest）或 http(s) 外链；省略则不可点击 */
+const { t, locale } = useI18n();
+const localePath = useLocalePath();
+
 type BannerSlide = {
   image: string
   alt: string
   href?: string
 }
 
-const slides: BannerSlide[] = [
+const slides = computed<BannerSlide[]>(() => [
   {
-    image: '/image/banner/AMWC-1.jpg',
-    alt: '第一届百块奖金web大赛',
-    href: '/contest',
+    image: "/image/banner/AMWC-1.jpg",
+    alt: t("homePage.carousel.slides.contestAlt"),
+    href: localePath("/contest"),
   },
-  { 
-    image: '/image/banner/welcome_cn_2.jpg', 
-    alt: '欢迎来到科广汇（中文）',
-    href: '/'
+  {
+    image: "/image/banner/welcome_cn_2.jpg",
+    alt: t("homePage.carousel.slides.welcomeZhAlt"),
+    href: localePath("/"),
   },
-  { 
-    image: '/image/banner/welcome_en.jpg', 
-    alt: '欢迎来到科广汇（English）',
-    href: '/'
+  {
+    image: "/image/banner/welcome_en.jpg",
+    alt: t("homePage.carousel.slides.welcomeEnAlt"),
+    href: localePath("/"),
   },
-]
+]);
 
 function isExternalHref(url: string) {
-  return /^https?:\/\//i.test(url)
+  return /^https?:\/\//i.test(url);
 }
 
-const current = ref(0)
-let timer: ReturnType<typeof setInterval>
+const current = ref(0);
+let timer: ReturnType<typeof setInterval>;
 
 function next() {
-  current.value = (current.value + 1) % slides.length
-  resetTimer()
+  current.value = (current.value + 1) % slides.value.length;
+  resetTimer();
 }
 
 function prev() {
-  current.value = (current.value - 1 + slides.length) % slides.length
-  resetTimer()
+  current.value = (current.value - 1 + slides.value.length) % slides.value.length;
+  resetTimer();
 }
 
 function goTo(idx: number) {
-  current.value = idx
-  resetTimer()
+  current.value = idx;
+  resetTimer();
 }
 
 function resetTimer() {
-  clearInterval(timer)
-  timer = setInterval(next, 4000)
+  clearInterval(timer);
+  timer = setInterval(next, 4000);
 }
 
-onMounted(() => { timer = setInterval(next, 4000) })
-onUnmounted(() => clearInterval(timer))
+watch(locale, () => {
+  current.value = 0;
+});
+
+onMounted(() => {
+  timer = setInterval(next, 4000);
+});
+
+onUnmounted(() => clearInterval(timer));
 </script>
 
 <style lang="scss" scoped>
@@ -122,7 +136,6 @@ onUnmounted(() => clearInterval(timer))
   border-radius: 16px;
   overflow: hidden;
   width: 100%;
-  /* 两张横幅图片实际尺寸均为 1024×341，保持原始比例 */
   aspect-ratio: 1024 / 341;
   background: #c8e0f4;
   box-shadow: 0 2px 12px rgba(38, 164, 255, 0.1);
@@ -170,7 +183,6 @@ onUnmounted(() => clearInterval(timer))
   display: block;
 }
 
-// 箭头按钮
 .arrow {
   position: absolute;
   top: 50%;
@@ -204,8 +216,13 @@ onUnmounted(() => clearInterval(timer))
     transform: translateY(-50%) scale(1.1);
   }
 
-  &.arrow-left  { left: 8px; }
-  &.arrow-right { right: 8px; }
+  &.arrow-left {
+    left: 8px;
+  }
+
+  &.arrow-right {
+    right: 8px;
+  }
 }
 
 .chevron {
@@ -224,22 +241,21 @@ onUnmounted(() => clearInterval(timer))
   }
 }
 
-// 指示点
 .dots {
   position: absolute;
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: row;   // 强制横向排列，防止被意外改为纵向
+  flex-direction: row;
   flex-wrap: nowrap;
-  align-items: center;   // 防止 flex stretch 把 button 拉高
+  align-items: center;
   gap: 6px;
   z-index: 2;
 }
 
 .dot {
-  display: inline-block; // button 默认 inline，需要显式声明才能精确控制尺寸
+  display: inline-block;
   flex-shrink: 0;
   flex-grow: 0;
   width: 8px !important;
@@ -254,7 +270,6 @@ onUnmounted(() => clearInterval(timer))
   cursor: pointer;
   padding: 0;
   transition: background 0.2s, transform 0.2s;
-  // 不用 aspect-ratio，用双向 !important 确保圆形
   box-sizing: content-box;
 
   &.active {

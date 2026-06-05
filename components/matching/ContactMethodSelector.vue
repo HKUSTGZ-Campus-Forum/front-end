@@ -1,286 +1,186 @@
 <template>
   <div class="contact-method-selector">
-    <h4>{{ t('Contact information Settings') }}</h4>
-    <p class="description">{{ t('Set your public contact information, other users can contact you through these methods') }}</p>
+    <h4>{{ t("matching.contact.title") }}</h4>
+    <p class="description">{{ t("matching.contact.description") }}</p>
 
     <div class="contact-methods">
-      <!-- Email -->
-      <div class="contact-method">
+      <div
+        v-for="method in contactMethodOptions"
+        :key="method.key"
+        class="contact-method"
+      >
         <div class="method-header">
           <div class="method-info">
-            <Icon name="mail" class="method-icon" />
+            <Icon :name="method.icon" class="method-icon" />
             <div class="method-details">
-              <div class="method-name">{{ t('Email') }}</div>
-              <div class="method-desc">{{ t('Contact via email') }}</div>
+              <div class="method-name">{{ t(method.nameKey) }}</div>
+              <div class="method-desc">{{ t(method.descriptionKey) }}</div>
             </div>
           </div>
           <label class="toggle">
             <input
               type="checkbox"
-              :checked="isMethodEnabled('email')"
-              @change="toggleMethod('email', $event.target.checked)"
+              :checked="isMethodEnabled(method.key)"
+              @change="toggleMethod(method.key, $event.target.checked)"
             />
             <span class="toggle-slider"></span>
           </label>
         </div>
-        <div v-if="isMethodEnabled('email')" class="method-input">
+        <div v-if="isMethodEnabled(method.key)" class="method-input">
           <input
-            v-model="contactValues.email"
-            type="email"
-            placeholder="your-email@example.com"
+            v-model="contactValues[method.key]"
+            :type="method.inputType"
+            :placeholder="t(method.placeholderKey)"
             class="contact-input"
-            @blur="updateContactValue('email')"
-          />
-        </div>
-      </div>
-
-      <!-- WeChat -->
-      <div class="contact-method">
-        <div class="method-header">
-          <div class="method-info">
-            <Icon name="message-square" class="method-icon" />
-            <div class="method-details">
-              <div class="method-name">{{ t('WeChat') }}</div>
-              <div class="method-desc">{{ t('Contact via WeChat') }}</div>
-            </div>
-          </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="isMethodEnabled('wechat')"
-              @change="toggleMethod('wechat', $event.target.checked)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div v-if="isMethodEnabled('wechat')" class="method-input">
-          <input
-            v-model="contactValues.wechat"
-            type="text"
-            placeholder="微信号或昵称"
-            class="contact-input"
-            @blur="updateContactValue('wechat')"
-          />
-        </div>
-      </div>
-
-      <!-- QQ -->
-      <div class="contact-method">
-        <div class="method-header">
-          <div class="method-info">
-            <Icon name="message-circle" class="method-icon" />
-            <div class="method-details">
-              <div class="method-name">{{ t('QQ') }}</div>
-              <div class="method-desc">{{ t('Contact via QQ') }}</div>
-            </div>
-          </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="isMethodEnabled('qq')"
-              @change="toggleMethod('qq', $event.target.checked)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div v-if="isMethodEnabled('qq')" class="method-input">
-          <input
-            v-model="contactValues.qq"
-            type="text"
-            placeholder="QQ号码"
-            class="contact-input"
-            @blur="updateContactValue('qq')"
-          />
-        </div>
-      </div>
-
-      <!-- Telegram -->
-      <div class="contact-method">
-        <div class="method-header">
-          <div class="method-info">
-            <Icon name="send" class="method-icon" />
-            <div class="method-details">
-              <div class="method-name">{{ t('Telegram') }}</div>
-              <div class="method-desc">{{ t('Contact via Telegram') }}</div>
-            </div>
-          </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="isMethodEnabled('telegram')"
-              @change="toggleMethod('telegram', $event.target.checked)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div v-if="isMethodEnabled('telegram')" class="method-input">
-          <input
-            v-model="contactValues.telegram"
-            type="text"
-            placeholder="@username 或用户名"
-            class="contact-input"
-            @blur="updateContactValue('telegram')"
-          />
-        </div>
-      </div>
-
-      <!-- Discord -->
-      <div class="contact-method">
-        <div class="method-header">
-          <div class="method-info">
-            <Icon name="hash" class="method-icon" />
-            <div class="method-details">
-              <div class="method-name">{{ t('Discord') }}</div>
-              <div class="method-desc">{{ t('Contact via Discord') }}</div>
-            </div>
-          </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="isMethodEnabled('discord')"
-              @change="toggleMethod('discord', $event.target.checked)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div v-if="isMethodEnabled('discord')" class="method-input">
-          <input
-            v-model="contactValues.discord"
-            type="text"
-            placeholder="username#1234"
-            class="contact-input"
-            @blur="updateContactValue('discord')"
-          />
-        </div>
-      </div>
-
-      <!-- Phone -->
-      <div class="contact-method">
-        <div class="method-header">
-          <div class="method-info">
-            <Icon name="phone" class="method-icon" />
-            <div class="method-details">
-              <div class="method-name">{{ t('Phone') }}</div>
-              <div class="method-desc">{{ t('Contact via Phone') }}</div>
-            </div>
-          </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="isMethodEnabled('phone')"
-              @change="toggleMethod('phone', $event.target.checked)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div v-if="isMethodEnabled('phone')" class="method-input">
-          <input
-            v-model="contactValues.phone"
-            type="tel"
-            placeholder="+86 138 0000 0000"
-            class="contact-input"
-            @blur="updateContactValue('phone')"
+            @blur="updateContactValue(method.key)"
           />
         </div>
       </div>
     </div>
 
-    <!-- Privacy Notice -->
     <div class="privacy-notice">
       <Icon name="shield" class="privacy-icon" />
       <div class="privacy-text">
-        <strong>{{ t('Privacy Notice') }}</strong> <br />
-        {{ t('Your contact information will be publicly visible on your profile and posts. Please ensure you are comfortable sharing this information with others.') }}
+        <strong>{{ t("matching.contact.privacyTitle") }}</strong> <br />
+        {{ t("matching.contact.privacyBody") }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from "vue";
 
-// Props
+const { t } = useI18n();
+
 const props = defineProps({
   modelValue: {
     type: Array,
-    default: () => []
-  }
-})
+    default: () => [],
+  },
+});
 
-// Emits
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"]);
 
-// State
+const contactMethodOptions = [
+  {
+    key: "email",
+    icon: "mail",
+    inputType: "email",
+    nameKey: "matching.contact.methods.email.name",
+    descriptionKey: "matching.contact.methods.email.description",
+    placeholderKey: "matching.contact.methods.email.placeholder",
+  },
+  {
+    key: "wechat",
+    icon: "message-square",
+    inputType: "text",
+    nameKey: "matching.contact.methods.wechat.name",
+    descriptionKey: "matching.contact.methods.wechat.description",
+    placeholderKey: "matching.contact.methods.wechat.placeholder",
+  },
+  {
+    key: "qq",
+    icon: "message-circle",
+    inputType: "text",
+    nameKey: "matching.contact.methods.qq.name",
+    descriptionKey: "matching.contact.methods.qq.description",
+    placeholderKey: "matching.contact.methods.qq.placeholder",
+  },
+  {
+    key: "telegram",
+    icon: "send",
+    inputType: "text",
+    nameKey: "matching.contact.methods.telegram.name",
+    descriptionKey: "matching.contact.methods.telegram.description",
+    placeholderKey: "matching.contact.methods.telegram.placeholder",
+  },
+  {
+    key: "discord",
+    icon: "hash",
+    inputType: "text",
+    nameKey: "matching.contact.methods.discord.name",
+    descriptionKey: "matching.contact.methods.discord.description",
+    placeholderKey: "matching.contact.methods.discord.placeholder",
+  },
+  {
+    key: "phone",
+    icon: "phone",
+    inputType: "tel",
+    nameKey: "matching.contact.methods.phone.name",
+    descriptionKey: "matching.contact.methods.phone.description",
+    placeholderKey: "matching.contact.methods.phone.placeholder",
+  },
+];
+
 const contactValues = ref({
-  email: '',
-  wechat: '',
-  qq: '',
-  telegram: '',
-  discord: '',
-  phone: ''
-})
+  email: "",
+  wechat: "",
+  qq: "",
+  telegram: "",
+  discord: "",
+  phone: "",
+});
 
-// Initialize from modelValue
 const initializeFromProps = () => {
+  const nextValues = {
+    email: "",
+    wechat: "",
+    qq: "",
+    telegram: "",
+    discord: "",
+    phone: "",
+  };
+
   if (props.modelValue?.length) {
-    props.modelValue.forEach(contact => {
-      if (contact.method && contact.value) {
-        contactValues.value[contact.method] = contact.value
+    props.modelValue.forEach((contact) => {
+      if (contact.method && contact.value && contact.method in nextValues) {
+        nextValues[contact.method] = contact.value;
       }
-    })
+    });
   }
-}
 
-// Initialize on mount
-initializeFromProps()
+  contactValues.value = nextValues;
+};
 
-// Watch for prop changes
-watch(() => props.modelValue, initializeFromProps, { deep: true })
+initializeFromProps();
 
-// Methods
+watch(() => props.modelValue, initializeFromProps, { deep: true });
+
 const isMethodEnabled = (method) => {
-  return props.modelValue.some(contact => contact.method === method)
-}
+  return props.modelValue.some((contact) => contact.method === method);
+};
 
 const toggleMethod = (method, enabled) => {
-  const currentMethods = [...props.modelValue]
+  const currentMethods = [...props.modelValue];
 
   if (enabled) {
-    // Add method if not already present
-    if (!currentMethods.some(contact => contact.method === method)) {
+    if (!currentMethods.some((contact) => contact.method === method)) {
       currentMethods.push({
         method,
-        value: contactValues.value[method] || ''
-      })
+        value: contactValues.value[method] || "",
+      });
     }
   } else {
-    // Remove method
-    const index = currentMethods.findIndex(contact => contact.method === method)
+    const index = currentMethods.findIndex((contact) => contact.method === method);
     if (index > -1) {
-      currentMethods.splice(index, 1)
+      currentMethods.splice(index, 1);
     }
-    // Clear the input value
-    contactValues.value[method] = ''
+    contactValues.value[method] = "";
   }
 
-  emit('update:modelValue', currentMethods)
-}
+  emit("update:modelValue", currentMethods);
+};
 
 const updateContactValue = (method) => {
-  const currentMethods = [...props.modelValue]
-  const index = currentMethods.findIndex(contact => contact.method === method)
+  const currentMethods = [...props.modelValue];
+  const index = currentMethods.findIndex((contact) => contact.method === method);
 
   if (index > -1) {
-    // Update existing method
-    currentMethods[index].value = contactValues.value[method] || ''
-    emit('update:modelValue', currentMethods)
+    currentMethods[index].value = contactValues.value[method] || "";
+    emit("update:modelValue", currentMethods);
   }
-}
-
-// Computed
-const enabledMethods = computed(() => {
-  return props.modelValue.filter(contact => contact.value && contact.value.trim())
-})
+};
 </script>
 
 <style scoped>

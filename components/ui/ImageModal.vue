@@ -3,12 +3,10 @@
   <teleport to="body">
     <div v-if="show" class="image-modal-overlay" @click="handleOverlayClick">
       <div class="image-modal-container" @click.stop>
-        <!-- Close button -->
         <button class="close-button" @click="handleClose">
           <span class="close-icon">✕</span>
         </button>
         
-        <!-- Navigation buttons for multiple images -->
         <button 
           v-if="showNavigation && hasPrevious" 
           class="nav-button nav-previous" 
@@ -25,7 +23,6 @@
           <span class="nav-icon">›</span>
         </button>
         
-        <!-- Image container -->
         <div class="image-container" ref="imageContainer">
           <div 
             v-if="imageUrl"
@@ -43,7 +40,7 @@
           >
             <img 
               :src="imageUrl" 
-              :alt="imageAlt || 'Image'"
+              :alt="imageAlt || t('imageModal.defaultAlt')"
               class="modal-image"
               :style="imageStyle"
               @load="handleImageLoad"
@@ -53,11 +50,10 @@
           </div>
           <div v-else class="image-placeholder">
             <span class="placeholder-icon">🖼️</span>
-            <p>无法加载图片</p>
+            <p>{{ t("imageModal.loadFailed") }}</p>
           </div>
         </div>
         
-        <!-- Zoom controls -->
         <div v-if="imageUrl" class="zoom-controls">
           <button class="zoom-btn" @click="zoomOut" :disabled="scale <= minScale">
             <span class="zoom-icon">-</span>
@@ -66,12 +62,11 @@
           <button class="zoom-btn" @click="zoomIn" :disabled="scale >= maxScale">
             <span class="zoom-icon">+</span>
           </button>
-          <button class="zoom-btn reset-btn" @click="resetZoom" title="适应屏幕">
+          <button class="zoom-btn reset-btn" @click="resetZoom" :title="t('imageModal.fitToScreen')">
             <span class="zoom-icon">⚏</span>
           </button>
         </div>
         
-        <!-- Image info -->
         <div v-if="filename || imageAlt" class="image-info">
           <p class="image-filename">{{ filename || imageAlt }}</p>
         </div>
@@ -83,6 +78,7 @@
 <script setup>
 import { defineProps, defineEmits, ref, computed, watch, nextTick } from 'vue';
 
+const { t } = useI18n();
 const props = defineProps({
   show: {
     type: Boolean,
@@ -120,7 +116,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'previous', 'next', 'image-load', 'image-error']);
 
-// Zoom and pan state
 const scale = ref(1);
 const translateX = ref(0);
 const translateY = ref(0);
@@ -130,26 +125,21 @@ const imageContainer = ref(null);
 const naturalDimensions = ref({ width: 0, height: 0 });
 const fittedScale = ref(1);
 
-// Zoom constraints
 const minScale = 0.1;
 const maxScale = 5;
 const zoomStep = 0.2;
 
-// Reset state when modal opens/closes
 watch(() => props.show, (newShow) => {
   if (newShow) {
-    // Reset state but don't auto-fit yet - wait for image load
     scale.value = 1;
     translateX.value = 0;
     translateY.value = 0;
   }
 });
 
-// Watch for image changes and reset zoom
 watch(() => props.imageUrl, () => {
   if (props.imageUrl) {
     nextTick(() => {
-      // Reset but don't auto-fit yet - wait for image load
       scale.value = 1;
       translateX.value = 0;
       translateY.value = 0;
@@ -157,7 +147,6 @@ watch(() => props.imageUrl, () => {
   }
 });
 
-// Computed styles
 const imageWrapperStyle = computed(() => ({
   transform: `translate(${translateX.value}px, ${translateY.value}px)`,
   cursor: scale.value > 1 ? (isDragging.value ? 'grabbing' : 'grab') : 'default',
@@ -182,15 +171,13 @@ const handleOverlayClick = () => {
 };
 
 const handleImageLoad = (event) => {
-  // Store natural dimensions for smart fitting
   naturalDimensions.value = {
     width: event.target.naturalWidth,
     height: event.target.naturalHeight
   };
   
-  // Auto-execute the == button logic when image loads
   nextTick(() => {
-    resetZoom(); // This is exactly what the == button does
+    resetZoom();
   });
   
   emit('image-load', event);
@@ -201,9 +188,7 @@ const handleImageError = (event) => {
   emit('image-error', event);
 };
 
-// Zoom and pan functions
 const resetZoom = () => {
-  // Reset to smart fit instead of 1:1 scale
   fitImageToViewport();
   isDragging.value = false;
 };

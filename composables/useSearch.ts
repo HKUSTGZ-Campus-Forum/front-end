@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useApi } from './useApi'
 import { useRouter } from 'vue-router'
+import { useI18n, useLocalePath } from '#imports'
 
 // Types for search results
 export interface SearchPost {
@@ -68,6 +69,8 @@ export interface SearchPagination {
 export function useSearch() {
   const { fetchPublic, getApiUrl } = useApi()
   const router = useRouter()
+  const localePath = useLocalePath()
+  const { t } = useI18n()
   
   // Search state
   const isSearching = ref(false)
@@ -173,11 +176,11 @@ export function useSearch() {
         saveToHistory(query)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        searchError.value = errorData.error || 'Search failed'
+        searchError.value = errorData.error || t('searchPage.errors.global')
       }
     } catch (error) {
       console.error('Search failed:', error)
-      searchError.value = 'Network error occurred'
+      searchError.value = t('searchPage.errors.network')
     } finally {
       isSearching.value = false
     }
@@ -214,11 +217,11 @@ export function useSearch() {
         saveToHistory(query)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        searchError.value = errorData.error || 'Search failed'
+        searchError.value = errorData.error || t('searchPage.errors.posts')
       }
     } catch (error) {
       console.error('Post search failed:', error)
-      searchError.value = 'Network error occurred'
+      searchError.value = t('searchPage.errors.network')
     } finally {
       postsLoading.value = false
     }
@@ -249,7 +252,7 @@ export function useSearch() {
         }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'User search failed')
+        throw new Error(errorData.error || t('searchPage.errors.users'))
       }
     } catch (error) {
       console.error('User search failed:', error)
@@ -278,7 +281,7 @@ export function useSearch() {
         return data.results
       } else {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Tag search failed')
+        throw new Error(errorData.error || t('searchPage.errors.tags'))
       }
     } catch (error) {
       console.error('Tag search failed:', error)
@@ -307,7 +310,7 @@ export function useSearch() {
         return data.results
       } else {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Course search failed')
+        throw new Error(errorData.error || t('searchPage.errors.courses'))
       }
     } catch (error) {
       console.error('Course search failed:', error)
@@ -317,20 +320,20 @@ export function useSearch() {
   
   // Navigation helpers
   const goToPost = (postId: number) => {
-    router.push(`/forum/posts/${postId}`)
+    router.push(localePath(`/forum/posts/${postId}`))
   }
   
   const goToUser = (userId: number) => {
-    router.push(`/users/${userId}`)
+    router.push(localePath(`/users/${userId}`))
   }
   
   const goToCourse = (courseId: number) => {
-    router.push(`/courses/${courseId}`)
+    router.push(localePath(`/courses/${courseId}`))
   }
   
   const goToSearchResults = (query: string, type = 'posts') => {
     router.push({
-      path: '/search',
+      path: localePath('/search'),
       query: { q: query, type }
     })
   }

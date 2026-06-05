@@ -1,1458 +1,946 @@
-<template>
-  <div class="admin-identity-management">
-    <div class="page-header">
-      <h1>身份认证管理</h1>
-      <p class="page-description">
-        审核和管理用户身份验证申请。
-      </p>
-    </div>
-
-    <!-- Stats Overview -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-number">{{ stats.pending }}</div>
-        <div class="stat-label">待审核</div>
-        <div class="stat-icon pending">⏳</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">{{ stats.approved }}</div>
-        <div class="stat-label">已认证</div>
-        <div class="stat-icon approved">✓</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">{{ stats.rejected }}</div>
-        <div class="stat-label">已拒绝</div>
-        <div class="stat-icon rejected">✕</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">{{ stats.total }}</div>
-        <div class="stat-label">总申请数</div>
-        <div class="stat-icon total">📊</div>
-      </div>
-    </div>
-
-    <!-- Filters and Controls -->
-    <div class="controls-section">
-      <div class="filters">
-        <div class="filter-group">
-          <label>状态筛选:</label>
-          <select v-model="selectedStatus" @change="applyFilters">
-            <option value="">全部状态</option>
-            <option value="pending">待审核</option>
-            <option value="approved">已认证</option>
-            <option value="rejected">已拒绝</option>
-            <option value="revoked">已撤销</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>身份类型:</label>
-          <select v-model="selectedType" @change="applyFilters">
-            <option value="">全部类型</option>
-            <option 
-              v-for="identityType in identityTypes"
-              :key="identityType.id"
-              :value="identityType.id"
-            >
-              {{ identityType.display_name }}
-            </option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>排序:</label>
-          <select v-model="sortOrder" @change="applyFilters">
-            <option value="newest">最新申请</option>
-            <option value="oldest">最早申请</option>
-            <option value="priority">优先审核</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="actions">
-        <button @click="refreshData" class="btn btn-secondary" :disabled="loading">
-          <span v-if="loading" class="loading-spinner">⟳</span>
-          刷新数据
-        </button>
-        <button 
-          @click="bulkAction = 'approve'; showBulkModal = true"
-          :disabled="selectedRequests.size === 0"
-          class="btn btn-success"
-        >
-          批量通过 ({{ selectedRequests.size }})
-        </button>
-        <button 
-          @click="bulkAction = 'reject'; showBulkModal = true"
-          :disabled="selectedRequests.size === 0"
-          class="btn btn-danger"
-        >
-          批量拒绝 ({{ selectedRequests.size }})
-        </button>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading && requests.length === 0" class="loading-container">
-      <span class="loading-spinner">⟳</span>
-      <span>加载申请列表...</span>
-    </div>
-
-    <!-- Error State -->
-    <div v-if="error" class="error-container">
-      <span class="error-icon">⚠️</span>
-      <div class="error-content">
-        <h3>加载失败</h3>
-        <p>{{ error }}</p>
-        <button @click="refreshData" class="retry-btn">重试</button>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-if="!loading && filteredRequests.length === 0 && !error" class="empty-state">
-      <span class="empty-icon">📋</span>
-      <h3>暂无申请</h3>
-      <p>当前筛选条件下没有找到身份验证申请。</p>
-    </div>
-
-    <!-- Requests List -->
-    <div v-if="filteredRequests.length > 0" class="requests-section">
-      <!-- Select All -->
-      <div class="select-all-container">
-        <label class="checkbox-label">
-          <input 
-            type="checkbox"
-            :checked="isAllSelected"
-            :indeterminate="isSomeSelected"
-            @change="toggleSelectAll"
-          />
-          <span class="checkmark"></span>
-          <span class="label-text">
-            {{ selectedRequests.size > 0 ? `已选择 ${selectedRequests.size} 个申请` : '全选申请' }}
-          </span>
-        </label>
-        <div class="list-info">
-          共 {{ filteredRequests.length }} 个申请
-        </div>
-      </div>
-
-      <!-- Request Cards -->
-      <div class="requests-list">
-        <div 
-          v-for="request in paginatedRequests"
-          :key="request.id"
-          class="request-card"
-          :class="`status-${request.status}`"
-        >
-          <!-- Selection Checkbox -->
-          <div class="card-selection">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox"
-                :checked="selectedRequests.has(request.id)"
-                @change="toggleRequestSelection(request.id)"
-              />
-              <span class="checkmark"></span>
-            </label>
-          </div>
-
-          <!-- Card Content -->
-          <div class="card-content">
-            <!-- Header -->
-            <div class="request-header">
-              <div class="user-info">
-                <div class="avatar-container">
-                  <img 
-                    v-if="request.user.profile_picture_url"
-                    :src="request.user.profile_picture_url"
-                    :alt="request.user.username"
-                    class="user-avatar"
-                  />
-                  <div v-else class="user-avatar placeholder">
-                    {{ request.user.username.charAt(0).toUpperCase() }}
-                  </div>
-                </div>
-                <div class="user-details">
-                  <h3 class="username">{{ request.user.username }}</h3>
-                  <p class="user-email">{{ request.user.email || '未提供邮箱' }}</p>
-                </div>
-              </div>
-
-              <div class="request-meta">
-                <div class="status-badge" :class="`status-${request.status}`">
-                  <span class="status-icon">{{ getStatusIcon(request.status) }}</span>
-                  <span class="status-text">{{ getStatusText(request.status) }}</span>
-                </div>
-                <div class="request-time">
-                  申请于 {{ formatDate(request.created_at) }}
-                </div>
-              </div>
-            </div>
-
-            <!-- Identity Type -->
-            <div class="identity-type-section">
-              <div class="identity-type-info">
-                <span 
-                  class="identity-icon"
-                  :style="{ color: request.identity_type.color }"
-                >
-                  {{ getIcon(request.identity_type.icon_name) }}
-                </span>
-                <div class="identity-details">
-                  <h4>{{ request.identity_type.display_name }}</h4>
-                  <p>{{ request.identity_type.description }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Documents -->
-            <div v-if="request.verification_documents" class="documents-section">
-              <h5>证明材料:</h5>
-              <div class="documents-grid">
-                <div 
-                  v-for="(doc, index) in getDocuments(request.verification_documents)"
-                  :key="index"
-                  class="document-item"
-                  @click="viewDocument(doc)"
-                >
-                  <div class="document-preview">
-                    <span class="document-icon">📄</span>
-                  </div>
-                  <div class="document-info">
-                    <span class="document-name">{{ doc.name || `文档${index + 1}` }}</span>
-                    <span class="document-size">{{ formatFileSize(doc.size || 0) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- User Notes -->
-            <div v-if="request.notes" class="notes-section">
-              <h5>申请说明:</h5>
-              <p class="user-notes">{{ request.notes }}</p>
-            </div>
-
-            <!-- Admin Actions for Pending Requests -->
-            <div v-if="request.status === 'pending'" class="action-buttons">
-              <button 
-                @click="approveRequest(request)"
-                :disabled="processing.has(request.id)"
-                class="btn btn-success"
-              >
-                <span v-if="processing.has(request.id)" class="loading-spinner">⟳</span>
-                通过申请
-              </button>
-              <button 
-                @click="showRejectModal(request)"
-                :disabled="processing.has(request.id)"
-                class="btn btn-danger"
-              >
-                拒绝申请
-              </button>
-              <button 
-                @click="showReviewModal(request)"
-                class="btn btn-secondary"
-              >
-                详细审核
-              </button>
-            </div>
-
-            <!-- Admin Actions for Approved Requests -->
-            <div v-if="request.status === 'approved'" class="action-buttons">
-              <button 
-                @click="revokeRequest(request)"
-                :disabled="processing.has(request.id)"
-                class="btn btn-danger"
-              >
-                撤销认证
-              </button>
-            </div>
-
-            <!-- Admin Info for Processed Requests -->
-            <div v-if="request.status !== 'pending' && request.verified_by" class="admin-info">
-              <div class="admin-action-info">
-                <span class="admin-label">处理人:</span>
-                <span class="admin-name">管理员 #{{ request.verified_by }}</span>
-              </div>
-              <div v-if="request.verified_at" class="admin-action-info">
-                <span class="admin-label">处理时间:</span>
-                <span class="admin-time">{{ formatDate(request.verified_at) }}</span>
-              </div>
-              <div v-if="request.notes" class="admin-notes">
-                <span class="admin-label">处理备注:</span>
-                <p>{{ request.notes }}</p>
-              </div>
-              <div v-if="request.rejection_reason" class="rejection-reason">
-                <span class="admin-label">拒绝原因:</span>
-                <p>{{ request.rejection_reason }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="pagination">
-        <button 
-          @click="currentPage = 1"
-          :disabled="currentPage === 1"
-          class="page-btn"
-        >
-          首页
-        </button>
-        <button 
-          @click="currentPage = Math.max(1, currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="page-btn"
-        >
-          上一页
-        </button>
-        
-        <span class="page-info">
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
-        </span>
-        
-        <button 
-          @click="currentPage = Math.min(totalPages, currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="page-btn"
-        >
-          下一页
-        </button>
-        <button 
-          @click="currentPage = totalPages"
-          :disabled="currentPage === totalPages"
-          class="page-btn"
-        >
-          末页
-        </button>
-      </div>
-    </div>
-
-    <!-- Modals -->
-    <!-- Review Modal -->
-    <div v-if="showReviewModalFlag && currentRequest" class="modal-overlay" @click="closeReviewModal">
-      <div class="modal-content large" @click.stop>
-        <div class="modal-header">
-          <h3>详细审核申请</h3>
-          <button @click="closeReviewModal" class="modal-close">✕</button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="review-sections">
-            <!-- User Information -->
-            <section class="review-section">
-              <h4>申请人信息</h4>
-              <div class="user-review-info">
-                <div class="info-row">
-                  <span class="label">用户名:</span>
-                  <span class="value">{{ currentRequest.user.username }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">邮箱:</span>
-                  <span class="value">{{ currentRequest.user.email || '未提供' }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">申请时间:</span>
-                  <span class="value">{{ formatDate(currentRequest.created_at) }}</span>
-                </div>
-              </div>
-            </section>
-
-            <!-- Identity Type -->
-            <section class="review-section">
-              <h4>申请身份类型</h4>
-              <div class="identity-review">
-                <div class="identity-type-card">
-                  <span 
-                    class="identity-icon large"
-                    :style="{ color: currentRequest.identity_type.color }"
-                  >
-                    {{ getIcon(currentRequest.identity_type.icon_name) }}
-                  </span>
-                  <div class="identity-details">
-                    <h5>{{ currentRequest.identity_type.display_name }}</h5>
-                    <p>{{ currentRequest.identity_type.description }}</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- Documents Review -->
-            <section v-if="currentRequest.verification_documents" class="review-section">
-              <h4>证明材料审核</h4>
-              <div class="documents-review">
-                <div 
-                  v-for="(doc, index) in getDocuments(currentRequest.verification_documents)"
-                  :key="index"
-                  class="document-review-item"
-                >
-                  <div class="document-preview large">
-                    <span class="document-icon">📄</span>
-                  </div>
-                  <div class="document-details">
-                    <h6>{{ doc.name || `文档${index + 1}` }}</h6>
-                    <p class="document-meta">
-                      大小: {{ formatFileSize(doc.size || 0) }}
-                      <br />
-                      类型: {{ doc.type || '未知' }}
-                    </p>
-                    <div class="document-actions">
-                      <button @click="viewDocument(doc)" class="btn btn-sm btn-secondary">
-                        查看文档
-                      </button>
-                      <button @click="downloadDocument(doc)" class="btn btn-sm btn-outline">
-                        下载
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- Notes -->
-            <section v-if="currentRequest.notes" class="review-section">
-              <h4>申请说明</h4>
-              <div class="notes-review">
-                <p>{{ currentRequest.notes }}</p>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button @click="closeReviewModal" class="btn btn-secondary">关闭</button>
-          <button 
-            @click="rejectFromModal"
-            :disabled="processing.has(currentRequest.id)"
-            class="btn btn-danger"
-          >
-            拒绝申请
-          </button>
-          <button 
-            @click="approveFromModal"
-            :disabled="processing.has(currentRequest.id)"
-            class="btn btn-success"
-          >
-            <span v-if="processing.has(currentRequest.id)" class="loading-spinner">⟳</span>
-            通过申请
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Reject Modal -->
-    <div v-if="showRejectModalFlag && requestToReject" class="modal-overlay" @click="closeRejectModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>拒绝申请</h3>
-          <button @click="closeRejectModal" class="modal-close">✕</button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="reject-form">
-            <div class="form-group">
-              <label>拒绝原因 *</label>
-              <textarea 
-                v-model="rejectReason"
-                placeholder="请输入拒绝申请的具体原因..."
-                rows="4"
-                required
-              ></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label>管理员备注 (可选)</label>
-              <textarea 
-                v-model="rejectNotes"
-                placeholder="内部备注，用户不可见..."
-                rows="3"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button @click="closeRejectModal" class="btn btn-secondary">取消</button>
-          <button 
-            @click="confirmReject"
-            :disabled="!rejectReason.trim() || rejecting"
-            class="btn btn-danger"
-          >
-            <span v-if="rejecting" class="loading-spinner">⟳</span>
-            确认拒绝
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bulk Action Modal -->
-    <div v-if="showBulkModal" class="modal-overlay" @click="closeBulkModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ bulkAction === 'approve' ? '批量通过' : '批量拒绝' }}</h3>
-          <button @click="closeBulkModal" class="modal-close">✕</button>
-        </div>
-        
-        <div class="modal-body">
-          <p>您即将{{ bulkAction === 'approve' ? '通过' : '拒绝' }} {{ selectedRequests.size }} 个申请：</p>
-          
-          <div class="bulk-list">
-            <div 
-              v-for="requestId in Array.from(selectedRequests)"
-              :key="requestId"
-              class="bulk-item"
-            >
-              <span class="user-name">
-                {{ requests.find(r => r.id === requestId)?.user.username }}
-              </span>
-              <span class="identity-name">
-                {{ requests.find(r => r.id === requestId)?.identity_type.display_name }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="bulkAction === 'reject'" class="bulk-reject-form">
-            <div class="form-group">
-              <label>批量拒绝原因 *</label>
-              <textarea 
-                v-model="bulkRejectReason"
-                placeholder="请输入拒绝这些申请的原因..."
-                rows="3"
-                required
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button @click="closeBulkModal" class="btn btn-secondary">取消</button>
-          <button 
-            @click="confirmBulkAction"
-            :disabled="bulkAction === 'reject' && !bulkRejectReason.trim()"
-            class="btn"
-            :class="bulkAction === 'approve' ? 'btn-success' : 'btn-danger'"
-          >
-            确认{{ bulkAction === 'approve' ? '通过' : '拒绝' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Success/Error Toast -->
-    <div v-if="toast.show" class="toast" :class="toast.type">
-      <span class="toast-icon">{{ toast.type === 'success' ? '✓' : '⚠️' }}</span>
-      <span>{{ toast.message }}</span>
-      <button @click="hideToast" class="toast-close">✕</button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useIdentity } from '~/composables/useIdentity'
-import type { IdentityManagementItem, IdentityType } from '~/types/identity'
+import type {
+  IdentityAdminCounts,
+  IdentityAdminStatus,
+  IdentityManagementItem,
+  IdentityType,
+  IdentityVerificationDocument,
+} from "~/types/identity";
+import { ConfirmModal } from "~/components/ui";
 
-// Page meta
 definePageMeta({
-  middleware: 'admin',
-  layout: 'admin'
-})
+  middleware: "admin",
+  layout: "admin",
+});
 
-// Composables
+const { t } = useI18n();
+const { formatDate } = useDateFormat();
 const {
   identityTypes,
-  pendingRequests,
   loading,
   error,
   fetchIdentityTypes,
-  fetchPendingRequests,
+  fetchAdminIdentityRequests,
   approveIdentityRequest,
   rejectIdentityRequest,
-  revokeIdentity
-} = useIdentity()
+  revokeIdentity,
+} = useIdentity();
 
-// State
-const requests = ref<IdentityManagementItem[]>([])
-const selectedRequests = ref(new Set<number>())
-const processing = ref(new Set<number>())
+const requests = ref<IdentityManagementItem[]>([]);
+const counts = ref<IdentityAdminCounts>({
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+  revoked: 0,
+  total: 0,
+});
+const selectedStatus = ref<IdentityAdminStatus | "">("");
+const selectedType = ref("");
+const sortOrder = ref<"newest" | "oldest" | "priority">("newest");
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalItems = ref(0);
+const perPage = 12;
+const busyKey = ref("");
+const selectedIds = ref<Set<number>>(new Set());
+const notice = ref<{ type: "success" | "error"; message: string } | null>(null);
 
-// Filters
-const selectedStatus = ref('')
-const selectedType = ref('')
-const sortOrder = ref('newest')
-
-// Pagination
-const currentPage = ref(1)
-const itemsPerPage = 10
-
-// Modals
-const showReviewModalFlag = ref(false)
-const currentRequest = ref<IdentityManagementItem | null>(null)
-const showRejectModalFlag = ref(false)
-const requestToReject = ref<IdentityManagementItem | null>(null)
-const showBulkModal = ref(false)
-const bulkAction = ref<'approve' | 'reject'>('approve')
-
-// Form data
-const rejectReason = ref('')
-const rejectNotes = ref('')
-const bulkRejectReason = ref('')
-const rejecting = ref(false)
-
-// Toast notifications
-const toast = ref({
+const confirmState = ref<{
+  show: boolean
+  title: string
+  message: string
+  confirmText: string
+  action: (() => Promise<void>) | null
+}>({
   show: false,
-  type: 'success' as 'success' | 'error',
-  message: ''
-})
+  title: "",
+  message: "",
+  confirmText: "",
+  action: null,
+});
 
-// Computed
-const stats = computed(() => {
-  return {
-    pending: requests.value.filter(r => r.status === 'pending').length,
-    approved: requests.value.filter(r => r.status === 'approved').length,
-    rejected: requests.value.filter(r => r.status === 'rejected').length,
-    total: requests.value.length
-  }
-})
+const rejectModal = ref({
+  show: false,
+  request: null as IdentityManagementItem | null,
+  reason: "",
+  notes: "",
+});
 
-const filteredRequests = computed(() => {
-  let filtered = [...requests.value]
+const bulkRejectModal = ref({
+  show: false,
+  reason: "",
+});
 
-  // Filter by status
-  if (selectedStatus.value) {
-    filtered = filtered.filter(r => r.status === selectedStatus.value)
-  }
+const statusOptions = computed(() => [
+  { value: "", label: t("adminIdentity.filters.allStatuses") },
+  { value: "pending", label: t("adminIdentity.status.pending") },
+  { value: "approved", label: t("adminIdentity.status.approved") },
+  { value: "rejected", label: t("adminIdentity.status.rejected") },
+  { value: "revoked", label: t("adminIdentity.status.revoked") },
+]);
 
-  // Filter by type
-  if (selectedType.value) {
-    filtered = filtered.filter(r => r.identity_type_id === parseInt(selectedType.value))
-  }
+const sortOptions = computed(() => [
+  { value: "newest", label: t("adminIdentity.sort.newest") },
+  { value: "oldest", label: t("adminIdentity.sort.oldest") },
+  { value: "priority", label: t("adminIdentity.sort.priority") },
+]);
 
-  // Sort
-  filtered.sort((a, b) => {
-    switch (sortOrder.value) {
-      case 'newest':
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      case 'oldest':
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      case 'priority':
-        // Priority: pending first, then by date
-        if (a.status !== b.status) {
-          if (a.status === 'pending') return -1
-          if (b.status === 'pending') return 1
-        }
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      default:
-        return 0
-    }
-  })
+const metricItems = computed(() => [
+  { key: "pending", label: t("adminIdentity.metrics.pending"), value: counts.value.pending },
+  { key: "approved", label: t("adminIdentity.metrics.approved"), value: counts.value.approved },
+  { key: "rejected", label: t("adminIdentity.metrics.rejected"), value: counts.value.rejected },
+  { key: "total", label: t("adminIdentity.metrics.total"), value: counts.value.total },
+]);
 
-  return filtered
-})
+const selectedCount = computed(() => selectedIds.value.size);
+const isAllPageSelected = computed(() => (
+  requests.value.length > 0 && requests.value.every((item) => selectedIds.value.has(item.id))
+));
 
-const totalPages = computed(() => Math.ceil(filteredRequests.value.length / itemsPerPage))
-
-const paginatedRequests = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredRequests.value.slice(start, end)
-})
-
-const isAllSelected = computed(() => {
-  return paginatedRequests.value.length > 0 && 
-         paginatedRequests.value.every(r => selectedRequests.value.has(r.id))
-})
-
-const isSomeSelected = computed(() => {
-  return selectedRequests.value.size > 0 && !isAllSelected.value
-})
-
-// Methods
-const getIcon = (iconName: string): string => {
-  const iconMap: Record<string, string> = {
-    'academic-cap': '🎓',
-    'user-group': '👥',
-    'shield-check': '🛡️',
-    'star': '⭐'
-  }
-  return iconMap[iconName] || '🏷️'
+function identityTypeName(type: IdentityType) {
+  return type.display_name || type.name;
 }
 
-const getStatusIcon = (status: string): string => {
-  const statusIcons = {
-    pending: '⏳',
-    approved: '✓',
-    rejected: '✕',
-    revoked: '🚫'
-  }
-  return statusIcons[status as keyof typeof statusIcons] || '❓'
+function setNotice(type: "success" | "error", message: string) {
+  notice.value = { type, message };
+  window.setTimeout(() => {
+    notice.value = null;
+  }, 3600);
 }
 
-const getStatusText = (status: string): string => {
-  const statusTexts = {
-    pending: '待审核',
-    approved: '已认证',
-    rejected: '已拒绝',
-    revoked: '已撤销'
-  }
-  return statusTexts[status as keyof typeof statusTexts] || '未知'
+async function loadRequests() {
+  const response = await fetchAdminIdentityRequests({
+    status: selectedStatus.value,
+    identity_type_id: selectedType.value,
+    sort: sortOrder.value,
+    page: currentPage.value,
+    per_page: perPage,
+  });
+
+  requests.value = response.requests || [];
+  counts.value = response.counts;
+  totalItems.value = response.total;
+  totalPages.value = Math.max(1, response.pages || 1);
+  selectedIds.value.clear();
 }
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-const getDocuments = (docs: any): any[] => {
-  if (!docs) return []
-  if (Array.isArray(docs)) return docs
-  if (typeof docs === 'object') return Object.values(docs)
-  return []
-}
-
-const refreshData = async () => {
+async function refreshData() {
   try {
     await Promise.all([
-      fetchIdentityTypes(),
-      fetchAllRequests()
-    ])
+      identityTypes.value.length ? Promise.resolve() : fetchIdentityTypes(),
+      loadRequests(),
+    ]);
   } catch (err) {
-    showToast('error', '刷新数据失败')
+    setNotice("error", err instanceof Error ? err.message : t("adminIdentity.errors.loadFailed"));
   }
 }
 
-const fetchAllRequests = async () => {
-  // This would need to be implemented to fetch all requests, not just pending
-  // For now, we'll use pending requests
-  await fetchPendingRequests()
-  requests.value = pendingRequests.value
+function resetAndRefresh() {
+  currentPage.value = 1;
+  refreshData();
 }
 
-const applyFilters = () => {
-  currentPage.value = 1
-  selectedRequests.value.clear()
+function toggleSelection(id: number) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = next;
 }
 
-const toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    paginatedRequests.value.forEach(r => selectedRequests.value.delete(r.id))
+function toggleSelectPage() {
+  const next = new Set(selectedIds.value);
+  if (isAllPageSelected.value) {
+    requests.value.forEach((item) => next.delete(item.id));
   } else {
-    paginatedRequests.value.forEach(r => selectedRequests.value.add(r.id))
+    requests.value.forEach((item) => next.add(item.id));
   }
+  selectedIds.value = next;
 }
 
-const toggleRequestSelection = (requestId: number) => {
-  if (selectedRequests.value.has(requestId)) {
-    selectedRequests.value.delete(requestId)
-  } else {
-    selectedRequests.value.add(requestId)
-  }
+function openConfirm(config: {
+  title: string
+  message: string
+  confirmText: string
+  action: () => Promise<void>
+}) {
+  confirmState.value = {
+    show: true,
+    title: config.title,
+    message: config.message,
+    confirmText: config.confirmText,
+    action: config.action,
+  };
 }
 
-const approveRequest = async (request: IdentityManagementItem) => {
-  if (!confirm(`确定通过 ${request.user.username} 的 ${request.identity_type.display_name} 认证申请吗？`)) {
-    return
-  }
+async function runConfirmAction() {
+  if (!confirmState.value.action) return;
+  await confirmState.value.action();
+  confirmState.value.show = false;
+}
 
+async function approveRequest(request: IdentityManagementItem) {
+  busyKey.value = `approve-${request.id}`;
   try {
-    processing.value.add(request.id)
-    await approveIdentityRequest(request.id)
-    
-    // Update local state
-    const index = requests.value.findIndex(r => r.id === request.id)
-    if (index > -1) {
-      requests.value[index].status = 'approved'
-      requests.value[index].verified_at = new Date().toISOString()
-    }
-    
-    showToast('success', '申请已通过')
+    await approveIdentityRequest(request.id);
+    setNotice("success", t("adminIdentity.messages.approved"));
+    await loadRequests();
   } catch (err) {
-    showToast('error', '通过申请失败')
+    setNotice("error", err instanceof Error ? err.message : t("adminIdentity.errors.approveFailed"));
   } finally {
-    processing.value.delete(request.id)
+    busyKey.value = "";
   }
 }
 
-const showRejectModal = (request: IdentityManagementItem) => {
-  requestToReject.value = request
-  rejectReason.value = ''
-  rejectNotes.value = ''
-  showRejectModalFlag.value = true
+function openRejectModal(request: IdentityManagementItem) {
+  rejectModal.value = {
+    show: true,
+    request,
+    reason: "",
+    notes: "",
+  };
 }
 
-const closeRejectModal = () => {
-  showRejectModalFlag.value = false
-  requestToReject.value = null
-  rejectReason.value = ''
-  rejectNotes.value = ''
-}
+async function submitReject() {
+  const request = rejectModal.value.request;
+  if (!request || !rejectModal.value.reason.trim()) return;
 
-const confirmReject = async () => {
-  if (!requestToReject.value || !rejectReason.value.trim()) return
-
+  busyKey.value = `reject-${request.id}`;
   try {
-    rejecting.value = true
     await rejectIdentityRequest(
-      requestToReject.value.id,
-      rejectReason.value.trim(),
-      rejectNotes.value.trim() || undefined
-    )
-    
-    // Update local state
-    const index = requests.value.findIndex(r => r.id === requestToReject.value!.id)
-    if (index > -1) {
-      requests.value[index].status = 'rejected'
-      requests.value[index].rejection_reason = rejectReason.value.trim()
-      requests.value[index].notes = rejectNotes.value.trim()
-    }
-    
-    showToast('success', '申请已拒绝')
-    closeRejectModal()
+      request.id,
+      rejectModal.value.reason.trim(),
+      rejectModal.value.notes.trim() || undefined,
+    );
+    setNotice("success", t("adminIdentity.messages.rejected"));
+    rejectModal.value.show = false;
+    await loadRequests();
   } catch (err) {
-    showToast('error', '拒绝申请失败')
+    setNotice("error", err instanceof Error ? err.message : t("adminIdentity.errors.rejectFailed"));
   } finally {
-    rejecting.value = false
+    busyKey.value = "";
   }
 }
 
-const showReviewModal = (request: IdentityManagementItem) => {
-  currentRequest.value = request
-  showReviewModalFlag.value = true
-}
-
-const closeReviewModal = () => {
-  showReviewModalFlag.value = false
-  currentRequest.value = null
-}
-
-const approveFromModal = async () => {
-  if (currentRequest.value) {
-    await approveRequest(currentRequest.value)
-    closeReviewModal()
-  }
-}
-
-const rejectFromModal = () => {
-  if (currentRequest.value) {
-    closeReviewModal()
-    showRejectModal(currentRequest.value)
-  }
-}
-
-const revokeRequest = async (request: IdentityManagementItem) => {
-  if (!confirm(`确定要撤销 ${request.user.username} 的 ${request.identity_type.display_name} 认证吗？`)) {
-    return
-  }
-
+async function revokeRequest(request: IdentityManagementItem) {
+  busyKey.value = `revoke-${request.id}`;
   try {
-    processing.value.add(request.id)
-    await revokeIdentity(request.id, '管理员撤销')
-    
-    // Update local state
-    const index = requests.value.findIndex(r => r.id === request.id)
-    if (index > -1) {
-      requests.value[index].status = 'revoked'
-    }
-    
-    showToast('success', '认证已撤销')
+    await revokeIdentity(request.id, t("adminIdentity.revoke.defaultReason"));
+    setNotice("success", t("adminIdentity.messages.revoked"));
+    await loadRequests();
   } catch (err) {
-    showToast('error', '撤销认证失败')
+    setNotice("error", err instanceof Error ? err.message : t("adminIdentity.errors.revokeFailed"));
   } finally {
-    processing.value.delete(request.id)
+    busyKey.value = "";
   }
 }
 
-const closeBulkModal = () => {
-  showBulkModal.value = false
-  bulkRejectReason.value = ''
-}
-
-const confirmBulkAction = async () => {
-  if (bulkAction.value === 'reject' && !bulkRejectReason.value.trim()) return
-
-  const requestIds = Array.from(selectedRequests.value)
-  const promises = requestIds.map(id => {
-    if (bulkAction.value === 'approve') {
-      return approveIdentityRequest(id)
-    } else {
-      return rejectIdentityRequest(id, bulkRejectReason.value.trim())
-    }
-  })
-
+async function approveSelected() {
+  const ids = Array.from(selectedIds.value);
+  busyKey.value = "bulk-approve";
   try {
-    await Promise.all(promises)
-    
-    // Update local state
-    requestIds.forEach(id => {
-      const index = requests.value.findIndex(r => r.id === id)
-      if (index > -1) {
-        requests.value[index].status = bulkAction.value === 'approve' ? 'approved' : 'rejected'
-        if (bulkAction.value === 'reject') {
-          requests.value[index].rejection_reason = bulkRejectReason.value.trim()
-        }
-      }
-    })
-    
-    showToast('success', `批量${bulkAction.value === 'approve' ? '通过' : '拒绝'}成功`)
-    selectedRequests.value.clear()
-    closeBulkModal()
+    await Promise.all(ids.map((id) => approveIdentityRequest(id)));
+    setNotice("success", t("adminIdentity.messages.bulkApproved", { count: ids.length }));
+    await loadRequests();
   } catch (err) {
-    showToast('error', `批量操作失败`)
+    setNotice("error", err instanceof Error ? err.message : t("adminIdentity.errors.bulkFailed"));
+  } finally {
+    busyKey.value = "";
   }
 }
 
-const viewDocument = (doc: any) => {
-  // Open document in new tab
-  if (doc.url) {
-    window.open(doc.url, '_blank')
+async function rejectSelected() {
+  const ids = Array.from(selectedIds.value);
+  if (!bulkRejectModal.value.reason.trim()) return;
+
+  busyKey.value = "bulk-reject";
+  try {
+    await Promise.all(ids.map((id) => rejectIdentityRequest(id, bulkRejectModal.value.reason.trim())));
+    setNotice("success", t("adminIdentity.messages.bulkRejected", { count: ids.length }));
+    bulkRejectModal.value.show = false;
+    await loadRequests();
+  } catch (err) {
+    setNotice("error", err instanceof Error ? err.message : t("adminIdentity.errors.bulkFailed"));
+  } finally {
+    busyKey.value = "";
   }
 }
 
-const downloadDocument = (doc: any) => {
-  // Trigger download
-  if (doc.url) {
-    const link = document.createElement('a')
-    link.href = doc.url
-    link.download = doc.name || 'document'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+function openDocument(document: IdentityVerificationDocument) {
+  if (!document.view_url) return;
+  window.open(document.view_url, "_blank", "noopener,noreferrer");
 }
 
-const showToast = (type: 'success' | 'error', message: string) => {
-  toast.value = { show: true, type, message }
-  setTimeout(() => {
-    hideToast()
-  }, 5000)
+function pageTo(page: number) {
+  currentPage.value = Math.min(Math.max(1, page), totalPages.value);
+  refreshData();
 }
 
-const hideToast = () => {
-  toast.value.show = false
+function statusClass(status: IdentityAdminStatus) {
+  return `identity-status identity-status--${status}`;
 }
 
-// Watch for filter changes to reset selection
-watch([selectedStatus, selectedType, sortOrder], () => {
-  selectedRequests.value.clear()
-})
-
-// Lifecycle
-onMounted(() => {
-  refreshData()
-})
+watch([selectedStatus, selectedType, sortOrder], resetAndRefresh);
+onMounted(refreshData);
 </script>
 
-<style lang="scss" scoped>
-// I'll provide a condensed version of the styles since this is getting quite long
-.admin-identity-management {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
+<template>
+  <section class="admin-identity">
+    <AdminPageHeader
+      :eyebrow="t('nav.admin')"
+      :title="t('adminIdentity.title')"
+      :description="t('adminIdentity.description')"
+    >
+      <template #actions>
+        <button class="admin-identity__primary-btn" type="button" :disabled="loading" @click="refreshData">
+          {{ loading ? t("adminIdentity.actions.refreshing") : t("adminIdentity.actions.refresh") }}
+        </button>
+      </template>
+    </AdminPageHeader>
+
+    <AdminMetricStrip :items="metricItems" />
+
+    <AdminFilterBar>
+      <label class="admin-identity__field">
+        <span>{{ t("adminIdentity.filters.status") }}</span>
+        <select v-model="selectedStatus">
+          <option v-for="item in statusOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </option>
+        </select>
+      </label>
+
+      <label class="admin-identity__field">
+        <span>{{ t("adminIdentity.filters.type") }}</span>
+        <select v-model="selectedType">
+          <option value="">{{ t("adminIdentity.filters.allTypes") }}</option>
+          <option v-for="item in identityTypes" :key="item.id" :value="item.id">
+            {{ identityTypeName(item) }}
+          </option>
+        </select>
+      </label>
+
+      <label class="admin-identity__field">
+        <span>{{ t("adminIdentity.filters.sort") }}</span>
+        <select v-model="sortOrder">
+          <option v-for="item in sortOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </option>
+        </select>
+      </label>
+
+      <template #actions>
+        <button
+          class="admin-identity__ghost-btn"
+          type="button"
+          :disabled="!requests.length"
+          @click="toggleSelectPage"
+        >
+          {{ isAllPageSelected ? t("adminIdentity.actions.clearPage") : t("adminIdentity.actions.selectPage") }}
+        </button>
+        <button
+          class="admin-identity__ghost-btn"
+          type="button"
+          :disabled="selectedCount === 0 || busyKey === 'bulk-approve'"
+          @click="openConfirm({
+            title: t('adminIdentity.bulkApprove.title'),
+            message: t('adminIdentity.bulkApprove.message', { count: selectedCount }),
+            confirmText: t('adminIdentity.actions.approve'),
+            action: approveSelected
+          })"
+        >
+          {{ t("adminIdentity.actions.bulkApprove", { count: selectedCount }) }}
+        </button>
+        <button
+          class="admin-identity__danger-ghost-btn"
+          type="button"
+          :disabled="selectedCount === 0 || busyKey === 'bulk-reject'"
+          @click="bulkRejectModal.show = true"
+        >
+          {{ t("adminIdentity.actions.bulkReject", { count: selectedCount }) }}
+        </button>
+      </template>
+    </AdminFilterBar>
+
+    <p v-if="notice" class="admin-identity__notice" :class="`admin-identity__notice--${notice.type}`">
+      {{ notice.message }}
+    </p>
+
+    <AdminStateBlock v-if="loading && !requests.length" :title="t('common.loading')" />
+    <AdminStateBlock
+      v-else-if="error && !requests.length"
+      tone="error"
+      :title="t('adminIdentity.errors.title')"
+      :message="error"
+    >
+      <button class="admin-identity__inline-btn" type="button" @click="refreshData">
+        {{ t("common.retry") }}
+      </button>
+    </AdminStateBlock>
+    <AdminStateBlock
+      v-else-if="!requests.length"
+      :title="t('adminIdentity.empty.title')"
+      :message="t('adminIdentity.empty.description')"
+    />
+
+    <div v-else class="admin-identity__list">
+      <article v-for="request in requests" :key="request.id" class="admin-identity-card">
+        <label class="admin-identity-card__select">
+          <input
+            type="checkbox"
+            :checked="selectedIds.has(request.id)"
+            @change="toggleSelection(request.id)"
+          />
+          <span>{{ t("adminIdentity.actions.selectOne") }}</span>
+        </label>
+
+        <div class="admin-identity-card__main">
+          <header class="admin-identity-card__header">
+            <div class="admin-identity-card__user">
+              <div class="admin-identity-card__avatar">
+                <img
+                  v-if="request.user.profile_picture_url"
+                  :src="request.user.profile_picture_url"
+                  :alt="request.user.username"
+                />
+                <span v-else>{{ request.user.username.slice(0, 1).toUpperCase() }}</span>
+              </div>
+              <div>
+                <h2>{{ request.user.username }}</h2>
+                <p>{{ request.user.email || t("adminIdentity.user.noEmail") }}</p>
+              </div>
+            </div>
+
+            <div class="admin-identity-card__meta">
+              <span :class="statusClass(request.status)">
+                {{ t(`adminIdentity.status.${request.status}`) }}
+              </span>
+              <span>{{ t("adminIdentity.requestedAt", { date: formatDate(request.created_at, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }) }}</span>
+            </div>
+          </header>
+
+          <section class="admin-identity-card__identity">
+            <div>
+              <strong>{{ request.identity_type.display_name }}</strong>
+              <p>{{ request.identity_type.description }}</p>
+            </div>
+          </section>
+
+          <section v-if="request.verification_documents?.length" class="admin-identity-card__documents">
+            <h3>{{ t("adminIdentity.documents.title") }}</h3>
+            <button
+              v-for="document in request.verification_documents"
+              :key="document.file_id || document.filename || document.uploaded_at || 'document'"
+              class="admin-identity-card__document"
+              type="button"
+              :disabled="!document.view_url"
+              @click="openDocument(document)"
+            >
+              <span>{{ document.filename || t("adminIdentity.documents.unnamed") }}</span>
+              <small>
+                {{ document.uploaded_at ? formatDate(document.uploaded_at, { year: 'numeric', month: 'short', day: 'numeric' }) : t("adminIdentity.documents.noDate") }}
+              </small>
+            </button>
+          </section>
+
+          <section v-if="request.notes || request.rejection_reason" class="admin-identity-card__notes">
+            <p v-if="request.notes">
+              <strong>{{ t("adminIdentity.notes") }}</strong>
+              {{ request.notes }}
+            </p>
+            <p v-if="request.rejection_reason">
+              <strong>{{ t("adminIdentity.rejectionReason") }}</strong>
+              {{ request.rejection_reason }}
+            </p>
+          </section>
+
+          <footer class="admin-identity-card__footer">
+            <AdminActionButtons
+              v-if="request.status === 'pending'"
+              :primary-label="t('adminIdentity.actions.approve')"
+              :danger-label="t('adminIdentity.actions.reject')"
+              :disabled="busyKey.endsWith(`-${request.id}`)"
+              @primary="openConfirm({
+                title: t('adminIdentity.approve.title'),
+                message: t('adminIdentity.approve.message', { user: request.user.username, type: request.identity_type.display_name }),
+                confirmText: t('adminIdentity.actions.approve'),
+                action: () => approveRequest(request)
+              })"
+              @danger="openRejectModal(request)"
+            />
+            <AdminActionButtons
+              v-else-if="request.status === 'approved'"
+              :danger-label="t('adminIdentity.actions.revoke')"
+              :disabled="busyKey === `revoke-${request.id}`"
+              @danger="openConfirm({
+                title: t('adminIdentity.revoke.title'),
+                message: t('adminIdentity.revoke.message', { user: request.user.username, type: request.identity_type.display_name }),
+                confirmText: t('adminIdentity.actions.revoke'),
+                action: () => revokeRequest(request)
+              })"
+            />
+            <span v-else class="admin-identity-card__processed">
+              {{ request.verified_at ? t("adminIdentity.processedAt", { date: formatDate(request.verified_at, { year: 'numeric', month: 'short', day: 'numeric' }) }) : t("adminIdentity.processed") }}
+            </span>
+          </footer>
+        </div>
+      </article>
+
+      <nav class="admin-identity__pagination" :aria-label="t('adminIdentity.pagination.label')">
+        <button type="button" :disabled="currentPage === 1" @click="pageTo(currentPage - 1)">
+          {{ t("adminIdentity.pagination.previous") }}
+        </button>
+        <span>{{ t("adminIdentity.pagination.page", { page: currentPage, pages: totalPages, total: totalItems }) }}</span>
+        <button type="button" :disabled="currentPage >= totalPages" @click="pageTo(currentPage + 1)">
+          {{ t("adminIdentity.pagination.next") }}
+        </button>
+      </nav>
+    </div>
+
+    <ConfirmModal
+      :show="confirmState.show"
+      :title="confirmState.title"
+      :message="confirmState.message"
+      :confirm-text="confirmState.confirmText"
+      :cancel-text="t('actions.cancel')"
+      @confirm="runConfirmAction"
+      @cancel="confirmState.show = false"
+      @close="confirmState.show = false"
+    />
+
+    <div v-if="rejectModal.show" class="admin-identity-modal" @click.self="rejectModal.show = false">
+      <form class="admin-identity-modal__panel" @submit.prevent="submitReject">
+        <h2>{{ t("adminIdentity.reject.title") }}</h2>
+        <p>{{ t("adminIdentity.reject.message", { user: rejectModal.request?.user.username || '' }) }}</p>
+        <label>
+          <span>{{ t("adminIdentity.reject.reason") }}</span>
+          <textarea v-model="rejectModal.reason" rows="4" required />
+        </label>
+        <label>
+          <span>{{ t("adminIdentity.reject.notes") }}</span>
+          <textarea v-model="rejectModal.notes" rows="3" />
+        </label>
+        <div class="admin-identity-modal__actions">
+          <button type="button" class="admin-identity__ghost-btn" @click="rejectModal.show = false">
+            {{ t("actions.cancel") }}
+          </button>
+          <button type="submit" class="admin-identity__danger-btn" :disabled="!rejectModal.reason.trim() || !!busyKey">
+            {{ t("adminIdentity.actions.reject") }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div v-if="bulkRejectModal.show" class="admin-identity-modal" @click.self="bulkRejectModal.show = false">
+      <form class="admin-identity-modal__panel" @submit.prevent="rejectSelected">
+        <h2>{{ t("adminIdentity.bulkReject.title") }}</h2>
+        <p>{{ t("adminIdentity.bulkReject.message", { count: selectedCount }) }}</p>
+        <label>
+          <span>{{ t("adminIdentity.reject.reason") }}</span>
+          <textarea v-model="bulkRejectModal.reason" rows="4" required />
+        </label>
+        <div class="admin-identity-modal__actions">
+          <button type="button" class="admin-identity__ghost-btn" @click="bulkRejectModal.show = false">
+            {{ t("actions.cancel") }}
+          </button>
+          <button type="submit" class="admin-identity__danger-btn" :disabled="!bulkRejectModal.reason.trim() || !!busyKey">
+            {{ t("adminIdentity.actions.bulkReject", { count: selectedCount }) }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</template>
+
+<style scoped lang="scss">
+.admin-identity {
+  min-width: 0;
 }
 
-.page-header {
-  margin-bottom: 2rem;
-  text-align: center;
-  
-  h1 {
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-  }
-  
-  .page-description {
-    color: var(--text-muted);
-  }
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: var(--surface-primary);
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-small);
-  position: relative;
-  
-  .stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--text-primary);
-  }
-  
-  .stat-label {
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-  }
-  
-  .stat-icon {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-size: 1.5rem;
-    opacity: 0.5;
-  }
-}
-
-.controls-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  background: var(--surface-primary);
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow-small);
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
-  }
-}
-
-.filters {
-  display: flex;
-  gap: 1rem;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  
-  label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-  }
-  
-  select {
-    padding: 0.5rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 4px;
-    background: var(--surface-primary);
-    color: var(--text-primary);
-  }
-}
-
-.actions {
-  display: flex;
-  gap: 1rem;
-  
-  @media (max-width: 768px) {
-    width: 100%;
-  }
-}
-
-.loading-container,
-.error-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 3rem;
-  color: var(--text-muted);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-muted);
-  
-  .empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    display: block;
-  }
-}
-
-.select-all-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: var(--surface-secondary);
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.requests-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.request-card {
-  background: var(--surface-primary);
-  border-radius: 8px;
-  box-shadow: var(--shadow-small);
-  border: 1px solid var(--border-primary);
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  
-  &.status-pending {
-    border-left: 4px solid var(--warning);
-  }
-  
-  &.status-approved {
-    border-left: 4px solid var(--success);
-  }
-  
-  &.status-rejected {
-    border-left: 4px solid var(--error);
-  }
-}
-
-.card-selection {
-  display: flex;
-  align-items: flex-start;
-  padding-top: 0.5rem;
-}
-
-.card-content {
-  flex: 1;
-}
-
-.request-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-  gap: 1rem;
-}
-
-.user-info {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.user-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  
-  &.placeholder {
-    background: var(--interactive-primary);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-  }
-}
-
-.status-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  
-  &.status-pending {
-    background: var(--warning)20;
-    color: var(--warning);
-  }
-  
-  &.status-approved {
-    background: var(--success)20;
-    color: var(--success);
-  }
-  
-  &.status-rejected {
-    background: var(--error)20;
-    color: var(--error);
-  }
-}
-
-.identity-type-section {
-  margin-bottom: 1rem;
-}
-
-.identity-type-info {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 1rem;
-  background: var(--surface-secondary);
-  border-radius: 6px;
-}
-
-.documents-section {
-  margin-bottom: 1rem;
-  
-  h5 {
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-  }
-}
-
-.documents-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.75rem;
-}
-
-.document-item {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: var(--surface-secondary);
-  border-radius: 6px;
+.admin-identity__primary-btn,
+.admin-identity__inline-btn,
+.admin-identity__ghost-btn,
+.admin-identity__danger-ghost-btn,
+.admin-identity__danger-btn {
+  min-height: 40px;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    box-shadow: var(--shadow-small);
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
   }
 }
 
-.document-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--surface-tertiary);
-  border-radius: 4px;
-  
-  .document-icon {
-    font-size: 1.25rem;
-  }
+.admin-identity__primary-btn,
+.admin-identity__inline-btn {
+  border: 0;
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
-.action-buttons {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding: 1rem;
-}
-
-.page-btn {
-  padding: 0.5rem 1rem;
+.admin-identity__ghost-btn {
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
   color: var(--text-primary);
-  border-radius: 4px;
-  cursor: pointer;
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  &:hover:not(:disabled) {
-    background: var(--surface-secondary);
-  }
 }
 
-// Modal styles (simplified)
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-content {
+.admin-identity__danger-ghost-btn {
+  border: 1px solid color-mix(in srgb, var(--semantic-error) 35%, var(--border-primary));
   background: var(--surface-primary);
-  border-radius: 12px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  
-  &.large {
-    max-width: 800px;
+  color: var(--semantic-error);
+}
+
+.admin-identity__danger-btn {
+  border: 0;
+  background: var(--semantic-error);
+  color: var(--text-inverse);
+}
+
+.admin-identity__field {
+  display: flex;
+  min-width: 170px;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  select {
+    min-height: 40px;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    padding: 0 0.85rem;
+    font: inherit;
   }
 }
 
-.modal-header {
+.admin-identity__notice {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: var(--surface-primary);
+  box-shadow: var(--card-shadow);
+}
+
+.admin-identity__notice--success {
+  border: 1px solid color-mix(in srgb, var(--semantic-success) 35%, var(--border-primary));
+  color: var(--semantic-success);
+}
+
+.admin-identity__notice--error {
+  border: 1px solid color-mix(in srgb, var(--semantic-error) 35%, var(--border-primary));
+  color: var(--semantic-error);
+}
+
+.admin-identity__list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-identity-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: var(--card-border);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  box-shadow: var(--card-shadow);
+}
+
+.admin-identity-card__select {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+
+  input {
+    width: 18px;
+    height: 18px;
+    margin-top: 0.15rem;
+    accent-color: var(--interactive-primary);
+  }
+
+  span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+}
+
+.admin-identity-card__main {
+  min-width: 0;
+}
+
+.admin-identity-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.modal-body {
-  padding: 2rem;
-}
-
-.modal-actions {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--border-primary);
-  display: flex;
-  justify-content: flex-end;
   gap: 1rem;
 }
 
-// Button styles
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  &.btn-primary {
-    background: var(--interactive-primary);
-    color: white;
-  }
-  
-  &.btn-secondary {
-    background: var(--surface-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-primary);
-  }
-  
-  &.btn-success {
-    background: var(--success);
-    color: white;
-  }
-  
-  &.btn-danger {
-    background: var(--error);
-    color: white;
-  }
-  
-  &.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
-}
-
-.checkbox-label {
+.admin-identity-card__user {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  
-  input[type="checkbox"] {
-    display: none;
-  }
-  
-  .checkmark {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--border-primary);
-    border-radius: 4px;
-    position: relative;
-    
-    &::after {
-      content: '✓';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 12px;
-      opacity: 0;
-    }
-  }
-  
-  input:checked + .checkmark {
-    background: var(--interactive-primary);
-    border-color: var(--interactive-primary);
-    
-    &::after {
-      opacity: 1;
-    }
-  }
-  
-  input:indeterminate + .checkmark {
-    background: var(--interactive-primary);
-    border-color: var(--interactive-primary);
-    
-    &::after {
-      content: '−';
-      opacity: 1;
-    }
-  }
-}
-
-.toast {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  display: flex;
+  min-width: 0;
   align-items: center;
   gap: 0.75rem;
-  box-shadow: var(--shadow-large);
-  z-index: 1001;
-  
-  &.success {
-    background: var(--success);
-    color: white;
+
+  h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
   }
-  
-  &.error {
-    background: var(--error);
-    color: white;
+
+  p {
+    margin: 0.25rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
   }
 }
 
-.loading-spinner {
-  animation: spin 1s linear infinite;
+.admin-identity-card__avatar {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.admin-identity-card__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.identity-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.identity-status--pending {
+  background: color-mix(in srgb, var(--semantic-warning) 14%, white);
+  color: #9a5b00;
+}
+
+.identity-status--approved {
+  background: color-mix(in srgb, var(--semantic-success) 14%, white);
+  color: #08754f;
+}
+
+.identity-status--rejected,
+.identity-status--revoked {
+  background: color-mix(in srgb, var(--semantic-error) 12%, white);
+  color: #b42323;
+}
+
+.admin-identity-card__identity,
+.admin-identity-card__documents,
+.admin-identity-card__notes {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-secondary);
+}
+
+.admin-identity-card__identity {
+  strong {
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+}
+
+.admin-identity-card__documents {
+  display: grid;
+  gap: 0.55rem;
+
+  h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.92rem;
+  }
+}
+
+.admin-identity-card__document {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  span {
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+}
+
+.admin-identity-card__notes {
+  display: grid;
+  gap: 0.4rem;
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  strong {
+    color: var(--text-primary);
+    margin-right: 0.35rem;
+  }
+}
+
+.admin-identity-card__footer {
+  margin-top: 1rem;
+}
+
+.admin-identity-card__processed {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.admin-identity__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+  color: var(--text-secondary);
+
+  button {
+    min-height: 38px;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+.admin-identity-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--modal-backdrop);
+}
+
+.admin-identity-modal__panel {
+  width: min(560px, 100%);
+  padding: 1.25rem;
+  border-radius: 8px;
+  background: var(--modal-bg);
+  box-shadow: var(--modal-shadow);
+
+  h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+  }
+
+  p {
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  label {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  textarea {
+    width: 100%;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    padding: 0.8rem;
+    resize: vertical;
+    font: inherit;
+  }
+}
+
+.admin-identity-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .admin-identity-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-identity-card__header {
+    flex-direction: column;
+  }
+
+  .admin-identity-card__meta {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .admin-identity__pagination {
+    flex-wrap: wrap;
+  }
 }
 </style>

@@ -5,19 +5,19 @@
       <div class="modal-container" @click.stop>
         <div class="modal-header">
           <i class="fas fa-exclamation-triangle warning-icon"></i>
-          <h3>{{ title }}</h3>
+          <h3>{{ resolvedTitle }}</h3>
         </div>
         
         <div class="modal-body">
-          <p>{{ message }}</p>
+          <p>{{ resolvedMessage }}</p>
         </div>
         
         <div class="modal-footer">
           <button class="btn btn-cancel" @click="handleCancel">
-            {{ cancelText }}
+            {{ resolvedCancelText }}
           </button>
           <button class="btn btn-confirm" @click="handleConfirm">
-            {{ confirmText }}
+            {{ resolvedConfirmText }}
           </button>
         </div>
       </div>
@@ -26,7 +26,9 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { computed } from 'vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   show: {
@@ -35,19 +37,19 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: '确认操作'
+    default: ''
   },
   message: {
     type: String,
-    default: '您确定要执行此操作吗？'
+    default: ''
   },
   confirmText: {
     type: String,
-    default: '确定'
+    default: ''
   },
   cancelText: {
     type: String,
-    default: '取消'
+    default: ''
   },
   closeOnOverlay: {
     type: Boolean,
@@ -56,6 +58,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['confirm', 'cancel', 'close']);
+const resolvedTitle = computed(() => props.title || t('modals.confirm.title'));
+const resolvedMessage = computed(() => props.message || t('modals.confirm.message'));
+const resolvedConfirmText = computed(() => props.confirmText || t('actions.submit'));
+const resolvedCancelText = computed(() => props.cancelText || t('actions.cancel'));
 
 const handleConfirm = () => {
   emit('confirm');
