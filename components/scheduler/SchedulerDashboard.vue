@@ -13,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const { getLocalePath } = useAppLocale()
 const { getCourseDetail } = useScheduler()
 const cart = useSchedulerCart(
   props.semesterId,
@@ -40,6 +41,8 @@ const displayOptions = ref({
 
 const solverResult = computed(() => solvePlans(courseList.value, bannedPeriods.value))
 const planList = computed(() => solverResult.value.status === 'ok' ? solverResult.value.plans : [])
+const enabledCourses = computed(() => courseList.value.filter(course => course.enabled))
+const totalCredits = computed(() => enabledCourses.value.reduce((sum, course) => sum + course.credit, 0))
 
 const currentPlan = computed(() => {
   const plan = planList.value[viewIndex.value - 1]
@@ -89,21 +92,42 @@ function toggleBan(day: number, period: number) {
 
 <template>
   <div class="dashboard">
-    <!-- Login banner -->
-    <div v-if="!isLoggedIn && showGuestHint" class="dashboard__banner">
-      {{ t('scheduler.guestHint') }}
+    <header class="dashboard__header">
+      <div class="dashboard__heading">
+        <NuxtLink class="dashboard__back" :to="getLocalePath('/courses/planner')">
+          {{ t('scheduler.backToSemesters') }}
+        </NuxtLink>
+        <h1>{{ t('scheduler.title') }}</h1>
+        <p>{{ t('scheduler.workspaceSubtitle') }}</p>
+      </div>
+      <div class="dashboard__summary" aria-label="planner summary">
+        <div class="dashboard__summary-item">
+          <span>{{ t('scheduler.selectedCourses') }}</span>
+          <strong>{{ enabledCourses.length }}</strong>
+        </div>
+        <div class="dashboard__summary-item">
+          <span>{{ t('scheduler.planCount') }}</span>
+          <strong>{{ planList.length }}</strong>
+        </div>
+        <div class="dashboard__summary-item">
+          <span>{{ t('scheduler.totalCredits') }}</span>
+          <strong>{{ totalCredits }}</strong>
+        </div>
+      </div>
+    </header>
+
+    <div v-if="!isLoggedIn && showGuestHint" class="dashboard__notice dashboard__notice--warning">
+      <span>{{ t('scheduler.guestHint') }}</span>
       <button type="button" :aria-label="t('scheduler.close')" @click="showGuestHint = false">&times;</button>
     </div>
 
-    <!-- Error overlay -->
-    <div v-if="cartError || planMessage" class="dashboard__message">
+    <div v-if="cartError || planMessage" class="dashboard__notice">
       {{ cartError || planMessage }}
     </div>
 
     <div class="dashboard__body">
-      <!-- Left: Timetable + BottomPanel -->
       <div class="dashboard__left">
-        <div class="dashboard__timetable">
+        <div class="dashboard__timetable-card">
           <SchedulerTimetable
             v-if="!loading"
             :course-list="courseList"
@@ -115,15 +139,14 @@ function toggleBan(day: number, period: number) {
             @toggle-ban="toggleBan"
           />
           <div v-else class="dashboard__loading">{{ t('scheduler.loading') }}</div>
+          <SchedulerBottomPanel
+            :current-index="viewIndex"
+            :total-plans="planList.length"
+            @update:index="viewIndex = $event"
+          />
         </div>
-        <SchedulerBottomPanel
-          :current-index="viewIndex"
-          :total-plans="planList.length"
-          @update:index="viewIndex = $event"
-        />
       </div>
 
-      <!-- Right: SidePanel -->
       <div class="dashboard__right">
         <SchedulerSidePanel
           :course-list="courseList"
@@ -160,62 +183,147 @@ function toggleBan(day: number, period: number) {
 
 <style lang="scss" scoped>
 .dashboard {
-  height: calc(100vh - 64px);
+  min-height: calc(100vh - 84px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 14px;
+  padding: 20px 24px 28px;
+  overflow: visible;
 
-  &__banner {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  &__heading {
+    min-width: 0;
+
+    h1 {
+      margin: 4px 0 0;
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 7px 0 0;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+  }
+
+  &__back {
+    color: var(--interactive-active);
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--interactive-hover);
+    }
+  }
+
+  &__summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(92px, 1fr));
+    gap: 10px;
+    flex: 0 0 min(420px, 42%);
+  }
+
+  &__summary-item {
+    min-height: 62px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 12px;
+    background: var(--surface-primary);
+    box-shadow: var(--shadow-small);
+
+    span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-secondary);
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    strong {
+      color: var(--text-primary);
+      font-size: 1.14rem;
+      line-height: 1.2;
+    }
+  }
+
+  &__notice {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 0.5rem 1rem;
-    background: color-mix(in srgb, var(--semantic-warning) 18%, var(--surface-primary));
-    color: var(--text-primary);
-    font-size: 0.85rem;
+    gap: 10px;
+    min-height: 40px;
+    padding: 9px 16px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 12px;
+    background: var(--surface-primary);
+    color: var(--text-secondary);
+    font-size: 0.86rem;
     text-align: center;
 
+    &--warning {
+      background: color-mix(in srgb, var(--semantic-warning) 14%, var(--surface-primary));
+      border-color: color-mix(in srgb, var(--semantic-warning) 24%, var(--border-secondary));
+      color: var(--text-primary);
+    }
+
     button {
-      border: 0;
+      width: 26px;
+      height: 26px;
+      border: 1px solid transparent;
+      border-radius: 999px;
       background: transparent;
       color: inherit;
       cursor: pointer;
       font-size: 1rem;
-    }
-  }
 
-  &__message {
-    padding: 0.5rem 1rem;
-    background: var(--surface-secondary);
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    text-align: center;
+      &:hover {
+        border-color: color-mix(in srgb, var(--semantic-warning) 35%, transparent);
+        background: color-mix(in srgb, var(--surface-primary) 70%, transparent);
+      }
+    }
   }
 
   &__body {
     flex: 1;
-    display: flex;
-    overflow: hidden;
+    min-height: 620px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    gap: 14px;
+    overflow: visible;
   }
 
   &__left {
-    flex: 7;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
   }
 
-  &__timetable {
+  &__timetable-card {
     flex: 1;
     overflow: hidden;
-    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 16px;
+    background: var(--surface-primary);
+    box-shadow: var(--shadow-small);
   }
 
   &__right {
-    flex: 3;
-    min-width: 280px;
-    max-width: 380px;
+    min-width: 0;
     overflow: hidden;
   }
 
@@ -225,6 +333,72 @@ function toggleBan(day: number, period: number) {
     justify-content: center;
     height: 100%;
     color: var(--text-tertiary);
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard {
+    &__header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &__summary {
+      flex-basis: auto;
+      width: 100%;
+    }
+
+    &__body {
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+
+    &__timetable-card {
+      min-height: 620px;
+    }
+
+    &__right {
+      overflow: visible;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    min-height: calc(100vh - 64px);
+    padding: 16px 14px 28px;
+
+    &__summary {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    &__summary-item {
+      padding: 9px 10px;
+
+      span {
+        white-space: normal;
+      }
+    }
+
+    &__notice {
+      align-items: flex-start;
+      justify-content: space-between;
+      text-align: left;
+    }
+
+    &__timetable-card {
+      min-height: 560px;
+      padding: 8px;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard {
+    &__summary {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>

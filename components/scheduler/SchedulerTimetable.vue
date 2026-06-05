@@ -50,18 +50,19 @@ onUnmounted(() => {
   resizeObserver?.disconnect()
 })
 
-const timeColWidth = 60
-const headerHeight = 32
+const timeColWidth = 52
+const headerHeight = 36
 const decorationWidth = 4
 
 const dayColWidth = computed(() => {
   const available = containerWidth.value - timeColWidth - decorationWidth * 2
-  return Math.max(80, available / props.maxDayNum)
+  const minWidth = containerWidth.value < 560 ? 52 : 86
+  return Math.max(minWidth, available / props.maxDayNum)
 })
 
 const rowHeight = computed(() => {
   const available = containerHeight.value - headerHeight - decorationWidth * 2
-  return Math.max(40, available / 8)
+  return Math.max(46, available / 8)
 })
 
 interface LectureBlock {
@@ -104,6 +105,8 @@ const lectureBlocks = computed(() => {
   }
   return blocks
 })
+
+const showEmptyState = computed(() => lectureBlocks.value.length === 0 && !props.filterMode)
 
 function getBlockStyle(block: LectureBlock) {
   const top = headerHeight + decorationWidth + getTopOffset(block.start_time) * rowHeight.value
@@ -180,6 +183,11 @@ function isBanned(day: number, period: number): boolean {
       </div>
     </template>
 
+    <div v-if="showEmptyState" class="timetable__empty">
+      <div class="timetable__empty-title">{{ t('scheduler.emptyTimetableTitle') }}</div>
+      <p>{{ t('scheduler.emptyTimetableDescription') }}</p>
+    </div>
+
     <!-- Lecture blocks -->
     <div
       v-for="(block, i) in lectureBlocks"
@@ -208,7 +216,13 @@ function isBanned(day: number, period: number): boolean {
   height: 100%;
   min-height: 400px;
   background: var(--surface-primary);
-  border-radius: 12px;
+  background-image:
+    linear-gradient(to right, transparent calc(100% - 1px), var(--border-secondary) calc(100% - 1px)),
+    linear-gradient(to bottom, transparent calc(100% - 1px), var(--border-secondary) calc(100% - 1px));
+  background-size: calc((100% - 52px) / 5) calc((100% - 36px) / 8);
+  background-position: 52px 36px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
 
   &__header {
@@ -219,17 +233,18 @@ function isBanned(day: number, period: number): boolean {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-secondary);
-    border-bottom: 1px solid var(--border-primary);
+    background: color-mix(in srgb, var(--surface-secondary) 72%, var(--surface-primary));
+    border-bottom: 1px solid var(--border-secondary);
   }
 
   &__time-label {
     position: absolute;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     font-size: 0.75rem;
-    color: var(--text-tertiary);
-    padding-top: 2px;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border-secondary);
   }
 
   &__cell {
@@ -242,30 +257,53 @@ function isBanned(day: number, period: number): boolean {
     }
 
     &--banned {
-      background: repeating-linear-gradient(
-        45deg,
-        color-mix(in srgb, var(--semantic-error) 12%, transparent),
-        color-mix(in srgb, var(--semantic-error) 12%, transparent) 4px,
-        transparent 4px,
-        transparent 8px
-      );
+      background: color-mix(in srgb, var(--semantic-error) 14%, var(--surface-primary));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--semantic-error) 24%, transparent);
     }
+  }
+
+  &__empty {
+    position: absolute;
+    inset: 76px 28px 28px 84px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+
+  &__empty-title {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  &__empty p {
+    max-width: 360px;
+    margin: 8px 0 0;
+    font-size: 0.86rem;
+    line-height: 1.6;
   }
 
   &__block {
     position: absolute;
-    border-radius: 6px;
-    padding: 4px 6px;
+    border-radius: 8px;
+    padding: 6px 8px;
     overflow: hidden;
     color: white;
     font-size: 0.75rem;
     cursor: default;
-    transition: opacity 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow: 0 2px 6px rgba(26, 42, 74, 0.14);
+    transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s;
     z-index: 10;
 
     &:hover {
       z-index: 20;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(26, 42, 74, 0.22);
     }
 
     &-code {
@@ -284,6 +322,33 @@ function isBanned(day: number, period: number): boolean {
     &-section, &-room, &-instructor, &-time {
       font-size: 0.65rem;
       opacity: 0.8;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .timetable {
+    min-height: 460px;
+
+    &__header {
+      font-size: 0.74rem;
+    }
+
+    &__time-label {
+      font-size: 0.7rem;
+    }
+
+    &__empty {
+      inset: 72px 16px 22px 64px;
+    }
+
+    &__block {
+      padding: 5px 6px;
+      font-size: 0.7rem;
+
+      &-code {
+        font-size: 0.72rem;
+      }
     }
   }
 }

@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { AcademicCourseRecord, AcademicCourseStatus } from '~/types/academic-map'
-import type { CourseOverviewPayload } from '~/types/course-overview'
+import type { AcademicCourseRecord } from '~/types/academic-map'
+import type { CourseOverviewOffering, CourseOverviewPayload } from '~/types/course-overview'
+import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import { buildCourseListBackQuery } from '~/utils/courseOffering'
-import { compactCourseCode } from '~/utils/courseUniverse'
+import {
+  compactCourseCode,
+  getCourseUniverseActiveSchedulerSemester,
+  getCourseUniverseSchedulerSemesterLabel,
+} from '~/utils/courseUniverse'
+import {
+  getCourseOverviewAcademicState,
+  getCourseOverviewPlannerState,
+} from '~/utils/courseOverviewDetail'
 
 definePageMeta({ layout: 'keguang' })
 
@@ -18,29 +27,64 @@ const {
   markCourseInterested,
   cancelCourseInterest,
 } = useCourseOverview()
+const {
+  getSemesters,
+  getCart,
+  addToCart,
+  removeFromCart,
+} = useScheduler()
 
 const overview = ref<CourseOverviewPayload | null>(null)
 const academicRecord = ref<AcademicCourseRecord | null>(null)
+const semesters = ref<SemesterInfo[]>([])
+const plannerCourses = ref<CartCourse[]>([])
 const isLoading = ref(true)
 const isSavingInterest = ref(false)
+const isLoadingPlanner = ref(false)
 const showAllOfferings = ref(false)
 const error = ref('')
 const statusMessage = ref('')
+const plannerMessage = ref('')
+const plannerNoticeTone = ref<'info' | 'success' | 'error'>('info')
+const plannerUpdatingTag = ref('')
 
 const courseCode = computed(() => compactCourseCode(String(route.params.id || '')))
 const course = computed(() => overview.value?.course || null)
 const offerings = computed(() => overview.value?.offerings || [])
-const visibleOfferings = computed(() => showAllOfferings.value ? offerings.value : offerings.value.slice(0, 4))
+const visibleOfferings = computed(() => showAllOfferings.value ? offerings.value : offerings.value.slice(0, 3))
 const hasHiddenOfferings = computed(() => offerings.value.length > visibleOfferings.value.length)
-const academicStatus = computed<AcademicCourseStatus | null>(() => academicRecord.value?.status || null)
-const isInterested = computed(() => academicStatus.value === 'interested')
-const isStrongStatus = computed(() => (
-  academicStatus.value === 'completed'
-  || academicStatus.value === 'in_progress'
-  || academicStatus.value === 'planned'
-))
+const academicState = computed(() => getCourseOverviewAcademicState(academicRecord.value))
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>))
-const listBackTo = computed(() => getLocalePath({ path: '/courses/explore', query: listBackQuery.value }))
+const cameFromUniverse = computed(() => route.query.from === 'universe')
+const backTo = computed(() => cameFromUniverse.value
+  ? getLocalePath({ path: '/courses', query: { focus: course.value?.code || courseCode.value } })
+  : getLocalePath({ path: '/courses/explore', query: listBackQuery.value }))
+const backLabel = computed(() => cameFromUniverse.value
+  ? t('courses.overviewPage.backToUniverse')
+  : t('courses.backToCourses'))
+const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
+const activeSchedulerSemesterLabel = computed(() => {
+  const semester = semesters.value.find(item => item.id === activeSchedulerSemester.value)
+  if (!semester) return activeSchedulerSemester.value
+  return getCourseUniverseSchedulerSemesterLabel(semester, locale.value)
+})
+const cartCourseCodes = computed(() => plannerCourses.value.map(item => item.course_code))
+const activePlannerOffering = computed(() => offerings.value.find((offering) => (
+  offering.scheduler_semester_id === activeSchedulerSemester.value
+)) || null)
+const heroPlannerState = computed(() => activePlannerOffering.value
+  ? getOfferingPlannerState(activePlannerOffering.value)
+  : null)
+const isHeroPlannerUpdating = computed(() => (
+  !!activePlannerOffering.value
+  && plannerUpdatingTag.value === activePlannerOffering.value.offering_tag
+))
+const heroPlannerActionLabel = computed(() => {
+  if (isHeroPlannerUpdating.value) return t('actions.saving')
+  return heroPlannerState.value?.status === 'in_cart'
+    ? t('courseUniverse.actions.removeFromPlannerCart')
+    : t('courseUniverse.actions.addToPlannerCart')
+})
 
 const ruleRows = computed(() => [
   { key: 'preRequirement', value: course.value?.pre_requirement },
@@ -48,16 +92,46 @@ const ruleRows = computed(() => [
   { key: 'exclusion', value: course.value?.exclusion },
 ].filter(item => item.value))
 
+const courseUniverseTo = computed(() => getLocalePath({
+  path: '/courses',
+  query: { focus: course.value?.code || courseCode.value },
+}))
+
 const refreshOverview = async () => {
   overview.value = await fetchCourseOverview(courseCode.value, locale.value)
   academicRecord.value = overview.value.academic_record
+}
+
+const refreshPlannerCart = async () => {
+  if (!isLoggedIn.value || !activeSchedulerSemester.value) {
+    plannerCourses.value = []
+    return
+  }
+  plannerCourses.value = await getCart(activeSchedulerSemester.value)
+}
+
+const loadPlannerContext = async () => {
+  try {
+    isLoadingPlanner.value = true
+    semesters.value = await getSemesters()
+    await refreshPlannerCart()
+  } catch {
+    plannerMessage.value = t('courses.overviewPage.plannerLoadFailed')
+    plannerNoticeTone.value = 'error'
+  } finally {
+    isLoadingPlanner.value = false
+  }
 }
 
 const loadPage = async () => {
   try {
     isLoading.value = true
     error.value = ''
-    await refreshOverview()
+    plannerMessage.value = ''
+    await Promise.all([
+      refreshOverview(),
+      loadPlannerContext(),
+    ])
   } catch (err: any) {
     error.value = err.message || t('courses.overviewPage.loadFailed')
   } finally {
@@ -66,7 +140,11 @@ const loadPage = async () => {
 }
 
 const saveInterest = async () => {
-  if (!course.value || !isLoggedIn.value) return
+  if (!course.value) return
+  if (!isLoggedIn.value) {
+    statusMessage.value = t('courses.overviewPage.loginToMark')
+    return
+  }
   try {
     isSavingInterest.value = true
     statusMessage.value = ''
@@ -82,7 +160,11 @@ const saveInterest = async () => {
 }
 
 const removeInterest = async () => {
-  if (!course.value || !isLoggedIn.value) return
+  if (!course.value) return
+  if (!isLoggedIn.value) {
+    statusMessage.value = t('courses.overviewPage.loginToMark')
+    return
+  }
   try {
     isSavingInterest.value = true
     statusMessage.value = ''
@@ -96,19 +178,100 @@ const removeInterest = async () => {
   }
 }
 
+const toggleInterest = () => {
+  if (!academicState.value.canToggleInterest || isSavingInterest.value) return
+  if (academicState.value.isInterested) {
+    removeInterest()
+    return
+  }
+  saveInterest()
+}
+
 const offeringHomeTo = (offeringTag: string) => getLocalePath({
   path: `/courses/${course.value?.code || courseCode.value}/offerings/${offeringTag}`,
   query: listBackQuery.value,
 })
 
-const offeringReviewTo = (offeringTag: string) => getLocalePath({
-  path: `/courses/${course.value?.code || courseCode.value}/reviews/${offeringTag}`,
-  query: listBackQuery.value,
+const getOfferingPlannerState = (offering: CourseOverviewOffering) => getCourseOverviewPlannerState({
+  activeSemesterId: activeSchedulerSemester.value,
+  cartCourseCodes: cartCourseCodes.value,
+  courseCode: course.value?.code || courseCode.value,
+  offeringSemesterId: offering.scheduler_semester_id,
 })
 
-const plannerTo = (semesterId?: string | null) => getLocalePath(
-  semesterId ? `/courses/planner/${semesterId}` : '/courses/planner',
-)
+const togglePlannerCourse = async (offering: CourseOverviewOffering) => {
+  if (!course.value) return
+  const state = getOfferingPlannerState(offering)
+  if (!state.canToggle || plannerUpdatingTag.value) return
+
+  plannerMessage.value = ''
+  plannerNoticeTone.value = 'info'
+
+  if (!isLoggedIn.value) {
+    plannerMessage.value = t('scheduler.loginHint')
+    plannerNoticeTone.value = 'error'
+    return
+  }
+
+  plannerUpdatingTag.value = offering.offering_tag
+  const normalizedCode = compactCourseCode(course.value.code)
+  try {
+    if (state.status === 'in_cart') {
+      await removeFromCart(activeSchedulerSemester.value, normalizedCode)
+      plannerMessage.value = t('scheduler.cartRemoved', {
+        course: course.value.display_code || normalizedCode,
+        semester: activeSchedulerSemesterLabel.value,
+      })
+    } else {
+      await addToCart(activeSchedulerSemester.value, normalizedCode)
+      plannerMessage.value = t('scheduler.cartAdded', {
+        course: course.value.display_code || normalizedCode,
+        semester: activeSchedulerSemesterLabel.value,
+      })
+    }
+    plannerNoticeTone.value = 'success'
+    await refreshPlannerCart()
+  } catch (err) {
+    const errorMessageText = err instanceof Error ? err.message : ''
+    plannerNoticeTone.value = 'error'
+    if (errorMessageText.includes('no sections')) {
+      plannerMessage.value = t('scheduler.cartCourseUnavailable', {
+        course: course.value.display_code || normalizedCode,
+        semester: activeSchedulerSemesterLabel.value,
+      })
+    } else if (errorMessageText.includes('already in cart')) {
+      plannerMessage.value = t('scheduler.cartAlreadyAdded', {
+        course: course.value.display_code || normalizedCode,
+        semester: activeSchedulerSemesterLabel.value,
+      })
+      await refreshPlannerCart()
+    } else {
+      plannerMessage.value = t('scheduler.cartFailed')
+    }
+  } finally {
+    plannerUpdatingTag.value = ''
+  }
+}
+
+const toggleHeroPlannerCourse = () => {
+  if (!activePlannerOffering.value) return
+  togglePlannerCourse(activePlannerOffering.value)
+}
+
+const formatOfferingMeta = (offering: CourseOverviewOffering) => {
+  const parts = [t('courses.overviewPage.sectionsCount', {
+    count: offering.section_count || 0,
+  })]
+  if (offering.instructors?.length) parts.push(offering.instructors.join(', '))
+  return parts.join(' · ')
+}
+
+watch(isLoggedIn, () => {
+  refreshPlannerCart().catch(() => {
+    plannerMessage.value = t('courses.overviewPage.plannerLoadFailed')
+    plannerNoticeTone.value = 'error'
+  })
+})
 
 onMounted(loadPage)
 
@@ -126,10 +289,7 @@ useHead({
 <template>
   <div class="kg-course-overview">
     <div class="kg-back-bar">
-      <NuxtLink :to="listBackTo" class="kg-back-link">← {{ t('courses.backToCourses') }}</NuxtLink>
-      <NuxtLink :to="getLocalePath('/courses')" class="kg-back-link kg-back-link--muted">
-        {{ t('courseUniverse.title') }}
-      </NuxtLink>
+      <NuxtLink :to="backTo" class="kg-back-link">← {{ backLabel }}</NuxtLink>
     </div>
 
     <div v-if="isLoading" class="kg-state-card">
@@ -143,73 +303,57 @@ useHead({
     </div>
 
     <template v-else-if="course">
-      <section class="kg-card kg-hero">
-        <div class="kg-hero__main">
-          <p class="kg-eyebrow">{{ t('courses.overviewPage.eyebrow') }}</p>
-          <h1>
-            <span>{{ course.display_code }}</span>
-            <span>{{ course.title }}</span>
-          </h1>
-          <p class="kg-description">{{ course.description || t('courses.overviewEmpty') }}</p>
-        </div>
-        <div class="kg-hero__meta">
-          <span v-if="course.credits" class="kg-meta-chip">{{ t('courses.credits', { count: course.credits }) }}</span>
-          <span :class="['kg-status-badge', course.is_active ? 'active' : 'inactive']">
-            {{ course.is_active ? t('courses.statusActive') : t('courses.statusInactive') }}
-          </span>
-          <span v-if="course.course_title_abbr" class="kg-meta-chip">{{ course.course_title_abbr }}</span>
-        </div>
-      </section>
-
       <div class="kg-overview-grid">
         <main class="kg-main-stack">
-          <section class="kg-card">
-            <div class="kg-section-head">
-              <div>
-                <p class="kg-eyebrow">{{ t('courses.overviewPage.offeringsEyebrow') }}</p>
-                <h2>{{ t('courses.overviewPage.offeringsTitle') }}</h2>
+          <section class="kg-card kg-hero">
+            <div class="kg-hero__top">
+              <p class="kg-eyebrow">{{ t('courses.overviewPage.eyebrow') }}</p>
+              <div class="kg-hero__meta">
+                <span v-if="course.credits" class="kg-meta-chip">{{ t('courses.credits', { count: course.credits }) }}</span>
+                <span :class="['kg-status-badge', course.is_active ? 'active' : 'inactive']">
+                  {{ course.is_active ? t('courses.statusActive') : t('courses.statusInactive') }}
+                </span>
+                <span :class="['kg-academic-chip', `is-${academicState.status}`]">
+                  {{ t(`courses.overviewPage.academicStatus.${academicState.status}`) }}
+                </span>
+                <button
+                  v-if="academicState.canToggleInterest"
+                  type="button"
+                  :class="['kg-interest-btn', { 'is-active': academicState.isInterested }]"
+                  :aria-label="academicState.isInterested ? t('courses.overviewPage.cancelInterested') : t('courses.overviewPage.markInterested')"
+                  :title="academicState.isInterested ? t('courses.overviewPage.cancelInterested') : t('courses.overviewPage.markInterested')"
+                  :disabled="isSavingInterest"
+                  @click="toggleInterest"
+                >
+                  <ForumUiIcon name="bookmark" />
+                </button>
+                <button
+                  v-if="activePlannerOffering"
+                  type="button"
+                  :class="['kg-cart-btn', { 'is-added': heroPlannerState?.status === 'in_cart' }]"
+                  :aria-label="heroPlannerActionLabel"
+                  :title="activeSchedulerSemesterLabel ? `${heroPlannerActionLabel} · ${activeSchedulerSemesterLabel}` : heroPlannerActionLabel"
+                  :disabled="isHeroPlannerUpdating || isLoadingPlanner || !heroPlannerState?.canToggle"
+                  @click="toggleHeroPlannerCourse"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path class="kg-cart-btn__basket" d="M5 6h2l1.7 8.2h8.1l1.6-5.6H8.2" />
+                    <circle class="kg-cart-btn__wheel" cx="10" cy="18" r="1.35" />
+                    <circle class="kg-cart-btn__wheel" cx="16" cy="18" r="1.35" />
+                    <path v-if="heroPlannerState?.status === 'in_cart'" class="kg-cart-btn__check" d="M11 11.5l2.1 2.1L18 8.8" />
+                  </svg>
+                </button>
               </div>
-              <button
-                v-if="offerings.length > 4"
-                type="button"
-                class="kg-btn kg-btn--ghost"
-                @click="showAllOfferings = !showAllOfferings"
-              >
-                {{ showAllOfferings ? t('courses.overviewPage.showRecent') : t('courses.overviewPage.showAll', { count: offerings.length }) }}
-              </button>
             </div>
 
-            <div v-if="offerings.length === 0" class="kg-empty-state">
-              {{ t('courses.overviewPage.noOfferings') }}
-            </div>
-
-            <div v-else class="kg-offering-list">
-              <article v-for="offering in visibleOfferings" :key="offering.offering_tag" class="kg-offering-item">
-                <div class="kg-offering-item__body">
-                  <h3>{{ offering.display_name }}</h3>
-                  <p>
-                    {{ t('courses.overviewPage.sectionsAndTeachers', {
-                      sections: offering.section_count || 0,
-                      teachers: offering.instructors?.length ? offering.instructors.join(', ') : t('courses.overviewPage.teacherTbd'),
-                    }) }}
-                  </p>
-                </div>
-                <div class="kg-offering-item__actions">
-                  <NuxtLink :to="offeringHomeTo(offering.offering_tag)" class="kg-btn kg-btn--primary">
-                    {{ t('courses.overviewPage.openOffering') }}
-                  </NuxtLink>
-                  <NuxtLink :to="offeringReviewTo(offering.offering_tag)" class="kg-btn kg-btn--ghost">
-                    {{ t('courses.reviewsEntry') }}
-                  </NuxtLink>
-                  <NuxtLink :to="plannerTo(offering.scheduler_semester_id)" class="kg-btn kg-btn--ghost">
-                    {{ t('courseUniverse.actions.openPlanner') }}
-                  </NuxtLink>
-                </div>
-              </article>
-            </div>
-
-            <p v-if="hasHiddenOfferings" class="kg-inline-note">
-              {{ t('courses.overviewPage.hiddenOfferings', { count: offerings.length - visibleOfferings.length }) }}
+            <h1>
+              <span class="kg-course-code">{{ course.display_code }}</span>
+              <span>{{ course.title }}</span>
+            </h1>
+            <p v-if="course.description" class="kg-description">{{ course.description }}</p>
+            <p v-if="statusMessage" class="kg-inline-note">{{ statusMessage }}</p>
+            <p v-if="plannerMessage" :class="['kg-inline-note', `is-${plannerNoticeTone}`]">
+              {{ plannerMessage }}
             </p>
           </section>
 
@@ -219,6 +363,9 @@ useHead({
                 <p class="kg-eyebrow">{{ t('courses.overviewPage.rulesEyebrow') }}</p>
                 <h2>{{ t('courses.overviewPage.rulesTitle') }}</h2>
               </div>
+              <NuxtLink :to="courseUniverseTo" class="kg-btn kg-btn--ghost kg-btn--compact">
+                {{ t('courses.overviewPage.openInMap') }}
+              </NuxtLink>
             </div>
             <div v-if="ruleRows.length" class="kg-rule-list">
               <div v-for="rule in ruleRows" :key="rule.key" class="kg-rule-row">
@@ -233,54 +380,44 @@ useHead({
         </main>
 
         <aside class="kg-side-stack">
-          <section class="kg-card">
-            <p class="kg-eyebrow">{{ t('academicMap.eyebrow') }}</p>
-            <h2>{{ t('courses.overviewPage.academicStatusTitle') }}</h2>
-            <div v-if="academicStatus" class="kg-current-status">
-              {{ t(`academicMap.status.${academicStatus}`) }}
+          <section class="kg-card kg-offerings-card">
+            <div class="kg-section-head kg-section-head--tight">
+              <div>
+                <p class="kg-eyebrow">{{ t('courses.overviewPage.offeringsEyebrow') }}</p>
+                <h2>{{ t('courses.overviewPage.offeringsTitle') }}</h2>
+              </div>
+              <button
+                v-if="offerings.length > 3"
+                type="button"
+                class="kg-link-button"
+                @click="showAllOfferings = !showAllOfferings"
+              >
+                {{ showAllOfferings ? t('courses.overviewPage.showRecent') : t('courses.overviewPage.showAll', { count: offerings.length }) }}
+              </button>
             </div>
-            <p v-else class="kg-side-copy">{{ t('courses.overviewPage.noAcademicStatus') }}</p>
 
-            <template v-if="isLoggedIn">
-              <button
-                v-if="!academicStatus"
-                type="button"
-                class="kg-btn kg-btn--primary kg-btn--block"
-                :disabled="isSavingInterest"
-                @click="saveInterest"
-              >
-                {{ isSavingInterest ? t('actions.saving') : t('courses.overviewPage.markInterested') }}
-              </button>
-              <button
-                v-else-if="isInterested"
-                type="button"
-                class="kg-btn kg-btn--ghost kg-btn--block"
-                :disabled="isSavingInterest"
-                @click="removeInterest"
-              >
-                {{ isSavingInterest ? t('actions.saving') : t('courses.overviewPage.cancelInterested') }}
-              </button>
-              <p v-else-if="isStrongStatus" class="kg-inline-note">
-                {{ t('courses.overviewPage.strongStatusNote') }}
-              </p>
-              <p v-if="statusMessage" class="kg-inline-note">{{ statusMessage }}</p>
-            </template>
+            <div v-if="offerings.length === 0" class="kg-empty-state kg-empty-state--compact">
+              {{ t('courses.overviewPage.noOfferings') }}
+            </div>
 
-            <NuxtLink v-else :to="getLocalePath('/login')" class="kg-btn kg-btn--primary kg-btn--block">
-              {{ t('courses.overviewPage.loginToMark') }}
-            </NuxtLink>
-          </section>
+            <div v-else class="kg-offering-list">
+              <article v-for="offering in visibleOfferings" :key="offering.offering_tag" class="kg-offering-item">
+                <div class="kg-offering-item__body">
+                  <h3>{{ offering.display_name }}</h3>
+                  <p>{{ formatOfferingMeta(offering) }}</p>
+                </div>
 
-          <section class="kg-card">
-            <p class="kg-eyebrow">{{ t('courseUniverse.title') }}</p>
-            <h2>{{ t('courses.overviewPage.mapTitle') }}</h2>
-            <p class="kg-side-copy">{{ t('courses.overviewPage.mapCopy') }}</p>
-            <NuxtLink
-              :to="getLocalePath({ path: '/courses', query: { focus: course.code } })"
-              class="kg-btn kg-btn--ghost kg-btn--block"
-            >
-              {{ t('courses.overviewPage.openInMap') }}
-            </NuxtLink>
+                <div class="kg-offering-item__actions">
+                  <NuxtLink :to="offeringHomeTo(offering.offering_tag)" class="kg-btn kg-btn--primary kg-btn--block">
+                    {{ t('courses.overviewPage.openOffering') }}
+                  </NuxtLink>
+                </div>
+              </article>
+            </div>
+
+            <p v-if="hasHiddenOfferings" class="kg-inline-note">
+              {{ t('courses.overviewPage.hiddenOfferings', { count: offerings.length - visibleOfferings.length }) }}
+            </p>
           </section>
         </aside>
       </div>
@@ -298,23 +435,18 @@ useHead({
 
 .kg-back-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
   margin-bottom: 16px;
 }
 
 .kg-back-link {
   color: var(--interactive-primary);
   font-size: 0.9rem;
+  font-weight: 700;
   text-decoration: none;
 
   &:hover {
-    text-decoration: underline;
+    color: var(--interactive-hover);
   }
-}
-
-.kg-back-link--muted {
-  color: var(--text-secondary);
 }
 
 .kg-card,
@@ -360,26 +492,49 @@ useHead({
   }
 }
 
-.kg-hero {
-  align-items: flex-start;
-  display: flex;
-  gap: 20px;
-  justify-content: space-between;
-  margin-bottom: 18px;
+.kg-overview-grid {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 340px;
 }
 
-.kg-hero__main {
-  min-width: 0;
+.kg-main-stack,
+.kg-side-stack {
+  display: grid;
+  gap: 18px;
+}
 
-  h1 {
-    color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
-    font-size: 1.62rem;
-    gap: 4px;
-    line-height: 1.25;
-    margin: 0 0 12px;
-  }
+.kg-side-stack {
+  position: sticky;
+  top: 104px;
+}
+
+.kg-hero {
+  display: grid;
+  gap: 12px;
+}
+
+.kg-hero__top {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.kg-hero h1 {
+  color: var(--text-primary);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 1.62rem;
+  column-gap: 12px;
+  row-gap: 4px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.kg-course-code {
+  white-space: nowrap;
 }
 
 .kg-hero__meta {
@@ -387,7 +542,6 @@ useHead({
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-  max-width: 360px;
 }
 
 .kg-eyebrow {
@@ -408,19 +562,30 @@ useHead({
 .kg-description {
   font-size: 0.94rem;
   margin: 0;
+  max-width: 72ch;
 }
 
-.kg-overview-grid {
-  align-items: start;
-  display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(0, 1fr) 320px;
+.kg-side-copy {
+  font-size: 0.9rem;
+  margin: 8px 0 0;
 }
 
-.kg-main-stack,
-.kg-side-stack {
-  display: grid;
-  gap: 18px;
+.kg-side-copy--small {
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.kg-inline-note {
+  font-size: 0.82rem;
+  margin: 10px 0 0;
+}
+
+.kg-inline-note.is-success {
+  color: var(--semantic-success);
+}
+
+.kg-inline-note.is-error {
+  color: var(--semantic-error);
 }
 
 .kg-section-head {
@@ -437,20 +602,24 @@ useHead({
   }
 }
 
-.kg-meta-chip,
-.kg-status-badge,
-.kg-current-status {
-  align-items: center;
-  border-radius: 999px;
-  display: inline-flex;
-  font-size: 0.82rem;
-  font-weight: 700;
-  min-height: 32px;
-  padding: 0 12px;
+.kg-section-head--tight {
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .kg-meta-chip,
-.kg-current-status {
+.kg-status-badge,
+.kg-academic-chip {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-height: 30px;
+  padding: 0 11px;
+}
+
+.kg-meta-chip {
   background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
   border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, var(--border-primary));
   color: var(--interactive-active);
@@ -468,44 +637,176 @@ useHead({
   color: var(--text-secondary);
 }
 
+.kg-academic-chip {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+}
+
+.kg-academic-chip.is-completed {
+  background: color-mix(in srgb, var(--semantic-success) 12%, var(--surface-primary));
+  border-color: color-mix(in srgb, var(--semantic-success) 34%, var(--border-primary));
+  color: var(--semantic-success);
+}
+
+.kg-academic-chip.is-in_progress,
+.kg-academic-chip.is-planned {
+  background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+  border-color: color-mix(in srgb, var(--interactive-primary) 28%, var(--border-primary));
+  color: var(--interactive-active);
+}
+
+.kg-academic-chip.is-interested {
+  background: color-mix(in srgb, var(--semantic-warning) 14%, var(--surface-primary));
+  border-color: color-mix(in srgb, var(--semantic-warning) 32%, var(--border-primary));
+  color: #a45c04;
+}
+
+.kg-interest-btn {
+  align-items: center;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1rem;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  width: 30px;
+
+  &:hover:not(:disabled) {
+    border-color: var(--interactive-primary);
+    color: var(--interactive-primary);
+  }
+
+  &.is-active {
+    background: color-mix(in srgb, var(--semantic-warning) 14%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--semantic-warning) 36%, var(--border-primary));
+    color: var(--semantic-warning);
+
+    :deep(svg path) {
+      fill: currentColor;
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.kg-cart-btn {
+  align-items: center;
+  appearance: none;
+  background: var(--surface-primary);
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 30%, var(--border-primary));
+  border-radius: 12px;
+  box-sizing: border-box;
+  color: var(--interactive-primary);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 36px;
+  height: 36px;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+  width: 36px;
+
+  svg {
+    display: block;
+    height: 20px;
+    width: 20px;
+  }
+
+  .kg-cart-btn__basket,
+  .kg-cart-btn__check {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .kg-cart-btn__wheel {
+    fill: currentColor;
+  }
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+    border-color: var(--interactive-primary);
+    transform: translateY(-1px);
+  }
+
+  &.is-added {
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+}
+
+.kg-offerings-card {
+  padding: 20px;
+}
+
 .kg-offering-list {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .kg-offering-item {
-  align-items: center;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: 14px;
+  background: var(--surface-primary);
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 18%, var(--border-primary));
+  border-radius: 12px;
   display: grid;
-  gap: 14px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
   padding: 16px;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--interactive-primary) 4%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--interactive-primary) 36%, var(--border-primary));
+    transform: translateY(-1px);
+  }
 }
 
 .kg-offering-item__body {
+  display: grid;
+  gap: 8px;
   min-width: 0;
 
   h3 {
     color: var(--text-primary);
-    font-size: 1rem;
-    margin: 0 0 6px;
+    font-size: 1.08rem;
+    line-height: 1.25;
+    margin: 0;
   }
 
   p {
     color: var(--text-secondary);
-    font-size: 0.86rem;
-    line-height: 1.55;
+    font-size: 0.84rem;
+    line-height: 1.5;
     margin: 0;
+    overflow: hidden;
+    text-wrap: pretty;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
   }
 }
 
 .kg-offering-item__actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
-  justify-content: flex-end;
 }
 
 .kg-btn {
@@ -520,6 +821,11 @@ useHead({
   padding: 0 13px;
   text-decoration: none;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.kg-btn--compact {
+  min-height: 34px;
+  white-space: nowrap;
 }
 
 .kg-btn--primary {
@@ -545,13 +851,27 @@ useHead({
 }
 
 .kg-btn--block {
-  margin-top: 14px;
   width: 100%;
 }
 
 .kg-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.kg-link-button {
+  background: transparent;
+  border: 0;
+  color: var(--interactive-primary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 0;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--interactive-hover);
+  }
 }
 
 .kg-empty-state {
@@ -563,18 +883,8 @@ useHead({
   text-align: center;
 }
 
-.kg-inline-note {
-  font-size: 0.82rem;
-  margin: 12px 0 0;
-}
-
-.kg-side-copy {
-  font-size: 0.9rem;
-  margin: 8px 0 0;
-}
-
-.kg-current-status {
-  margin-top: 8px;
+.kg-empty-state--compact {
+  padding: 18px 12px;
 }
 
 .kg-rule-list {
@@ -607,30 +917,35 @@ useHead({
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .kg-course-overview {
     padding: 16px 14px 48px;
-  }
-
-  .kg-hero,
-  .kg-section-head {
-    flex-direction: column;
-  }
-
-  .kg-hero__meta {
-    justify-content: flex-start;
-    max-width: none;
   }
 
   .kg-overview-grid {
     grid-template-columns: 1fr;
   }
 
-  .kg-offering-item {
-    grid-template-columns: 1fr;
+  .kg-side-stack {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .kg-card {
+    padding: 18px;
   }
 
-  .kg-offering-item__actions {
+  .kg-hero__top,
+  .kg-section-head {
+    flex-direction: column;
+  }
+
+  .kg-hero h1 {
+    flex-direction: column;
+  }
+
+  .kg-hero__meta {
     justify-content: flex-start;
   }
 }

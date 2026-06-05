@@ -8,6 +8,7 @@ import type {
 import {
   COURSE_UNIVERSE_COURSE_HEIGHT,
   COURSE_UNIVERSE_COURSE_WIDTH,
+  buildCourseUniverseCourseDetailPath,
   buildCourseUniverseGraph,
   buildCourseUniverseHighlightSet,
   buildCourseUniversePrefixOptions,
@@ -15,6 +16,8 @@ import {
   clampCourseUniverseZoom,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
+  getCourseUniverseBounds,
+  getCourseUniverseNodeStatusKey,
   getCourseUniverseNodePrefix,
   getCourseUniverseViewBox,
   hasCourseUniversePointerMoved,
@@ -32,9 +35,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'select', code: string): void
+  (event: 'toggle-planner', code: string): void
 }>()
 
 const { t } = useI18n()
+const { getLocalePath } = useAppLocale()
 
 const svgRef = ref<SVGSVGElement | null>(null)
 const canvasSize = ref({ width: 1200, height: 620 })
@@ -54,7 +59,7 @@ const dragStart = ref<{
   viewBox: CourseUniverseViewBox
 } | null>(null)
 let resizeObserver: ResizeObserver | null = null
-const localLayoutMinZoom = 0.72
+const localLayoutMinZoom = 0.66
 
 const query = computed(() => props.searchQuery.trim().toLowerCase())
 const selectedCode = computed(() => props.nodes.find(node => node.selected)?.code || '')
@@ -102,9 +107,23 @@ const visibleRenderComponents = computed(() => (
 const visibleLogicComponents = computed(() => (
   visibleRenderComponents.value.filter(component => (
     component.kind === 'logic'
-    && !(component.category === 3 && component.hollow)
   ))
 ))
+const visibleViewportNodes = computed<CourseUniverseNode[]>(() => [
+  ...visibleNodes.value,
+  ...visibleLogicComponents.value.map(component => ({
+    componentId: component.id,
+    code: component.id,
+    displayCode: component.id,
+    title: component.id,
+    x: component.x,
+    y: component.y,
+    category: component.category,
+    academicStatus: null,
+    inPlanner: false,
+    selected: false,
+  })),
+])
 
 const visibleRenderLines = computed(() => (
   graph.value.lines.filter(line => (
@@ -171,9 +190,8 @@ function nodeClasses(node: CourseUniverseNode) {
       'is-dimmed': hasFocusContext && !isRelated,
       'is-completed': node.academicStatus === 'completed',
       'is-in-progress': node.academicStatus === 'in_progress',
-      'is-planned': node.academicStatus === 'planned',
+      'is-not-taken': getCourseUniverseNodeStatusKey(node) === 'notTaken',
       'is-interested': node.academicStatus === 'interested',
-      'is-planner': node.inPlanner,
     },
   ]
 }
@@ -187,20 +205,31 @@ function resetReadableView() {
 
 function fitFullGraph() {
   viewport.value = fitCourseUniverseViewport({
-    nodes: visibleNodes.value,
+    nodes: visibleViewportNodes.value,
     canvasSize: canvasSize.value,
   })
 }
 
 function fitLocalGraph() {
+  const nodesForViewport = visibleNodes.value
+  const padding = 150
   const nextViewport = fitCourseUniverseViewport({
-    nodes: visibleNodes.value,
+    nodes: nodesForViewport,
     canvasSize: canvasSize.value,
-    padding: 150,
+    padding,
   })
+  const zoom = Math.max(nextViewport.zoom, localLayoutMinZoom)
+  const bounds = getCourseUniverseBounds(nodesForViewport, padding)
+  const clampedBox = getCourseUniverseViewBox({ ...nextViewport, zoom }, canvasSize.value)
   viewport.value = {
     ...nextViewport,
-    zoom: Math.max(nextViewport.zoom, localLayoutMinZoom),
+    centerX: bounds.width > clampedBox.width
+      ? bounds.minX + clampedBox.width / 2
+      : nextViewport.centerX,
+    centerY: bounds.height > clampedBox.height
+      ? bounds.minY + clampedBox.height / 2
+      : nextViewport.centerY,
+    zoom,
   }
 }
 
@@ -305,6 +334,14 @@ function handleNodeClick(code: string) {
   emit('select', code)
 }
 
+function handlePlannerToggle(node: CourseUniverseNode) {
+  if (didDrag.value) {
+    didDrag.value = false
+    return
+  }
+  emit('toggle-planner', node.code)
+}
+
 function isRenderComponentDimmed(id: string) {
   return Boolean(hoveredId.value && !highlightedComponentIds.value.has(id))
 }
@@ -321,10 +358,6 @@ function hasDistinctTitle(node: CourseUniverseNode) {
   return Boolean(node.title && compact(node.title) !== compact(node.displayCode))
 }
 
-function shouldShowPrefixBadge(node: CourseUniverseNode) {
-  return Boolean(selectedPrefix.value && getCourseUniverseNodePrefix(node.code) !== selectedPrefix.value)
-}
-
 function getNodeX(node: CourseUniverseNode) {
   return renderComponentById.value.get(node.componentId)?.x || 0
 }
@@ -333,15 +366,30 @@ function getNodeY(node: CourseUniverseNode) {
   return renderComponentById.value.get(node.componentId)?.y || 0
 }
 
-function getNodeStatus(node: CourseUniverseNode) {
-  if (node.inPlanner) return t('courseUniverse.legend.inPlanner')
-  if (node.academicStatus) return t(`academicMap.status.${node.academicStatus}`)
-  return t('courseUniverse.selectCourse')
-}
-
 function getNodeTitle(node: CourseUniverseNode) {
   if (node.title.length <= 27) return node.title
   return `${node.title.slice(0, 26)}...`
+}
+
+function getNodeStatusKey(node: CourseUniverseNode) {
+  return getCourseUniverseNodeStatusKey(node)
+}
+
+function getNodeStatusLabel(node: CourseUniverseNode) {
+  return t(`courseUniverse.statusShort.${getNodeStatusKey(node)}`)
+}
+
+function getPlannerCartActionLabel(node: CourseUniverseNode) {
+  return node.inPlanner
+    ? t('courseUniverse.actions.removeFromPlannerCart')
+    : t('courseUniverse.actions.addToPlannerCart')
+}
+
+function getNodeDetailPath(node: CourseUniverseNode) {
+  return getLocalePath({
+    path: buildCourseUniverseCourseDetailPath(node.code),
+    query: { from: 'universe' },
+  })
 }
 
 watch(prefixOptions, options => {
@@ -414,7 +462,6 @@ onBeforeUnmount(() => {
       >
         ← {{ t('common.back') }}
       </button>
-      <span v-if="selectedPrefix">{{ selectedPrefix }}</span>
     </div>
 
     <div v-if="nodes.length === 0" class="cu-canvas__empty">
@@ -522,18 +569,56 @@ onBeforeUnmount(() => {
             @keydown.enter="handleNodeClick(node.code)"
             @keydown.space.prevent="handleNodeClick(node.code)"
           >
-            <rect class="cu-node__card" :width="COURSE_UNIVERSE_COURSE_WIDTH" :height="COURSE_UNIVERSE_COURSE_HEIGHT" rx="14" ry="14" />
-            <rect class="cu-node__accent" width="6" :height="COURSE_UNIVERSE_COURSE_HEIGHT" rx="6" ry="6" />
-            <text class="cu-node__code" x="16" y="31">{{ node.displayCode }}</text>
-            <text v-if="semanticLevel !== 'far' && hasDistinctTitle(node)" class="cu-node__title" x="16" y="53">
+            <rect class="cu-node__card" :width="COURSE_UNIVERSE_COURSE_WIDTH" :height="COURSE_UNIVERSE_COURSE_HEIGHT" rx="12" ry="12" />
+            <rect class="cu-node__accent" x="8" y="14" width="4" height="64" rx="2" ry="2" />
+            <g class="cu-node__header">
+              <text class="cu-node__code" x="20" y="31">{{ node.displayCode }}</text>
+              <a
+                v-if="semanticLevel === 'near'"
+                class="cu-node__detail-link"
+                :href="getNodeDetailPath(node)"
+                :aria-label="`${node.displayCode} ${t('courseUniverse.actions.showDetails')}`"
+                @pointerdown.stop
+                @click.stop
+              >
+                <rect class="cu-node__detail-bg" x="128" y="15" width="48" height="23" rx="11.5" ry="11.5" />
+                <text class="cu-node__detail-text" x="152" y="31">
+                  {{ t('courseUniverse.actions.detailsShort') }}
+                </text>
+              </a>
+            </g>
+            <text v-if="semanticLevel !== 'far' && hasDistinctTitle(node)" class="cu-node__title" x="20" y="54">
               {{ getNodeTitle(node) }}
             </text>
-            <text v-if="semanticLevel === 'near'" class="cu-node__status" x="16" y="75">
-              {{ getNodeStatus(node) }}
-            </text>
-            <text v-if="shouldShowPrefixBadge(node)" class="cu-node__prefix" :x="COURSE_UNIVERSE_COURSE_WIDTH - 12" y="78">
-              {{ getCourseUniverseNodePrefix(node.code) }}
-            </text>
+            <g
+              v-if="semanticLevel === 'near'"
+              :class="['cu-node__status-pill', `is-${getNodeStatusKey(node)}`]"
+            >
+              <rect class="cu-node__status-bg" x="20" y="66" width="64" height="20" rx="10" ry="10" />
+              <text class="cu-node__status-text" x="52" y="79.5">
+                {{ getNodeStatusLabel(node) }}
+              </text>
+            </g>
+            <a
+              v-if="semanticLevel === 'near'"
+              :class="['cu-node__cart-action', { 'is-added': node.inPlanner }]"
+              href="#"
+              :aria-label="`${node.displayCode} ${getPlannerCartActionLabel(node)}`"
+              :data-icon="node.inPlanner ? 'shopping-cart-check' : 'shopping-cart'"
+              role="button"
+              tabindex="0"
+              @pointerdown.stop
+              @click.stop.prevent="handlePlannerToggle(node)"
+              @keydown.enter.stop.prevent="handlePlannerToggle(node)"
+              @keydown.space.stop.prevent="handlePlannerToggle(node)"
+            >
+              <title>{{ getPlannerCartActionLabel(node) }}</title>
+              <rect class="cu-node__cart-bg" x="150" y="63" width="28" height="26" rx="10" ry="10" />
+              <path class="cu-node__cart-icon" d="M 157 70 H 159 L 161 79 H 170 L 172 73 H 161" />
+              <circle class="cu-node__cart-wheel" cx="163" cy="83" r="1.25" />
+              <circle class="cu-node__cart-wheel" cx="169" cy="83" r="1.25" />
+              <path v-if="node.inPlanner" class="cu-node__cart-check" d="M 164 75 L 167 78 L 173 72" />
+            </a>
           </g>
         </g>
       </svg>
@@ -543,13 +628,10 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .cu-canvas {
-  background:
-    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--interactive-primary) 14%, transparent), transparent 26%),
-    radial-gradient(circle at 80% 82%, color-mix(in srgb, var(--semantic-success) 12%, transparent), transparent 24%),
-    var(--surface-secondary);
+  background: var(--surface-secondary);
   border: 1px solid var(--border-secondary);
-  border-radius: 18px;
-  min-height: clamp(640px, calc(100vh - 260px), 780px);
+  border-radius: 16px;
+  min-height: clamp(450px, calc(100vh - 300px), 680px);
   overflow: hidden;
   position: relative;
 }
@@ -610,13 +692,6 @@ onBeforeUnmount(() => {
   z-index: 4;
 }
 
-.cu-canvas__context span {
-  background: color-mix(in srgb, var(--surface-primary) 84%, transparent);
-  border: 1px solid var(--border-secondary);
-  border-radius: 999px;
-  padding: 5px 10px;
-}
-
 .cu-canvas__back {
   appearance: none;
   background: var(--interactive-primary);
@@ -641,11 +716,11 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
   display: flex;
   justify-content: center;
-  min-height: 620px;
+  min-height: 450px;
 }
 
 .cu-canvas__stage {
-  height: clamp(610px, calc(100vh - 292px), 750px);
+  height: clamp(410px, calc(100vh - 350px), 640px);
   position: relative;
 }
 
@@ -706,7 +781,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
   stroke: var(--text-primary);
   stroke-width: 2;
-  transition: opacity 0.18s, stroke 0.18s, stroke-width 0.18s;
+  transition: opacity 0.18s, stroke 0.18s, filter 0.18s;
 }
 
 .cu-line.is-corequisite {
@@ -722,7 +797,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-line.is-highlighted {
-  stroke-width: 4;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--interactive-primary) 22%, transparent));
 }
 
 .cu-line.is-dimmed,
@@ -747,7 +822,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-line-arrows .is-highlighted {
-  stroke-width: 3;
+  opacity: 1;
 }
 
 .cu-logic-node {
@@ -772,7 +847,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-logic-node.is-highlighted {
-  stroke-width: 3;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--interactive-primary) 28%, transparent));
 }
 
 .cu-node {
@@ -783,21 +858,21 @@ onBeforeUnmount(() => {
 
 .cu-node__card {
   fill: var(--surface-primary);
-  filter: drop-shadow(0 4px 8px color-mix(in srgb, var(--text-primary) 11%, transparent));
+  filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--text-primary) 8%, transparent));
   stroke: var(--border-primary);
-  stroke-width: 1.5;
-  transition: fill 0.18s, stroke 0.18s, stroke-width 0.18s;
+  stroke-width: 1.25;
+  transition: fill 0.18s, stroke 0.18s, filter 0.18s;
 }
 
 .cu-node__accent {
   fill: var(--cu-node-accent, var(--interactive-primary));
-  opacity: 0.88;
+  opacity: 0.72;
 }
 
 .cu-node__code,
 .cu-node__title,
-.cu-node__status,
-.cu-node__prefix {
+.cu-node__detail-text,
+.cu-node__status-text {
   pointer-events: none;
   user-select: none;
 }
@@ -805,23 +880,146 @@ onBeforeUnmount(() => {
 .cu-node__code {
   fill: var(--text-primary);
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 780;
 }
 
-.cu-node__title,
-.cu-node__status,
-.cu-node__prefix {
+.cu-node__title {
   fill: var(--text-secondary);
   font-size: 12px;
 }
 
-.cu-node__status,
-.cu-node__prefix {
-  font-weight: 700;
+.cu-node__header {
+  pointer-events: none;
 }
 
-.cu-node__prefix {
-  text-anchor: end;
+.cu-node__detail-link {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+
+.cu-node__detail-bg {
+  fill: var(--surface-primary);
+  stroke: color-mix(in srgb, var(--interactive-primary) 32%, var(--border-primary));
+  stroke-width: 1;
+  transition: fill 0.18s, stroke 0.18s;
+}
+
+.cu-node__detail-text {
+  fill: var(--interactive-active);
+  font-size: 10px;
+  font-weight: 760;
+  text-anchor: middle;
+}
+
+.cu-node__detail-link:hover .cu-node__detail-bg,
+.cu-node__detail-link:focus .cu-node__detail-bg {
+  fill: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+  stroke: var(--interactive-primary);
+}
+
+.cu-node__detail-link:hover .cu-node__detail-text,
+.cu-node__detail-link:focus .cu-node__detail-text {
+  fill: var(--interactive-active);
+}
+
+.cu-node__status-pill {
+  pointer-events: none;
+}
+
+.cu-node__status-bg {
+  fill: color-mix(in srgb, var(--cu-status-color, var(--border-primary)) 8%, var(--surface-primary));
+  stroke: color-mix(in srgb, var(--cu-status-color, var(--border-primary)) 34%, var(--border-primary));
+  stroke-width: 1;
+}
+
+.cu-node__status-text {
+  fill: var(--cu-status-text, var(--text-secondary));
+  font-size: 10px;
+  font-weight: 760;
+  text-anchor: middle;
+}
+
+.cu-node__status-pill.is-completed {
+  --cu-status-color: var(--semantic-success);
+  --cu-status-text: var(--semantic-success);
+}
+
+.cu-node__status-pill.is-inProgress {
+  --cu-status-color: var(--interactive-primary);
+  --cu-status-text: var(--interactive-active);
+}
+
+.cu-node__status-pill.is-notTaken {
+  --cu-status-color: var(--border-primary);
+  --cu-status-text: var(--text-secondary);
+}
+
+.cu-node__status-pill.is-interested {
+  --cu-status-color: var(--text-secondary);
+  --cu-status-text: var(--text-secondary);
+}
+
+.cu-node__cart-action {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+
+.cu-node__cart-bg {
+  fill: var(--surface-primary);
+  stroke: color-mix(in srgb, var(--interactive-primary) 30%, var(--border-primary));
+  stroke-width: 1;
+  transition: fill 0.18s, stroke 0.18s;
+}
+
+.cu-node__cart-icon,
+.cu-node__cart-check {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--interactive-primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.55;
+}
+
+.cu-node__cart-wheel {
+  fill: var(--interactive-primary);
+  pointer-events: none;
+}
+
+.cu-node__cart-action:hover .cu-node__cart-bg,
+.cu-node__cart-action:focus .cu-node__cart-bg {
+  fill: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+  stroke: var(--interactive-primary);
+}
+
+.cu-node__cart-action.is-added .cu-node__cart-bg {
+  fill: var(--interactive-primary);
+  stroke: var(--interactive-primary);
+}
+
+.cu-node__cart-action.is-added .cu-node__cart-icon,
+.cu-node__cart-action.is-added .cu-node__cart-check,
+.cu-node__cart-action:hover .cu-node__cart-icon,
+.cu-node__cart-action:hover .cu-node__cart-check,
+.cu-node__cart-action:focus .cu-node__cart-icon,
+.cu-node__cart-action:focus .cu-node__cart-check {
+  stroke: var(--interactive-primary);
+}
+
+.cu-node__cart-action.is-added .cu-node__cart-icon,
+.cu-node__cart-action.is-added .cu-node__cart-check {
+  stroke: var(--text-inverse);
+}
+
+.cu-node__cart-action:hover .cu-node__cart-wheel,
+.cu-node__cart-action:focus .cu-node__cart-wheel {
+  fill: var(--interactive-primary);
+}
+
+.cu-node__cart-action.is-added .cu-node__cart-wheel {
+  fill: var(--text-inverse);
 }
 
 .cu-node.is-far .cu-node__code {
@@ -832,7 +1030,7 @@ onBeforeUnmount(() => {
 .cu-node.is-selected .cu-node__card,
 .cu-node:focus .cu-node__card {
   stroke: var(--interactive-primary);
-  stroke-width: 4;
+  filter: drop-shadow(0 4px 9px color-mix(in srgb, var(--interactive-primary) 20%, transparent));
 }
 
 .cu-node.is-dimmed {
@@ -843,9 +1041,8 @@ onBeforeUnmount(() => {
 .cu-node.is-related .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 62%, var(--border-primary)); }
 .cu-node.is-completed .cu-node__card { stroke: color-mix(in srgb, var(--semantic-success) 45%, var(--border-primary)); }
 .cu-node.is-in-progress .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 55%, var(--border-primary)); }
-.cu-node.is-planned .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 50%, var(--border-primary)); }
+.cu-node.is-not-taken .cu-node__card { stroke: var(--border-primary); }
 .cu-node.is-interested .cu-node__card { stroke: color-mix(in srgb, var(--text-secondary) 38%, var(--border-primary)); }
-.cu-node.is-planner .cu-node__card { fill: color-mix(in srgb, var(--interactive-primary) 7%, var(--surface-primary)); }
 
 .cu-node.is-tone-0 { --cu-node-accent: var(--interactive-primary); }
 .cu-node.is-tone-1 { --cu-node-accent: var(--semantic-success); }
@@ -861,14 +1058,14 @@ onBeforeUnmount(() => {
   .cu-canvas__empty,
   .cu-canvas__stage,
   .cu-canvas__svg {
-    min-height: 500px;
-    height: 500px;
+    min-height: 430px;
+    height: 430px;
   }
 
   .cu-canvas__controls {
     left: 12px;
     right: auto;
-    top: 12px;
+    top: 8px;
   }
 }
 </style>

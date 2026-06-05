@@ -3,9 +3,11 @@ import CourseUniversePage from '~/components/courses/universe/CourseUniversePage
 
 definePageMeta({ layout: 'keguang' })
 
-useHead({
-  title: 'Course Universe - UniKorn',
-})
+const { t } = useI18n()
+
+useHead(() => ({
+  title: `${t('courseUniverse.hubTitle')} - ${t('common.appName')}`,
+}))
 </script>
 
 <template>

@@ -26,8 +26,12 @@ export interface CourseUniverseMapLine {
 }
 
 export interface CourseUniverseMapCourse {
-  course_code: string
-  course_title_abbr: string
+  course_code?: string
+  code?: string
+  course_title_abbr?: string | null
+  course_title?: string | null
+  name?: string | null
+  title?: string | null
 }
 
 export interface CourseUniverseAcademicRecord {
@@ -51,6 +55,8 @@ export interface CourseUniverseNode {
   inPlanner: boolean
   selected: boolean
 }
+
+export type CourseUniverseNodeStatusKey = 'completed' | 'inProgress' | 'notTaken' | 'interested'
 
 export interface CourseUniverseCanvasSize {
   width: number
@@ -127,7 +133,7 @@ export function compactCourseCode(code: string) {
 }
 
 export function getCourseUniverseComponentCourseCode(componentId: string) {
-  return compactCourseCode(componentId).replace(/\[\d+\]$/, '')
+  return compactCourseCode(String(componentId || '').replace(/\[\d+\]$/, ''))
 }
 
 export function formatCourseCode(code: string) {
@@ -143,6 +149,10 @@ export function getCourseUniverseNodePrefix(code: string) {
 
 export function buildCourseUniverseModePath(mode: CourseUniverseModeKey) {
   return COURSE_UNIVERSE_MODES.find(item => item.key === mode)?.path || '/courses'
+}
+
+export function buildCourseUniverseCourseDetailPath(code: string) {
+  return `/courses/${getCourseUniverseComponentCourseCode(code)}`
 }
 
 export function isCourseUniverseActivePath(path: string) {
@@ -304,13 +314,16 @@ export function buildCourseUniverseGraph(input: {
     if (!start || !end) return []
     const startPoint = getCourseUniverseLinePoint(start, 'start')
     const endPoint = getCourseUniverseLinePoint(end, 'end')
+    const elbowX = (line.category === 2 || line.category === 3) && start.category !== 0 && end.category !== 0
+      ? (startPoint.x + endPoint.x) / 2
+      : line.x_coordinate
     return [{
       id: line.id,
       startId: line.start_id,
       endId: line.end_id,
       category: line.category,
       lineType: line.line_type,
-      path: `M ${startPoint.x},${startPoint.y} H ${line.x_coordinate} V ${endPoint.y} H ${endPoint.x}`,
+      path: `M ${startPoint.x},${startPoint.y} H ${elbowX} V ${endPoint.y} H ${endPoint.x}`,
       arrowPaths: buildCourseUniverseLineArrows({
         category: line.category,
         lineType: line.line_type,
@@ -318,7 +331,7 @@ export function buildCourseUniverseGraph(input: {
         startY: startPoint.y,
         endX: endPoint.x,
         endY: endPoint.y,
-        elbowX: line.x_coordinate,
+        elbowX,
       }),
       ...getCourseUniverseLineStyle({ category: line.category, lineType: line.line_type }),
     }]
@@ -375,6 +388,14 @@ function getCourseUniverseAlignedColumnX(column: CourseUniverseMapComponent[]) {
   return Math.round(sortedX[Math.floor(sortedX.length / 2)])
 }
 
+function getCourseUniverseCodesInComponentId(componentId: string) {
+  return new Set(
+    (String(componentId || '').match(/[A-Z]{4}\d{4}[A-Z]?(?:\[\d+\])?/g) || [])
+      .map(code => getCourseUniverseComponentCourseCode(code))
+      .filter(Boolean),
+  )
+}
+
 export function layoutCourseUniverseGraphComponents(input: {
   components: CourseUniverseMapComponent[]
   lines: CourseUniverseMapLine[]
@@ -394,15 +415,15 @@ export function layoutCourseUniverseGraphComponents(input: {
 
   groupCourseUniverseColumns(connectedCourses).forEach(column => {
     const columnX = getCourseUniverseAlignedColumnX(column)
-    let previousY = Number.NEGATIVE_INFINITY
-    column
+    const sortedColumn = column
       .sort((a, b) => a.y_coordinate - b.y_coordinate || a.x_coordinate - b.x_coordinate || a.id.localeCompare(b.id))
-      .forEach(component => {
+    const compactStartY = sortedColumn[0]?.y_coordinate || 0
+    sortedColumn
+      .forEach((component, index) => {
         const next = laidOut.get(component.id)
         if (!next) return
         next.x_coordinate = columnX
-        next.y_coordinate = Math.max(component.y_coordinate, previousY + minVerticalGap)
-        previousY = next.y_coordinate
+        next.y_coordinate = compactStartY + index * minVerticalGap
       })
   })
 
@@ -418,15 +439,11 @@ export function layoutCourseUniverseGraphComponents(input: {
     const connectedMaxY = visibleLaidOutCourses.length
       ? Math.max(...visibleLaidOutCourses.map(component => component.y_coordinate))
       : Math.min(...isolatedCourses.map(component => component.y_coordinate)) - COURSE_UNIVERSE_COURSE_HEIGHT - 160
-    const columnCount = isolatedCourses.length >= 7
-      ? 4
-      : isolatedCourses.length >= 4
-        ? 3
-        : Math.max(1, isolatedCourses.length)
-    const columnGap = COURSE_UNIVERSE_COURSE_WIDTH + 92
-    const rowGap = COURSE_UNIVERSE_COURSE_HEIGHT + 36
+    const columnCount = Math.min(10, Math.max(1, Math.ceil(isolatedCourses.length / 3)))
+    const columnGap = COURSE_UNIVERSE_COURSE_WIDTH + 52
+    const rowGap = COURSE_UNIVERSE_COURSE_HEIGHT + 24
     const startX = Math.round(connectedMinX)
-    const startY = Math.round(connectedMaxY + COURSE_UNIVERSE_COURSE_HEIGHT + 160)
+    const startY = Math.round(connectedMaxY + COURSE_UNIVERSE_COURSE_HEIGHT + 96)
 
     isolatedCourses
       .sort((a, b) => getCourseUniverseComponentCourseCode(a.id).localeCompare(
@@ -441,6 +458,22 @@ export function layoutCourseUniverseGraphComponents(input: {
         next.y_coordinate = startY + Math.floor(index / columnCount) * rowGap
       })
   }
+
+  const coursePositionByCode = new Map<string, CourseUniverseMapComponent>()
+  laidOut.forEach(component => {
+    if (component.category !== 0 || !visibleIds.has(component.id)) return
+    const code = getCourseUniverseComponentCourseCode(component.id)
+    if (!coursePositionByCode.has(code)) coursePositionByCode.set(code, component)
+  })
+
+  laidOut.forEach(component => {
+    if ((component.category !== 2 && component.category !== 3) || !visibleIds.has(component.id)) return
+    const anchorCode = [...getCourseUniverseCodesInComponentId(component.id)][0]
+    const anchorCourse = anchorCode ? coursePositionByCode.get(anchorCode) : null
+    if (!anchorCourse) return
+    component.x_coordinate = anchorCourse.x_coordinate + COURSE_UNIVERSE_COURSE_WIDTH / 2
+    component.y_coordinate = anchorCourse.y_coordinate + COURSE_UNIVERSE_COURSE_HEIGHT / 2
+  })
 
   return input.components.map(component => laidOut.get(component.id) || component)
 }
@@ -496,6 +529,63 @@ function traverseCourseUniverseDirectPaths(
   return result
 }
 
+function expandCourseUniverseDetachedRelationComponents(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  componentIds: Set<string>
+  relationSeedCodes: Set<string>
+}) {
+  const courseIdsByCode = new Map<string, string[]>()
+  input.components.forEach(component => {
+    if (component.category !== 0) return
+    const code = getCourseUniverseComponentCourseCode(component.id)
+    if (!courseIdsByCode.has(code)) courseIdsByCode.set(code, [])
+    courseIdsByCode.get(code)?.push(component.id)
+  })
+
+  if (!input.relationSeedCodes.size) return input.componentIds
+
+  const relationIds = new Set(input.components
+    .filter(component => component.category === 2 || component.category === 3)
+    .map(component => component.id))
+  const relationAdjacency = new Map<string, Set<string>>()
+  input.lines.forEach(line => {
+    if (line.category !== 2 && line.category !== 3) return
+    if (!relationIds.has(line.start_id) || !relationIds.has(line.end_id)) return
+    if (!relationAdjacency.has(line.start_id)) relationAdjacency.set(line.start_id, new Set())
+    if (!relationAdjacency.has(line.end_id)) relationAdjacency.set(line.end_id, new Set())
+    relationAdjacency.get(line.start_id)?.add(line.end_id)
+    relationAdjacency.get(line.end_id)?.add(line.start_id)
+  })
+
+  const queue: string[] = []
+  relationIds.forEach(id => {
+    const codes = getCourseUniverseCodesInComponentId(id)
+    if ([...codes].some(code => input.relationSeedCodes.has(code))) {
+      queue.push(id)
+    }
+  })
+
+  const expandedRelationIds = new Set<string>()
+  while (queue.length) {
+    const id = queue.shift()
+    if (!id || expandedRelationIds.has(id)) continue
+    expandedRelationIds.add(id)
+    relationAdjacency.get(id)?.forEach(nextId => {
+      if (!expandedRelationIds.has(nextId)) queue.push(nextId)
+    })
+  }
+
+  expandedRelationIds.forEach(id => {
+    input.componentIds.add(id)
+    getCourseUniverseCodesInComponentId(id).forEach(code => {
+      courseIdsByCode.get(code)?.forEach(courseId => input.componentIds.add(courseId))
+    })
+  })
+
+  return input.componentIds
+}
+
 export function buildCourseUniverseVisibleComponentSet(input: {
   components: CourseUniverseMapComponent[]
   lines: CourseUniverseMapLine[]
@@ -510,12 +600,14 @@ export function buildCourseUniverseVisibleComponentSet(input: {
     .filter(component => component.category === 0)
     .map(component => component.id))
   const seeds = new Set<string>()
+  const relationSeedCodes = new Set<string>()
   let directPathsOnly = false
 
   if (selectedCode) {
     input.components.forEach(component => {
       if (component.category === 0 && getCourseUniverseComponentCourseCode(component.id) === selectedCode) {
         seeds.add(component.id)
+        relationSeedCodes.add(selectedCode)
       }
     })
   } else if (String(input.searchQuery || '').trim()) {
@@ -524,6 +616,7 @@ export function buildCourseUniverseVisibleComponentSet(input: {
     input.courseNodes.forEach(node => {
       if (node.displayCode.toLowerCase().includes(query) || node.title.toLowerCase().includes(query)) {
         seeds.add(node.componentId)
+        relationSeedCodes.add(node.code)
       }
     })
   } else if (input.selectedPrefix) {
@@ -531,6 +624,7 @@ export function buildCourseUniverseVisibleComponentSet(input: {
     input.courseNodes.forEach(node => {
       if (getCourseUniverseNodePrefix(node.code) === input.selectedPrefix) {
         seeds.add(node.componentId)
+        relationSeedCodes.add(node.code)
       }
     })
   } else {
@@ -548,7 +642,12 @@ export function buildCourseUniverseVisibleComponentSet(input: {
     upstream.forEach(id => result.add(id))
     downstream.forEach(id => result.add(id))
   })
-  return result
+  return expandCourseUniverseDetachedRelationComponents({
+    components: input.components,
+    lines: input.lines,
+    componentIds: result,
+    relationSeedCodes,
+  })
 }
 
 export function buildCourseUniverseHighlightSet(input: {
@@ -560,6 +659,12 @@ export function buildCourseUniverseHighlightSet(input: {
   const componentIds = new Set<string>([input.startId])
   traverseCourseUniverseComponents(input.startId, incoming).forEach(id => componentIds.add(id))
   traverseCourseUniverseComponents(input.startId, outgoing).forEach(id => componentIds.add(id))
+  expandCourseUniverseDetachedRelationComponents({
+    components: input.components,
+    lines: input.lines,
+    componentIds,
+    relationSeedCodes: new Set([getCourseUniverseComponentCourseCode(input.startId)]),
+  })
   return {
     componentIds: [...componentIds],
     lineIds: input.lines
@@ -696,6 +801,91 @@ export function buildCourseUniversePrefixOptions(
     .map(([prefix, count]) => ({ prefix, count }))
     .sort((a, b) => b.count - a.count || a.prefix.localeCompare(b.prefix))
     .slice(0, limit)
+}
+
+export function getCourseUniverseNodeStatusKey(input: {
+  academicStatus: AcademicCourseStatus | null
+  inPlanner?: boolean
+}): CourseUniverseNodeStatusKey {
+  if (input.academicStatus === 'completed') return 'completed'
+  if (input.academicStatus === 'in_progress') return 'inProgress'
+  if (input.academicStatus === 'interested') return 'interested'
+  return 'notTaken'
+}
+
+export function getCourseUniverseActiveSchedulerSemester(semesters: Array<{ id?: string | null }>) {
+  return semesters
+    .map(semester => String(semester.id || '').trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .at(-1) || ''
+}
+
+export function getCourseUniverseSchedulerSemesterLabel(
+  semester: { id?: string | null; name?: string | null; name_zh?: string | null },
+  language: string,
+) {
+  const id = String(semester.id || '').trim()
+  const existingLabel = String((language === 'zh' ? semester.name_zh : semester.name) || '').trim()
+  if (existingLabel && existingLabel !== id) return existingLabel
+
+  const match = id.match(/^(\d{2})(\d{2})$/)
+  if (!match) return existingLabel || id
+
+  const seasonCode = match[2]
+  const seasons = language === 'zh'
+    ? { '10': '秋', '20': '冬', '30': '春', '40': '夏' }
+    : { '10': 'Fall', '20': 'Winter', '30': 'Spring', '40': 'Summer' }
+  const seasonLabel = seasons[seasonCode as keyof typeof seasons]
+  if (!seasonLabel) return existingLabel || id
+
+  const startYear = Number(match[1])
+  const endYear = (startYear + 1) % 100
+  return language === 'zh'
+    ? `${String(startYear).padStart(2, '0')}-${String(endYear).padStart(2, '0')}${seasonLabel}`
+    : `${String(startYear).padStart(2, '0')}-${String(endYear).padStart(2, '0')} ${seasonLabel}`
+}
+
+export function getCourseUniverseCatalogCourseCode(course: CourseUniverseMapCourse) {
+  return compactCourseCode(course.course_code || course.code || '')
+}
+
+export function getCourseUniverseCatalogCourseTitle(course: CourseUniverseMapCourse) {
+  const code = getCourseUniverseCatalogCourseCode(course)
+  const candidates = [
+    course.course_title_abbr,
+    course.course_title,
+    course.name,
+    course.title,
+  ]
+
+  return candidates.find(candidate => {
+    const value = String(candidate || '').trim()
+    return value && compactCourseCode(value) !== code
+  })?.trim() || ''
+}
+
+export function mergeCourseUniverseCatalogCourses(
+  primaryCourses: CourseUniverseMapCourse[],
+  fallbackCourses: CourseUniverseMapCourse[],
+) {
+  const coursesByCode = new Map<string, CourseUniverseMapCourse>()
+
+  primaryCourses.forEach(course => {
+    const code = getCourseUniverseCatalogCourseCode(course)
+    if (code) coursesByCode.set(code, course)
+  })
+
+  fallbackCourses.forEach(course => {
+    const code = getCourseUniverseCatalogCourseCode(course)
+    if (!code) return
+    const existing = coursesByCode.get(code)
+    if (!existing || !getCourseUniverseCatalogCourseTitle(existing)) {
+      coursesByCode.set(code, course)
+    }
+  })
+
+  return [...coursesByCode.values()]
 }
 
 function buildCourseUniverseLineAdjacency(input: {
@@ -846,7 +1036,7 @@ export function normalizeCourseUniverseNodes(input: {
   selectedCourseCode?: string | null
 }): CourseUniverseNode[] {
   const coursesByCode = new Map(
-    input.courses.map(course => [compactCourseCode(course.course_code), course]),
+    input.courses.map(course => [getCourseUniverseCatalogCourseCode(course), course]),
   )
   const recordsByCode = new Map(
     input.academicRecords.map(record => [compactCourseCode(record.course_code), record]),
@@ -865,7 +1055,7 @@ export function normalizeCourseUniverseNodes(input: {
         componentId: component.id,
         code,
         displayCode: formatCourseCode(code),
-        title: course?.course_title_abbr || formatCourseCode(code),
+        title: course ? getCourseUniverseCatalogCourseTitle(course) || formatCourseCode(code) : formatCourseCode(code),
         x: component.x_coordinate,
         y: component.y_coordinate,
         category: component.category,

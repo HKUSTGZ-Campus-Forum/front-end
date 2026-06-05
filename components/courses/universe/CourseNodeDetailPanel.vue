@@ -19,7 +19,9 @@ const { getLocalePath } = useAppLocale()
 const { isLoggedIn } = useAuth()
 
 const overviewTo = computed(() => (
-  props.node ? getLocalePath(`/courses/${props.node.code}`) : getLocalePath('/courses')
+  props.node
+    ? getLocalePath({ path: `/courses/${props.node.code}`, query: { from: 'universe' } })
+    : getLocalePath('/courses')
 ))
 const isInterested = computed(() => props.academicStatus === 'interested')
 const hasStrongStatus = computed(() => (

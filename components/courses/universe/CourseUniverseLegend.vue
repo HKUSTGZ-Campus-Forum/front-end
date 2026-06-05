@@ -2,20 +2,22 @@
 const { t } = useI18n()
 
 const items = [
-  { key: 'completed', className: 'is-completed' },
-  { key: 'inProgress', className: 'is-in-progress' },
-  { key: 'planned', className: 'is-planned' },
-  { key: 'interested', className: 'is-interested' },
-  { key: 'inPlanner', className: 'is-planner' },
-  { key: 'blocker', className: 'is-blocker' },
-  { key: 'reviewSignal', className: 'is-review' },
+  { key: 'completed', className: 'is-completed', type: 'dot' },
+  { key: 'inProgress', className: 'is-in-progress', type: 'dot' },
+  { key: 'notTaken', className: 'is-not-taken', type: 'dot' },
+  { key: 'interested', className: 'is-interested', type: 'dot' },
+  { key: 'prerequisite', className: 'is-prerequisite', type: 'line' },
+  { key: 'corequisite', className: 'is-corequisite', type: 'line' },
+  { key: 'exclusion', className: 'is-exclusion', type: 'line' },
+  { key: 'hollowLogic', className: 'is-hollow-logic', type: 'logic' },
+  { key: 'solidLogic', className: 'is-solid-logic', type: 'logic' },
 ]
 </script>
 
 <template>
   <div class="cu-legend" aria-label="Course graph legend">
     <span v-for="item in items" :key="item.key" class="cu-legend__item">
-      <i :class="['cu-legend__dot', item.className]" aria-hidden="true"></i>
+      <i :class="['cu-legend__mark', `cu-legend__mark--${item.type}`, item.className]" aria-hidden="true"></i>
       {{ t(`courseUniverse.legend.${item.key}`) }}
     </span>
   </div>
@@ -42,18 +44,37 @@ const items = [
   padding: 0 10px;
 }
 
-.cu-legend__dot {
-  border-radius: 999px;
+.cu-legend__mark {
   display: inline-block;
+}
+
+.cu-legend__mark--dot {
+  border-radius: 999px;
   height: 9px;
   width: 9px;
 }
 
+.cu-legend__mark--logic {
+  border: 2px solid var(--text-primary);
+  border-radius: 999px;
+  height: 10px;
+  width: 10px;
+}
+
+.cu-legend__mark--line {
+  border-radius: 999px;
+  height: 0;
+  width: 18px;
+  border-top: 2px solid var(--text-primary);
+}
+
 .is-completed { background: var(--semantic-success); }
 .is-in-progress { background: var(--interactive-primary); }
-.is-planned { background: var(--interactive-primary); }
+.is-not-taken { background: var(--border-primary); }
 .is-interested { background: var(--text-secondary); }
-.is-planner { background: var(--interactive-hover); }
-.is-blocker { background: var(--semantic-warning); }
-.is-review { background: var(--semantic-info); }
+.is-prerequisite { border-top-style: dashed; }
+.is-corequisite { border-top-color: var(--semantic-info); }
+.is-exclusion { border-top-color: var(--semantic-error); }
+.is-hollow-logic { background: var(--surface-primary); }
+.is-solid-logic { background: var(--text-primary); }
 </style>

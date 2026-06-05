@@ -45,6 +45,10 @@ const props = defineProps({
     <path d="M12 20.5 4.8 13.6A4.8 4.8 0 0 1 11.6 7l.4.5.4-.5a4.8 4.8 0 0 1 6.8 6.7Z" />
   </svg>
 
+  <svg v-else-if="name === 'bookmark'" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M7 5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V20l-5-3-5 3Z" />
+  </svg>
+
   <svg v-else-if="name === 'plus-one'" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M10 6v12" />
     <path d="M6 10h8" />

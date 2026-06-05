@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import CourseNodeDetailPanel from './CourseNodeDetailPanel.vue'
 import CourseUniverseCanvas from './CourseUniverseCanvas.vue'
 import CourseUniverseLegend from './CourseUniverseLegend.vue'
 import CourseUniverseToolbar from './CourseUniverseToolbar.vue'
-import type { AcademicCourseRecord } from '~/types/academic-map'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import {
   compactCourseCode,
+  getCourseUniverseActiveSchedulerSemester,
+  getCourseUniverseSchedulerSemesterLabel,
+  mergeCourseUniverseCatalogCourses,
   normalizeCourseUniverseNodes,
+  type CourseUniverseAcademicRecord,
   type CourseUniverseMapComponent,
   type CourseUniverseMapCourse,
   type CourseUniverseMapLine,
@@ -20,25 +22,32 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { isLoggedIn } = useAuth()
-const { getMapComponents, getMapLines, getMapCourses, getSemesters, getCart } = useScheduler()
+const { fetchPublic } = useApi()
+const { getMapComponents, getMapLines, getMapCourses, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
 const { fetchSummary } = useAcademicMap()
-const { markCourseInterested, cancelCourseInterest } = useCourseOverview()
 
 const components = ref<CourseUniverseMapComponent[]>([])
 const lines = ref<CourseUniverseMapLine[]>([])
 const courses = ref<CourseUniverseMapCourse[]>([])
 const semesters = ref<SemesterInfo[]>([])
 const plannerCourses = ref<CartCourse[]>([])
-const academicRecords = ref<AcademicCourseRecord[]>([])
-const searchQuery = ref('')
-const selectedSemester = ref('')
+const academicRecords = ref<CourseUniverseAcademicRecord[]>([])
 const selectedCourseCode = ref<string | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
+const cartMessage = ref('')
+const cartNoticeTone = ref<'info' | 'success' | 'error'>('info')
+const cartUpdatingCodes = ref(new Set<string>())
 
 const mode = computed(() => props.mode || 'universe')
+const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
+const activeSchedulerSemesterLabel = computed(() => {
+  const semester = semesters.value.find(item => item.id === activeSchedulerSemester.value)
+  if (!semester) return activeSchedulerSemester.value
+  return getCourseUniverseSchedulerSemesterLabel(semester, locale.value)
+})
 
 const nodes = computed(() => normalizeCourseUniverseNodes({
   components: components.value,
@@ -48,44 +57,45 @@ const nodes = computed(() => normalizeCourseUniverseNodes({
   selectedCourseCode: selectedCourseCode.value,
 }))
 
-const selectedNode = computed(() => (
-  nodes.value.find(node => node.code === compactCourseCode(selectedCourseCode.value || '')) || null
-))
+async function getCatalogCourses(): Promise<CourseUniverseMapCourse[]> {
+  const response = await fetchPublic('/api/courses?stage=all')
+  if (!response.ok) return []
+  const data = await response.json()
+  if (!Array.isArray(data)) return []
 
-const selectedAcademicRecord = computed(() => {
-  if (!selectedNode.value) return null
-  return academicRecords.value.find(record => (
-    compactCourseCode(record.course_code) === selectedNode.value?.code
-  )) || null
-})
-
-const selectedAcademicStatus = computed(() => selectedAcademicRecord.value?.status || null)
-const selectedInPlanner = computed(() => Boolean(selectedNode.value?.inPlanner))
+  return data.map(course => ({
+    course_code: course.course_code || course.code,
+    course_title_abbr: course.course_title_abbr,
+    course_title: course.course_title,
+    name: course.name,
+    title: course.title,
+  }))
+}
 
 async function loadUniverse() {
   try {
     loading.value = true
     errorMessage.value = ''
-    const [mapComponents, mapLines, mapCourses, semesterData] = await Promise.all([
+    const [mapComponents, mapLines, mapCourses, semesterData, catalogCourses] = await Promise.all([
       getMapComponents(),
       getMapLines(),
       getMapCourses(),
       getSemesters(),
+      getCatalogCourses().catch(() => []),
     ])
 
     components.value = mapComponents
     lines.value = mapLines
-    courses.value = mapCourses
+    courses.value = mergeCourseUniverseCatalogCourses(mapCourses, catalogCourses)
     semesters.value = semesterData
-    selectedSemester.value = semesterData[0]?.id || ''
     const focusedCourse = typeof route.query.focus === 'string' ? compactCourseCode(route.query.focus) : ''
     if (focusedCourse) selectedCourseCode.value = focusedCourse
 
     if (isLoggedIn.value) {
       const summary = await fetchSummary()
       academicRecords.value = summary.records || []
-      if (selectedSemester.value) {
-        plannerCourses.value = await getCart(selectedSemester.value)
+      if (activeSchedulerSemester.value) {
+        plannerCourses.value = await getCart(activeSchedulerSemester.value)
       }
     }
   } catch {
@@ -96,35 +106,69 @@ async function loadUniverse() {
 }
 
 async function refreshPlannerCart() {
-  if (!isLoggedIn.value || !selectedSemester.value) {
+  if (!isLoggedIn.value || !activeSchedulerSemester.value) {
     plannerCourses.value = []
     return
   }
-  plannerCourses.value = await getCart(selectedSemester.value)
+  plannerCourses.value = await getCart(activeSchedulerSemester.value)
 }
 
-async function refreshAcademicRecords() {
-  if (!isLoggedIn.value) {
-    academicRecords.value = []
+function isCourseInPlannerCart(code: string) {
+  const normalizedCode = compactCourseCode(code)
+  return plannerCourses.value.some(course => compactCourseCode(course.course_code) === normalizedCode)
+}
+
+async function togglePlannerCourse(code: string) {
+  cartMessage.value = ''
+  cartNoticeTone.value = 'info'
+  const semester = activeSchedulerSemester.value
+  const semesterLabel = activeSchedulerSemesterLabel.value
+  if (!semester) {
+    cartMessage.value = t('scheduler.noSemesters')
+    cartNoticeTone.value = 'error'
     return
   }
-  const summary = await fetchSummary()
-  academicRecords.value = summary.records || []
+  if (!isLoggedIn.value) {
+    cartMessage.value = t('scheduler.loginHint')
+    cartNoticeTone.value = 'error'
+    return
+  }
+
+  const normalizedCode = compactCourseCode(code)
+  if (cartUpdatingCodes.value.has(normalizedCode)) return
+
+  cartUpdatingCodes.value = new Set(cartUpdatingCodes.value).add(normalizedCode)
+  try {
+    if (isCourseInPlannerCart(normalizedCode)) {
+      await removeFromCart(semester, normalizedCode)
+      cartMessage.value = t('scheduler.cartRemoved', { course: normalizedCode, semester: semesterLabel })
+    } else {
+      await addToCart(semester, normalizedCode)
+      cartMessage.value = t('scheduler.cartAdded', { course: normalizedCode, semester: semesterLabel })
+    }
+    cartNoticeTone.value = 'success'
+    await refreshPlannerCart()
+  } catch (error) {
+    const errorMessageText = error instanceof Error ? error.message : ''
+    cartNoticeTone.value = 'error'
+    if (errorMessageText.includes('no sections')) {
+      cartMessage.value = t('scheduler.cartCourseUnavailable', { course: normalizedCode, semester: semesterLabel })
+    } else if (errorMessageText.includes('already in cart')) {
+      cartMessage.value = t('scheduler.cartAlreadyAdded', { course: normalizedCode, semester: semesterLabel })
+      await refreshPlannerCart()
+    } else {
+      cartMessage.value = t('scheduler.cartFailed')
+    }
+  } finally {
+    const nextUpdatingCodes = new Set(cartUpdatingCodes.value)
+    nextUpdatingCodes.delete(normalizedCode)
+    cartUpdatingCodes.value = nextUpdatingCodes
+  }
 }
 
-async function markSelectedCourseInterested() {
-  if (!selectedNode.value || !isLoggedIn.value) return
-  await markCourseInterested(selectedNode.value.code)
-  await refreshAcademicRecords()
-}
-
-async function cancelSelectedCourseInterest() {
-  if (!selectedNode.value || !isLoggedIn.value) return
-  await cancelCourseInterest(selectedNode.value.code)
-  await refreshAcademicRecords()
-}
-
-watch(selectedSemester, refreshPlannerCart)
+watch(activeSchedulerSemester, () => {
+  refreshPlannerCart()
+})
 onMounted(loadUniverse)
 </script>
 
@@ -132,11 +176,6 @@ onMounted(loadUniverse)
   <div class="cu-page">
     <CourseUniverseToolbar
       :mode="mode"
-      :search-query="searchQuery"
-      :semesters="semesters"
-      :selected-semester="selectedSemester"
-      @update:search-query="searchQuery = $event"
-      @update:selected-semester="selectedSemester = $event"
     />
 
     <div v-if="loading" class="cu-page__state">
@@ -147,24 +186,18 @@ onMounted(loadUniverse)
     </div>
 
     <template v-else>
-      <div class="cu-page__main">
-        <div class="cu-page__graph">
-          <CourseUniverseCanvas
-            :components="components"
-            :nodes="nodes"
-            :lines="lines"
-            :search-query="searchQuery"
-            @select="selectedCourseCode = $event"
-          />
-          <CourseUniverseLegend class="cu-page__legend" />
-        </div>
-        <CourseNodeDetailPanel
-          :node="selectedNode"
-          :academic-status="selectedAcademicStatus"
-          :in-planner="selectedInPlanner"
-          :selected-semester="selectedSemester"
-          @mark-interest="markSelectedCourseInterested"
-          @cancel-interest="cancelSelectedCourseInterest"
+      <p v-if="cartMessage" :class="['cu-page__notice', `is-${cartNoticeTone}`]">
+        {{ cartMessage }}
+      </p>
+      <div class="cu-page__graph">
+        <CourseUniverseLegend class="cu-page__legend" />
+        <CourseUniverseCanvas
+          :components="components"
+          :nodes="nodes"
+          :lines="lines"
+          search-query=""
+          @select="selectedCourseCode = $event"
+          @toggle-planner="togglePlannerCourse"
         />
       </div>
     </template>
@@ -174,8 +207,8 @@ onMounted(loadUniverse)
 <style scoped lang="scss">
 .cu-page {
   margin: 0 auto;
-  max-width: 1380px;
-  padding: 22px 20px 60px;
+  max-width: 1600px;
+  padding: 18px 20px 28px;
 }
 
 .cu-page__state {
@@ -193,37 +226,43 @@ onMounted(loadUniverse)
   color: var(--semantic-error);
 }
 
-.cu-page__main {
+.cu-page__graph {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 16px;
-  align-items: start;
+  gap: 10px;
+  min-width: 0;
 }
 
-.cu-page__graph {
-  min-width: 0;
-  position: relative;
+.cu-page__notice {
+  background: color-mix(in srgb, var(--interactive-primary) 8%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, var(--border-primary));
+  border-radius: 999px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+  padding: 7px 12px;
+}
+
+.cu-page__notice.is-success {
+  background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary));
+  border-color: color-mix(in srgb, var(--semantic-success) 34%, var(--border-primary));
+  color: var(--semantic-success);
+}
+
+.cu-page__notice.is-error {
+  background: color-mix(in srgb, var(--semantic-error) 10%, var(--surface-primary));
+  border-color: color-mix(in srgb, var(--semantic-error) 34%, var(--border-primary));
+  color: var(--semantic-error);
 }
 
 .cu-page__legend {
-  bottom: 14px;
-  left: 14px;
-  position: absolute;
-  z-index: 2;
+  min-width: 0;
 }
 
 @media (max-width: 980px) {
   .cu-page {
-    padding: 16px 14px 48px;
-  }
-
-  .cu-page__main {
-    grid-template-columns: 1fr;
-  }
-
-  .cu-page__legend {
-    margin-top: 10px;
-    position: static;
+    padding: 16px 14px 36px;
   }
 }
 </style>

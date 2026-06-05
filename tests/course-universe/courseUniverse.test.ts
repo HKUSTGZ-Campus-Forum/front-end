@@ -7,6 +7,7 @@ import {
   COURSE_UNIVERSE_MODES,
   buildCourseUniverseGraph,
   buildCourseUniverseHighlightSet,
+  buildCourseUniverseCourseDetailPath,
   layoutCourseUniverseGraphComponents,
   buildCourseUniverseModePath,
   buildCourseUniversePrefixOptions,
@@ -16,6 +17,9 @@ import {
   fitCourseUniverseViewport,
   getCourseUniverseRedirect,
   getCourseUniverseLineStyle,
+  getCourseUniverseActiveSchedulerSemester,
+  getCourseUniverseSchedulerSemesterLabel,
+  getCourseUniverseNodeStatusKey,
   getCourseUniverseViewBox,
   getCourseUniverseNodePrefix,
   hasCourseUniversePointerMoved,
@@ -89,6 +93,35 @@ const directPathLines = [
   { id: 15, start_id: '(UFUG1101&DLED2010)', end_id: 'DLED2010', line_type: null, x_coordinate: 840, category: 1 },
 ]
 
+const detachedRelationComponents: CourseUniverseMapComponent[] = [
+  { id: 'AMAT2040', node_type: null, x_coordinate: 100, y_coordinate: 100, category: 0 },
+  { id: 'AMAT2450', node_type: null, x_coordinate: 520, y_coordinate: 100, category: 0 },
+  { id: 'UCUG1052', node_type: null, x_coordinate: 100, y_coordinate: 360, category: 0 },
+  { id: 'UCUG1053', node_type: null, x_coordinate: 520, y_coordinate: 360, category: 0 },
+  { id: 'co_AMAT2040_AMAT2450', node_type: null, x_coordinate: 300, y_coordinate: 96, category: 2 },
+  { id: 'co_AMAT2450_AMAT2040', node_type: null, x_coordinate: 360, y_coordinate: 96, category: 2 },
+  { id: 'ex_UCUG1052_UCUG1053', node_type: false, x_coordinate: 300, y_coordinate: 356, category: 3 },
+  { id: 'ex_UCUG1053_UCUG1052', node_type: false, x_coordinate: 360, y_coordinate: 356, category: 3 },
+]
+
+const detachedRelationLines = [
+  { id: 16, start_id: 'co_AMAT2040_AMAT2450', end_id: 'co_AMAT2450_AMAT2040', line_type: null, x_coordinate: 330, category: 2 },
+  { id: 17, start_id: 'ex_UCUG1052_UCUG1053', end_id: 'ex_UCUG1053_UCUG1052', line_type: true, x_coordinate: 330, category: 3 },
+]
+
+const crossPrefixRelationComponents: CourseUniverseMapComponent[] = [
+  { id: 'UCUG1051', node_type: null, x_coordinate: 100, y_coordinate: 100, category: 0 },
+  { id: 'DLED3010', node_type: null, x_coordinate: 520, y_coordinate: 100, category: 0 },
+  { id: 'DLED3020', node_type: null, x_coordinate: 940, y_coordinate: 100, category: 0 },
+  { id: 'co_DLED3010_DLED3020', node_type: null, x_coordinate: 720, y_coordinate: 96, category: 2 },
+  { id: 'co_DLED3020_DLED3010', node_type: null, x_coordinate: 780, y_coordinate: 96, category: 2 },
+]
+
+const crossPrefixRelationLines = [
+  { id: 18, start_id: 'UCUG1051', end_id: 'DLED3010', line_type: null, x_coordinate: 360, category: 1 },
+  { id: 19, start_id: 'co_DLED3010_DLED3020', end_id: 'co_DLED3020_DLED3010', line_type: null, x_coordinate: 750, category: 2 },
+]
+
 const overlappingComponents: CourseUniverseMapComponent[] = [
   { id: 'UCUG1050', node_type: null, x_coordinate: 100, y_coordinate: 100, category: 0 },
   { id: 'UCUG1051', node_type: null, x_coordinate: 104, y_coordinate: 178, category: 0 },
@@ -140,6 +173,79 @@ describe('course universe helpers', () => {
     expect(canvasSource).toContain('<rect class="cu-node__card"')
   })
 
+  it('renders graph card controls as a detail link beside the code and a planner cart icon action', () => {
+    const canvasSource = readFileSync(
+      new URL('../../components/courses/universe/CourseUniverseCanvas.vue', import.meta.url),
+      'utf8',
+    )
+
+    expect(canvasSource).toContain("event: 'toggle-planner'")
+    expect(canvasSource).toContain('cu-node__header')
+    expect(canvasSource).toContain('cu-node__status-pill')
+    expect(canvasSource).toContain('cu-node__cart-action')
+    expect(canvasSource).toContain('shopping-cart-check')
+  })
+
+  it('limits the graph legend to four academic statuses plus relationship and logic markers', () => {
+    const legendSource = readFileSync(
+      new URL('../../components/courses/universe/CourseUniverseLegend.vue', import.meta.url),
+      'utf8',
+    )
+
+    expect(legendSource).toContain("key: 'notTaken'")
+    expect(legendSource).toContain("key: 'hollowLogic'")
+    expect(legendSource).toContain("key: 'solidLogic'")
+    expect(legendSource).not.toContain("key: 'planned'")
+    expect(legendSource).not.toContain("key: 'inPlanner'")
+  })
+
+  it('uses the greatest semester id with offering data as the active scheduler semester', () => {
+    expect(getCourseUniverseActiveSchedulerSemester([
+      { id: '2530', name: '2025-26 Spring', name_zh: '25-26春', section_count: 20 },
+      { id: '2510', name: '2025-26 Fall', name_zh: '25-26秋', section_count: 40 },
+      { id: '2540', name: '2025-26 Summer', name_zh: '25-26夏', section_count: 10 },
+      { id: '2520', name: '2025-26 Winter', name_zh: '25-26冬', section_count: 5 },
+    ])).toBe('2540')
+    expect(getCourseUniverseActiveSchedulerSemester([])).toBe('')
+  })
+
+  it('formats scheduler semester ids when backend metadata is missing', () => {
+    const semester = { id: '2540', name: '2540', name_zh: '2540', section_count: 10 }
+
+    expect(getCourseUniverseSchedulerSemesterLabel(semester, 'zh')).toBe('25-26夏')
+    expect(getCourseUniverseSchedulerSemesterLabel(semester, 'en')).toBe('25-26 Summer')
+    expect(getCourseUniverseSchedulerSemesterLabel({
+      id: '2530',
+      name: '2025-26 Spring',
+      name_zh: '25-26春',
+      section_count: 10,
+    }, 'zh')).toBe('25-26春')
+  })
+
+  it('keeps graph cart actions tied to the active scheduler semester with explicit feedback', () => {
+    const pageSource = readFileSync(
+      new URL('../../components/courses/universe/CourseUniversePage.vue', import.meta.url),
+      'utf8',
+    )
+
+    expect(pageSource).toContain('activeSchedulerSemester')
+    expect(pageSource).toContain("t('scheduler.cartCourseUnavailable'")
+    expect(pageSource).toContain("t('scheduler.cartAdded'")
+    expect(pageSource).toContain("t('scheduler.cartRemoved'")
+    expect(pageSource).not.toContain("selectedSemester.value = semesterData[0]?.id || ''")
+  })
+
+  it('keeps the course graph toolbar focused on mode navigation', () => {
+    const toolbarSource = readFileSync(
+      new URL('../../components/courses/universe/CourseUniverseToolbar.vue', import.meta.url),
+      'utf8',
+    )
+
+    expect(toolbarSource).toContain('COURSE_UNIVERSE_MODES')
+    expect(toolbarSource).not.toContain('<select')
+    expect(toolbarSource).not.toContain('semesterLocked')
+  })
+
   it('exports the expected course modes', () => {
     expect(COURSE_UNIVERSE_MODES.map(mode => mode.key)).toEqual([
       'universe',
@@ -154,6 +260,11 @@ describe('course universe helpers', () => {
     expect(buildCourseUniverseModePath('explore')).toBe('/courses/explore')
     expect(buildCourseUniverseModePath('planner')).toBe('/courses/planner')
     expect(buildCourseUniverseModePath('academicMap')).toBe('/courses/academic-map')
+  })
+
+  it('builds stable course overview paths from graph node codes', () => {
+    expect(buildCourseUniverseCourseDetailPath('AIAA 2205')).toBe('/courses/AIAA2205')
+    expect(buildCourseUniverseCourseDetailPath('DLED4010[2]')).toBe('/courses/DLED4010')
   })
 
   it('marks legacy schedule and academic map routes active under courses', () => {
@@ -198,6 +309,41 @@ describe('course universe helpers', () => {
       academicStatus: null,
       inPlanner: true,
       selected: true,
+    })
+  })
+
+  it('maps course nodes into the four display statuses used by the graph cards', () => {
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'completed' })).toBe('completed')
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'in_progress' })).toBe('inProgress')
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'interested' })).toBe('interested')
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: null })).toBe('notTaken')
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'planned' })).toBe('notTaken')
+  })
+
+  it('keeps planner cart state separate from the four academic display statuses', () => {
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: null, inPlanner: true })).toBe('notTaken')
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'interested', inPlanner: true })).toBe('interested')
+  })
+
+  it('uses full catalog course names when map title abbreviations are missing', () => {
+    const nodes = normalizeCourseUniverseNodes({
+      components: [
+        { id: 'UCUG1052', node_type: null, x_coordinate: 100, y_coordinate: 120, category: 0 },
+      ],
+      courses: [
+        {
+          code: 'UCUG1052',
+          course_title_abbr: null,
+          name: 'Academic English for University Studies',
+        },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+
+    expect(nodes[0]).toMatchObject({
+      code: 'UCUG1052',
+      title: 'Academic English for University Studies',
     })
   })
 
@@ -358,6 +504,26 @@ describe('course universe helpers', () => {
     expect(rightColumn[2] - rightColumn[1]).toBeGreaterThanOrEqual(COURSE_UNIVERSE_COURSE_HEIGHT + 24)
   })
 
+  it('compacts sparse course columns so local prefix views stay readable', () => {
+    const laidOut = layoutCourseUniverseGraphComponents({
+      components: [
+        { id: 'UCUG1050', node_type: null, x_coordinate: 100, y_coordinate: 100, category: 0 },
+        { id: 'UCUG1051', node_type: null, x_coordinate: 104, y_coordinate: 640, category: 0 },
+        { id: 'UCUG1052', node_type: null, x_coordinate: 108, y_coordinate: 1400, category: 0 },
+        { id: '(UCUG1050&UCUG1051)', node_type: false, x_coordinate: 340, y_coordinate: 170, category: 1 },
+      ],
+      lines: [
+        { id: 25, start_id: 'UCUG1050', end_id: '(UCUG1050&UCUG1051)', line_type: false, x_coordinate: 300, category: 1 },
+        { id: 26, start_id: 'UCUG1051', end_id: '(UCUG1050&UCUG1051)', line_type: false, x_coordinate: 300, category: 1 },
+        { id: 27, start_id: '(UCUG1050&UCUG1051)', end_id: 'UCUG1052', line_type: null, x_coordinate: 420, category: 1 },
+      ],
+    })
+    const byId = new Map(laidOut.map(component => [component.id, component]))
+
+    expect(byId.get('UCUG1051')?.y_coordinate).toBe(100 + COURSE_UNIVERSE_COURSE_HEIGHT + 24)
+    expect(byId.get('UCUG1052')?.y_coordinate).toBe(100 + (COURSE_UNIVERSE_COURSE_HEIGHT + 24) * 2)
+  })
+
   it('packs isolated visible courses into an aligned multi-column gallery', () => {
     const visibleIds = new Set(isolatedComponents.map(component => component.id))
     const laidOut = layoutCourseUniverseGraphComponents({
@@ -445,6 +611,110 @@ describe('course universe helpers', () => {
     expect(visible).toContain('UFUG1101')
     expect(visible).not.toContain('(UFUG1101&DLED2010)')
     expect(visible).not.toContain('DLED2010')
+  })
+
+  it('keeps detached corequisite relation nodes when their courses are visible', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: detachedRelationComponents,
+      courses: [
+        { course_code: 'AMAT2040', course_title_abbr: 'Physical Chemistry' },
+        { course_code: 'AMAT2450', course_title_abbr: 'Physical Chemistry Laboratory' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: detachedRelationComponents,
+      lines: detachedRelationLines,
+      courseNodes,
+      selectedPrefix: 'AMAT',
+    })
+
+    expect(visible).toContain('AMAT2040')
+    expect(visible).toContain('AMAT2450')
+    expect(visible).toContain('co_AMAT2040_AMAT2450')
+    expect(visible).toContain('co_AMAT2450_AMAT2040')
+  })
+
+  it('anchors detached relationship logic nodes to their laid out course cards', () => {
+    const visibleIds = new Set(['AMAT2040', 'AMAT2450', 'co_AMAT2040_AMAT2450', 'co_AMAT2450_AMAT2040'])
+    const laidOut = layoutCourseUniverseGraphComponents({
+      components: detachedRelationComponents,
+      lines: detachedRelationLines,
+      visibleComponentIds: visibleIds,
+    })
+    const byId = new Map(laidOut.map(component => [component.id, component]))
+
+    expect(byId.get('co_AMAT2040_AMAT2450')).toMatchObject({
+      x_coordinate: (byId.get('AMAT2040')?.x_coordinate || 0) + COURSE_UNIVERSE_COURSE_WIDTH / 2,
+      y_coordinate: (byId.get('AMAT2040')?.y_coordinate || 0) + COURSE_UNIVERSE_COURSE_HEIGHT / 2,
+    })
+    expect(byId.get('co_AMAT2450_AMAT2040')).toMatchObject({
+      x_coordinate: (byId.get('AMAT2450')?.x_coordinate || 0) + COURSE_UNIVERSE_COURSE_WIDTH / 2,
+      y_coordinate: (byId.get('AMAT2450')?.y_coordinate || 0) + COURSE_UNIVERSE_COURSE_HEIGHT / 2,
+    })
+  })
+
+  it('routes detached relationship lines through the midpoint of their logic anchors', () => {
+    const components = [
+      { id: 'co_AMAT2040_AMAT2450', node_type: null, x_coordinate: 196, y_coordinate: 146, category: 2 },
+      { id: 'co_AMAT2450_AMAT2040', node_type: null, x_coordinate: 616, y_coordinate: 146, category: 2 },
+    ]
+    const graph = buildCourseUniverseGraph({
+      components,
+      lines: [
+        { id: 28, start_id: 'co_AMAT2040_AMAT2450', end_id: 'co_AMAT2450_AMAT2040', line_type: null, x_coordinate: 999, category: 2 },
+      ],
+    })
+
+    expect(graph.lines[0].path).toBe('M 196,146 H 406 V 146 H 616')
+  })
+
+  it('keeps detached exclusion relation nodes when focusing a related course', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: detachedRelationComponents,
+      courses: [
+        { course_code: 'UCUG1052', course_title_abbr: 'Academic English' },
+        { course_code: 'UCUG1053', course_title_abbr: 'Advanced Academic English' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: detachedRelationComponents,
+      lines: detachedRelationLines,
+      courseNodes,
+      selectedCourseCode: 'UCUG1052',
+    })
+
+    expect(visible).toContain('UCUG1052')
+    expect(visible).toContain('ex_UCUG1052_UCUG1053')
+    expect(visible).toContain('ex_UCUG1053_UCUG1052')
+  })
+
+  it('does not expand detached relations for cross-prefix neighbor courses', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: crossPrefixRelationComponents,
+      courses: [
+        { course_code: 'UCUG1051', course_title_abbr: 'Core A' },
+        { course_code: 'DLED3010', course_title_abbr: 'English Communication I' },
+        { course_code: 'DLED3020', course_title_abbr: 'English Communication II' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: crossPrefixRelationComponents,
+      lines: crossPrefixRelationLines,
+      courseNodes,
+      selectedPrefix: 'UCUG',
+    })
+
+    expect(visible).toContain('UCUG1051')
+    expect(visible).toContain('DLED3010')
+    expect(visible).not.toContain('DLED3020')
+    expect(visible).not.toContain('co_DLED3010_DLED3020')
+    expect(visible).not.toContain('co_DLED3020_DLED3010')
   })
 
   it('traverses complete relationship chains for hover highlighting', () => {
