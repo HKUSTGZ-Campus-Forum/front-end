@@ -1,6 +1,6 @@
 {
   "allowedPaths": [
-    "pages/contest/**",
+    "pages/contest/admin.vue",
     "pages/gugu/**",
     "pages/setting/**",
     "pages/test-*.vue",

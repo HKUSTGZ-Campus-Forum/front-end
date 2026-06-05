@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
+import { formatCourseUniverseAcademicYearLabel } from '~/utils/courseUniverse'
 import type { SemesterInfo } from '~/utils/scheduler'
 
 definePageMeta({ layout: 'keguang' })
@@ -33,8 +35,7 @@ onMounted(async () => {
 function groupByYear(sems: SemesterInfo[]) {
   const groups: Record<string, SemesterInfo[]> = {}
   for (const s of sems) {
-    const yearNum = Math.floor(Number(s.id) / 100)
-    const year = `20${String(yearNum).slice(0, 2)}-${String(yearNum).slice(2)}`
+    const year = formatCourseUniverseAcademicYearLabel(s.id)
     if (!groups[year]) groups[year] = []
     groups[year].push(s)
   }
@@ -50,20 +51,20 @@ function getSemesterName(sem: SemesterInfo) {
 
 <template>
   <div class="scheduler-home">
-    <section class="scheduler-home__hero">
-      <div class="scheduler-home__intro">
-        <p class="scheduler-home__eyebrow">{{ t('scheduler.plannerEyebrow') }}</p>
-        <h1 class="scheduler-home__title">{{ t('scheduler.title') }}</h1>
-        <p class="scheduler-home__subtitle">{{ t('scheduler.plannerSubtitle') }}</p>
-      </div>
-      <NuxtLink
-        v-if="latestSemester"
-        :to="getLocalePath(`/courses/planner/${latestSemester.id}`)"
-        class="scheduler-home__primary"
-      >
-        {{ t('scheduler.openLatest') }}
-      </NuxtLink>
-    </section>
+    <CourseToolsHeader
+      mode="planner"
+      :title="t('scheduler.title')"
+    >
+      <template #actions>
+        <NuxtLink
+          v-if="latestSemester"
+          :to="getLocalePath(`/courses/planner/${latestSemester.id}`)"
+          class="scheduler-home__primary"
+        >
+          {{ t('scheduler.openLatest') }}
+        </NuxtLink>
+      </template>
+    </CourseToolsHeader>
 
     <div v-if="loading" class="scheduler-home__panel scheduler-home__loading">
       {{ t('scheduler.loading') }}
@@ -122,41 +123,6 @@ function getSemesterName(sem: SemesterInfo) {
   max-width: 1160px;
   margin: 0 auto;
   padding: 22px 24px 64px;
-
-  &__hero {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 20px;
-  }
-
-  &__intro {
-    min-width: 0;
-  }
-
-  &__eyebrow {
-    margin: 0 0 6px;
-    font-size: 0.86rem;
-    font-weight: 700;
-    color: var(--interactive-active);
-  }
-
-  &__title {
-    font-size: 1.6rem;
-    line-height: 1.25;
-    font-weight: 700;
-    margin: 0;
-    color: var(--text-primary);
-  }
-
-  &__subtitle {
-    max-width: 640px;
-    margin: 8px 0 0;
-    font-size: 0.94rem;
-    line-height: 1.65;
-    color: var(--text-secondary);
-  }
 
   &__primary {
     flex-shrink: 0;
@@ -304,13 +270,8 @@ function getSemesterName(sem: SemesterInfo) {
   .scheduler-home {
     padding: 18px 16px 48px;
 
-    &__hero {
-      display: block;
-    }
-
     &__primary {
       width: 100%;
-      margin-top: 16px;
     }
 
     &__stats {

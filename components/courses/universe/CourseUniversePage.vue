@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import CourseUniverseCanvas from './CourseUniverseCanvas.vue'
 import CourseUniverseLegend from './CourseUniverseLegend.vue'
-import CourseUniverseToolbar from './CourseUniverseToolbar.vue'
+import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import {
   compactCourseCode,
@@ -174,7 +174,7 @@ onMounted(loadUniverse)
 
 <template>
   <div class="cu-page">
-    <CourseUniverseToolbar
+    <CourseToolsHeader
       :mode="mode"
     />
 

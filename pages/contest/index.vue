@@ -13,16 +13,19 @@ function renderMarkdown(text: string | null | undefined): string {
 
 const { isLoggedIn } = useAuth()
 const { fetchWithAuth, fetchPublic } = useApi()
+const { t, locale } = useI18n()
+const localePath = useLocalePath()
 
 const contest = ref<any>(null)
 const loading = ref(true)
+const PENDING_SUBMISSION_NAME = '\u5f85\u63d0\u4ea4'
 
 async function fetchContest() {
   try {
     const res = await fetchPublic('/api/contest')
     if (res.ok) contest.value = await res.json()
   } catch (e) {
-    console.error('获取比赛信息失败', e)
+    console.error('Failed to load contest info', e)
   } finally {
     loading.value = false
   }
@@ -45,34 +48,31 @@ const isOrganizer = ref(false)
 const targetTime = computed(() => contestStarted.value ? endTime.value : startTime.value)
 
 const countdownHuman = computed(() => {
-  if (contestEnded.value) return '比赛已结束'
+  if (contestEnded.value) return t('contest.countdown.ended')
   const diff = Math.max(0, targetTime.value.getTime() - now.value.getTime())
   const totalSeconds = Math.floor(diff / 1000)
   const days = Math.floor(totalSeconds / 86400)
   const hours = Math.floor((totalSeconds % 86400) / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  const prefix = contestStarted.value ? '离提交截止还有' : '离比赛开始还有'
-  return `${prefix} ${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`
+  const key = contestStarted.value ? 'contest.countdown.untilDeadline' : 'contest.countdown.untilStart'
+  return t(key, { days, hours, minutes, seconds })
 })
 
-// ── 双赛道 ──
 type TrackId = 'tech' | 'fun'
 
 const TRACK_LIST = [
-  { id: 'tech' as TrackId, title: '技术赛道' },
-  { id: 'fun' as TrackId, title: '娱乐赛道' },
+  { id: 'tech' as TrackId, titleKey: 'contest.tracks.tech' },
+  { id: 'fun' as TrackId, titleKey: 'contest.tracks.fun' },
 ] as const
 
 function emptyContestForm() {
   return { project_name: '', project_url: '', team_members: '' }
 }
 
-// ── 报名逻辑 ──
 const registering = ref(false)
 const registerError = ref('')
 
-/** 两条赛道均有报名占位记录（后端一次写入 tech + fun） */
 const mySubmissions = ref<Partial<Record<TrackId, any>> | null>(null)
 const registered = computed(() => {
   const s = mySubmissions.value
@@ -82,7 +82,7 @@ const registered = computed(() => {
 
 async function handleRegister() {
   if (!isLoggedIn.value) {
-    navigateTo('/login')
+    navigateTo(localePath('/login'))
     return
   }
   registering.value = true
@@ -91,8 +91,8 @@ async function handleRegister() {
     const res = await fetchWithAuth('/api/contest/submit', {
       method: 'POST',
       body: JSON.stringify({
-        project_name: '待提交',
-        description: '已报名，等待提交作品',
+        project_name: PENDING_SUBMISSION_NAME,
+        description: t('contest.submission.placeholderDescription'),
         project_url: '',
         team_members: '',
       }) as any,
@@ -101,16 +101,15 @@ async function handleRegister() {
       await fetchMySubmission()
     } else {
       const data = await res.json()
-      registerError.value = data.error || '报名失败，请稍后重试'
+      registerError.value = data.error || t('contest.errors.registerFailed')
     }
   } catch {
-    registerError.value = '网络错误，请稍后重试'
+    registerError.value = t('contest.errors.networkRetry')
   } finally {
     registering.value = false
   }
 }
 
-/** 与后端一致：管理后台「开放报名/提交」关闭时，接口会拒绝报名与提交 */
 const contestOpen = computed(() => contest.value?.is_active !== false)
 
 const canSubmit = computed(() =>
@@ -122,7 +121,6 @@ const canSubmit = computed(() =>
 )
 const canRegister = computed(() => !contestEnded.value && contestOpen.value)
 
-// ── 提交逻辑（按赛道） ──
 const editMode = ref<Record<TrackId, boolean>>({ tech: false, fun: false })
 const forms = ref<Record<TrackId, ReturnType<typeof emptyContestForm>>>({
   tech: emptyContestForm(),
@@ -168,7 +166,7 @@ function cancelEdit(track: TrackId) {
   const sub = mySubmissions.value?.[track]
   forms.value[track] = sub
     ? {
-        project_name: sub.project_name === '待提交' ? '' : (sub.project_name || ''),
+        project_name: sub.project_name === PENDING_SUBMISSION_NAME ? '' : (sub.project_name || ''),
         project_url: sub.project_url || '',
         team_members: sub.team_members || '',
       }
@@ -178,11 +176,11 @@ function cancelEdit(track: TrackId) {
 async function handleSubmit(track: TrackId) {
   submitErrors.value[track] = ''
   const f = forms.value[track]
-  if (!f.project_name.trim()) { submitErrors.value[track] = '请填写队名'; return }
-  if (f.project_name.trim() === '待提交') { submitErrors.value[track] = '队名不能使用「待提交」'; return }
-  if (!f.project_url.trim()) { submitErrors.value[track] = '请填写项目链接'; return }
-  if (!isValidHttpUrl(f.project_url)) { submitErrors.value[track] = '项目链接需为有效的 http(s) 地址'; return }
-  if (!f.team_members.trim()) { submitErrors.value[track] = '请填写团队成员'; return }
+  if (!f.project_name.trim()) { submitErrors.value[track] = t('contest.errors.teamNameRequired'); return }
+  if (f.project_name.trim() === PENDING_SUBMISSION_NAME) { submitErrors.value[track] = t('contest.errors.teamNameReserved'); return }
+  if (!f.project_url.trim()) { submitErrors.value[track] = t('contest.errors.projectUrlRequired'); return }
+  if (!isValidHttpUrl(f.project_url)) { submitErrors.value[track] = t('contest.errors.projectUrlInvalid'); return }
+  if (!f.team_members.trim()) { submitErrors.value[track] = t('contest.errors.teamMembersRequired'); return }
   submittingTrack.value = track
   try {
     const res = await fetchWithAuth('/api/contest/submit', {
@@ -196,14 +194,14 @@ async function handleSubmit(track: TrackId) {
     })
     const data = await res.json()
     if (!res.ok) {
-      submitErrors.value[track] = data.error || '提交失败'
+      submitErrors.value[track] = data.error || t('contest.errors.submitFailed')
       return
     }
     if (data.submissions) mySubmissions.value = data.submissions
     editMode.value[track] = false
     forms.value[track] = emptyContestForm()
   } catch {
-    submitErrors.value[track] = '网络错误'
+    submitErrors.value[track] = t('contest.errors.network')
   } finally {
     submittingTrack.value = null
   }
@@ -220,7 +218,6 @@ async function checkRole() {
   } catch {}
 }
 
-/** 题目 Tab：已报名且已开始，或管理员（任意时刻可预览） */
 const showTabProblems = computed(() => isOrganizer.value || (registered.value && contestStarted.value))
 type TabId = 'description' | 'announcements' | 'problems'
 const activeTab = ref<TabId>('description')
@@ -232,7 +229,6 @@ watch(
   },
 )
 
-/** 公告「新」标记：与 localStorage 中已读内容指纹对比；进入公告 Tab 即视为已读 */
 const ANNOUNCE_FP_PREFIX = 'unikorn_contest_announce_seen_fp:'
 
 function fingerprintAnnouncements(text: string): string {
@@ -284,15 +280,52 @@ const showAnnouncementNewBadge = computed(() => {
   return fp !== lastSeenAnnouncementFp.value
 })
 
+const pageTitle = computed(() =>
+  locale.value === 'en'
+    ? t('contest.defaultTitle')
+    : contest.value?.title || t('contest.defaultTitle'),
+)
+
+const localizedDescription = computed(() =>
+  locale.value === 'en'
+    ? t('contest.defaultDescriptionMarkdown')
+    : contest.value?.description || t('contest.defaultDescriptionMarkdown'),
+)
+
+const localizedRules = computed(() =>
+  locale.value === 'en'
+    ? t('contest.defaultRulesMarkdown')
+    : contest.value?.rules || t('contest.defaultRulesMarkdown'),
+)
+
+const statusLabel = computed(() => {
+  if (contestEnded.value) return t('contest.status.ended')
+  if (contestStarted.value && !contestOpen.value) return t('contest.status.paused')
+  if (contestStarted.value) return t('contest.status.live')
+  return t('contest.status.upcoming')
+})
+
+const dateTimeLocale = computed(() => locale.value === 'en' ? 'en-US' : 'zh-CN')
+
 function formatTime(iso: string | null): string {
-  if (!iso) return '待公布'
-  return new Date(iso).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai' })
+  if (!iso) return t('contest.timeTba')
+  return new Date(iso).toLocaleString(dateTimeLocale.value, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai' })
 }
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '-'
-  return new Date(iso).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+  return new Date(iso).toLocaleString(dateTimeLocale.value, { timeZone: 'Asia/Shanghai' })
 }
+
+function submitButtonLabel(track: TrackId): string {
+  if (submittingTrack.value === track) return t('contest.actions.submitting')
+  return editMode.value[track] ? t('contest.actions.updateSubmission') : t('contest.actions.submitProject')
+}
+
+useHead(() => ({
+  title: `${pageTitle.value} - ${t('common.appName')}`,
+  meta: [{ name: 'description', content: t('contest.metaDescription') }],
+}))
 
 onMounted(async () => {
   await fetchContest()
@@ -307,15 +340,15 @@ onUnmounted(() => clearInterval(timer))
   <div class="kg-contest">
     <div v-if="loading" class="kg-loading">
       <div class="kg-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ t('common.loading') }}</span>
     </div>
 
     <template v-else>
       <header class="kg-page-head">
         <div class="kg-page-head-main">
           <div class="kg-page-title-row">
-            <span class="kg-title-icon" role="img" aria-label="奖杯">🏆</span>
-            <h1 class="kg-page-title">{{ contest?.title || '「百块奖金」校园生活 Web 开发大赛' }}</h1>
+            <span class="kg-title-icon" role="img" :aria-label="t('contest.trophyLabel')">🏆</span>
+            <h1 class="kg-page-title">{{ pageTitle }}</h1>
             <div
               class="kg-status-pill"
               :class="{
@@ -324,25 +357,17 @@ onUnmounted(() => clearInterval(timer))
                 paused: contestStarted && !contestEnded && !contestOpen,
               }"
             >
-              {{
-                contestEnded
-                  ? '已结束'
-                  : contestStarted && !contestOpen
-                    ? '暂不开放'
-                    : contestStarted
-                      ? '进行中'
-                      : '即将开始'
-              }}
+              {{ statusLabel }}
             </div>
           </div>
-          <nav class="kg-tabs" aria-label="比赛导航">
+          <nav class="kg-tabs" :aria-label="t('contest.tabs.ariaLabel')">
             <button
               type="button"
               class="kg-tab"
               :class="{ active: activeTab === 'description' }"
               @click="activeTab = 'description'"
             >
-              比赛说明
+              {{ t('contest.tabs.description') }}
             </button>
             <button
               type="button"
@@ -350,8 +375,8 @@ onUnmounted(() => clearInterval(timer))
               :class="{ active: activeTab === 'announcements' }"
               @click="activeTab = 'announcements'"
             >
-              <span class="kg-tab-label">比赛公告</span>
-              <span v-if="showAnnouncementNewBadge" class="kg-tab-badge-new" aria-hidden="true">新</span>
+              <span class="kg-tab-label">{{ t('contest.tabs.announcements') }}</span>
+              <span v-if="showAnnouncementNewBadge" class="kg-tab-badge-new" aria-hidden="true">{{ t('contest.tabs.newBadge') }}</span>
             </button>
             <button
               v-if="showTabProblems"
@@ -360,7 +385,7 @@ onUnmounted(() => clearInterval(timer))
               :class="{ active: activeTab === 'problems' }"
               @click="activeTab = 'problems'"
             >
-              题目
+              {{ t('contest.tabs.problems') }}
             </button>
           </nav>
         </div>
@@ -368,11 +393,11 @@ onUnmounted(() => clearInterval(timer))
           <p class="kg-countdown-line">{{ countdownHuman }}</p>
           <div class="kg-time-meta-row">
             <p class="kg-time-meta">
-              开始 {{ formatTime(contest?.start_time || DEFAULT_START) }}
+              {{ t('contest.time.start', { time: formatTime(contest?.start_time || DEFAULT_START) }) }}
             </p>
             <span class="kg-time-meta-sep" aria-hidden="true">·</span>
             <p class="kg-time-meta">
-              截止 {{ formatTime(contest?.end_time || DEFAULT_END) }}
+              {{ t('contest.time.deadline', { time: formatTime(contest?.end_time || DEFAULT_END) }) }}
             </p>
           </div>
         </div>
@@ -380,35 +405,34 @@ onUnmounted(() => clearInterval(timer))
 
       <div class="kg-layout">
         <main class="kg-main">
-          <!-- 比赛说明 -->
           <div v-show="activeTab === 'description'" class="kg-panel kg-card">
-            <template v-if="contest?.description">
-              <div class="kg-markdown-body" v-html="renderMarkdown(contest.description)"></div>
+            <template v-if="localizedDescription">
+              <div class="kg-markdown-body" v-html="renderMarkdown(localizedDescription)"></div>
             </template>
-            <p v-else class="kg-empty">暂无比赛说明。</p>
+            <p v-else class="kg-empty">{{ t('contest.empty.description') }}</p>
           </div>
 
-          <!-- 比赛公告 -->
           <div v-show="activeTab === 'announcements'" class="kg-panel kg-card">
             <template v-if="contest?.announcements">
               <div class="kg-markdown-body" v-html="renderMarkdown(contest.announcements)"></div>
             </template>
-            <p v-else class="kg-empty">暂无公告。</p>
+            <p v-else class="kg-empty">{{ t('contest.empty.announcements') }}</p>
           </div>
 
-          <!-- 题目（与后台「编辑题目」同一 Markdown 字段） -->
           <div v-show="activeTab === 'problems'" class="kg-panel">
-            <div v-if="contest?.rules" class="kg-card kg-block">
-              <h2 class="kg-block-title">题目</h2>
-              <div class="kg-markdown-body" v-html="renderMarkdown(contest.rules)"></div>
+            <div v-if="localizedRules" class="kg-card kg-block">
+              <h2 class="kg-block-title">{{ t('contest.tabs.problems') }}</h2>
+              <div class="kg-markdown-body" v-html="renderMarkdown(localizedRules)"></div>
             </div>
-            <p v-else class="kg-card kg-empty">题目尚未发布。</p>
+            <p v-else class="kg-card kg-empty">{{ t('contest.empty.problems') }}</p>
 
-            <p v-if="isOrganizer && activeTab === 'problems'" class="kg-organizer-hint kg-card">
-              你正在以<strong>管理员</strong>身份预览题目区。选手在报名且比赛开始后才会看到本页；提交列表与导出请在完整后台操作。
+            <p
+              v-if="isOrganizer && activeTab === 'problems'"
+              class="kg-organizer-hint kg-card"
+            >
+              {{ t('contest.organizerPreview') }}
             </p>
 
-            <!-- 选手提交：技术 / 娱乐双赛道，互不覆盖 -->
             <template v-if="!isOrganizer && registered && contestStarted">
               <template v-if="canSubmit">
                 <div
@@ -416,43 +440,43 @@ onUnmounted(() => clearInterval(timer))
                   :key="item.id"
                   class="kg-card kg-block kg-track-block"
                 >
-                  <h2 class="kg-block-title">{{ item.title }}</h2>
+                  <h2 class="kg-block-title">{{ t(item.titleKey) }}</h2>
                   <template
-                    v-if="mySubmissions?.[item.id] && mySubmissions[item.id].project_name !== '待提交' && !editMode[item.id]"
+                    v-if="mySubmissions?.[item.id] && mySubmissions[item.id].project_name !== PENDING_SUBMISSION_NAME && !editMode[item.id]"
                   >
                     <div class="kg-submission-view">
                       <div class="kg-field">
-                        <label>队名</label>
+                        <label>{{ t('contest.fields.teamName') }}</label>
                         <p>{{ mySubmissions[item.id].project_name }}</p>
                       </div>
                       <div class="kg-field">
-                        <label>项目链接</label>
+                        <label>{{ t('contest.fields.projectUrl') }}</label>
                         <a :href="mySubmissions[item.id].project_url" target="_blank" class="kg-link">{{ mySubmissions[item.id].project_url }}</a>
                       </div>
                       <div class="kg-field">
-                        <label>团队成员</label>
+                        <label>{{ t('contest.fields.teamMembers') }}</label>
                         <p>{{ mySubmissions[item.id].team_members }}</p>
                       </div>
                       <div class="kg-field">
-                        <label>提交时间</label>
+                        <label>{{ t('contest.fields.submittedAt') }}</label>
                         <p>{{ formatDateTime(mySubmissions[item.id].submitted_at || mySubmissions[item.id].updated_at) }}</p>
                       </div>
-                      <button type="button" class="kg-btn-primary" @click="enterEditMode(item.id)">编辑提交</button>
+                      <button type="button" class="kg-btn-primary" @click="enterEditMode(item.id)">{{ t('contest.actions.editSubmission') }}</button>
                     </div>
                   </template>
                   <template v-else>
                     <form class="kg-form" @submit.prevent="handleSubmit(item.id)">
                       <div class="kg-form-group">
-                        <label>项目链接 *</label>
+                        <label>{{ t('contest.fields.projectUrlRequired') }}</label>
                         <input v-model="forms[item.id].project_url" class="kg-input" type="url" placeholder="https://..." required />
                       </div>
                       <div class="kg-form-group">
-                        <label>队名 *</label>
-                        <input v-model="forms[item.id].project_name" class="kg-input" type="text" placeholder="请输入队名" required />
+                        <label>{{ t('contest.fields.teamNameRequired') }}</label>
+                        <input v-model="forms[item.id].project_name" class="kg-input" type="text" :placeholder="t('contest.placeholders.teamName')" required />
                       </div>
                       <div class="kg-form-group">
-                        <label>团队成员 *</label>
-                        <input v-model="forms[item.id].team_members" class="kg-input" type="text" placeholder="例如：张三, 李四" required />
+                        <label>{{ t('contest.fields.teamMembersRequired') }}</label>
+                        <input v-model="forms[item.id].team_members" class="kg-input" type="text" :placeholder="t('contest.placeholders.teamMembers')" required />
                       </div>
                       <div v-if="submitErrors[item.id]" class="kg-form-error">{{ submitErrors[item.id] }}</div>
                       <div class="kg-form-actions">
@@ -462,16 +486,10 @@ onUnmounted(() => clearInterval(timer))
                           class="kg-btn-ghost"
                           @click="cancelEdit(item.id)"
                         >
-                          取消
+                          {{ t('actions.cancel') }}
                         </button>
                         <button type="submit" class="kg-btn-primary" :disabled="submittingTrack === item.id">
-                          {{
-                            submittingTrack === item.id
-                              ? '提交中...'
-                              : editMode[item.id]
-                                ? '更新提交'
-                                : '提交作品'
-                          }}
+                          {{ submitButtonLabel(item.id) }}
                         </button>
                       </div>
                     </form>
@@ -479,23 +497,23 @@ onUnmounted(() => clearInterval(timer))
                 </div>
               </template>
               <div v-else-if="contestEnded" class="kg-card kg-hint-box">
-                <p>比赛已结束，感谢参与。</p>
+                <p>{{ t('contest.messages.endedThanks') }}</p>
                 <template v-for="item in TRACK_LIST" :key="'end-' + item.id">
                   <div
-                    v-if="mySubmissions?.[item.id] && mySubmissions[item.id].project_name !== '待提交'"
+                    v-if="mySubmissions?.[item.id] && mySubmissions[item.id].project_name !== PENDING_SUBMISSION_NAME"
                     class="kg-submission-view kg-track-end-summary"
                   >
-                    <p class="kg-track-end-title">{{ item.title }}</p>
+                    <p class="kg-track-end-title">{{ t(item.titleKey) }}</p>
                     <div class="kg-field">
-                      <label>队名</label>
+                      <label>{{ t('contest.fields.teamName') }}</label>
                       <p>{{ mySubmissions[item.id].project_name }}</p>
                     </div>
                     <div v-if="mySubmissions[item.id].project_url" class="kg-field">
-                      <label>项目链接</label>
+                      <label>{{ t('contest.fields.projectUrl') }}</label>
                       <a :href="mySubmissions[item.id].project_url" target="_blank" class="kg-link">{{ mySubmissions[item.id].project_url }}</a>
                     </div>
                     <div v-if="mySubmissions[item.id].team_members" class="kg-field">
-                      <label>团队成员</label>
+                      <label>{{ t('contest.fields.teamMembers') }}</label>
                       <p>{{ mySubmissions[item.id].team_members }}</p>
                     </div>
                   </div>
@@ -508,17 +526,17 @@ onUnmounted(() => clearInterval(timer))
 
         <aside class="kg-aside">
           <div class="kg-card kg-aside-block">
-            <h3 class="kg-aside-title">比赛报名</h3>
+            <h3 class="kg-aside-title">{{ t('contest.registration.title') }}</h3>
             <template v-if="isOrganizer">
-              <p class="kg-aside-text">你是比赛管理员，报名与提交请用选手账号体验；或使用后台管理数据。</p>
-              <NuxtLink to="/contest/admin" class="kg-btn-ghost kg-aside-btn">打开管理后台</NuxtLink>
+              <p class="kg-aside-text">{{ t('contest.registration.organizerHint') }}</p>
+              <NuxtLink :to="localePath('/contest/admin')" class="kg-btn-ghost kg-aside-btn">{{ t('contest.actions.openAdmin') }}</NuxtLink>
             </template>
             <template v-else-if="!isLoggedIn">
-              <p class="kg-aside-text">您还没有报名本场比赛</p>
-              <NuxtLink to="/login" class="kg-btn-primary kg-aside-btn">登录后报名</NuxtLink>
+              <p class="kg-aside-text">{{ t('contest.registration.notRegistered') }}</p>
+              <NuxtLink :to="localePath('/login')" class="kg-btn-primary kg-aside-btn">{{ t('contest.actions.loginToRegister') }}</NuxtLink>
             </template>
             <template v-else-if="!registered">
-              <p class="kg-aside-text">您还没有报名本场比赛</p>
+              <p class="kg-aside-text">{{ t('contest.registration.notRegistered') }}</p>
               <div v-if="registerError" class="kg-form-error kg-aside-error">{{ registerError }}</div>
               <button
                 v-if="canRegister"
@@ -527,32 +545,32 @@ onUnmounted(() => clearInterval(timer))
                 :disabled="registering"
                 @click="handleRegister"
               >
-                {{ registering ? '报名中...' : '报名' }}
+                {{ registering ? t('contest.actions.registering') : t('contest.actions.register') }}
               </button>
-              <p v-else-if="contestEnded" class="kg-aside-muted">比赛已结束，无法报名。</p>
+              <p v-else-if="contestEnded" class="kg-aside-muted">{{ t('contest.registration.endedCannotRegister') }}</p>
               <p v-else class="kg-aside-muted">
-                比赛暂未开放报名：管理员已在后台关闭「开放报名/提交」。开启后即可点击报名。
+                {{ t('contest.registration.paused') }}
               </p>
             </template>
             <template v-else>
-              <p class="kg-aside-ok">您已成功报名</p>
+              <p class="kg-aside-ok">{{ t('contest.registration.registered') }}</p>
               <p v-if="!contestStarted" class="kg-aside-text">
-                比赛尚未开始，题目将在开始后显示在「题目」标签页。
+                {{ t('contest.registration.waitingForStart') }}
               </p>
-              <p v-else-if="contestEnded" class="kg-aside-text">比赛已结束。</p>
+              <p v-else-if="contestEnded" class="kg-aside-text">{{ t('contest.status.ended') }}</p>
               <p v-else-if="!contestOpen" class="kg-aside-text">
-                报名与提交已由管理员暂停，请留意公告；开启「开放报名/提交」后可继续操作。
+                {{ t('contest.registration.submissionPaused') }}
               </p>
-              <p v-else class="kg-aside-text">请前往「题目」查看赛题；技术赛道与娱乐赛道各有独立提交入口。</p>
+              <p v-else class="kg-aside-text">{{ t('contest.registration.goProblems') }}</p>
             </template>
           </div>
 
           <div class="kg-card kg-aside-block kg-discuss">
-            <h3 class="kg-aside-title">比赛讨论区</h3>
+            <h3 class="kg-aside-title">{{ t('contest.discussion.title') }}</h3>
             <p class="kg-aside-text">
-              赛题交流、组队讨论可前往站内论坛；本页专注于说明与提交。
+              {{ t('contest.discussion.description') }}
             </p>
-            <NuxtLink to="/forum" class="kg-link kg-discuss-link">前往论坛 →</NuxtLink>
+            <NuxtLink :to="localePath('/forum')" class="kg-link kg-discuss-link">{{ t('contest.actions.goForum') }}</NuxtLink>
           </div>
         </aside>
       </div>
