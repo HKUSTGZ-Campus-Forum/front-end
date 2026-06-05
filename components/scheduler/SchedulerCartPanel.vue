@@ -2,8 +2,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartCourse, SearchResult, SearchResponse } from '~/utils/scheduler'
-import { FREQUENT_SUBJECTS } from '~/utils/scheduler'
+import type { CartCourse, SchedulerSubject, SearchResult, SearchResponse } from '~/utils/scheduler'
 
 const props = defineProps<{
   semesterId: string
@@ -18,10 +17,11 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { searchCourses } = useScheduler()
+const { getSubjects, searchCourses } = useScheduler()
 
 const searchQuery = ref('')
 const searchResults = ref<SearchResult[]>([])
+const subjectFilters = ref<SchedulerSubject[]>([])
 const totalResults = ref(0)
 const currentPage = ref(1)
 const pageSize = 8
@@ -33,10 +33,26 @@ const errorMessage = ref('')
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+watch(
+  () => [props.visible, props.semesterId] as const,
+  ([visible]) => {
+    if (visible) loadSubjectFilters()
+  },
+  { immediate: true },
+)
+
 watch(searchQuery, () => {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => doSearch(1), 300)
 })
+
+async function loadSubjectFilters() {
+  try {
+    subjectFilters.value = await getSubjects(props.semesterId)
+  } catch {
+    subjectFilters.value = []
+  }
+}
 
 async function doSearch(page: number) {
   errorMessage.value = ''
@@ -102,13 +118,13 @@ async function handleRemove(code: string) {
 
           <div class="cart-panel__subjects">
             <button
-              v-for="subj in FREQUENT_SUBJECTS"
-              :key="subj"
+              v-for="item in subjectFilters"
+              :key="item.subject"
               type="button"
               class="cart-panel__subject-btn"
-              :class="{ active: searchQuery === subj }"
-              @click="searchQuery = subj"
-            >{{ subj }}</button>
+              :class="{ active: searchQuery === item.subject }"
+              @click="searchQuery = item.subject"
+            >{{ item.subject }}</button>
           </div>
 
           <div class="cart-panel__results">
@@ -330,8 +346,23 @@ async function handleRemove(code: string) {
   &__result-actions { flex-shrink: 0; margin-left: 0.5rem; }
 
   &__add-btn, &__remove-btn {
-    width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer;
-    font-size: 1.1rem; display: flex; align-items: center; justify-content: center; color: white;
+    inline-size: 40px;
+    block-size: 40px;
+    min-inline-size: 40px;
+    min-block-size: 40px;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex: 0 0 auto;
     &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
   &__add-btn { background: var(--semantic-success); }
