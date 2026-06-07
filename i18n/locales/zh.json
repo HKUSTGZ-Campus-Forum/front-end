@@ -943,7 +943,8 @@
       "loadCourse": "获取课程详情失败",
       "loadDiscussions": "获取讨论区失败",
       "loadReviews": "获取评价失败",
-      "submitReview": "发布失败，请稍后重试"
+      "submitReview": "发布失败，请稍后重试",
+      "courseOfferingNotResolved": "无法确认这条评课对应的课程学期，请刷新页面后重试。"
     },
     "semester": {
       "spring": "春",

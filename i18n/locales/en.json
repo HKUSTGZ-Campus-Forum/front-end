@@ -943,7 +943,8 @@
       "loadCourse": "Failed to load course details.",
       "loadDiscussions": "Failed to load discussions.",
       "loadReviews": "Failed to load reviews.",
-      "submitReview": "Failed to publish the review. Please try again."
+      "submitReview": "Failed to publish the review. Please try again.",
+      "courseOfferingNotResolved": "We could not resolve the course offering for this review. Please refresh and try again."
     },
     "semester": {
       "spring": "Spring",

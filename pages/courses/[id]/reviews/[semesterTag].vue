@@ -107,6 +107,13 @@ const extractRating = (content: string) => {
   return match ? parseInt(match[1], 10) : null;
 };
 
+const reviewSubmitErrorMessage = (errorData: any) => {
+  if (errorData?.code === "course_offering_not_resolved") {
+    return t("courses.errors.courseOfferingNotResolved");
+  }
+  return errorData?.message || errorData?.error || t("courses.errors.submitReview");
+};
+
 const fetchCourseDetail = async () => {
   const response = await fetchPublic(getApiUrl(`/api/courses/${courseId.value}`));
   if (!response.ok) {
@@ -196,7 +203,7 @@ const submitReview = async () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || errorData.error || t("courses.errors.submitReview"));
+      throw new Error(reviewSubmitErrorMessage(errorData));
     }
 
     reviewForm.value = { title: "", content: "", rating: null };
