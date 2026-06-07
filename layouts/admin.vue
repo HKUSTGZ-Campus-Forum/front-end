@@ -15,6 +15,20 @@ const navItems = computed(() => [
     exact: true,
   },
   {
+    key: "users",
+    label: t("adminShell.nav.users"),
+    to: getLocalePath("/admin/users"),
+    match: "/admin/users",
+    exact: false,
+  },
+  {
+    key: "content",
+    label: t("adminShell.nav.content"),
+    to: getLocalePath("/admin/content"),
+    match: "/admin/content",
+    exact: false,
+  },
+  {
     key: "feedback",
     label: t("adminShell.nav.feedback"),
     to: getLocalePath("/admin/feedback"),
@@ -26,6 +40,20 @@ const navItems = computed(() => [
     label: t("adminShell.nav.identity"),
     to: getLocalePath("/admin/identity-management"),
     match: "/admin/identity-management",
+    exact: false,
+  },
+  {
+    key: "domains",
+    label: t("adminShell.nav.domains"),
+    to: getLocalePath("/admin/domains"),
+    match: "/admin/domains",
+    exact: false,
+  },
+  {
+    key: "audit",
+    label: t("adminShell.nav.audit"),
+    to: getLocalePath("/admin/audit"),
+    match: "/admin/audit",
     exact: false,
   },
 ]);

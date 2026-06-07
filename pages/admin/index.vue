@@ -1,12 +1,9 @@
 <script setup lang="ts">
+import type { AdminOverviewResponse } from "~/types/admin";
+
 const { t } = useI18n();
 const { getLocalePath } = useAppLocale();
-const {
-  listFeedbacks,
-  listPendingFeedback,
-  listPendingMergeRequests,
-} = useFeedbackAdmin();
-const { fetchAdminIdentityRequests } = useIdentity();
+const { getOverview } = useAdminConsole();
 
 definePageMeta({
   middleware: "admin",
@@ -15,10 +12,7 @@ definePageMeta({
 
 const loading = ref(false);
 const loadError = ref<string | null>(null);
-const pendingFeedback = ref<number | null>(null);
-const pendingMerge = ref<number | null>(null);
-const pendingIdentity = ref<number | null>(null);
-const publishedFeedback = ref<number | null>(null);
+const overview = ref<AdminOverviewResponse | null>(null);
 
 const metricValue = (value: number | null) => {
   if (value !== null) return value;
@@ -29,26 +23,46 @@ const metricItems = computed(() => [
   {
     key: "pending-feedback",
     label: t("adminOverview.metrics.pendingFeedback"),
-    value: metricValue(pendingFeedback.value),
+    value: metricValue(overview.value?.pending.feedbacks ?? null),
   },
   {
     key: "pending-merge",
     label: t("adminOverview.metrics.pendingMerge"),
-    value: metricValue(pendingMerge.value),
+    value: metricValue(overview.value?.pending.merge_requests ?? null),
   },
   {
     key: "pending-identity",
     label: t("adminOverview.metrics.pendingIdentity"),
-    value: metricValue(pendingIdentity.value),
+    value: metricValue(overview.value?.pending.identity_requests ?? null),
   },
   {
-    key: "published-feedback",
-    label: t("adminOverview.metrics.feedbackTotal"),
-    value: metricValue(publishedFeedback.value),
+    key: "active-users",
+    label: t("adminOverview.metrics.activeUsers"),
+    value: metricValue(overview.value?.metrics.users.active ?? null),
   },
 ]);
 
 const cards = computed(() => [
+  {
+    title: t("adminOverview.cards.users.title"),
+    description: t("adminOverview.cards.users.description"),
+    action: t("adminOverview.cards.users.action"),
+    to: getLocalePath("/admin/users"),
+    stats: [
+      { label: t("adminOverview.metrics.usersTotal"), value: metricValue(overview.value?.metrics.users.total ?? null) },
+      { label: t("adminOverview.metrics.adminUsers"), value: metricValue(overview.value?.metrics.users.admins ?? null) },
+    ],
+  },
+  {
+    title: t("adminOverview.cards.content.title"),
+    description: t("adminOverview.cards.content.description"),
+    action: t("adminOverview.cards.content.action"),
+    to: getLocalePath("/admin/content"),
+    stats: [
+      { label: t("adminOverview.metrics.postsTotal"), value: metricValue(overview.value?.metrics.content.posts.total ?? null) },
+      { label: t("adminOverview.metrics.commentsTotal"), value: metricValue(overview.value?.metrics.content.comments.total ?? null) },
+    ],
+  },
   {
     title: t("adminOverview.cards.feedback.title"),
     description: t("adminOverview.cards.feedback.description"),
@@ -57,11 +71,11 @@ const cards = computed(() => [
     stats: [
       {
         label: t("adminOverview.metrics.pendingFeedback"),
-        value: metricValue(pendingFeedback.value),
+        value: metricValue(overview.value?.pending.feedbacks ?? null),
       },
       {
         label: t("adminOverview.metrics.pendingMerge"),
-        value: metricValue(pendingMerge.value),
+        value: metricValue(overview.value?.pending.merge_requests ?? null),
       },
     ],
   },
@@ -73,55 +87,54 @@ const cards = computed(() => [
     stats: [
       {
         label: t("adminOverview.metrics.pendingIdentity"),
-        value: metricValue(pendingIdentity.value),
+        value: metricValue(overview.value?.pending.identity_requests ?? null),
       },
     ],
   },
+  {
+    title: t("adminOverview.cards.domains.title"),
+    description: t("adminOverview.cards.domains.description"),
+    action: t("adminOverview.cards.domains.action"),
+    to: getLocalePath("/admin/domains"),
+    stats: [
+      { label: t("adminOverview.metrics.coursesTotal"), value: metricValue(overview.value?.metrics.courses.courses ?? null) },
+      { label: t("adminOverview.metrics.projectsTotal"), value: metricValue(overview.value?.metrics.matching.projects ?? null) },
+    ],
+  },
+  {
+    title: t("adminOverview.cards.audit.title"),
+    description: t("adminOverview.cards.audit.description"),
+    action: t("adminOverview.cards.audit.action"),
+    to: getLocalePath("/admin/audit"),
+    stats: [
+      { label: t("adminOverview.metrics.auditRecent"), value: overview.value?.recent_activity.length ?? (loading.value ? "..." : "-") },
+    ],
+  },
 ]);
+
+const healthRows = computed(() => {
+  const metrics = overview.value?.metrics;
+  if (!metrics) return [];
+  return [
+    { key: "courses", label: t("adminDomains.sections.courses"), value: metrics.courses.offerings },
+    { key: "academic", label: t("adminDomains.sections.academicMap"), value: metrics.academic_map.user_profiles },
+    { key: "matching", label: t("adminDomains.sections.matching"), value: metrics.matching.active_projects },
+    { key: "contest", label: t("adminDomains.sections.contest"), value: metrics.contest.submissions },
+    { key: "operations", label: t("adminDomains.sections.operations"), value: metrics.operations.valid_sts_tokens },
+  ];
+});
 
 const loadOverview = async () => {
   loading.value = true;
   loadError.value = null;
 
-  const [
-    pendingFeedbackResult,
-    pendingMergeResult,
-    pendingIdentityResult,
-    publishedFeedbackResult,
-  ] = await Promise.allSettled([
-    listPendingFeedback(),
-    listPendingMergeRequests(),
-    fetchAdminIdentityRequests({ status: "pending", per_page: 1 }),
-    listFeedbacks({ status: "published", per_page: 1 }),
-  ]);
-
-  if (pendingFeedbackResult.status === "fulfilled") {
-    pendingFeedback.value = pendingFeedbackResult.value.length;
-  }
-  if (pendingMergeResult.status === "fulfilled") {
-    pendingMerge.value = pendingMergeResult.value.length;
-  }
-  if (pendingIdentityResult.status === "fulfilled") {
-    pendingIdentity.value =
-      pendingIdentityResult.value.counts?.pending ?? pendingIdentityResult.value.total;
-  }
-  if (publishedFeedbackResult.status === "fulfilled") {
-    publishedFeedback.value =
-      publishedFeedbackResult.value.counts?.published ?? publishedFeedbackResult.value.total;
-  }
-
-  const failed = [
-    pendingFeedbackResult,
-    pendingMergeResult,
-    pendingIdentityResult,
-    publishedFeedbackResult,
-  ].some((result) => result.status === "rejected");
-
-  if (failed) {
+  try {
+    overview.value = await getOverview();
+  } catch {
     loadError.value = t("adminOverview.status.loadFailed");
+  } finally {
+    loading.value = false;
   }
-
-  loading.value = false;
 };
 
 onMounted(loadOverview);
@@ -172,6 +185,30 @@ onMounted(loadOverview);
         </article>
       </div>
     </section>
+
+    <section class="admin-overview__health" :aria-label="t('adminOverview.healthTitle')">
+      <h2>{{ t("adminOverview.healthTitle") }}</h2>
+      <div class="admin-overview__health-grid">
+        <article v-for="row in healthRows" :key="row.key">
+          <span>{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="admin-overview__activity" :aria-label="t('adminOverview.activityTitle')">
+      <h2>{{ t("adminOverview.activityTitle") }}</h2>
+      <AdminStateBlock
+        v-if="overview && !overview.recent_activity.length"
+        :title="t('adminOverview.activityEmpty')"
+      />
+      <div v-else class="admin-overview__activity-list">
+        <article v-for="log in overview?.recent_activity || []" :key="log.id">
+          <strong>{{ log.action }}</strong>
+          <span>{{ log.actor || t("adminConsole.unknown") }} · {{ log.target_type }} #{{ log.target_id || "-" }}</span>
+        </article>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -213,9 +250,18 @@ onMounted(loadOverview);
   }
 }
 
+.admin-overview__health,
+.admin-overview__activity {
+  h2 {
+    margin: 0 0 0.75rem;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+  }
+}
+
 .admin-overview__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -227,6 +273,61 @@ onMounted(loadOverview);
   border-radius: 8px;
   background: var(--surface-primary);
   box-shadow: var(--card-shadow);
+}
+
+.admin-overview__health-grid,
+.admin-overview__activity-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-overview__health-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  article {
+    padding: 1rem;
+    border: var(--card-border);
+    border-radius: 8px;
+    background: var(--surface-primary);
+    box-shadow: var(--card-shadow);
+  }
+
+  span {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  strong {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--text-primary);
+    font-size: 1.35rem;
+  }
+}
+
+.admin-overview__activity-list {
+  article {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: var(--card-border);
+    border-radius: 8px;
+    background: var(--surface-primary);
+    box-shadow: var(--card-shadow);
+  }
+
+  strong {
+    color: var(--text-primary);
+  }
+
+  span {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
 }
 
 .admin-overview__card-copy {
@@ -279,6 +380,15 @@ onMounted(loadOverview);
 @media (max-width: 768px) {
   .admin-overview__grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-overview__health-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-overview__activity-list article {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

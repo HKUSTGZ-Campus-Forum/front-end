@@ -88,8 +88,12 @@
     "description": "Manage feedback reviews, identity verification, and future moderation tools from one shared admin surface.",
     "nav": {
       "overview": "Overview",
+      "users": "Users",
+      "content": "Content",
       "feedback": "Feedback review",
-      "identity": "Identity"
+      "identity": "Identity",
+      "domains": "Data and ops",
+      "audit": "Audit logs"
     }
   },
   "adminOverview": {
@@ -103,14 +107,35 @@
       "pendingFeedback": "Pending feedback",
       "pendingMerge": "Pending merge reviews",
       "pendingIdentity": "Pending identity",
-      "feedbackTotal": "Published feedback"
+      "feedbackTotal": "Published feedback",
+      "activeUsers": "Active users",
+      "usersTotal": "Users",
+      "adminUsers": "Admins",
+      "postsTotal": "Posts",
+      "commentsTotal": "Comments",
+      "coursesTotal": "Courses",
+      "projectsTotal": "Projects",
+      "auditRecent": "Recent logs"
     },
     "status": {
       "loadFailed": "Some admin counts could not be loaded.",
       "moduleError": "Count unavailable"
     },
     "modulesTitle": "Admin modules",
+    "healthTitle": "Domain health",
+    "activityTitle": "Recent admin activity",
+    "activityEmpty": "No admin actions recorded yet",
     "cards": {
+      "users": {
+        "title": "Users and roles",
+        "description": "Search accounts, inspect verification state, change roles, and soft-delete or restore users.",
+        "action": "Open users"
+      },
+      "content": {
+        "title": "Content moderation",
+        "description": "Inspect posts, comments, uploaded files, tags, and wall activity from a single content surface.",
+        "action": "Open content"
+      },
       "feedback": {
         "title": "Feedback review",
         "description": "Review pending feedback, finalize accepted merge proposals, and manage published feedback discussion state.",
@@ -120,8 +145,242 @@
         "title": "Identity verification",
         "description": "Review pending verification requests and inspect approved, rejected, or revoked identity records.",
         "action": "Open identity review"
+      },
+      "domains": {
+        "title": "Course, data, and operations",
+        "description": "Monitor courses, scheduler data, Academic Map, matching, contests, storage, OAuth, and notifications.",
+        "action": "Open data and ops"
+      },
+      "audit": {
+        "title": "Audit logs",
+        "description": "Trace admin mutations with actor, action, target, note, and timestamp.",
+        "action": "Open audit logs"
       }
     }
+  },
+  "adminConsole": {
+    "unknown": "Unknown",
+    "errors": {
+      "loadOverview": "Failed to load admin overview.",
+      "loadAudit": "Failed to load audit logs.",
+      "loadUsers": "Failed to load users.",
+      "updateUser": "Failed to update user.",
+      "loadContent": "Failed to load content.",
+      "updateContent": "Failed to update content."
+    }
+  },
+  "adminUsers": {
+    "title": "User Management",
+    "description": "Search accounts, filter by role and verification state, and manage user roles or soft-deletion state.",
+    "metrics": {
+      "total": "Total users",
+      "verified": "Email verified",
+      "deleted": "Deleted users",
+      "page": "Shown"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Username or email",
+      "role": "Role",
+      "allRoles": "All roles",
+      "deleted": "Deletion state",
+      "allUsers": "All users",
+      "activeOnly": "Active only",
+      "deletedOnly": "Deleted only",
+      "email": "Email",
+      "allEmail": "All email states",
+      "emailVerified": "Verified",
+      "emailUnverified": "Unverified"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "apply": "Apply filters",
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "audit": {
+      "roleChange": "Role changed in admin console",
+      "delete": "User soft-deleted in admin console",
+      "restore": "User restored in admin console"
+    },
+    "confirm": {
+      "delete": "Soft-delete this user?",
+      "restore": "Restore this user?"
+    },
+    "messages": {
+      "roleUpdated": "Role updated.",
+      "deleted": "User deleted.",
+      "restored": "User restored."
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "empty": {
+      "title": "No users",
+      "description": "No users match the current filters."
+    },
+    "pagination": {
+      "label": "User pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    },
+    "noEmail": "No email",
+    "createdAt": "Created {date}",
+    "emailVerified": "Email verified",
+    "emailUnverified": "Email unverified",
+    "deleted": "Deleted"
+  },
+  "adminContent": {
+    "title": "Content Management",
+    "description": "Moderate forum posts and comments while monitoring tags, files, and gugu activity.",
+    "metrics": {
+      "posts": "Posts",
+      "comments": "Comments",
+      "files": "Files",
+      "gugu": "Gugu messages"
+    },
+    "tabs": {
+      "posts": "Posts",
+      "comments": "Comments"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Title or content",
+      "deleted": "State",
+      "all": "All",
+      "active": "Active",
+      "deletedOnly": "Deleted"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "apply": "Apply filters",
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "audit": {
+      "deletePost": "Post soft-deleted in admin console",
+      "restorePost": "Post restored in admin console",
+      "deleteComment": "Comment soft-deleted in admin console",
+      "restoreComment": "Comment restored in admin console"
+    },
+    "confirm": {
+      "deletePost": "Soft-delete this post?",
+      "restorePost": "Restore this post?",
+      "deleteComment": "Soft-delete this comment?",
+      "restoreComment": "Restore this comment?"
+    },
+    "messages": {
+      "postDeleted": "Post deleted.",
+      "postRestored": "Post restored.",
+      "commentDeleted": "Comment deleted.",
+      "commentRestored": "Comment restored."
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "empty": {
+      "title": "No content",
+      "description": "No records match the current filters."
+    },
+    "pagination": {
+      "label": "Content pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    },
+    "createdAt": "Created {date}",
+    "commentPost": "Post #{id}",
+    "deleted": "Deleted",
+    "postStats": {
+      "comments": "{count} comments",
+      "reactions": "{count} reactions",
+      "views": "{count} views"
+    }
+  },
+  "adminDomains": {
+    "title": "Data And Operations",
+    "description": "Monitor course data, Academic Map, matching, contests, storage, OAuth, notifications, and push infrastructure.",
+    "metrics": {
+      "courses": "Courses",
+      "offerings": "Offerings",
+      "projects": "Projects",
+      "submissions": "Submissions"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing..."
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "sections": {
+      "courses": "Courses and scheduler",
+      "academicMap": "Academic Map",
+      "matching": "Matching",
+      "contest": "Contest",
+      "operations": "Operations"
+    },
+    "descriptions": {
+      "courses": "Catalog, offerings, sections, and meeting data health.",
+      "academicMap": "Aggregate curriculum and user record health without exposing private grades.",
+      "matching": "Project and profile health for the team matching subsystem.",
+      "contest": "Contest configuration, organizer, and submission counts.",
+      "operations": "Storage, STS, OAuth, notification, and push infrastructure."
+    },
+    "labels": {
+      "activeCourses": "Active courses",
+      "offerings": "Offerings",
+      "sections": "Sections",
+      "meetings": "Meetings",
+      "programs": "Programs",
+      "requirementGroups": "Requirement groups",
+      "academicProfiles": "Academic profiles",
+      "recordsNeedingReview": "Records needing review",
+      "projects": "Projects",
+      "activeProjects": "Active projects",
+      "profiles": "Profiles",
+      "activeProfiles": "Active profiles",
+      "contests": "Contests",
+      "activeContests": "Active contests",
+      "organizers": "Organizers",
+      "submissions": "Submissions",
+      "files": "Files",
+      "validStsTokens": "Valid STS tokens",
+      "oauthClients": "OAuth clients",
+      "pushSubscriptions": "Push subscriptions"
+    }
+  },
+  "adminAudit": {
+    "title": "Audit Logs",
+    "description": "Trace admin actions by actor, action, target, note, and time.",
+    "filters": {
+      "action": "Action",
+      "actionPlaceholder": "user.role_update",
+      "target": "Target type",
+      "targetPlaceholder": "user, post, comment"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "apply": "Apply filters"
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "empty": {
+      "title": "No audit logs",
+      "description": "Admin mutations will appear here after they are recorded."
+    },
+    "pagination": {
+      "label": "Audit log pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    },
+    "noNote": "No note"
   },
   "adminIdentity": {
     "title": "Identity Verification",
