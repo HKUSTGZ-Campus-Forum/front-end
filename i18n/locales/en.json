@@ -50,7 +50,7 @@
     "feedback": "Feedback",
     "admin": "Admin",
     "courses": "Courses",
-    "academicMap": "Academic Map",
+    "academicMap": "Degree Progress",
     "activity": "Activities",
     "teamMatching": "Form a team",
     "users": "Users",
@@ -755,21 +755,21 @@
     }
   },
   "courseUniverse": {
-    "title": "Course Universe",
+    "title": "Course Graph",
     "hubTitle": "Course Graph",
     "hubSubtitle": "Start here to read course relationships, reviews, schedules, and degree progress.",
     "subtitle": "Find your next course through relationships, reviews, schedules, and degree progress.",
     "searchPlaceholder": "Search course code, title, or requirement...",
     "selectedSemester": "Current semester",
     "targetMajor": "Target major",
-    "loading": "Loading Course Universe...",
+    "loading": "Loading Course Graph...",
     "empty": "No course graph data yet.",
     "selectCourse": "Select a course to inspect it",
     "modes": {
-      "universe": "Universe",
+      "universe": "Graph",
       "explore": "Explore",
       "planner": "Planner",
-      "academicMap": "Academic Map"
+      "academicMap": "Degree Progress"
     },
     "legend": {
       "completed": "Completed",
@@ -799,7 +799,7 @@
       "openPlanner": "Open planner",
       "openReviews": "View reviews",
       "writeReview": "Write review",
-      "openAcademicMap": "Open Academic Map",
+      "openAcademicMap": "Open Degree Progress",
       "markStatus": "Update academic status",
       "graphControls": "Graph controls",
       "zoomIn": "Zoom in",
@@ -824,7 +824,7 @@
       "notAvailable": "Not available"
     },
     "errors": {
-      "load": "Course Universe failed to load. Please try again later.",
+      "load": "Course Graph failed to load. Please try again later.",
       "courseDetail": "Failed to load course detail."
     }
   },
@@ -866,7 +866,7 @@
       "metaTitle": "Course overview",
       "metaDescription": "View the course overview, academic status, and offerings for {course}.",
       "eyebrow": "Course overview",
-      "backToUniverse": "Back to Course Universe",
+      "backToUniverse": "Back to Course Graph",
       "loadFailed": "Failed to load course overview",
       "offeringsEyebrow": "Offerings",
       "offeringsTitle": "Offering terms",
@@ -896,13 +896,13 @@
         "interested": "Want to take",
         "not_taken": "Not taken"
       },
-      "noAcademicStatus": "This course is not in your Academic Map yet.",
+      "noAcademicStatus": "This course is not in your Degree Progress yet.",
       "markInterested": "Mark want to take",
       "cancelInterested": "Cancel want to take",
       "loginToMark": "Log in to mark want to take",
       "interestSaved": "Marked as want to take.",
       "interestRemoved": "Want-to-take status removed.",
-      "interestFailed": "Failed to update Academic Map.",
+      "interestFailed": "Failed to update Degree Progress.",
       "strongStatusNote": "Completed or in-progress status takes priority over want-to-take and is not edited here yet.",
       "activePlannerSemester": "Active planner term: {semester}",
       "plannerLoadFailed": "Planner cart status could not be loaded. Please try again later.",
@@ -913,7 +913,7 @@
         "unavailable": "No planner data"
       },
       "mapTitle": "See relationships in the graph",
-      "mapCopy": "Open Course Universe to inspect prerequisite, corequisite, and exclusion relationships around this course.",
+      "mapCopy": "Open Course Graph to inspect prerequisite, corequisite, and exclusion relationships around this course.",
       "openInMap": "View in graph"
     },
     "offeringMissing": "This offering does not exist for the selected course.",
@@ -957,15 +957,15 @@
     }
   },
   "academicMap": {
-    "metaTitle": "Academic Map - UniKorn",
-    "eyebrow": "Academic Map",
-    "title": "Academic Map",
+    "metaTitle": "Degree Progress - UniKorn",
+    "eyebrow": "Degree Progress",
+    "title": "Degree Progress",
     "openCourses": "Go to course reviews",
     "loading": "Loading academic state...",
     "cohort": "Cohort",
     "units": "credits",
     "login": {
-      "title": "Log in to maintain your Academic Map",
+      "title": "Log in to maintain your Degree Progress",
       "copy": "This information belongs to you. Course records and grades are not public, and they will help future planning suggestions become more precise."
     },
     "targetMajors": {
@@ -977,7 +977,7 @@
       "minimum": "{count}",
       "activeCredits": "{count} credits completed, in progress, or planned",
       "completedCredits": "{completed} credits completed, {inProgress} credits in progress this term",
-      "mapCompleteness": "Map completeness",
+      "mapCompleteness": "Progress completeness",
       "mapCompletenessCopy": "Shows whether future planning has enough context",
       "importedCourses": "Maintained courses",
       "importedCoursesCopy": "Course records from paste import or manual confirmation",
@@ -1068,13 +1068,13 @@
       "copy": "Grades are never shown publicly. You can keep them for future recommendations or delete them now or later.",
       "deleteGrades": "Delete all grades",
       "deleting": "Deleting...",
-      "clearMap": "Clear Academic Map",
+      "clearMap": "Clear Degree Progress",
       "clearingMap": "Clearing...",
       "clearMapConfirm": "Clear course records, cohort, and target majors for the current account? This will not affect other users."
     },
     "future": {
       "title": "Signals for future planning",
-      "copy": "This version does not recommend courses yet. It focuses on building the state map with low effort.",
+      "copy": "This version does not recommend courses yet. It focuses on building your academic state with low effort.",
       "signals": {
         "courseHistory": "Course history",
         "targetMajors": "Target major changes",
@@ -1131,7 +1131,7 @@
       "overviewTitle": "Reading the matrix",
       "overviewCopy": "Click any requirement row to inspect its full course pool; click a top metric card for prerequisite or grade details.",
       "gradesTitle": "OCGA / MCGA",
-      "gradesCopy": "Grades stay inside your private Academic Map and are calculated only after upload.",
+      "gradesCopy": "Grades stay inside your private Degree Progress and are calculated only after upload.",
       "ocgaRule": "Overall CGA: equally weighted average of all grade-point courses.",
       "mcgaRule": "Major CGA: equally weighted estimate from courses counted toward the active major.",
       "gradePrivacy": "Grades are not shown publicly and can be deleted anytime. Without uploaded grades, these cards show Not uploaded.",
@@ -1169,24 +1169,24 @@
       "recordsCleared": "Cleared {count} course records."
     },
     "errors": {
-      "load": "Failed to load Academic Map. Please try again later.",
+      "load": "Failed to load Degree Progress. Please try again later.",
       "profile": "Failed to save target majors. Please try again later.",
       "parse": "Failed to parse the pasted content.",
       "importSave": "Failed to save course records. Please try again later.",
       "record": "Failed to update the course record. Please try again later.",
       "grades": "Failed to delete grades. Please try again later.",
-      "clearRecords": "Failed to clear Academic Map. Please try again later."
+      "clearRecords": "Failed to clear Degree Progress. Please try again later."
     },
     "coursesCta": {
-      "title": "Connect course reviews with your Academic Map",
-      "copy": "While browsing courses, open Academic Map to keep completed, in-progress, wanted, and not-taken courses organized.",
-      "action": "Open Academic Map"
+      "title": "Connect course reviews with your Degree Progress",
+      "copy": "While browsing courses, open Degree Progress to keep completed, in-progress, wanted, and not-taken courses organized.",
+      "action": "Open Degree Progress"
     },
     "courseDetail": {
-      "title": "Add to my Academic Map",
+      "title": "Add to my Degree Progress",
       "copy": "Mark this course as want to take so it becomes planning context later.",
-      "saved": "Updated in Academic Map.",
-      "saveFailed": "Failed to update Academic Map. Please try again later."
+      "saved": "Updated in Degree Progress.",
+      "saveFailed": "Failed to update Degree Progress. Please try again later."
     }
   },
   "matching": {

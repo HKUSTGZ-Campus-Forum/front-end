@@ -89,11 +89,12 @@ const termSortValue = (term: string) => {
 
   const rawStartYear = Number(yearMatch[1])
   const startYear = rawStartYear < 100 ? 2000 + rawStartYear : rawStartYear
+  const zhSeasonPattern = (codePoint: number) => new RegExp(String.fromCharCode(codePoint))
   const seasonRank = [
-    { patterns: [/fall/i, /秋/], value: 1 },
-    { patterns: [/winter/i, /冬/], value: 2 },
-    { patterns: [/spring/i, /春/], value: 3 },
-    { patterns: [/summer/i, /夏/], value: 4 },
+    { patterns: [/fall/i, zhSeasonPattern(0x79cb)], value: 1 },
+    { patterns: [/winter/i, zhSeasonPattern(0x51ac)], value: 2 },
+    { patterns: [/spring/i, zhSeasonPattern(0x6625)], value: 3 },
+    { patterns: [/summer/i, zhSeasonPattern(0x590f)], value: 4 },
   ].find(item => item.patterns.some(pattern => pattern.test(normalized)))?.value || 0
 
   return startYear * 10 + seasonRank

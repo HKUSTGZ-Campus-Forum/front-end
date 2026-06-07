@@ -330,7 +330,7 @@ describe('course universe helpers', () => {
     expect(buildCourseUniverseCourseDetailPath('DLED4010[2]')).toBe('/courses/DLED4010')
   })
 
-  it('marks legacy schedule and academic map routes active under courses', () => {
+  it('marks legacy schedule and degree progress routes active under courses', () => {
     expect(COURSE_UNIVERSE_ALIAS_PREFIXES).toEqual(['/courses', '/schedule', '/academic-map'])
     expect(isCourseUniverseActivePath('/courses')).toBe(true)
     expect(isCourseUniverseActivePath('/courses/123/offerings/2530')).toBe(true)
@@ -339,7 +339,7 @@ describe('course universe helpers', () => {
     expect(isCourseUniverseActivePath('/forum')).toBe(false)
   })
 
-  it('maps legacy routes to new Course Universe routes', () => {
+  it('maps legacy routes to new course graph routes', () => {
     expect(getCourseUniverseRedirect('/schedule')).toBe('/courses/planner')
     expect(getCourseUniverseRedirect('/schedule/dashboard')).toBe('/courses/planner')
     expect(getCourseUniverseRedirect('/schedule/dashboard/2530')).toBe('/courses/planner/2530')

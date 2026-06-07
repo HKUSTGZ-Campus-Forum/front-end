@@ -50,7 +50,7 @@
     "feedback": "反馈",
     "admin": "管理员",
     "courses": "课程",
-    "academicMap": "学业地图",
+    "academicMap": "学业进度",
     "activity": "活动",
     "teamMatching": "组队",
     "users": "用户",
@@ -755,21 +755,21 @@
     }
   },
   "courseUniverse": {
-    "title": "课程宇宙",
+    "title": "课程图谱",
     "hubTitle": "课程图谱",
     "hubSubtitle": "查课程关系、看评价、排课和管理学业进度都从这里开始。",
     "subtitle": "从课程关系、评价、课表和毕业进度里找到下一门课。",
     "searchPlaceholder": "搜索课程代码、名称或要求...",
     "selectedSemester": "当前学期",
     "targetMajor": "目标专业",
-    "loading": "正在加载课程宇宙...",
+    "loading": "正在加载课程图谱...",
     "empty": "暂无课程图谱数据。",
     "selectCourse": "选择一门课程查看详情",
     "modes": {
       "universe": "图谱",
       "explore": "探索",
       "planner": "排课",
-      "academicMap": "学业地图"
+      "academicMap": "学业进度"
     },
     "legend": {
       "completed": "已修",
@@ -799,7 +799,7 @@
       "openPlanner": "打开排课",
       "openReviews": "查看评价",
       "writeReview": "写评价",
-      "openAcademicMap": "打开学业地图",
+      "openAcademicMap": "打开学业进度",
       "markStatus": "更新学业状态",
       "graphControls": "图谱控制",
       "zoomIn": "放大图谱",
@@ -824,7 +824,7 @@
       "notAvailable": "暂无信息"
     },
     "errors": {
-      "load": "课程宇宙加载失败，请稍后重试。",
+      "load": "课程图谱加载失败，请稍后重试。",
       "courseDetail": "课程详情加载失败。"
     }
   },
@@ -866,7 +866,7 @@
       "metaTitle": "课程总览",
       "metaDescription": "查看 {course} 的课程总览、学业状态和相关开课记录。",
       "eyebrow": "课程总览",
-      "backToUniverse": "返回课程宇宙",
+      "backToUniverse": "返回课程图谱",
       "loadFailed": "课程总览加载失败",
       "offeringsEyebrow": "开课记录",
       "offeringsTitle": "开课学期",
@@ -896,13 +896,13 @@
         "interested": "想修",
         "not_taken": "未修"
       },
-      "noAcademicStatus": "这门课还没有加入你的学业地图。",
+      "noAcademicStatus": "这门课还没有加入你的学业进度。",
       "markInterested": "标记想修",
       "cancelInterested": "取消想修",
       "loginToMark": "登录后标记想修",
       "interestSaved": "已标记为想修。",
       "interestRemoved": "已取消想修。",
-      "interestFailed": "更新学业地图失败。",
+      "interestFailed": "更新学业进度失败。",
       "strongStatusNote": "已修或在修状态优先于想修，当前阶段暂不在这里编辑。",
       "activePlannerSemester": "当前排课学期：{semester}",
       "plannerLoadFailed": "排课车状态加载失败，请稍后重试。",
@@ -913,7 +913,7 @@
         "unavailable": "暂无排课数据"
       },
       "mapTitle": "回到图谱查看关系",
-      "mapCopy": "在课程宇宙中查看这门课与先修、共修、互斥课程之间的关系。",
+      "mapCopy": "在课程图谱中查看这门课与先修、共修、互斥课程之间的关系。",
       "openInMap": "在图谱中查看"
     },
     "offeringMissing": "当前学期不存在或未开设这门课",
@@ -957,15 +957,15 @@
     }
   },
   "academicMap": {
-    "metaTitle": "学业地图 - UniKorn",
-    "eyebrow": "Academic Map",
-    "title": "学业地图",
+    "metaTitle": "学业进度 - UniKorn",
+    "eyebrow": "学业进度",
+    "title": "学业进度",
     "openCourses": "去课程评价",
     "loading": "正在加载学业状态...",
     "cohort": "入学年份",
     "units": "学分",
     "login": {
-      "title": "登录后维护你的学业地图",
+      "title": "登录后维护你的学业进度",
       "copy": "这些信息只属于你。课程记录和成绩不会公开展示，后续会用于更精准的学业规划建议。"
     },
     "targetMajors": {
@@ -977,7 +977,7 @@
       "minimum": "{count}",
       "activeCredits": "已修、在修、计划共 {count} 学分",
       "completedCredits": "已修{completed}学分，本学期正在修{inProgress}学分",
-      "mapCompleteness": "地图完整度",
+      "mapCompleteness": "进度完整度",
       "mapCompletenessCopy": "用于判断后续规划建议是否有足够上下文",
       "importedCourses": "已维护课程",
       "importedCoursesCopy": "来自粘贴导入或手动确认的课程记录",
@@ -1068,13 +1068,13 @@
       "copy": "成绩默认不会公开展示。你可以保留用于后续推荐，也可以现在或之后删除。",
       "deleteGrades": "删除所有成绩",
       "deleting": "删除中...",
-      "clearMap": "清空学业地图",
+      "clearMap": "清空学业进度",
       "clearingMap": "清空中...",
       "clearMapConfirm": "确定要清空当前账号的课程记录、入学年份和目标专业吗？这个操作不会影响其他用户。"
     },
     "future": {
       "title": "为未来规划系统收集的信号",
-      "copy": "当前版本不做推荐，重点是低负担地建立状态图。",
+      "copy": "当前版本不做推荐，重点是低负担地建立学业状态。",
       "signals": {
         "courseHistory": "已修/在修记录",
         "targetMajors": "目标专业变化",
@@ -1131,7 +1131,7 @@
       "overviewTitle": "怎么看这张矩阵",
       "overviewCopy": "点击任意要求行可以查看完整课程列表；点击顶部先修或成绩卡片可以看对应解释。",
       "gradesTitle": "OCGA / MCGA",
-      "gradesCopy": "成绩只用于你的私密学业地图，上传后才会计算。",
+      "gradesCopy": "成绩只用于你的私密学业进度，上传后才会计算。",
       "ocgaRule": "Overall CGA：所有计 grade point 的课程等权平均。",
       "mcgaRule": "Major CGA：按当前专业要求中计入的课程估算，等权平均。",
       "gradePrivacy": "成绩默认不公开展示，也可以随时删除；没有上传成绩时显示未上传。",
@@ -1169,24 +1169,24 @@
       "recordsCleared": "已清空 {count} 条课程记录。"
     },
     "errors": {
-      "load": "学业地图加载失败，请稍后重试。",
+      "load": "学业进度加载失败，请稍后重试。",
       "profile": "保存目标专业失败，请稍后重试。",
       "parse": "解析失败，请检查粘贴内容。",
       "importSave": "保存课程记录失败，请稍后重试。",
       "record": "更新课程记录失败，请稍后重试。",
       "grades": "删除成绩失败，请稍后重试。",
-      "clearRecords": "清空学业地图失败，请稍后重试。"
+      "clearRecords": "清空学业进度失败，请稍后重试。"
     },
     "coursesCta": {
-      "title": "把课程评价和学业地图连起来",
-      "copy": "查课时可以顺手打开学业地图，把想修、在修、已修的状态维护起来。",
-      "action": "打开学业地图"
+      "title": "把课程评价和学业进度连起来",
+      "copy": "查课时可以顺手打开学业进度，把想修、在修、已修的状态维护起来。",
+      "action": "打开学业进度"
     },
     "courseDetail": {
-      "title": "加入我的学业地图",
+      "title": "加入我的学业进度",
       "copy": "把这门课标成想修，之后会成为规划推荐的上下文。",
-      "saved": "已更新到学业地图。",
-      "saveFailed": "更新学业地图失败，请稍后重试。"
+      "saved": "已更新到学业进度。",
+      "saveFailed": "更新学业进度失败，请稍后重试。"
     }
   },
   "matching": {
