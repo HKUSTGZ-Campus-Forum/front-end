@@ -12,6 +12,7 @@ import {
   buildCourseUniverseGraph,
   buildCourseUniverseHighlightSet,
   buildCourseUniversePrefixOptions,
+  buildCourseUniverseSupplementalComponentSet,
   buildCourseUniverseVisibleComponentSet,
   clampCourseUniverseZoom,
   createReadableCourseUniverseViewport,
@@ -66,6 +67,16 @@ const selectedCode = computed(() => props.nodes.find(node => node.selected)?.cod
 const prefixOptions = computed(() => buildCourseUniversePrefixOptions(props.nodes))
 const visibleComponentIds = computed(() => {
   return buildCourseUniverseVisibleComponentSet({
+    components: props.components,
+    lines: props.lines,
+    selectedPrefix: selectedPrefix.value,
+    selectedCourseCode: selectedCode.value,
+    searchQuery: props.searchQuery,
+    courseNodes: props.nodes,
+  })
+})
+const supplementalComponentIds = computed(() => {
+  return buildCourseUniverseSupplementalComponentSet({
     components: props.components,
     lines: props.lines,
     selectedPrefix: selectedPrefix.value,
@@ -178,6 +189,7 @@ const semanticLevel = computed(() => {
 function nodeClasses(node: CourseUniverseNode) {
   const hasFocusContext = Boolean(selectedCode.value || matchingComponentIds.value.size)
   const isRelated = relatedComponentIds.value.has(node.componentId)
+  const isSupplemental = isSupplementalComponent(node.componentId)
   const prefix = getCourseUniverseNodePrefix(node.code)
   return [
     'cu-node',
@@ -187,11 +199,12 @@ function nodeClasses(node: CourseUniverseNode) {
       'is-selected': node.selected,
       'is-matched': matchingComponentIds.value.has(node.componentId),
       'is-related': isRelated,
+      'is-supplemental': isSupplemental,
       'is-dimmed': hasFocusContext && !isRelated,
       'is-completed': node.academicStatus === 'completed',
       'is-in-progress': node.academicStatus === 'in_progress',
       'is-not-taken': getCourseUniverseNodeStatusKey(node) === 'notTaken',
-      'is-interested': node.academicStatus === 'interested',
+      'is-interested': node.academicStatus === 'interested' || node.academicStatus === 'planned',
     },
   ]
 }
@@ -375,8 +388,23 @@ function getNodeStatusKey(node: CourseUniverseNode) {
   return getCourseUniverseNodeStatusKey(node)
 }
 
+function getNodeStatusClass(node: CourseUniverseNode) {
+  return isSupplementalComponent(node.componentId)
+    ? 'otherRelation'
+    : getNodeStatusKey(node)
+}
+
 function getNodeStatusLabel(node: CourseUniverseNode) {
+  if (isSupplementalComponent(node.componentId)) return t('courseUniverse.relation.other')
   return t(`courseUniverse.statusShort.${getNodeStatusKey(node)}`)
+}
+
+function isSupplementalComponent(componentId: string) {
+  return supplementalComponentIds.value.has(componentId)
+}
+
+function isSupplementalLine(line: { startId: string, endId: string }) {
+  return isSupplementalComponent(line.startId) || isSupplementalComponent(line.endId)
 }
 
 function getPlannerCartActionLabel(node: CourseUniverseNode) {
@@ -505,6 +533,7 @@ onBeforeUnmount(() => {
               `is-${line.tone}`,
               {
                 'is-dashed': line.dashed,
+                'is-supplemental': isSupplementalLine(line),
                 'is-highlighted': highlightedLineIds.has(line.id),
                 'is-dimmed': isRenderLineDimmed(line.id),
               },
@@ -519,6 +548,7 @@ onBeforeUnmount(() => {
             :class="[
               `is-${line.tone}`,
               {
+                'is-supplemental': isSupplementalLine(line),
                 'is-highlighted': highlightedLineIds.has(line.id),
                 'is-dimmed': isRenderLineDimmed(line.id),
               },
@@ -540,6 +570,7 @@ onBeforeUnmount(() => {
               `is-category-${component.category}`,
               {
                 'is-hollow': component.hollow,
+                'is-supplemental': isSupplementalComponent(component.id),
                 'is-highlighted': highlightedComponentIds.has(component.id),
                 'is-dimmed': isRenderComponentDimmed(component.id),
               },
@@ -592,7 +623,7 @@ onBeforeUnmount(() => {
             </text>
             <g
               v-if="semanticLevel === 'near'"
-              :class="['cu-node__status-pill', `is-${getNodeStatusKey(node)}`]"
+              :class="['cu-node__status-pill', `is-${getNodeStatusClass(node)}`]"
             >
               <rect class="cu-node__status-bg" x="20" y="66" width="64" height="20" rx="10" ry="10" />
               <text class="cu-node__status-text" x="52" y="79.5">
@@ -792,6 +823,11 @@ onBeforeUnmount(() => {
   stroke: var(--semantic-error);
 }
 
+.cu-line.is-supplemental {
+  stroke: var(--semantic-warning);
+  stroke-dasharray: 4 6;
+}
+
 .cu-line.is-dashed {
   stroke-dasharray: 6 5;
 }
@@ -821,6 +857,10 @@ onBeforeUnmount(() => {
   stroke: var(--semantic-error);
 }
 
+.cu-line-arrows .is-supplemental {
+  stroke: var(--semantic-warning);
+}
+
 .cu-line-arrows .is-highlighted {
   opacity: 1;
 }
@@ -844,6 +884,11 @@ onBeforeUnmount(() => {
 
 .cu-logic-node.is-hollow {
   fill: var(--surface-primary);
+}
+
+.cu-logic-node.is-supplemental {
+  fill: color-mix(in srgb, var(--semantic-warning) 10%, var(--surface-primary));
+  stroke: var(--semantic-warning);
 }
 
 .cu-logic-node.is-highlighted {
@@ -960,6 +1005,11 @@ onBeforeUnmount(() => {
   --cu-status-text: var(--text-secondary);
 }
 
+.cu-node__status-pill.is-otherRelation {
+  --cu-status-color: var(--semantic-warning);
+  --cu-status-text: color-mix(in srgb, var(--semantic-warning) 70%, var(--text-primary));
+}
+
 .cu-node__cart-action {
   cursor: pointer;
   outline: none;
@@ -1043,6 +1093,12 @@ onBeforeUnmount(() => {
 .cu-node.is-in-progress .cu-node__card { stroke: color-mix(in srgb, var(--interactive-primary) 55%, var(--border-primary)); }
 .cu-node.is-not-taken .cu-node__card { stroke: var(--border-primary); }
 .cu-node.is-interested .cu-node__card { stroke: color-mix(in srgb, var(--text-secondary) 38%, var(--border-primary)); }
+.cu-node.is-supplemental .cu-node__card {
+  fill: color-mix(in srgb, var(--semantic-warning) 7%, var(--surface-primary));
+  stroke: color-mix(in srgb, var(--semantic-warning) 58%, var(--border-primary));
+}
+.cu-node.is-supplemental .cu-node__accent { fill: var(--semantic-warning); }
+.cu-node.is-supplemental .cu-node__code { fill: color-mix(in srgb, var(--semantic-warning) 22%, var(--text-primary)); }
 
 .cu-node.is-tone-0 { --cu-node-accent: var(--interactive-primary); }
 .cu-node.is-tone-1 { --cu-node-accent: var(--semantic-success); }

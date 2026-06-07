@@ -4,15 +4,20 @@ import type {
   AcademicMapSummary,
   AcademicProfile,
 } from '~/types/academic-map'
+import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
+import {
+  compactCourseCode,
+  getCourseUniverseActiveSchedulerSemester,
+  getCourseUniverseSchedulerSemesterLabel,
+} from '~/utils/courseUniverse'
 
 definePageMeta({ layout: 'keguang' })
 
 const { t } = useI18n()
 const { isLoggedIn } = useAuth()
-const { getLocalePath } = useAppLocale()
+const { locale, getLocalePath } = useAppLocale()
 const {
-  deleteGrades,
   clearRecords,
   deleteRecord,
   fetchSummary,
@@ -21,17 +26,28 @@ const {
   updateProfile,
   updateRecord,
 } = useAcademicMap()
+const {
+  getSemesters,
+  getCart,
+  addToCart,
+  removeFromCart,
+} = useScheduler()
 
 const summary = ref<AcademicMapSummary | null>(null)
+const semesters = ref<SemesterInfo[]>([])
+const plannerCourses = ref<CartCourse[]>([])
 const isLoading = ref(false)
+const isLoadingPlanner = ref(false)
 const isSavingProfile = ref(false)
 const isParsing = ref(false)
 const isSavingImport = ref(false)
-const isClearingGrades = ref(false)
 const isClearingMap = ref(false)
 const errorMessage = ref('')
 const importRef = ref<InstanceType<typeof AcademicMapCourseHistoryImport> | null>(null)
 const activeMajor = ref<string | null>(null)
+const gradeDrafts = ref<Record<string, string>>({})
+const savingGradeKeys = ref(new Set<string>())
+const cartUpdatingCodes = ref(new Set<string>())
 
 const records = computed(() => summary.value?.records || [])
 const profile = computed<AcademicProfile>(() => summary.value?.profile || {
@@ -39,6 +55,15 @@ const profile = computed<AcademicProfile>(() => summary.value?.profile || {
   target_majors: [],
   grade_policy: 'keep_private',
 })
+const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
+const activeSchedulerSemesterLabel = computed(() => {
+  const semester = semesters.value.find(item => item.id === activeSchedulerSemester.value)
+  if (!semester) return activeSchedulerSemester.value
+  return getCourseUniverseSchedulerSemesterLabel(semester, locale.value)
+})
+const plannerCourseCodes = computed(() => new Set(
+  plannerCourses.value.map(item => compactCourseCode(item.course_code)),
+))
 
 const groupedRecords = computed(() => {
   const groups = new Map<string, AcademicCourseRecord[]>()
@@ -46,8 +71,33 @@ const groupedRecords = computed(() => {
     const term = record.term_label || t('academicMap.records.noTerm')
     groups.set(term, [...(groups.get(term) || []), record])
   }
-  return Array.from(groups.entries()).map(([term, items]) => ({ term, items }))
+  return Array.from(groups.entries())
+    .map(([term, items]) => ({ term, items }))
+    .sort((a, b) => termSortValue(b.term) - termSortValue(a.term))
 })
+
+const recordKey = (record: AcademicCourseRecord) => String(record.id || compactCourseCode(record.course_code))
+const normalizedCourseCode = (record: AcademicCourseRecord) => compactCourseCode(record.course_code)
+const gradeDraft = (record: AcademicCourseRecord) => gradeDrafts.value[recordKey(record)] ?? (record.grade || '')
+const isSavingGrade = (record: AcademicCourseRecord) => savingGradeKeys.value.has(recordKey(record))
+const isInPlannerCart = (record: AcademicCourseRecord) => plannerCourseCodes.value.has(normalizedCourseCode(record))
+const isCartUpdating = (record: AcademicCourseRecord) => cartUpdatingCodes.value.has(normalizedCourseCode(record))
+const termSortValue = (term: string) => {
+  const normalized = String(term || '').trim()
+  const yearMatch = normalized.match(/(\d{2,4})\s*[-/]\s*(\d{2,4})/)
+  if (!yearMatch) return -1
+
+  const rawStartYear = Number(yearMatch[1])
+  const startYear = rawStartYear < 100 ? 2000 + rawStartYear : rawStartYear
+  const seasonRank = [
+    { patterns: [/fall/i, /秋/], value: 1 },
+    { patterns: [/winter/i, /冬/], value: 2 },
+    { patterns: [/spring/i, /春/], value: 3 },
+    { patterns: [/summer/i, /夏/], value: 4 },
+  ].find(item => item.patterns.some(pattern => pattern.test(normalized)))?.value || 0
+
+  return startYear * 10 + seasonRank
+}
 
 watch(summary, value => {
   const targetMajors = value?.profile?.target_majors || []
@@ -63,6 +113,14 @@ watch(summary, value => {
     activeMajor.value = firstMajor
   }
 })
+
+watch(records, value => {
+  const nextDrafts: Record<string, string> = {}
+  for (const record of value) {
+    nextDrafts[recordKey(record)] = record.grade || ''
+  }
+  gradeDrafts.value = nextDrafts
+}, { immediate: true })
 
 const setMessage = (_message = '') => {
   errorMessage.value = ''
@@ -81,6 +139,27 @@ const loadSummary = async () => {
     setError(t('academicMap.errors.load'))
   } finally {
     isLoading.value = false
+  }
+}
+
+const refreshPlannerCart = async () => {
+  if (!isLoggedIn.value || !activeSchedulerSemester.value) {
+    plannerCourses.value = []
+    return
+  }
+  plannerCourses.value = await getCart(activeSchedulerSemester.value)
+}
+
+const loadPlannerContext = async () => {
+  if (!isLoggedIn.value) return
+  try {
+    isLoadingPlanner.value = true
+    semesters.value = await getSemesters()
+    await refreshPlannerCart()
+  } catch {
+    setError(t('courses.overviewPage.plannerLoadFailed'))
+  } finally {
+    isLoadingPlanner.value = false
   }
 }
 
@@ -114,12 +193,18 @@ const handleParse = async (text: string) => {
   }
 }
 
-const handleImportSave = async (payload: { records: AcademicCourseRecord[]; keepGrades: boolean }) => {
+const handleImportSave = async (payload: { records: AcademicCourseRecord[]; keepGrades: boolean; deleteRecords?: AcademicCourseRecord[] }) => {
   try {
     isSavingImport.value = true
-    await saveImportedRecords(payload.records, payload.keepGrades)
+    const deleteRecords = payload.deleteRecords || []
+    if (payload.records.length > 0) {
+      await saveImportedRecords(payload.records, payload.keepGrades)
+    }
+    for (const record of deleteRecords) {
+      if (record.id) await deleteRecord(record.id)
+    }
     await loadSummary()
-    setMessage(t('academicMap.messages.importSaved'))
+    setMessage(t(deleteRecords.length > 0 ? 'academicMap.messages.importChangesSaved' : 'academicMap.messages.importSaved'))
   } catch (error) {
     setError(t('academicMap.errors.importSave'))
   } finally {
@@ -137,6 +222,82 @@ const handleStatusChange = async (record: AcademicCourseRecord, status: Academic
   }
 }
 
+const handleGradeInput = (record: AcademicCourseRecord, value: string) => {
+  gradeDrafts.value = {
+    ...gradeDrafts.value,
+    [recordKey(record)]: value,
+  }
+}
+
+const handleGradeCommit = async (record: AcademicCourseRecord) => {
+  if (!record.id) return
+  const key = recordKey(record)
+  const nextGrade = gradeDraft(record).trim()
+  const currentGrade = (record.grade || '').trim()
+  if (nextGrade === currentGrade) return
+
+  try {
+    savingGradeKeys.value = new Set(savingGradeKeys.value).add(key)
+    await updateRecord(record.id, {
+      grade: nextGrade || null,
+      keep_grade: Boolean(nextGrade),
+    })
+    await loadSummary()
+  } catch {
+    handleGradeInput(record, record.grade || '')
+    setError(t('academicMap.errors.record'))
+  } finally {
+    const nextSaving = new Set(savingGradeKeys.value)
+    nextSaving.delete(key)
+    savingGradeKeys.value = nextSaving
+  }
+}
+
+const handlePlannerToggle = async (record: AcademicCourseRecord) => {
+  if (!isLoggedIn.value) {
+    setError(t('scheduler.loginHint'))
+    return
+  }
+  if (!activeSchedulerSemester.value) {
+    setError(t('scheduler.noSemesters'))
+    return
+  }
+
+  const code = normalizedCourseCode(record)
+  if (!code || cartUpdatingCodes.value.has(code)) return
+
+  try {
+    cartUpdatingCodes.value = new Set(cartUpdatingCodes.value).add(code)
+    if (isInPlannerCart(record)) {
+      await removeFromCart(activeSchedulerSemester.value, code)
+    } else {
+      await addToCart(activeSchedulerSemester.value, code)
+    }
+    await refreshPlannerCart()
+    setMessage()
+  } catch (err) {
+    const errorMessageText = err instanceof Error ? err.message : ''
+    if (errorMessageText.includes('no sections')) {
+      setError(t('scheduler.cartCourseUnavailable', {
+        course: record.course_code || code,
+        semester: activeSchedulerSemesterLabel.value,
+      }))
+    } else if (errorMessageText.includes('already in cart')) {
+      await refreshPlannerCart()
+      setError(t('scheduler.cartAlreadyAdded', {
+        course: record.course_code || code,
+        semester: activeSchedulerSemesterLabel.value,
+      }))
+    } else {
+      setError(t('scheduler.cartFailed'))
+    }
+  } finally {
+    const nextUpdating = new Set(cartUpdatingCodes.value)
+    nextUpdating.delete(code)
+    cartUpdatingCodes.value = nextUpdating
+  }
+}
+
 const handleDeleteRecord = async (record: AcademicCourseRecord) => {
   if (!record.id) return
   try {
@@ -145,19 +306,6 @@ const handleDeleteRecord = async (record: AcademicCourseRecord) => {
     setMessage(t('academicMap.messages.recordDeleted'))
   } catch (error) {
     setError(t('academicMap.errors.record'))
-  }
-}
-
-const handleDeleteGrades = async () => {
-  try {
-    isClearingGrades.value = true
-    const result = await deleteGrades()
-    await loadSummary()
-    setMessage(t('academicMap.messages.gradesDeleted', { count: result.cleared_count }))
-  } catch (error) {
-    setError(t('academicMap.errors.grades'))
-  } finally {
-    isClearingGrades.value = false
   }
 }
 
@@ -179,7 +327,18 @@ const handleSelectMajor = (major: string) => {
   activeMajor.value = major
 }
 
-onMounted(loadSummary)
+watch(isLoggedIn, value => {
+  if (!value) {
+    plannerCourses.value = []
+    return
+  }
+  loadPlannerContext()
+})
+
+onMounted(() => {
+  loadSummary()
+  loadPlannerContext()
+})
 
 useHead({
   title: computed(() => t('academicMap.metaTitle')),
@@ -230,6 +389,7 @@ useHead({
             ref="importRef"
             :parsing="isParsing"
             :saving="isSavingImport"
+            :existing-records="records"
             @parse="handleParse"
             @save="handleImportSave"
           />
@@ -239,12 +399,9 @@ useHead({
           <div class="am-section-head">
             <div>
               <h2>{{ t('academicMap.records.title') }}</h2>
-              <p>{{ t('academicMap.records.copy') }}</p>
+              <small>{{ t('academicMap.records.summary', { count: records.length }) }}</small>
             </div>
             <div class="am-records-tools">
-              <button class="am-outline-btn" :disabled="isClearingGrades" type="button" @click="handleDeleteGrades">
-                {{ isClearingGrades ? t('academicMap.privacy.deleting') : t('academicMap.privacy.deleteGrades') }}
-              </button>
               <button class="am-outline-btn am-outline-btn--danger" :disabled="isClearingMap" type="button" @click="handleClearRecords">
                 {{ isClearingMap ? t('academicMap.privacy.clearingMap') : t('academicMap.privacy.clearMap') }}
               </button>
@@ -260,22 +417,61 @@ useHead({
               <h3>{{ group.term }}</h3>
               <article v-for="record in group.items" :key="record.id || record.course_code" class="am-record-row">
                 <div class="am-record-main">
-                  <strong>{{ record.course_code }}</strong>
+                  <div class="am-record-code-row">
+                    <strong>{{ record.course_code }}</strong>
+                    <span class="am-unit-chip">{{ record.units || 0 }} {{ t('academicMap.units') }}</span>
+                  </div>
                   <span>{{ record.course_title || t('academicMap.records.untitled') }}</span>
-                  <small>
-                    {{ record.units || 0 }} {{ t('academicMap.units') }}
-                    <template v-if="record.keep_grade && record.grade"> / {{ t('academicMap.records.privateGrade', { grade: record.grade }) }}</template>
-                  </small>
                 </div>
                 <div class="am-record-actions">
-                  <AcademicMapCourseStatusChips
-                    :model-value="record.status"
-                    compact
-                    @update:model-value="handleStatusChange(record, $event)"
-                  />
-                  <button class="am-icon-btn" type="button" :aria-label="t('academicMap.records.delete')" @click="handleDeleteRecord(record)">
-                    x
-                  </button>
+                  <div class="am-record-field am-record-field--status">
+                    <span class="am-record-label">{{ t('academicMap.records.statusLabel') }}</span>
+                    <AcademicMapCourseStatusChips
+                      :model-value="record.status"
+                      compact
+                      @update:model-value="handleStatusChange(record, $event)"
+                    />
+                  </div>
+                  <label class="am-record-field am-record-field--grade">
+                    <span class="am-record-label">{{ t('academicMap.records.gpaLabel') }}</span>
+                    <input
+                      :value="gradeDraft(record)"
+                      class="am-grade-input"
+                      type="text"
+                      :aria-label="t('academicMap.records.gpaAria', { course: record.course_code })"
+                      :placeholder="t('academicMap.records.gpaPlaceholder')"
+                      :disabled="isSavingGrade(record)"
+                      @input="handleGradeInput(record, ($event.target as HTMLInputElement).value)"
+                      @blur="handleGradeCommit(record)"
+                      @keydown.enter.prevent="handleGradeCommit(record)"
+                    />
+                  </label>
+                  <div class="am-record-icon-group">
+                    <button
+                      :class="['am-cart-btn', { 'is-added': isInPlannerCart(record) }]"
+                      type="button"
+                      :aria-label="isInPlannerCart(record) ? t('academicMap.records.removeFromCart', { course: record.course_code }) : t('academicMap.records.addToCart', { course: record.course_code })"
+                      :title="isInPlannerCart(record) ? t('academicMap.records.removeFromCart', { course: record.course_code }) : t('academicMap.records.addToCart', { course: record.course_code })"
+                      :disabled="isLoadingPlanner || isCartUpdating(record)"
+                      @click="handlePlannerToggle(record)"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path class="am-cart-btn__basket" d="M5 6h2l1.7 8.2h8.1l1.6-5.6H8.2" />
+                        <circle class="am-cart-btn__wheel" cx="10" cy="18" r="1.35" />
+                        <circle class="am-cart-btn__wheel" cx="16" cy="18" r="1.35" />
+                        <path v-if="isInPlannerCart(record)" class="am-cart-btn__check" d="M11 11.5l2.1 2.1L18 8.8" />
+                      </svg>
+                    </button>
+                    <button class="am-icon-btn" type="button" :aria-label="t('academicMap.records.delete')" @click="handleDeleteRecord(record)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16" />
+                        <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
+                        <path d="M7.5 7l.7 11a1.5 1.5 0 0 0 1.5 1.4h4.6a1.5 1.5 0 0 0 1.5-1.4l.7-11" />
+                        <path d="M10 10.5v5" />
+                        <path d="M14 10.5v5" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </article>
             </div>
@@ -330,6 +526,14 @@ useHead({
     color: var(--text-secondary);
     font-size: 0.86rem;
     line-height: 1.55;
+  }
+
+  small {
+    color: var(--text-tertiary);
+    display: inline-flex;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 5px;
   }
 }
 
@@ -455,19 +659,28 @@ useHead({
 .am-record-row {
   border: 1px solid var(--border-primary);
   border-radius: 14px;
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 12px;
+  background: linear-gradient(180deg, var(--surface-primary) 0%, #fbfdff 100%);
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(510px, auto);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 
   & + & {
     margin-top: 8px;
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--interactive-primary) 38%, var(--border-primary));
+    box-shadow: 0 8px 14px rgba(38, 120, 190, 0.08);
+    transform: translateY(-1px);
   }
 }
 
 .am-record-main {
   display: grid;
-  gap: 3px;
+  gap: 6px;
   min-width: 0;
 
   strong {
@@ -480,36 +693,167 @@ useHead({
     overflow-wrap: anywhere;
   }
 
-  small {
-    color: var(--text-tertiary);
-  }
+}
+
+.am-record-code-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.am-unit-chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--interactive-primary) 8%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 20%, var(--border-primary));
+  border-radius: 999px;
+  color: var(--interactive-active);
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  min-height: 24px;
+  padding: 0 9px;
+  white-space: nowrap;
 }
 
 .am-record-actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
 }
 
-.am-icon-btn {
-  background: transparent;
+.am-record-field {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.am-record-field--grade {
+  cursor: text;
+}
+
+.am-record-label {
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.am-grade-input {
+  background: var(--surface-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 999px;
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 760;
+  height: 34px;
+  outline: none;
+  padding: 0 10px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  width: 72px;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+    font-weight: 650;
+  }
+
+  &:focus {
+    border-color: var(--interactive-primary);
+    box-shadow: 0 0 0 3px rgba(38, 164, 255, 0.14);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+}
+
+.am-record-icon-group {
+  align-items: center;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 3px;
+}
+
+.am-icon-btn,
+.am-cart-btn {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 11px;
   color: var(--text-secondary);
   cursor: pointer;
-  height: 28px;
-  width: 28px;
+  display: inline-flex;
+  flex: 0 0 32px;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  width: 32px;
+
+  svg {
+    display: block;
+    height: 18px;
+    width: 18px;
+  }
+
+  path,
+  circle {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+}
+
+.am-cart-btn {
+  color: var(--interactive-primary);
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--interactive-primary) 26%, transparent);
+    transform: translateY(-1px);
+  }
+
+  &.is-added {
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
+  }
+
+  .am-cart-btn__wheel {
+    fill: currentColor;
+  }
+}
+
+.am-icon-btn {
+  color: var(--text-secondary);
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    background: rgba(209, 77, 77, 0.08);
+    border-color: rgba(209, 77, 77, 0.18);
+    color: var(--semantic-error);
+  }
 }
 
 @media (max-width: 900px) {
   .am-record-row {
-    grid-template-columns: 1fr;
-  }
-
-  .am-record-row {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .am-record-actions {
@@ -518,6 +862,20 @@ useHead({
 
   .am-records-tools {
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 680px) {
+  .am-record-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  .am-record-field--status {
+    align-items: flex-start;
+    flex-direction: column;
+    grid-column: 1 / -1;
   }
 }
 </style>

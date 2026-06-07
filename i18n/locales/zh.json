@@ -788,6 +788,9 @@
       "notTaken": "未修",
       "interested": "想修"
     },
+    "relation": {
+      "other": "其他关系"
+    },
     "actions": {
       "addToPlanner": "加入排课",
       "addToPlannerCart": "加入排课车",
@@ -876,7 +879,7 @@
       "teacherTbd": "教师待定",
       "openOffering": "查看学期详情",
       "offeringContextTitle": "学期主页",
-      "offeringContextCopy": "本页集中展示该学期的评价、讨论和排课信息；课程级信息和感兴趣状态在课程总览中维护。",
+      "offeringContextCopy": "本页集中展示该学期的评价、讨论和排课信息；课程级信息和想修状态在课程总览中维护。",
       "rulesEyebrow": "课程规则",
       "rulesTitle": "先修、共修与互斥",
       "noRules": "暂无先修、共修或互斥信息。",
@@ -889,18 +892,18 @@
       "academicStatus": {
         "completed": "已修",
         "in_progress": "在修",
-        "planned": "计划中",
+        "planned": "想修",
         "interested": "想修",
         "not_taken": "未修"
       },
       "noAcademicStatus": "这门课还没有加入你的学业地图。",
-      "markInterested": "标记感兴趣",
-      "cancelInterested": "取消感兴趣",
-      "loginToMark": "登录后标记感兴趣",
-      "interestSaved": "已标记为感兴趣。",
-      "interestRemoved": "已取消感兴趣。",
+      "markInterested": "标记想修",
+      "cancelInterested": "取消想修",
+      "loginToMark": "登录后标记想修",
+      "interestSaved": "已标记为想修。",
+      "interestRemoved": "已取消想修。",
       "interestFailed": "更新学业地图失败。",
-      "strongStatusNote": "已修、在修或已规划状态优先于感兴趣，当前阶段暂不在这里编辑。",
+      "strongStatusNote": "已修或在修状态优先于想修，当前阶段暂不在这里编辑。",
       "activePlannerSemester": "当前排课学期：{semester}",
       "plannerLoadFailed": "排课车状态加载失败，请稍后重试。",
       "plannerStatus": {
@@ -992,8 +995,10 @@
       "notUploaded": "未上传"
     },
     "import": {
-      "title": "导入课程历史",
-      "copyPrefix": "你可以从SIS系统中一键导入课程历史：",
+      "title": "导入已修/在修课程",
+      "copyPrefix": "SIS复制粘贴导入指引：",
+      "methodLabel": "导入方式",
+      "sisMethod": "SIS批量导入",
       "exampleLink": "示意图",
       "placeholder": "粘贴类似：AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
       "parse": "解析",
@@ -1001,7 +1006,7 @@
       "save": "保存课程",
       "saving": "保存中...",
       "keepGrades": "上传成绩",
-      "keepGradesCopy": "成绩仅你自己可见，取消后GPA计算、个性化推荐等功能将无法使用。",
+      "keepGradesCopy": "成绩仅自己可见，用于 GPA 计算。",
       "previewTitle": "预览 {count} 门课程",
       "exampleTitle": "示意图",
       "example": {
@@ -1024,14 +1029,39 @@
       "courseTitle": "课程名称",
       "noTerm": "未填写学期",
       "remove": "移除课程",
-      "needsReview": "这门课需要你确认状态或匹配结果。"
+      "needsReview": "这门课需要你确认状态或匹配结果。",
+      "picker": {
+        "open": "按课程选择",
+        "title": "按课程选择",
+        "search": "搜索前缀或课程代码...",
+        "allCourses": "全部课程",
+        "cartTitle": "已选 {count} 门",
+        "empty": "还未选择课程",
+        "add": "加入",
+        "selected": "已选",
+        "pendingAdd": "新增",
+        "added": "已导入",
+        "removeImported": "移除",
+        "pendingRemove": "待移除",
+        "cancelRemove": "取消移除",
+        "statusLabel": "课程状态",
+        "termLabel": "学期",
+        "termPlaceholder": "选择学期（必选）",
+        "gradePlaceholder": "成绩/GPA（可选）",
+        "defaultStatus": "默认导入为已修",
+        "missingTerm": "还有 {count} 门新增课程需要选择学期",
+        "importSelected": "导入 {count} 门",
+        "removeSelected": "移除 {count} 门",
+        "applyMixed": "移除 {removalCount} 门，导入 {importCount} 门",
+        "loadFailed": "课程加载失败"
+      }
     },
     "status": {
       "completed": "已修",
       "in_progress": "在修",
-      "planned": "计划",
-      "interested": "感兴趣",
-      "not_interested": "不考虑"
+      "planned": "想修",
+      "interested": "想修",
+      "not_interested": "未修"
     },
     "privacy": {
       "title": "成绩隐私",
@@ -1048,12 +1078,12 @@
       "signals": {
         "courseHistory": "已修/在修记录",
         "targetMajors": "目标专业变化",
-        "statusIntent": "计划与兴趣",
+        "statusIntent": "想修状态",
         "privateGrades": "私密成绩"
       }
     },
     "requirements": {
-      "title": "Requirement Matrix",
+      "title": "专业要求总览",
       "empty": "选择入学年份和目标专业后，这里会显示专业要求矩阵。",
       "emptyMissingProfile": "请选择入学年份和目标专业后生成专业要求矩阵。",
       "emptyMissingCatalog": "当前后端还没有这个入学年份/专业的要求数据，请先同步专业要求材料。",
@@ -1115,17 +1145,25 @@
     },
     "records": {
       "title": "课程状态库",
-      "copy": "把每门课标成已修、在修、计划或感兴趣，之后系统才能理解你真正的学业路径。",
+      "copy": "把每门课标成已修、在修、想修或未修，之后系统才能理解你真正的学业路径。",
+      "summary": "{count} 门课程",
       "empty": "还没有课程记录。先从 Course History 粘贴导入一批课程吧。",
       "noTerm": "未分配学期",
       "untitled": "未填写课程名称",
       "privateGrade": "私密成绩 {grade}",
+      "statusLabel": "状态",
+      "gpaLabel": "GPA",
+      "gpaPlaceholder": "-",
+      "gpaAria": "修改 {course} 的 GPA",
+      "addToCart": "将 {course} 加入排课车",
+      "removeFromCart": "将 {course} 从排课车移除",
       "delete": "删除课程"
     },
     "messages": {
       "profileSaved": "目标专业已更新。",
       "parsed": "已解析 {count} 条课程记录，请确认后保存。",
       "importSaved": "课程记录已保存。",
+      "importChangesSaved": "课程变更已保存。",
       "recordDeleted": "课程记录已删除。",
       "gradesDeleted": "已删除 {count} 条成绩记录。",
       "recordsCleared": "已清空 {count} 条课程记录。"
@@ -1146,7 +1184,7 @@
     },
     "courseDetail": {
       "title": "加入我的学业地图",
-      "copy": "把这门课标成计划或感兴趣，之后会成为规划推荐的上下文。",
+      "copy": "把这门课标成想修，之后会成为规划推荐的上下文。",
       "saved": "已更新到学业地图。",
       "saveFailed": "更新学业地图失败，请稍后重试。"
     }

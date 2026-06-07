@@ -12,7 +12,9 @@ export type CourseOverviewPlannerStatus =
   | 'unavailable'
 
 export function getCourseOverviewAcademicState(record: Pick<AcademicCourseRecord, 'status'> | null) {
-  const status: CourseOverviewAcademicDisplayStatus = record?.status === 'not_interested'
+  const status: CourseOverviewAcademicDisplayStatus = record?.status === 'planned'
+    ? 'interested'
+    : record?.status === 'not_interested'
     ? 'not_taken'
     : record?.status || 'not_taken'
   const canToggleInterest = status === 'not_taken' || status === 'interested'

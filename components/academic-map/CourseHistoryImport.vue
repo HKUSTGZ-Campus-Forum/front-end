@@ -4,11 +4,12 @@ import type { AcademicCourseRecord } from '~/types/academic-map'
 const props = defineProps<{
   parsing?: boolean
   saving?: boolean
+  existingRecords?: AcademicCourseRecord[]
 }>()
 
 const emit = defineEmits<{
   (e: 'parse', value: string): void
-  (e: 'save', value: { records: AcademicCourseRecord[]; keepGrades: boolean }): void
+  (e: 'save', value: { records: AcademicCourseRecord[]; keepGrades: boolean; deleteRecords?: AcademicCourseRecord[] }): void
 }>()
 
 const { t } = useI18n()
@@ -16,6 +17,7 @@ const { t } = useI18n()
 const pasteText = ref('')
 const previewRows = ref<AcademicCourseRecord[]>([])
 const keepGrades = ref(true)
+const pickerVisible = ref(false)
 const exampleImageUrl = '/image/academic-map/sis-course-history-example.png'
 
 const hasRows = computed(() => previewRows.value.length > 0)
@@ -48,6 +50,11 @@ const save = () => {
   })
 }
 
+const savePickedCourses = (payload: { records: AcademicCourseRecord[]; keepGrades: boolean; deleteRecords?: AcademicCourseRecord[] }) => {
+  emit('save', payload)
+  pickerVisible.value = false
+}
+
 defineExpose({ setRows })
 </script>
 
@@ -56,17 +63,25 @@ defineExpose({ setRows })
     <div class="am-section-head">
       <div>
         <h2>{{ t('academicMap.import.title') }}</h2>
-        <p>
-          {{ t('academicMap.import.copyPrefix') }}
-          <a class="am-example-link" :href="exampleImageUrl" target="_blank" rel="noopener noreferrer">
-            {{ t('academicMap.import.exampleLink') }}
-          </a>
-        </p>
       </div>
-      <button class="am-primary-btn" :disabled="props.parsing || !pasteText.trim()" type="button" @click="parse">
-        {{ props.parsing ? t('academicMap.import.parsing') : t('academicMap.import.parse') }}
+    </div>
+
+    <div class="am-import-methods">
+      <span>{{ t('academicMap.import.methodLabel') }}</span>
+      <button class="am-method-btn active" type="button">
+        {{ t('academicMap.import.sisMethod') }}
+      </button>
+      <button class="am-method-btn" type="button" @click="pickerVisible = true">
+        {{ t('academicMap.import.picker.open') }}
       </button>
     </div>
+
+    <p class="am-sis-hint">
+      {{ t('academicMap.import.copyPrefix') }}
+      <a class="am-example-link" :href="exampleImageUrl" target="_blank" rel="noopener noreferrer">
+        {{ t('academicMap.import.exampleLink') }}
+      </a>
+    </p>
 
     <textarea
       v-model="pasteText"
@@ -74,6 +89,12 @@ defineExpose({ setRows })
       :placeholder="t('academicMap.import.placeholder')"
       rows="7"
     />
+
+    <div class="am-parse-row">
+      <button class="am-primary-btn" :disabled="props.parsing || !pasteText.trim()" type="button" @click="parse">
+        {{ props.parsing ? t('academicMap.import.parsing') : t('academicMap.import.parse') }}
+      </button>
+    </div>
 
     <label class="am-grade-toggle">
       <input v-model="keepGrades" type="checkbox" />
@@ -128,7 +149,13 @@ defineExpose({ setRows })
         </article>
       </div>
     </div>
-
+    <AcademicMapCoursePickerImport
+      :visible="pickerVisible"
+      :saving="props.saving"
+      :existing-records="props.existingRecords || []"
+      @close="pickerVisible = false"
+      @save="savePickedCourses"
+    />
   </section>
 </template>
 
@@ -193,6 +220,67 @@ defineExpose({ setRows })
     cursor: not-allowed;
     opacity: 0.65;
   }
+}
+
+.am-outline-btn,
+.am-method-btn {
+  align-items: center;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-focus);
+  border-radius: 999px;
+  color: var(--interactive-active);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.am-import-methods {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  > span {
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    font-weight: 800;
+    margin-right: 2px;
+  }
+}
+
+.am-method-btn {
+  border-color: var(--border-secondary);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  inline-size: 106px;
+  min-height: 36px;
+  padding: 0 12px;
+
+  &.active,
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--interactive-primary) 34%, transparent);
+    color: var(--interactive-active);
+  }
+}
+
+.am-sis-hint {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.am-parse-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 .am-paste-box {
@@ -349,6 +437,10 @@ defineExpose({ setRows })
   .am-row-side {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .am-parse-row {
+    justify-content: flex-start;
   }
 }
 </style>

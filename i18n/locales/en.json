@@ -788,6 +788,9 @@
       "notTaken": "Not taken",
       "interested": "Want"
     },
+    "relation": {
+      "other": "Other"
+    },
     "actions": {
       "addToPlanner": "Add to planner",
       "addToPlannerCart": "Add to planner cart",
@@ -876,7 +879,7 @@
       "teacherTbd": "Instructor TBD",
       "openOffering": "View term details",
       "offeringContextTitle": "Term page",
-      "offeringContextCopy": "This page keeps reviews, discussion, and scheduling context for this term. Course-level details and interest live on the course overview.",
+      "offeringContextCopy": "This page keeps reviews, discussion, and scheduling context for this term. Course-level details and want-to-take status live on the course overview.",
       "rulesEyebrow": "Course rules",
       "rulesTitle": "Prerequisites, corequisites, and exclusions",
       "noRules": "No prerequisite, corequisite, or exclusion information yet.",
@@ -889,18 +892,18 @@
       "academicStatus": {
         "completed": "Completed",
         "in_progress": "In progress",
-        "planned": "Planned",
+        "planned": "Want to take",
         "interested": "Want to take",
         "not_taken": "Not taken"
       },
       "noAcademicStatus": "This course is not in your Academic Map yet.",
-      "markInterested": "Mark interested",
-      "cancelInterested": "Cancel interest",
-      "loginToMark": "Log in to mark interest",
-      "interestSaved": "Marked as interested.",
-      "interestRemoved": "Interest removed.",
+      "markInterested": "Mark want to take",
+      "cancelInterested": "Cancel want to take",
+      "loginToMark": "Log in to mark want to take",
+      "interestSaved": "Marked as want to take.",
+      "interestRemoved": "Want-to-take status removed.",
       "interestFailed": "Failed to update Academic Map.",
-      "strongStatusNote": "Completed, in-progress, or planned status takes priority over interest and is not edited here yet.",
+      "strongStatusNote": "Completed or in-progress status takes priority over want-to-take and is not edited here yet.",
       "activePlannerSemester": "Active planner term: {semester}",
       "plannerLoadFailed": "Planner cart status could not be loaded. Please try again later.",
       "plannerStatus": {
@@ -992,8 +995,10 @@
       "notUploaded": "Not uploaded"
     },
     "import": {
-      "title": "Import Course History",
-      "copyPrefix": "You can import course history from SIS in one click:",
+      "title": "Import Completed/In-Progress Courses",
+      "copyPrefix": "SIS copy-paste import guide:",
+      "methodLabel": "Import method",
+      "sisMethod": "SIS bulk import",
       "exampleLink": "example",
       "placeholder": "Paste something like: AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
       "parse": "Parse",
@@ -1001,7 +1006,7 @@
       "save": "Save courses",
       "saving": "Saving...",
       "keepGrades": "Upload grades",
-      "keepGradesCopy": "Grades are visible only to you. If you turn this off, GPA calculation and personalized recommendations will no longer work.",
+      "keepGradesCopy": "Grades stay private and power GPA.",
       "previewTitle": "Preview {count} courses",
       "exampleTitle": "Example",
       "example": {
@@ -1024,14 +1029,39 @@
       "courseTitle": "Course title",
       "noTerm": "No term",
       "remove": "Remove course",
-      "needsReview": "This course needs your confirmation."
+      "needsReview": "This course needs your confirmation.",
+      "picker": {
+        "open": "Choose courses",
+        "title": "Choose courses",
+        "search": "Search prefix or code...",
+        "allCourses": "All courses",
+        "cartTitle": "{count} selected",
+        "empty": "No courses selected",
+        "add": "Add",
+        "selected": "Selected",
+        "pendingAdd": "New",
+        "added": "Imported",
+        "removeImported": "Remove",
+        "pendingRemove": "Pending removal",
+        "cancelRemove": "Cancel removal",
+        "statusLabel": "Course status",
+        "termLabel": "Term",
+        "termPlaceholder": "Choose term (required)",
+        "gradePlaceholder": "Grade/GPA optional",
+        "defaultStatus": "Imports as completed",
+        "missingTerm": "{count} new courses still need a term",
+        "importSelected": "Import {count}",
+        "removeSelected": "Remove {count}",
+        "applyMixed": "Remove {removalCount}, import {importCount}",
+        "loadFailed": "Failed to load courses"
+      }
     },
     "status": {
       "completed": "Completed",
       "in_progress": "In progress",
-      "planned": "Planned",
-      "interested": "Interested",
-      "not_interested": "Not interested"
+      "planned": "Want to take",
+      "interested": "Want to take",
+      "not_interested": "Not taken"
     },
     "privacy": {
       "title": "Grade privacy",
@@ -1048,12 +1078,12 @@
       "signals": {
         "courseHistory": "Course history",
         "targetMajors": "Target major changes",
-        "statusIntent": "Plans and interest",
+        "statusIntent": "Want-to-take status",
         "privateGrades": "Private grades"
       }
     },
     "requirements": {
-      "title": "Requirement Matrix",
+      "title": "Program Requirements",
       "empty": "Choose a cohort and target major to show the requirement matrix here.",
       "emptyMissingProfile": "Choose a cohort and target major to generate the requirement matrix.",
       "emptyMissingCatalog": "The backend does not have requirement data for this cohort/major yet. Sync the curriculum requirement materials first.",
@@ -1115,17 +1145,25 @@
     },
     "records": {
       "title": "Course status library",
-      "copy": "Mark each course as completed, in progress, planned, or interested so the system can understand your real academic path later.",
+      "copy": "Mark each course as completed, in progress, wanted, or not taken so the system can understand your real academic path later.",
+      "summary": "{count} courses",
       "empty": "No course records yet. Paste your Course History to import a first batch.",
       "noTerm": "No term",
       "untitled": "Untitled course",
       "privateGrade": "Private grade {grade}",
+      "statusLabel": "Status",
+      "gpaLabel": "GPA",
+      "gpaPlaceholder": "-",
+      "gpaAria": "Edit GPA for {course}",
+      "addToCart": "Add {course} to planner cart",
+      "removeFromCart": "Remove {course} from planner cart",
       "delete": "Delete course"
     },
     "messages": {
       "profileSaved": "Target majors updated.",
       "parsed": "Parsed {count} course records. Review and save them when ready.",
       "importSaved": "Course records saved.",
+      "importChangesSaved": "Course changes saved.",
       "recordDeleted": "Course record deleted.",
       "gradesDeleted": "Deleted grades from {count} records.",
       "recordsCleared": "Cleared {count} course records."
@@ -1141,12 +1179,12 @@
     },
     "coursesCta": {
       "title": "Connect course reviews with your Academic Map",
-      "copy": "While browsing courses, open Academic Map to keep completed, in-progress, planned, and interested courses organized.",
+      "copy": "While browsing courses, open Academic Map to keep completed, in-progress, wanted, and not-taken courses organized.",
       "action": "Open Academic Map"
     },
     "courseDetail": {
       "title": "Add to my Academic Map",
-      "copy": "Mark this course as planned or interested so it becomes planning context later.",
+      "copy": "Mark this course as want to take so it becomes planning context later.",
       "saved": "Updated in Academic Map.",
       "saveFailed": "Failed to update Academic Map. Please try again later."
     }
