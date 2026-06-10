@@ -175,8 +175,14 @@
         "posts": "帖子",
         "comments": "评论",
         "files": "文件",
-        "gugu": "咕咕"
-      }
+        "gugu": "咕咕",
+        "feedbacks": "反馈",
+        "identityRequests": "身份申请",
+        "courseRecords": "课程记录",
+        "projects": "组队项目"
+      },
+      "chartTitle": "校园活动增长曲线",
+      "chartDescription": "按天对比用户、内容、反馈、身份、课程记录和组队项目的新增变化。"
     },
     "healthRows": {
       "courses": "课程与排课",
@@ -264,7 +270,18 @@
     "createdAt": "创建于 {date}",
     "emailVerified": "邮箱已认证",
     "emailUnverified": "邮箱未认证",
-    "deleted": "已删除"
+    "deleted": "已删除",
+    "charts": {
+      "roles": "角色分布",
+      "status": "账号状态",
+      "email": "邮箱认证",
+      "labels": {
+        "active": "正常账号",
+        "deleted": "已删除账号",
+        "emailVerified": "已认证邮箱",
+        "emailUnverified": "未认证邮箱"
+      }
+    }
   },
   "adminContent": {
     "title": "内容管理",
@@ -353,6 +370,16 @@
     "fileStats": {
       "size": "{size} 字节",
       "unknownMime": "未知类型"
+    },
+    "charts": {
+      "volume": "内容规模对比",
+      "deletion": "软删除占比",
+      "fileStatus": "文件状态分布",
+      "fileTypes": "文件类型分布",
+      "labels": {
+        "active": "可见内容",
+        "deleted": "已软删除"
+      }
     }
   },
   "adminDomains": {
@@ -406,6 +433,28 @@
       "validStsTokens": "有效 STS token",
       "oauthClients": "OAuth 客户端",
       "pushSubscriptions": "推送订阅"
+    },
+    "charts": {
+      "volume": "校园运营规模",
+      "courseStatus": "课程状态分布",
+      "projectStatus": "组队项目状态",
+      "contestTracks": "比赛投稿赛道",
+      "operations": "系统运营指标",
+      "labels": {
+        "active": "活跃",
+        "inactive": "未启用",
+        "deleted": "已删除",
+        "recruiting": "招募中",
+        "projectActive": "进行中",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "techTrack": "技术赛道",
+        "funTrack": "娱乐赛道",
+        "validTokens": "有效 STS",
+        "unreadNotifications": "未读通知",
+        "pushSubscriptions": "推送订阅",
+        "oauthClients": "OAuth 客户端"
+      }
     }
   },
   "adminAudit": {
@@ -435,7 +484,11 @@
       "next": "下一页",
       "page": "第 {page} / {pages} 页，共 {total} 条"
     },
-    "noNote": "无备注"
+    "noNote": "无备注",
+    "charts": {
+      "actions": "操作类型分布",
+      "targets": "目标对象分布"
+    }
   },
   "adminIdentity": {
     "title": "身份认证管理",
@@ -536,6 +589,10 @@
       "previous": "上一页",
       "next": "下一页",
       "page": "第 {page} / {pages} 页，共 {total} 条"
+    },
+    "charts": {
+      "status": "认证状态分布",
+      "types": "身份类型申请分布"
     }
   },
   "adminFeedback": {
@@ -616,7 +673,16 @@
     "feedbackId": "反馈 #{id}",
     "commentsEnded": "评论已结束",
     "emptyExcerpt": "暂无正文",
-    "notePlaceholder": "给用户或内部审核留下说明（可选）"
+    "notePlaceholder": "给用户或内部审核留下说明（可选）",
+    "charts": {
+      "feedbackStatus": "反馈状态分布",
+      "mergeStatus": "修改提案状态分布",
+      "pendingQueues": "待处理队列",
+      "labels": {
+        "pendingFeedback": "待公开反馈",
+        "pendingMerge": "待终审提案"
+      }
+    }
   },
   "footer": {
     "title": "UniKorn 科广汇",
@@ -1997,5 +2063,9 @@
       "sat": "周六",
       "sun": "周日"
     }
+  },
+  "adminCharts": {
+    "emptyTitle": "暂无可视化数据",
+    "emptyDescription": "当前统计还没有足够数据生成图表。"
   }
 }

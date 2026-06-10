@@ -1,5 +1,6 @@
 import type {
   AdminAuditLog,
+  AdminAuditSummary,
   AdminCommentsResponse,
   AdminContestSummary,
   AdminContentSummary,
@@ -70,6 +71,12 @@ export function useAdminConsole() {
     per_page: number
   }>(
     `/api/admin/audit-logs${buildQuery(query)}`,
+    {},
+    t("adminConsole.errors.loadAudit")
+  );
+
+  const getAuditSummary = () => request<AdminAuditSummary>(
+    "/api/admin/audit-logs/summary",
     {},
     t("adminConsole.errors.loadAudit")
   );
@@ -174,6 +181,7 @@ export function useAdminConsole() {
     getOverview,
     getOverviewTrends,
     getAuditLogs,
+    getAuditSummary,
     getUsers,
     updateUserRole,
     setUserDeleted,

@@ -71,6 +71,7 @@ export interface IdentityAdminCounts {
   rejected: number
   revoked: number
   total: number
+  by_type?: Record<string, number>
 }
 
 export interface IdentityAdminListQuery {

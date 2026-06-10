@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type {
+  AdminChartDatum,
   AdminContestSummary,
   AdminCoursesSummary,
+  AdminDistributionCounts,
   AdminMatchingSummary,
   AdminOperationsSummary,
 } from "~/types/admin";
@@ -26,6 +28,45 @@ const metricItems = computed(() => [
   { key: "offerings", label: t("adminDomains.metrics.offerings"), value: coursesSummary.value?.offerings ?? 0 },
   { key: "projects", label: t("adminDomains.metrics.projects"), value: matchingSummary.value?.projects ?? 0 },
   { key: "submissions", label: t("adminDomains.metrics.submissions"), value: contestSummary.value?.submissions ?? 0 },
+]);
+
+function distributionItems(source?: AdminDistributionCounts, labels: Record<string, string> = {}): AdminChartDatum[] {
+  return Object.entries(source || {})
+    .map(([label, value]) => ({ label: labels[label] || label, value }))
+    .filter((item) => item.value > 0);
+}
+
+const domainVolumeData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminDomains.sections.courses"), value: coursesSummary.value?.courses ?? 0 },
+  { label: t("adminDomains.labels.offerings"), value: coursesSummary.value?.offerings ?? 0 },
+  { label: t("adminDomains.sections.matching"), value: matchingSummary.value?.projects ?? 0 },
+  { label: t("adminDomains.sections.contest"), value: contestSummary.value?.submissions ?? 0 },
+  { label: t("adminDomains.labels.files"), value: operationsSummary.value?.files ?? 0 },
+]);
+
+const courseStatusData = computed(() => distributionItems(coursesSummary.value?.course_status, {
+  active: t("adminDomains.charts.labels.active"),
+  inactive: t("adminDomains.charts.labels.inactive"),
+  deleted: t("adminDomains.charts.labels.deleted"),
+}));
+
+const projectStatusData = computed(() => distributionItems(matchingSummary.value?.project_status, {
+  recruiting: t("adminDomains.charts.labels.recruiting"),
+  active: t("adminDomains.charts.labels.projectActive"),
+  completed: t("adminDomains.charts.labels.completed"),
+  cancelled: t("adminDomains.charts.labels.cancelled"),
+}));
+
+const contestTrackData = computed(() => distributionItems(contestSummary.value?.submission_tracks, {
+  tech: t("adminDomains.charts.labels.techTrack"),
+  fun: t("adminDomains.charts.labels.funTrack"),
+}));
+
+const operationsHealthData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminDomains.charts.labels.validTokens"), value: operationsSummary.value?.valid_sts_tokens ?? 0 },
+  { label: t("adminDomains.charts.labels.unreadNotifications"), value: operationsSummary.value?.unread_notifications ?? 0 },
+  { label: t("adminDomains.charts.labels.pushSubscriptions"), value: operationsSummary.value?.push_subscriptions ?? 0 },
+  { label: t("adminDomains.charts.labels.oauthClients"), value: operationsSummary.value?.oauth_clients ?? 0 },
 ]);
 
 const sections = computed(() => {
@@ -120,20 +161,30 @@ onMounted(loadOverview);
     <AdminStateBlock v-if="loading && !coursesSummary" :title="t('common.loading')" />
     <AdminStateBlock v-else-if="error" tone="error" :title="t('adminDomains.errors.title')" :message="error" />
 
-    <div v-else class="admin-domains__grid">
-      <article v-for="section in sections" :key="section.key" class="admin-domains__card">
-        <div>
-          <h2>{{ section.title }}</h2>
-          <p>{{ section.description }}</p>
-        </div>
-        <dl>
-          <div v-for="row in section.rows" :key="row[0]">
-            <dt>{{ row[0] }}</dt>
-            <dd>{{ row[1] }}</dd>
+    <template v-else>
+      <div class="admin-domains__charts">
+        <AdminBarChart :title="t('adminDomains.charts.volume')" :items="domainVolumeData" />
+        <AdminDonutChart :title="t('adminDomains.charts.courseStatus')" :items="courseStatusData" />
+        <AdminDonutChart :title="t('adminDomains.charts.projectStatus')" :items="projectStatusData" />
+        <AdminBarChart :title="t('adminDomains.charts.contestTracks')" :items="contestTrackData" />
+        <AdminBarChart :title="t('adminDomains.charts.operations')" :items="operationsHealthData" horizontal />
+      </div>
+
+      <div class="admin-domains__grid">
+        <article v-for="section in sections" :key="section.key" class="admin-domains__card">
+          <div>
+            <h2>{{ section.title }}</h2>
+            <p>{{ section.description }}</p>
           </div>
-        </dl>
-      </article>
-    </div>
+          <dl>
+            <div v-for="row in section.rows" :key="row[0]">
+              <dt>{{ row[0] }}</dt>
+              <dd>{{ row[1] }}</dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+    </template>
   </section>
 </template>
 
@@ -160,6 +211,12 @@ onMounted(loadOverview);
 }
 
 .admin-domains__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-domains__charts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
@@ -207,6 +264,7 @@ onMounted(loadOverview);
 }
 
 @media (max-width: 820px) {
+  .admin-domains__charts,
   .admin-domains__grid,
   .admin-domains__card dl {
     grid-template-columns: 1fr;

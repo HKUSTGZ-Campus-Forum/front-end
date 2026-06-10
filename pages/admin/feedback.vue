@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminChartDatum } from "~/types/admin";
 import type {
   Feedback,
   FeedbackMergeRequest,
@@ -79,6 +80,20 @@ const mergeStatusOptions = computed(() => [
   { value: "merged", label: t("feedbackModule.mergeRequest.status.merged") },
   { value: "admin_rejected", label: t("feedbackModule.mergeRequest.status.admin_rejected") },
   { value: "withdrawn", label: t("feedbackModule.mergeRequest.status.withdrawn") },
+]);
+
+function statusDistribution(source: Record<string, number>, options: Array<{ value: string; label: string }>): AdminChartDatum[] {
+  return options
+    .filter((option) => option.value)
+    .map((option) => ({ label: option.label, value: source[option.value] || 0 }))
+    .filter((item) => item.value > 0);
+}
+
+const feedbackStatusData = computed(() => statusDistribution(feedbackCounts.value, feedbackStatusOptions.value));
+const mergeStatusData = computed(() => statusDistribution(mergeCounts.value, mergeStatusOptions.value));
+const pendingQueueData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminFeedback.charts.labels.pendingFeedback"), value: pendingFeedbacks.value.length },
+  { label: t("adminFeedback.charts.labels.pendingMerge"), value: pendingMergeRequests.value.length },
 ]);
 
 function excerpt(value?: string | null) {
@@ -216,6 +231,12 @@ onMounted(loadBoard);
     </AdminPageHeader>
 
     <AdminMetricStrip :items="metricItems" />
+
+    <div class="admin-feedback__charts">
+      <AdminDonutChart :title="t('adminFeedback.charts.feedbackStatus')" :items="feedbackStatusData" />
+      <AdminDonutChart :title="t('adminFeedback.charts.mergeStatus')" :items="mergeStatusData" />
+      <AdminBarChart :title="t('adminFeedback.charts.pendingQueues')" :items="pendingQueueData" />
+    </div>
 
     <p v-if="notice" class="admin-feedback__notice" :class="`admin-feedback__notice--${notice.type}`">
       {{ notice.message }}
@@ -515,6 +536,12 @@ onMounted(loadBoard);
   gap: 1rem;
 }
 
+.admin-feedback__charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .admin-feedback-row__actions {
   display: grid;
   justify-items: end;
@@ -552,6 +579,7 @@ onMounted(loadBoard);
 
 @media (max-width: 900px) {
   .admin-feedback__queues,
+  .admin-feedback__charts,
   .admin-feedback-row {
     grid-template-columns: 1fr;
   }

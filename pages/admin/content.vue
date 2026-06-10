@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { AdminComment, AdminContentSummary, AdminFile, AdminGuguMessage, AdminPost } from "~/types/admin";
+import type {
+  AdminChartDatum,
+  AdminComment,
+  AdminContentSummary,
+  AdminDistributionCounts,
+  AdminFile,
+  AdminGuguMessage,
+  AdminPost,
+} from "~/types/admin";
 
 definePageMeta({
   middleware: "admin",
@@ -45,6 +53,40 @@ const metricItems = computed(() => [
   { key: "files", label: t("adminContent.metrics.files"), value: summary.value?.files.total ?? 0 },
   { key: "gugu", label: t("adminContent.metrics.gugu"), value: summary.value?.gugu.messages ?? 0 },
 ]);
+
+function metricNumber(source: Record<string, unknown> | undefined, key: string) {
+  const value = source?.[key];
+  return typeof value === "number" ? value : 0;
+}
+
+function distributionItems(source?: AdminDistributionCounts, labels: Record<string, string> = {}): AdminChartDatum[] {
+  return Object.entries(source || {})
+    .map(([label, value]) => ({ label: labels[label] || label, value }))
+    .filter((item) => item.value > 0);
+}
+
+const contentVolumeData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminContent.tabs.posts"), value: metricNumber(summary.value?.posts, "total") },
+  { label: t("adminContent.tabs.comments"), value: metricNumber(summary.value?.comments, "total") },
+  { label: t("adminContent.tabs.gugu"), value: metricNumber(summary.value?.gugu, "messages") },
+  { label: t("adminContent.tabs.files"), value: metricNumber(summary.value?.files, "total") },
+]);
+
+const deletionData = computed<AdminChartDatum[]>(() => {
+  const blocks = [
+    summary.value?.posts,
+    summary.value?.comments,
+    summary.value?.gugu,
+    summary.value?.files,
+  ] as Array<Record<string, unknown> | undefined>;
+  return [
+    { label: t("adminContent.charts.labels.active"), value: blocks.reduce((sum, block) => sum + metricNumber(block, "active"), 0) },
+    { label: t("adminContent.charts.labels.deleted"), value: blocks.reduce((sum, block) => sum + metricNumber(block, "deleted"), 0) },
+  ];
+});
+
+const fileStatusData = computed(() => distributionItems(summary.value?.files.status as AdminDistributionCounts | undefined));
+const fileTypeData = computed(() => distributionItems(summary.value?.files.file_type as AdminDistributionCounts | undefined));
 
 function setNotice(type: "success" | "error", message: string) {
   notice.value = { type, message };
@@ -179,6 +221,13 @@ onMounted(loadContent);
     </AdminPageHeader>
 
     <AdminMetricStrip :items="metricItems" />
+
+    <div class="admin-content__charts">
+      <AdminBarChart :title="t('adminContent.charts.volume')" :items="contentVolumeData" />
+      <AdminDonutChart :title="t('adminContent.charts.deletion')" :items="deletionData" />
+      <AdminDonutChart :title="t('adminContent.charts.fileStatus')" :items="fileStatusData" />
+      <AdminBarChart :title="t('adminContent.charts.fileTypes')" :items="fileTypeData" horizontal />
+    </div>
 
     <AdminFilterBar>
       <div class="admin-content__tabs">
@@ -350,6 +399,12 @@ onMounted(loadContent);
   gap: 0.65rem;
 }
 
+.admin-content__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .admin-content__notice {
   margin: 0;
   padding: 0.8rem 1rem;
@@ -407,6 +462,10 @@ onMounted(loadContent);
 }
 
 @media (max-width: 900px) {
+  .admin-content__charts {
+    grid-template-columns: 1fr;
+  }
+
   .admin-content__card {
     grid-template-columns: 1fr;
   }

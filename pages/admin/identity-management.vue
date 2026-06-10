@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminChartDatum } from "~/types/admin";
 import type {
   IdentityAdminCounts,
   IdentityAdminStatus,
@@ -91,6 +92,18 @@ const metricItems = computed(() => [
   { key: "rejected", label: t("adminIdentity.metrics.rejected"), value: counts.value.rejected },
   { key: "total", label: t("adminIdentity.metrics.total"), value: counts.value.total },
 ]);
+
+const statusDistribution = computed<AdminChartDatum[]>(() => statusOptions.value
+  .filter((option) => option.value)
+  .map((option) => ({
+    label: option.label,
+    value: counts.value[option.value as IdentityAdminStatus] || 0,
+  }))
+  .filter((item) => item.value > 0));
+
+const typeDistribution = computed<AdminChartDatum[]>(() => Object.entries(counts.value.by_type || {})
+  .map(([label, value]) => ({ label, value }))
+  .filter((item) => item.value > 0));
 
 const selectedCount = computed(() => selectedIds.value.size);
 const isAllPageSelected = computed(() => (
@@ -298,6 +311,11 @@ onMounted(refreshData);
     </AdminPageHeader>
 
     <AdminMetricStrip :items="metricItems" />
+
+    <div class="admin-identity__charts">
+      <AdminDonutChart :title="t('adminIdentity.charts.status')" :items="statusDistribution" />
+      <AdminBarChart :title="t('adminIdentity.charts.types')" :items="typeDistribution" horizontal />
+    </div>
 
     <AdminFilterBar>
       <label class="admin-identity__field">
@@ -637,6 +655,12 @@ onMounted(refreshData);
   color: var(--semantic-error);
 }
 
+.admin-identity__charts {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+}
+
 .admin-identity__list {
   display: grid;
   gap: 0.85rem;
@@ -926,6 +950,10 @@ onMounted(refreshData);
 }
 
 @media (max-width: 760px) {
+  .admin-identity__charts {
+    grid-template-columns: 1fr;
+  }
+
   .admin-identity-card {
     grid-template-columns: 1fr;
   }
