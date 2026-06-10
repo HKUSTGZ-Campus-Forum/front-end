@@ -6,7 +6,7 @@ import { useApi } from "~/composables/useApi";
 import { useAuth } from "~/composables/useAuth";
 import CourseToolsHeader from "~/components/courses/CourseToolsHeader.vue";
 import type { CourseOffering } from "~/utils/courseOffering";
-import { getSingleQueryValue } from "~/utils/courseOffering";
+import { buildCourseExploreCardPath, getSingleQueryValue } from "~/utils/courseOffering";
 
 definePageMeta({ layout: 'keguang' });
 
@@ -46,12 +46,11 @@ const availableCourseTypes = ref<any[]>([]);
 
 // Extract course number from code like "AIAA 1010" -> 1010
 const getCourseNumber = (code: string): number => {
-  const parts = code.split(/\s+/);
-  if (parts.length >= 2) {
-    const num = parseInt(parts[1]);
-    return isNaN(num) ? 0 : num;
-  }
-  return 0;
+  const compact = String(code || "").replace(/\s+/g, "").toUpperCase();
+  const match = compact.match(/[A-Z]+(\d+)/);
+  if (!match) return 0;
+  const num = parseInt(match[1], 10);
+  return Number.isNaN(num) ? 0 : num;
 };
 
 // Filter courses by stage (UG/PG) on frontend
@@ -280,7 +279,7 @@ onMounted(() => { fetchFiltersData(); });
         v-for="course in filteredCourses"
         :key="course.id"
         :to="getLocalePath({
-          path: `/courses/${course.code.replace(/[^A-Za-z0-9]+/g, '')}`,
+          path: buildCourseExploreCardPath(course.code, selectedSemester, availableSemesters),
           query: courseListReturnQuery,
         })"
         class="kg-course-card"

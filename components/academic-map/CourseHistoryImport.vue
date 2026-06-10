@@ -4,36 +4,27 @@ import type { AcademicCourseRecord } from '~/types/academic-map'
 const props = defineProps<{
   parsing?: boolean
   saving?: boolean
+  existingRecords?: AcademicCourseRecord[]
+  draftStorageKey?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'parse', value: string): void
-  (e: 'save', value: { records: AcademicCourseRecord[]; keepGrades: boolean }): void
+  (e: 'save', value: { records: AcademicCourseRecord[]; keepGrades: boolean; deleteRecords?: AcademicCourseRecord[] }): void
 }>()
 
 const { t } = useI18n()
 
 const pasteText = ref('')
-const previewRows = ref<AcademicCourseRecord[]>([])
-const keepGrades = ref(true)
+const pickerVisible = ref(false)
+const pickerRef = ref<InstanceType<typeof AcademicMapCoursePickerImport> | null>(null)
 const exampleImageUrl = '/image/academic-map/sis-course-history-example.png'
 
-const hasRows = computed(() => previewRows.value.length > 0)
-
 const setRows = (rows: AcademicCourseRecord[]) => {
-  previewRows.value = rows.map(row => ({
-    ...row,
-    status: row.status || 'completed',
-    keep_grade: keepGrades.value && !!row.grade,
-  }))
-}
-
-const updateRow = (index: number, patch: Partial<AcademicCourseRecord>) => {
-  previewRows.value[index] = { ...previewRows.value[index], ...patch }
-}
-
-const removeRow = (index: number) => {
-  previewRows.value = previewRows.value.filter((_, rowIndex) => rowIndex !== index)
+  pickerVisible.value = true
+  nextTick(() => {
+    pickerRef.value?.mergeImportedRows(rows)
+  })
 }
 
 const parse = () => {
@@ -41,11 +32,9 @@ const parse = () => {
   emit('parse', pasteText.value)
 }
 
-const save = () => {
-  emit('save', {
-    records: previewRows.value,
-    keepGrades: keepGrades.value,
-  })
+const savePickedCourses = (payload: { records: AcademicCourseRecord[]; keepGrades: boolean; deleteRecords?: AcademicCourseRecord[] }) => {
+  emit('save', payload)
+  pickerVisible.value = false
 }
 
 defineExpose({ setRows })
@@ -56,17 +45,25 @@ defineExpose({ setRows })
     <div class="am-section-head">
       <div>
         <h2>{{ t('academicMap.import.title') }}</h2>
-        <p>
-          {{ t('academicMap.import.copyPrefix') }}
-          <a class="am-example-link" :href="exampleImageUrl" target="_blank" rel="noopener noreferrer">
-            {{ t('academicMap.import.exampleLink') }}
-          </a>
-        </p>
       </div>
-      <button class="am-primary-btn" :disabled="props.parsing || !pasteText.trim()" type="button" @click="parse">
-        {{ props.parsing ? t('academicMap.import.parsing') : t('academicMap.import.parse') }}
+    </div>
+
+    <div class="am-import-methods">
+      <span>{{ t('academicMap.import.methodLabel') }}</span>
+      <button class="am-method-btn active" type="button">
+        {{ t('academicMap.import.sisMethod') }}
+      </button>
+      <button class="am-method-btn" type="button" @click="pickerVisible = true">
+        {{ t('academicMap.import.picker.open') }}
       </button>
     </div>
+
+    <p class="am-sis-hint">
+      {{ t('academicMap.import.copyPrefix') }}
+      <a class="am-example-link" :href="exampleImageUrl" target="_blank" rel="noopener noreferrer">
+        {{ t('academicMap.import.exampleLink') }}
+      </a>
+    </p>
 
     <textarea
       v-model="pasteText"
@@ -75,60 +72,21 @@ defineExpose({ setRows })
       rows="7"
     />
 
-    <label class="am-grade-toggle">
-      <input v-model="keepGrades" type="checkbox" />
-      <span>
-        <strong>{{ t('academicMap.import.keepGrades') }}</strong>
-        <small>{{ t('academicMap.import.keepGradesCopy') }}</small>
-      </span>
-    </label>
-
-    <div v-if="hasRows" class="am-preview">
-      <div class="am-preview-head">
-        <h3>{{ t('academicMap.import.previewTitle', { count: previewRows.length }) }}</h3>
-        <button class="am-primary-btn" :disabled="props.saving || previewRows.length === 0" type="button" @click="save">
-          {{ props.saving ? t('academicMap.import.saving') : t('academicMap.import.save') }}
-        </button>
-      </div>
-
-      <div class="am-preview-list">
-        <article v-for="(row, index) in previewRows" :key="`${row.course_code}-${index}`" class="am-preview-row">
-          <div class="am-row-main">
-            <input
-              :value="row.course_code"
-              class="am-code-input"
-              @input="updateRow(index, { course_code: ($event.target as HTMLInputElement).value.toUpperCase() })"
-            />
-            <div class="am-row-copy">
-              <input
-                :value="row.course_title || ''"
-                class="am-title-input"
-                :placeholder="t('academicMap.import.courseTitle')"
-                @input="updateRow(index, { course_title: ($event.target as HTMLInputElement).value })"
-              />
-              <span>{{ row.term_label || t('academicMap.import.noTerm') }} / {{ row.units || 0 }} {{ t('academicMap.units') }}</span>
-            </div>
-          </div>
-
-          <div class="am-row-side">
-            <AcademicMapCourseStatusChips
-              :model-value="row.status"
-              compact
-              @update:model-value="updateRow(index, { status: $event })"
-            />
-            <span v-if="keepGrades && row.grade" class="am-grade-pill">{{ row.grade }}</span>
-            <button class="am-icon-btn" type="button" :aria-label="t('academicMap.import.remove')" @click="removeRow(index)">
-              x
-            </button>
-          </div>
-
-          <p v-if="row.needs_review" class="am-review-note">
-            {{ row.review_reason || t('academicMap.import.needsReview') }}
-          </p>
-        </article>
-      </div>
+    <div class="am-parse-row">
+      <button class="am-primary-btn" :disabled="props.parsing || !pasteText.trim()" type="button" @click="parse">
+        {{ props.parsing ? t('academicMap.import.parsing') : t('academicMap.import.parse') }}
+      </button>
     </div>
 
+    <AcademicMapCoursePickerImport
+      ref="pickerRef"
+      :visible="pickerVisible"
+      :saving="props.saving"
+      :existing-records="props.existingRecords || []"
+      :draft-storage-key="props.draftStorageKey"
+      @close="pickerVisible = false"
+      @save="savePickedCourses"
+    />
   </section>
 </template>
 
@@ -193,6 +151,67 @@ defineExpose({ setRows })
     cursor: not-allowed;
     opacity: 0.65;
   }
+}
+
+.am-outline-btn,
+.am-method-btn {
+  align-items: center;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-focus);
+  border-radius: 999px;
+  color: var(--interactive-active);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.am-import-methods {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  > span {
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    font-weight: 800;
+    margin-right: 2px;
+  }
+}
+
+.am-method-btn {
+  border-color: var(--border-secondary);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  inline-size: 106px;
+  min-height: 36px;
+  padding: 0 12px;
+
+  &.active,
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--interactive-primary) 34%, transparent);
+    color: var(--interactive-active);
+  }
+}
+
+.am-sis-hint {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.am-parse-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 .am-paste-box {
@@ -349,6 +368,10 @@ defineExpose({ setRows })
   .am-row-side {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .am-parse-row {
+    justify-content: flex-start;
   }
 }
 </style>

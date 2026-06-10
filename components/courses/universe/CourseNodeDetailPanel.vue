@@ -23,11 +23,10 @@ const overviewTo = computed(() => (
     ? getLocalePath({ path: `/courses/${props.node.code}`, query: { from: 'universe' } })
     : getLocalePath('/courses')
 ))
-const isInterested = computed(() => props.academicStatus === 'interested')
+const isInterested = computed(() => props.academicStatus === 'interested' || props.academicStatus === 'planned')
 const hasStrongStatus = computed(() => (
   props.academicStatus === 'completed'
   || props.academicStatus === 'in_progress'
-  || props.academicStatus === 'planned'
 ))
 </script>
 

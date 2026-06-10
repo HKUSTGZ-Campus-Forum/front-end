@@ -50,7 +50,7 @@
     "feedback": "反馈",
     "admin": "管理员",
     "courses": "课程",
-    "academicMap": "学业地图",
+    "academicMap": "学业进度",
     "activity": "活动",
     "teamMatching": "组队",
     "users": "用户",
@@ -88,8 +88,12 @@
     "description": "统一处理反馈审核、身份认证和后续站务工具，先把入口和导航搭稳，后面的反馈审核页就能直接接进来。",
     "nav": {
       "overview": "概览",
+      "users": "用户",
+      "content": "内容",
       "feedback": "反馈审核",
-      "identity": "身份认证"
+      "identity": "身份认证",
+      "domains": "数据与运维",
+      "audit": "审计日志"
     }
   },
   "adminOverview": {
@@ -103,14 +107,35 @@
       "pendingFeedback": "待公开反馈",
       "pendingMerge": "待终审 Merge",
       "pendingIdentity": "待审核身份",
-      "feedbackTotal": "已公开反馈"
+      "feedbackTotal": "已公开反馈",
+      "activeUsers": "活跃用户",
+      "usersTotal": "用户总数",
+      "adminUsers": "管理员",
+      "postsTotal": "帖子",
+      "commentsTotal": "评论",
+      "coursesTotal": "课程",
+      "projectsTotal": "项目",
+      "auditRecent": "近期日志"
     },
     "status": {
       "loadFailed": "部分后台统计加载失败。",
       "moduleError": "统计暂不可用"
     },
     "modulesTitle": "后台模块",
+    "healthTitle": "领域健康度",
+    "activityTitle": "近期管理操作",
+    "activityEmpty": "暂无管理操作记录",
     "cards": {
+      "users": {
+        "title": "用户与角色",
+        "description": "搜索账号，查看认证状态，调整角色，并软删除或恢复用户。",
+        "action": "打开用户管理"
+      },
+      "content": {
+        "title": "内容管理",
+        "description": "集中查看帖子、评论、上传文件、标签和咕咕墙活动。",
+        "action": "打开内容管理"
+      },
       "feedback": {
         "title": "反馈审核",
         "description": "审核待公开反馈，终审作者已接受的修改提案，并管理已发布反馈的讨论状态。",
@@ -120,8 +145,242 @@
         "title": "身份认证",
         "description": "审核待处理认证申请，并查看已认证、已拒绝或已撤销的身份记录。",
         "action": "打开身份认证"
+      },
+      "domains": {
+        "title": "课程、数据与运维",
+        "description": "监控课程、排课、Academic Map、组队、比赛、存储、OAuth 和通知系统。",
+        "action": "打开数据与运维"
+      },
+      "audit": {
+        "title": "审计日志",
+        "description": "追踪管理员操作的执行人、动作、目标、备注和时间。",
+        "action": "打开审计日志"
       }
     }
+  },
+  "adminConsole": {
+    "unknown": "未知",
+    "errors": {
+      "loadOverview": "加载管理概览失败。",
+      "loadAudit": "加载审计日志失败。",
+      "loadUsers": "加载用户失败。",
+      "updateUser": "更新用户失败。",
+      "loadContent": "加载内容失败。",
+      "updateContent": "更新内容失败。"
+    }
+  },
+  "adminUsers": {
+    "title": "用户管理",
+    "description": "搜索账号，按角色和认证状态筛选，并管理用户角色或软删除状态。",
+    "metrics": {
+      "total": "用户总数",
+      "verified": "邮箱已认证",
+      "deleted": "已删除用户",
+      "page": "当前显示"
+    },
+    "filters": {
+      "search": "搜索",
+      "searchPlaceholder": "用户名或邮箱",
+      "role": "角色",
+      "allRoles": "全部角色",
+      "deleted": "删除状态",
+      "allUsers": "全部用户",
+      "activeOnly": "仅活跃",
+      "deletedOnly": "仅已删除",
+      "email": "邮箱",
+      "allEmail": "全部邮箱状态",
+      "emailVerified": "已认证",
+      "emailUnverified": "未认证"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "apply": "应用筛选",
+      "delete": "删除",
+      "restore": "恢复"
+    },
+    "audit": {
+      "roleChange": "在管理后台调整角色",
+      "delete": "在管理后台软删除用户",
+      "restore": "在管理后台恢复用户"
+    },
+    "confirm": {
+      "delete": "确定软删除该用户吗？",
+      "restore": "确定恢复该用户吗？"
+    },
+    "messages": {
+      "roleUpdated": "角色已更新。",
+      "deleted": "用户已删除。",
+      "restored": "用户已恢复。"
+    },
+    "errors": {
+      "title": "加载失败"
+    },
+    "empty": {
+      "title": "暂无用户",
+      "description": "当前筛选条件下没有用户。"
+    },
+    "pagination": {
+      "label": "用户分页",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {page} / {pages} 页，共 {total} 条"
+    },
+    "noEmail": "未提供邮箱",
+    "createdAt": "创建于 {date}",
+    "emailVerified": "邮箱已认证",
+    "emailUnverified": "邮箱未认证",
+    "deleted": "已删除"
+  },
+  "adminContent": {
+    "title": "内容管理",
+    "description": "管理论坛帖子和评论，同时监控标签、文件和咕咕墙活动。",
+    "metrics": {
+      "posts": "帖子",
+      "comments": "评论",
+      "files": "文件",
+      "gugu": "咕咕消息"
+    },
+    "tabs": {
+      "posts": "帖子",
+      "comments": "评论"
+    },
+    "filters": {
+      "search": "搜索",
+      "searchPlaceholder": "标题或正文",
+      "deleted": "状态",
+      "all": "全部",
+      "active": "活跃",
+      "deletedOnly": "已删除"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "apply": "应用筛选",
+      "delete": "删除",
+      "restore": "恢复"
+    },
+    "audit": {
+      "deletePost": "在管理后台软删除帖子",
+      "restorePost": "在管理后台恢复帖子",
+      "deleteComment": "在管理后台软删除评论",
+      "restoreComment": "在管理后台恢复评论"
+    },
+    "confirm": {
+      "deletePost": "确定软删除该帖子吗？",
+      "restorePost": "确定恢复该帖子吗？",
+      "deleteComment": "确定软删除该评论吗？",
+      "restoreComment": "确定恢复该评论吗？"
+    },
+    "messages": {
+      "postDeleted": "帖子已删除。",
+      "postRestored": "帖子已恢复。",
+      "commentDeleted": "评论已删除。",
+      "commentRestored": "评论已恢复。"
+    },
+    "errors": {
+      "title": "加载失败"
+    },
+    "empty": {
+      "title": "暂无内容",
+      "description": "当前筛选条件下没有记录。"
+    },
+    "pagination": {
+      "label": "内容分页",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {page} / {pages} 页，共 {total} 条"
+    },
+    "createdAt": "创建于 {date}",
+    "commentPost": "帖子 #{id}",
+    "deleted": "已删除",
+    "postStats": {
+      "comments": "{count} 条评论",
+      "reactions": "{count} 个反应",
+      "views": "{count} 次浏览"
+    }
+  },
+  "adminDomains": {
+    "title": "数据与运维",
+    "description": "监控课程数据、Academic Map、组队、比赛、存储、OAuth、通知和推送基础设施。",
+    "metrics": {
+      "courses": "课程",
+      "offerings": "开课",
+      "projects": "项目",
+      "submissions": "投稿"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中..."
+    },
+    "errors": {
+      "title": "加载失败"
+    },
+    "sections": {
+      "courses": "课程与排课",
+      "academicMap": "Academic Map",
+      "matching": "组队匹配",
+      "contest": "比赛",
+      "operations": "系统运维"
+    },
+    "descriptions": {
+      "courses": "课程目录、开课、班级与上课时间数据健康度。",
+      "academicMap": "只展示培养方案与用户记录聚合健康度，不暴露私人绩点。",
+      "matching": "组队匹配子系统的项目和用户画像健康度。",
+      "contest": "比赛配置、组织者与投稿数量。",
+      "operations": "存储、STS、OAuth、通知和推送基础设施。"
+    },
+    "labels": {
+      "activeCourses": "活跃课程",
+      "offerings": "开课",
+      "sections": "班级",
+      "meetings": "上课时间",
+      "programs": "培养方案",
+      "requirementGroups": "要求组",
+      "academicProfiles": "学业档案",
+      "recordsNeedingReview": "待复核记录",
+      "projects": "项目",
+      "activeProjects": "活跃项目",
+      "profiles": "用户画像",
+      "activeProfiles": "活跃画像",
+      "contests": "比赛",
+      "activeContests": "活跃比赛",
+      "organizers": "组织者",
+      "submissions": "投稿",
+      "files": "文件",
+      "validStsTokens": "有效 STS token",
+      "oauthClients": "OAuth 客户端",
+      "pushSubscriptions": "推送订阅"
+    }
+  },
+  "adminAudit": {
+    "title": "审计日志",
+    "description": "追踪管理员操作的执行人、动作、目标、备注和时间。",
+    "filters": {
+      "action": "动作",
+      "actionPlaceholder": "user.role_update",
+      "target": "目标类型",
+      "targetPlaceholder": "user、post、comment"
+    },
+    "actions": {
+      "refresh": "刷新数据",
+      "refreshing": "刷新中...",
+      "apply": "应用筛选"
+    },
+    "errors": {
+      "title": "加载失败"
+    },
+    "empty": {
+      "title": "暂无审计日志",
+      "description": "管理员变更操作记录后会出现在这里。"
+    },
+    "pagination": {
+      "label": "审计日志分页",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第 {page} / {pages} 页，共 {total} 条"
+    },
+    "noNote": "无备注"
   },
   "adminIdentity": {
     "title": "身份认证管理",
@@ -755,21 +1014,21 @@
     }
   },
   "courseUniverse": {
-    "title": "课程宇宙",
+    "title": "课程图谱",
     "hubTitle": "课程图谱",
     "hubSubtitle": "查课程关系、看评价、排课和管理学业进度都从这里开始。",
     "subtitle": "从课程关系、评价、课表和毕业进度里找到下一门课。",
     "searchPlaceholder": "搜索课程代码、名称或要求...",
     "selectedSemester": "当前学期",
     "targetMajor": "目标专业",
-    "loading": "正在加载课程宇宙...",
+    "loading": "正在加载课程图谱...",
     "empty": "暂无课程图谱数据。",
     "selectCourse": "选择一门课程查看详情",
     "modes": {
       "universe": "图谱",
       "explore": "探索",
       "planner": "排课",
-      "academicMap": "学业地图"
+      "academicMap": "学业进度"
     },
     "legend": {
       "completed": "已修",
@@ -777,16 +1036,19 @@
       "notTaken": "未修",
       "interested": "想修",
       "prerequisite": "先修关系",
-      "corequisite": "共修关系（需同时修）",
-      "exclusion": "互斥关系（不可同修）",
-      "hollowLogic": "空心：任选其一",
-      "solidLogic": "实心：需全部满足"
+      "corequisite": "需同一学期修",
+      "exclusion": "互斥关系",
+      "hollowLogic": "任选其一",
+      "solidLogic": "需全部满足"
     },
     "statusShort": {
       "completed": "已修",
       "inProgress": "在修",
       "notTaken": "未修",
       "interested": "想修"
+    },
+    "relation": {
+      "other": "其他关系"
     },
     "actions": {
       "addToPlanner": "加入排课",
@@ -796,7 +1058,7 @@
       "openPlanner": "打开排课",
       "openReviews": "查看评价",
       "writeReview": "写评价",
-      "openAcademicMap": "打开学业地图",
+      "openAcademicMap": "打开学业进度",
       "markStatus": "更新学业状态",
       "graphControls": "图谱控制",
       "zoomIn": "放大图谱",
@@ -821,7 +1083,7 @@
       "notAvailable": "暂无信息"
     },
     "errors": {
-      "load": "课程宇宙加载失败，请稍后重试。",
+      "load": "课程图谱加载失败，请稍后重试。",
       "courseDetail": "课程详情加载失败。"
     }
   },
@@ -863,7 +1125,7 @@
       "metaTitle": "课程总览",
       "metaDescription": "查看 {course} 的课程总览、学业状态和相关开课记录。",
       "eyebrow": "课程总览",
-      "backToUniverse": "返回课程宇宙",
+      "backToUniverse": "返回课程图谱",
       "loadFailed": "课程总览加载失败",
       "offeringsEyebrow": "开课记录",
       "offeringsTitle": "开课学期",
@@ -876,7 +1138,7 @@
       "teacherTbd": "教师待定",
       "openOffering": "查看学期详情",
       "offeringContextTitle": "学期主页",
-      "offeringContextCopy": "本页集中展示该学期的评价、讨论和排课信息；课程级信息和感兴趣状态在课程总览中维护。",
+      "offeringContextCopy": "本页集中展示该学期的评价、讨论和排课信息；课程级信息和想修状态在课程总览中维护。",
       "rulesEyebrow": "课程规则",
       "rulesTitle": "先修、共修与互斥",
       "noRules": "暂无先修、共修或互斥信息。",
@@ -889,18 +1151,18 @@
       "academicStatus": {
         "completed": "已修",
         "in_progress": "在修",
-        "planned": "计划中",
+        "planned": "想修",
         "interested": "想修",
         "not_taken": "未修"
       },
-      "noAcademicStatus": "这门课还没有加入你的学业地图。",
-      "markInterested": "标记感兴趣",
-      "cancelInterested": "取消感兴趣",
-      "loginToMark": "登录后标记感兴趣",
-      "interestSaved": "已标记为感兴趣。",
-      "interestRemoved": "已取消感兴趣。",
-      "interestFailed": "更新学业地图失败。",
-      "strongStatusNote": "已修、在修或已规划状态优先于感兴趣，当前阶段暂不在这里编辑。",
+      "noAcademicStatus": "这门课还没有加入你的学业进度。",
+      "markInterested": "标记想修",
+      "cancelInterested": "取消想修",
+      "loginToMark": "登录后标记想修",
+      "interestSaved": "已标记为想修。",
+      "interestRemoved": "已取消想修。",
+      "interestFailed": "更新学业进度失败。",
+      "strongStatusNote": "已修或在修状态优先于想修，当前阶段暂不在这里编辑。",
       "activePlannerSemester": "当前排课学期：{semester}",
       "plannerLoadFailed": "排课车状态加载失败，请稍后重试。",
       "plannerStatus": {
@@ -910,7 +1172,7 @@
         "unavailable": "暂无排课数据"
       },
       "mapTitle": "回到图谱查看关系",
-      "mapCopy": "在课程宇宙中查看这门课与先修、共修、互斥课程之间的关系。",
+      "mapCopy": "在课程图谱中查看这门课与先修、共修、互斥课程之间的关系。",
       "openInMap": "在图谱中查看"
     },
     "offeringMissing": "当前学期不存在或未开设这门课",
@@ -943,7 +1205,8 @@
       "loadCourse": "获取课程详情失败",
       "loadDiscussions": "获取讨论区失败",
       "loadReviews": "获取评价失败",
-      "submitReview": "发布失败，请稍后重试"
+      "submitReview": "发布失败，请稍后重试",
+      "courseOfferingNotResolved": "无法确认这条评课对应的课程学期，请刷新页面后重试。"
     },
     "semester": {
       "spring": "春",
@@ -953,15 +1216,15 @@
     }
   },
   "academicMap": {
-    "metaTitle": "学业地图 - UniKorn",
-    "eyebrow": "Academic Map",
-    "title": "学业地图",
+    "metaTitle": "学业进度 - UniKorn",
+    "eyebrow": "学业进度",
+    "title": "学业进度",
     "openCourses": "去课程评价",
     "loading": "正在加载学业状态...",
     "cohort": "入学年份",
     "units": "学分",
     "login": {
-      "title": "登录后维护你的学业地图",
+      "title": "登录后维护你的学业进度",
       "copy": "这些信息只属于你。课程记录和成绩不会公开展示，后续会用于更精准的学业规划建议。"
     },
     "targetMajors": {
@@ -973,7 +1236,7 @@
       "minimum": "{count}",
       "activeCredits": "已修、在修、计划共 {count} 学分",
       "completedCredits": "已修{completed}学分，本学期正在修{inProgress}学分",
-      "mapCompleteness": "地图完整度",
+      "mapCompleteness": "进度完整度",
       "mapCompletenessCopy": "用于判断后续规划建议是否有足够上下文",
       "importedCourses": "已维护课程",
       "importedCoursesCopy": "来自粘贴导入或手动确认的课程记录",
@@ -991,8 +1254,10 @@
       "notUploaded": "未上传"
     },
     "import": {
-      "title": "导入课程历史",
-      "copyPrefix": "你可以从SIS系统中一键导入课程历史：",
+      "title": "导入已修/在修课程",
+      "copyPrefix": "SIS复制粘贴导入指引：",
+      "methodLabel": "导入方式",
+      "sisMethod": "SIS批量导入",
       "exampleLink": "示意图",
       "placeholder": "粘贴类似：AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
       "parse": "解析",
@@ -1000,7 +1265,7 @@
       "save": "保存课程",
       "saving": "保存中...",
       "keepGrades": "上传成绩",
-      "keepGradesCopy": "成绩仅你自己可见，取消后GPA计算、个性化推荐等功能将无法使用。",
+      "keepGradesCopy": "成绩仅自己可见，用于 GPA 计算。",
       "previewTitle": "预览 {count} 门课程",
       "exampleTitle": "示意图",
       "example": {
@@ -1023,36 +1288,62 @@
       "courseTitle": "课程名称",
       "noTerm": "未填写学期",
       "remove": "移除课程",
-      "needsReview": "这门课需要你确认状态或匹配结果。"
+      "needsReview": "这门课需要你确认状态或匹配结果。",
+      "picker": {
+        "open": "按课程选择",
+        "title": "按课程选择",
+        "search": "搜索前缀或课程代码...",
+        "allCourses": "全部课程",
+        "cartTitle": "已选 {count} 门",
+        "empty": "还未选择课程",
+        "add": "加入",
+        "selected": "已选",
+        "pendingAdd": "新增",
+        "pendingUpdate": "更新",
+        "added": "已导入",
+        "removeImported": "移除",
+        "pendingRemove": "待移除",
+        "cancelRemove": "取消移除",
+        "statusLabel": "课程状态",
+        "termLabel": "学期",
+        "termPlaceholder": "选择学期（必选）",
+        "gradePlaceholder": "成绩/GPA（可选）",
+        "defaultStatus": "默认导入为已修",
+        "missingTerm": "还有 {count} 门新增课程需要选择学期",
+        "importSelected": "导入 {count} 门",
+        "removeSelected": "移除 {count} 门",
+        "applyMixed": "移除 {removalCount} 门，导入 {importCount} 门",
+        "loadFailed": "课程加载失败"
+      }
     },
     "status": {
       "completed": "已修",
       "in_progress": "在修",
-      "planned": "计划",
-      "interested": "感兴趣",
-      "not_interested": "不考虑"
+      "planned": "想修",
+      "interested": "想修",
+      "not_interested": "未修"
     },
     "privacy": {
       "title": "成绩隐私",
       "copy": "成绩默认不会公开展示。你可以保留用于后续推荐，也可以现在或之后删除。",
       "deleteGrades": "删除所有成绩",
       "deleting": "删除中...",
-      "clearMap": "清空学业地图",
+      "clearMap": "清空学业进度",
       "clearingMap": "清空中...",
       "clearMapConfirm": "确定要清空当前账号的课程记录、入学年份和目标专业吗？这个操作不会影响其他用户。"
     },
     "future": {
       "title": "为未来规划系统收集的信号",
-      "copy": "当前版本不做推荐，重点是低负担地建立状态图。",
+      "copy": "当前版本不做推荐，重点是低负担地建立学业状态。",
       "signals": {
         "courseHistory": "已修/在修记录",
         "targetMajors": "目标专业变化",
-        "statusIntent": "计划与兴趣",
+        "statusIntent": "想修状态",
         "privateGrades": "私密成绩"
       }
     },
     "requirements": {
-      "title": "Requirement Matrix",
+      "title": "专业要求总览",
       "empty": "选择入学年份和目标专业后，这里会显示专业要求矩阵。",
       "emptyMissingProfile": "请选择入学年份和目标专业后生成专业要求矩阵。",
       "emptyMissingCatalog": "当前后端还没有这个入学年份/专业的要求数据，请先同步专业要求材料。",
@@ -1100,7 +1391,7 @@
       "overviewTitle": "怎么看这张矩阵",
       "overviewCopy": "点击任意要求行可以查看完整课程列表；点击顶部先修或成绩卡片可以看对应解释。",
       "gradesTitle": "OCGA / MCGA",
-      "gradesCopy": "成绩只用于你的私密学业地图，上传后才会计算。",
+      "gradesCopy": "成绩只用于你的私密学业进度，上传后才会计算。",
       "ocgaRule": "Overall CGA：所有计 grade point 的课程等权平均。",
       "mcgaRule": "Major CGA：按当前专业要求中计入的课程估算，等权平均。",
       "gradePrivacy": "成绩默认不公开展示，也可以随时删除；没有上传成绩时显示未上传。",
@@ -1114,40 +1405,48 @@
     },
     "records": {
       "title": "课程状态库",
-      "copy": "把每门课标成已修、在修、计划或感兴趣，之后系统才能理解你真正的学业路径。",
+      "copy": "把每门课标成已修、在修、想修或未修，之后系统才能理解你真正的学业路径。",
+      "summary": "{count} 门课程",
       "empty": "还没有课程记录。先从 Course History 粘贴导入一批课程吧。",
       "noTerm": "未分配学期",
       "untitled": "未填写课程名称",
       "privateGrade": "私密成绩 {grade}",
+      "statusLabel": "状态",
+      "gpaLabel": "GPA",
+      "gpaPlaceholder": "-",
+      "gpaAria": "修改 {course} 的 GPA",
+      "addToCart": "将 {course} 加入排课车",
+      "removeFromCart": "将 {course} 从排课车移除",
       "delete": "删除课程"
     },
     "messages": {
       "profileSaved": "目标专业已更新。",
       "parsed": "已解析 {count} 条课程记录，请确认后保存。",
       "importSaved": "课程记录已保存。",
+      "importChangesSaved": "课程变更已保存。",
       "recordDeleted": "课程记录已删除。",
       "gradesDeleted": "已删除 {count} 条成绩记录。",
       "recordsCleared": "已清空 {count} 条课程记录。"
     },
     "errors": {
-      "load": "学业地图加载失败，请稍后重试。",
+      "load": "学业进度加载失败，请稍后重试。",
       "profile": "保存目标专业失败，请稍后重试。",
       "parse": "解析失败，请检查粘贴内容。",
       "importSave": "保存课程记录失败，请稍后重试。",
       "record": "更新课程记录失败，请稍后重试。",
       "grades": "删除成绩失败，请稍后重试。",
-      "clearRecords": "清空学业地图失败，请稍后重试。"
+      "clearRecords": "清空学业进度失败，请稍后重试。"
     },
     "coursesCta": {
-      "title": "把课程评价和学业地图连起来",
-      "copy": "查课时可以顺手打开学业地图，把想修、在修、已修的状态维护起来。",
-      "action": "打开学业地图"
+      "title": "把课程评价和学业进度连起来",
+      "copy": "查课时可以顺手打开学业进度，把想修、在修、已修的状态维护起来。",
+      "action": "打开学业进度"
     },
     "courseDetail": {
-      "title": "加入我的学业地图",
-      "copy": "把这门课标成计划或感兴趣，之后会成为规划推荐的上下文。",
-      "saved": "已更新到学业地图。",
-      "saveFailed": "更新学业地图失败，请稍后重试。"
+      "title": "加入我的学业进度",
+      "copy": "把这门课标成想修，之后会成为规划推荐的上下文。",
+      "saved": "已更新到学业进度。",
+      "saveFailed": "更新学业进度失败，请稍后重试。"
     }
   },
   "matching": {

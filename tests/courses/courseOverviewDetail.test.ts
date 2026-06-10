@@ -35,6 +35,12 @@ describe('course overview detail helpers', () => {
       canToggleInterest: true,
       isInterested: false,
     })
+
+    expect(getCourseOverviewAcademicState({ course_code: 'UCUG 052S', status: 'planned' })).toEqual({
+      status: 'interested',
+      canToggleInterest: true,
+      isInterested: true,
+    })
   })
 
   it('enables planner cart actions only for the active scheduler semester', () => {

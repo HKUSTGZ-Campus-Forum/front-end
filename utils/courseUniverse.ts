@@ -509,6 +509,52 @@ function traverseCourseUniverseComponents(startId: string, adjacency: Map<string
   return result
 }
 
+function isCourseUniversePrerequisiteAndComponent(component?: CourseUniverseMapComponent) {
+  return Boolean(component && component.category === 1 && component.node_type === false)
+}
+
+function expandCourseUniverseRequiredPrerequisiteBranches(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  componentIds: Set<string>
+  supplementalComponentIds?: Set<string>
+}) {
+  const componentById = new Map(input.components.map(component => [component.id, component]))
+  const incomingPrerequisite = new Map<string, Set<string>>()
+  input.lines.forEach(line => {
+    if (line.category !== 1) return
+    if (!componentById.has(line.start_id) || !componentById.has(line.end_id)) return
+    if (!incomingPrerequisite.has(line.end_id)) incomingPrerequisite.set(line.end_id, new Set())
+    incomingPrerequisite.get(line.end_id)?.add(line.start_id)
+  })
+
+  const queue = [...input.componentIds]
+    .filter(id => isCourseUniversePrerequisiteAndComponent(componentById.get(id)))
+
+  while (queue.length) {
+    const id = queue.shift()
+    if (!id) continue
+
+    const requiredBranchIds = incomingPrerequisite.get(id) || new Set<string>()
+    requiredBranchIds.forEach(branchId => {
+      const branchComponents = new Set<string>([branchId])
+      traverseCourseUniverseComponents(branchId, incomingPrerequisite)
+        .forEach(componentId => branchComponents.add(componentId))
+
+      branchComponents.forEach(componentId => {
+        const wasVisible = input.componentIds.has(componentId)
+        input.componentIds.add(componentId)
+        if (!wasVisible) input.supplementalComponentIds?.add(componentId)
+        if (!wasVisible && isCourseUniversePrerequisiteAndComponent(componentById.get(componentId))) {
+          queue.push(componentId)
+        }
+      })
+    })
+  }
+
+  return input.componentIds
+}
+
 function traverseCourseUniverseDirectPaths(
   startId: string,
   adjacency: Map<string, Set<string>>,
@@ -594,6 +640,28 @@ export function buildCourseUniverseVisibleComponentSet(input: {
   selectedCourseCode?: string | null
   searchQuery?: string
 }) {
+  return buildCourseUniverseVisibleComponentContext(input).componentIds
+}
+
+export function buildCourseUniverseSupplementalComponentSet(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  courseNodes: CourseUniverseNode[]
+  selectedPrefix?: string
+  selectedCourseCode?: string | null
+  searchQuery?: string
+}) {
+  return buildCourseUniverseVisibleComponentContext(input).supplementalComponentIds
+}
+
+function buildCourseUniverseVisibleComponentContext(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  courseNodes: CourseUniverseNode[]
+  selectedPrefix?: string
+  selectedCourseCode?: string | null
+  searchQuery?: string
+}) {
   const { incoming, outgoing } = buildCourseUniverseComponentAdjacency(input)
   const selectedCode = compactCourseCode(input.selectedCourseCode || '')
   const courseComponentIds = new Set(input.components
@@ -604,6 +672,7 @@ export function buildCourseUniverseVisibleComponentSet(input: {
   let directPathsOnly = false
 
   if (selectedCode) {
+    directPathsOnly = true
     input.components.forEach(component => {
       if (component.category === 0 && getCourseUniverseComponentCourseCode(component.id) === selectedCode) {
         seeds.add(component.id)
@@ -628,10 +697,14 @@ export function buildCourseUniverseVisibleComponentSet(input: {
       }
     })
   } else {
-    return new Set(input.components.map(component => component.id))
+    return {
+      componentIds: new Set(input.components.map(component => component.id)),
+      supplementalComponentIds: new Set<string>(),
+    }
   }
 
   const result = new Set(seeds)
+  const supplementalComponentIds = new Set<string>()
   seeds.forEach(seed => {
     const upstream = directPathsOnly
       ? traverseCourseUniverseDirectPaths(seed, incoming, courseComponentIds, seeds)
@@ -642,12 +715,24 @@ export function buildCourseUniverseVisibleComponentSet(input: {
     upstream.forEach(id => result.add(id))
     downstream.forEach(id => result.add(id))
   })
-  return expandCourseUniverseDetachedRelationComponents({
+  if (selectedCode) {
+    expandCourseUniverseRequiredPrerequisiteBranches({
+      components: input.components,
+      lines: input.lines,
+      componentIds: result,
+      supplementalComponentIds,
+    })
+  }
+  const componentIds = expandCourseUniverseDetachedRelationComponents({
     components: input.components,
     lines: input.lines,
     componentIds: result,
     relationSeedCodes,
   })
+  return {
+    componentIds,
+    supplementalComponentIds,
+  }
 }
 
 export function buildCourseUniverseHighlightSet(input: {
@@ -727,15 +812,23 @@ export function findCourseUniverseFocusNode(nodes: CourseUniverseNode[], focusQu
   return nodes.find(node => node.selected) || null
 }
 
+function getCourseUniverseFocusPoint(node: CourseUniverseNode) {
+  return {
+    centerX: node.x + (node.category === 0 ? COURSE_UNIVERSE_COURSE_WIDTH / 2 : 0),
+    centerY: node.y + (node.category === 0 ? COURSE_UNIVERSE_COURSE_HEIGHT / 2 : 0),
+  }
+}
+
 export function createReadableCourseUniverseViewport(input: {
   nodes: CourseUniverseNode[]
   focusQuery?: string | null
 }): CourseUniverseViewport {
   const focusNode = findCourseUniverseFocusNode(input.nodes, input.focusQuery)
   if (focusNode) {
+    const focusPoint = getCourseUniverseFocusPoint(focusNode)
     return {
-      centerX: focusNode.x,
-      centerY: focusNode.y,
+      centerX: focusPoint.centerX,
+      centerY: focusPoint.centerY,
       zoom: COURSE_UNIVERSE_FOCUS_ZOOM,
     }
   }
@@ -809,7 +902,7 @@ export function getCourseUniverseNodeStatusKey(input: {
 }): CourseUniverseNodeStatusKey {
   if (input.academicStatus === 'completed') return 'completed'
   if (input.academicStatus === 'in_progress') return 'inProgress'
-  if (input.academicStatus === 'interested') return 'interested'
+  if (input.academicStatus === 'interested' || input.academicStatus === 'planned') return 'interested'
   return 'notTaken'
 }
 

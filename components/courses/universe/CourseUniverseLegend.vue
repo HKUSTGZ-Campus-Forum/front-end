@@ -2,13 +2,9 @@
 const { t } = useI18n()
 
 const items = [
-  { key: 'completed', className: 'is-completed', type: 'dot' },
-  { key: 'inProgress', className: 'is-in-progress', type: 'dot' },
-  { key: 'notTaken', className: 'is-not-taken', type: 'dot' },
-  { key: 'interested', className: 'is-interested', type: 'dot' },
   { key: 'prerequisite', className: 'is-prerequisite', type: 'line' },
-  { key: 'corequisite', className: 'is-corequisite', type: 'line' },
   { key: 'exclusion', className: 'is-exclusion', type: 'line' },
+  { key: 'corequisite', className: 'is-corequisite', type: 'line' },
   { key: 'hollowLogic', className: 'is-hollow-logic', type: 'logic' },
   { key: 'solidLogic', className: 'is-solid-logic', type: 'logic' },
 ]
@@ -48,12 +44,6 @@ const items = [
   display: inline-block;
 }
 
-.cu-legend__mark--dot {
-  border-radius: 999px;
-  height: 9px;
-  width: 9px;
-}
-
 .cu-legend__mark--logic {
   border: 2px solid var(--text-primary);
   border-radius: 999px;
@@ -68,10 +58,6 @@ const items = [
   border-top: 2px solid var(--text-primary);
 }
 
-.is-completed { background: var(--semantic-success); }
-.is-in-progress { background: var(--interactive-primary); }
-.is-not-taken { background: var(--border-primary); }
-.is-interested { background: var(--text-secondary); }
 .is-prerequisite { border-top-style: dashed; }
 .is-corequisite { border-top-color: var(--semantic-info); }
 .is-exclusion { border-top-color: var(--semantic-error); }

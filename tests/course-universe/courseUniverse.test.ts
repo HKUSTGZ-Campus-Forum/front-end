@@ -11,6 +11,7 @@ import {
   layoutCourseUniverseGraphComponents,
   buildCourseUniverseModePath,
   buildCourseUniversePrefixOptions,
+  buildCourseUniverseSupplementalComponentSet,
   buildCourseUniverseVisibleComponentSet,
   buildCourseUniverseVisibleCodeSet,
   createReadableCourseUniverseViewport,
@@ -92,6 +93,27 @@ const directPathLines = [
   ...graphLines,
   { id: 14, start_id: 'UFUG1101', end_id: '(UFUG1101&DLED2010)', line_type: false, x_coordinate: 720, category: 1 },
   { id: 15, start_id: '(UFUG1101&DLED2010)', end_id: 'DLED2010', line_type: null, x_coordinate: 840, category: 1 },
+]
+
+const incompleteAndBranchComponents: CourseUniverseMapComponent[] = [
+  { id: 'UFUG1102', node_type: null, x_coordinate: 100, y_coordinate: 120, category: 0 },
+  { id: 'UFUG1105', node_type: null, x_coordinate: 100, y_coordinate: 240, category: 0 },
+  { id: '(UFUG1102|UFUG1105)', node_type: true, x_coordinate: 380, y_coordinate: 180, category: 1 },
+  { id: 'UFUG1501', node_type: null, x_coordinate: 100, y_coordinate: 420, category: 0 },
+  { id: 'UFUG1503', node_type: null, x_coordinate: 100, y_coordinate: 540, category: 0 },
+  { id: '(UFUG1501|UFUG1503)', node_type: true, x_coordinate: 380, y_coordinate: 480, category: 1 },
+  { id: '((UFUG1501|UFUG1503)&(UFUG1102|UFUG1105))', node_type: false, x_coordinate: 620, y_coordinate: 330, category: 1 },
+  { id: 'UFUG1504', node_type: null, x_coordinate: 860, y_coordinate: 330, category: 0 },
+]
+
+const incompleteAndBranchLines = [
+  { id: 101, start_id: 'UFUG1102', end_id: '(UFUG1102|UFUG1105)', line_type: true, x_coordinate: 330, category: 1 },
+  { id: 102, start_id: 'UFUG1105', end_id: '(UFUG1102|UFUG1105)', line_type: true, x_coordinate: 330, category: 1 },
+  { id: 103, start_id: '(UFUG1102|UFUG1105)', end_id: '((UFUG1501|UFUG1503)&(UFUG1102|UFUG1105))', line_type: false, x_coordinate: 520, category: 1 },
+  { id: 104, start_id: 'UFUG1501', end_id: '(UFUG1501|UFUG1503)', line_type: true, x_coordinate: 330, category: 1 },
+  { id: 105, start_id: 'UFUG1503', end_id: '(UFUG1501|UFUG1503)', line_type: true, x_coordinate: 330, category: 1 },
+  { id: 106, start_id: '(UFUG1501|UFUG1503)', end_id: '((UFUG1501|UFUG1503)&(UFUG1102|UFUG1105))', line_type: false, x_coordinate: 520, category: 1 },
+  { id: 107, start_id: '((UFUG1501|UFUG1503)&(UFUG1102|UFUG1105))', end_id: 'UFUG1504', line_type: null, x_coordinate: 760, category: 1 },
 ]
 
 const detachedRelationComponents: CourseUniverseMapComponent[] = [
@@ -187,17 +209,21 @@ describe('course universe helpers', () => {
     expect(canvasSource).toContain('shopping-cart-check')
   })
 
-  it('limits the graph legend to four academic statuses plus relationship and logic markers', () => {
+  it('limits the graph legend to relationship and logic markers', () => {
     const legendSource = readFileSync(
       new URL('../../components/courses/universe/CourseUniverseLegend.vue', import.meta.url),
       'utf8',
     )
 
-    expect(legendSource).toContain("key: 'notTaken'")
+    expect(legendSource).toContain("key: 'prerequisite'")
+    expect(legendSource).toContain("key: 'corequisite'")
+    expect(legendSource).toContain("key: 'exclusion'")
     expect(legendSource).toContain("key: 'hollowLogic'")
     expect(legendSource).toContain("key: 'solidLogic'")
-    expect(legendSource).not.toContain("key: 'planned'")
-    expect(legendSource).not.toContain("key: 'inPlanner'")
+    expect(legendSource).not.toContain("key: 'completed'")
+    expect(legendSource).not.toContain("key: 'inProgress'")
+    expect(legendSource).not.toContain("key: 'notTaken'")
+    expect(legendSource).not.toContain("key: 'interested'")
   })
 
   it('uses the greatest semester id with offering data as the active scheduler semester', () => {
@@ -304,7 +330,7 @@ describe('course universe helpers', () => {
     expect(buildCourseUniverseCourseDetailPath('DLED4010[2]')).toBe('/courses/DLED4010')
   })
 
-  it('marks legacy schedule and academic map routes active under courses', () => {
+  it('marks legacy schedule and degree progress routes active under courses', () => {
     expect(COURSE_UNIVERSE_ALIAS_PREFIXES).toEqual(['/courses', '/schedule', '/academic-map'])
     expect(isCourseUniverseActivePath('/courses')).toBe(true)
     expect(isCourseUniverseActivePath('/courses/123/offerings/2530')).toBe(true)
@@ -313,7 +339,7 @@ describe('course universe helpers', () => {
     expect(isCourseUniverseActivePath('/forum')).toBe(false)
   })
 
-  it('maps legacy routes to new Course Universe routes', () => {
+  it('maps legacy routes to new course graph routes', () => {
     expect(getCourseUniverseRedirect('/schedule')).toBe('/courses/planner')
     expect(getCourseUniverseRedirect('/schedule/dashboard')).toBe('/courses/planner')
     expect(getCourseUniverseRedirect('/schedule/dashboard/2530')).toBe('/courses/planner/2530')
@@ -354,7 +380,7 @@ describe('course universe helpers', () => {
     expect(getCourseUniverseNodeStatusKey({ academicStatus: 'in_progress' })).toBe('inProgress')
     expect(getCourseUniverseNodeStatusKey({ academicStatus: 'interested' })).toBe('interested')
     expect(getCourseUniverseNodeStatusKey({ academicStatus: null })).toBe('notTaken')
-    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'planned' })).toBe('notTaken')
+    expect(getCourseUniverseNodeStatusKey({ academicStatus: 'planned' })).toBe('interested')
   })
 
   it('keeps planner cart state separate from the four academic display statuses', () => {
@@ -439,8 +465,8 @@ describe('course universe helpers', () => {
       focusQuery: 'data mining',
     })
 
-    expect(viewport.centerX).toBe(4200)
-    expect(viewport.centerY).toBe(1200)
+    expect(viewport.centerX).toBe(4200 + COURSE_UNIVERSE_COURSE_WIDTH / 2)
+    expect(viewport.centerY).toBe(1200 + COURSE_UNIVERSE_COURSE_HEIGHT / 2)
     expect(viewport.zoom).toBeGreaterThan(1)
   })
 
@@ -623,6 +649,85 @@ describe('course universe helpers', () => {
     expect(visible).toContain('UCUG1051')
     expect(visible).toContain('(UCUG1051|UFUG1101)')
     expect(visible).toContain('UFUG1101')
+  })
+
+  it('limits selected course views to direct relationship paths while keeping intermediate nodes', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: directPathComponents,
+      courses: [
+        { course_code: 'UCUG1051', course_title_abbr: 'Core A' },
+        { course_code: 'UFUG1101', course_title_abbr: 'Foundation A' },
+        { course_code: 'DLED2010', course_title_abbr: 'Design Lab' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: directPathComponents,
+      lines: directPathLines,
+      courseNodes,
+      selectedCourseCode: 'UCUG1051',
+    })
+
+    expect(visible).toContain('UCUG1051')
+    expect(visible).toContain('(UCUG1051|UFUG1101)')
+    expect(visible).toContain('UFUG1101')
+    expect(visible).not.toContain('(UFUG1101&DLED2010)')
+    expect(visible).not.toContain('DLED2010')
+  })
+
+  it('fills missing sibling prerequisite branches for downstream AND requirements', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: incompleteAndBranchComponents,
+      courses: [
+        { course_code: 'UFUG1102', course_title_abbr: 'Calculus I' },
+        { course_code: 'UFUG1105', course_title_abbr: 'Honors Calculus I' },
+        { course_code: 'UFUG1501', course_title_abbr: 'General Physics I' },
+        { course_code: 'UFUG1503', course_title_abbr: 'Honors General Physics I' },
+        { course_code: 'UFUG1504', course_title_abbr: 'Honors General Physics II' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const visible = buildCourseUniverseVisibleComponentSet({
+      components: incompleteAndBranchComponents,
+      lines: incompleteAndBranchLines,
+      courseNodes,
+      selectedCourseCode: 'UFUG1102',
+    })
+
+    expect(visible).toContain('UFUG1504')
+    expect(visible).toContain('((UFUG1501|UFUG1503)&(UFUG1102|UFUG1105))')
+    expect(visible).toContain('(UFUG1501|UFUG1503)')
+    expect(visible).toContain('UFUG1501')
+    expect(visible).toContain('UFUG1503')
+  })
+
+  it('marks added sibling prerequisite branches as supplemental relationships', () => {
+    const courseNodes = normalizeCourseUniverseNodes({
+      components: incompleteAndBranchComponents,
+      courses: [
+        { course_code: 'UFUG1102', course_title_abbr: 'Calculus I' },
+        { course_code: 'UFUG1105', course_title_abbr: 'Honors Calculus I' },
+        { course_code: 'UFUG1501', course_title_abbr: 'General Physics I' },
+        { course_code: 'UFUG1503', course_title_abbr: 'Honors General Physics I' },
+        { course_code: 'UFUG1504', course_title_abbr: 'Honors General Physics II' },
+      ],
+      academicRecords: [],
+      plannerCourses: [],
+    })
+    const supplemental = buildCourseUniverseSupplementalComponentSet({
+      components: incompleteAndBranchComponents,
+      lines: incompleteAndBranchLines,
+      courseNodes,
+      selectedCourseCode: 'UFUG1102',
+    })
+
+    expect(supplemental).toContain('(UFUG1501|UFUG1503)')
+    expect(supplemental).toContain('UFUG1501')
+    expect(supplemental).toContain('UFUG1503')
+    expect(supplemental).not.toContain('UFUG1102')
+    expect(supplemental).not.toContain('UFUG1504')
   })
 
   it('limits prefix views to direct relationship paths while keeping intermediate nodes', () => {

@@ -12,7 +12,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const statuses: AcademicCourseStatus[] = ['completed', 'in_progress', 'planned', 'interested', 'not_interested']
+const statuses: AcademicCourseStatus[] = ['completed', 'in_progress', 'interested', 'not_interested']
+
+const normalizedValue = computed(() => (
+  props.modelValue === 'planned' ? 'interested' : props.modelValue
+))
 </script>
 
 <template>
@@ -21,7 +25,7 @@ const statuses: AcademicCourseStatus[] = ['completed', 'in_progress', 'planned',
       v-for="status in statuses"
       :key="status"
       type="button"
-      :class="['am-status-chip', { active: props.modelValue === status }]"
+      :class="['am-status-chip', `am-status-chip--${status.replace('_', '-')}`, { active: normalizedValue === status }]"
       @click="emit('update:modelValue', status)"
     >
       {{ t(`academicMap.status.${status}`) }}
@@ -31,32 +35,66 @@ const statuses: AcademicCourseStatus[] = ['completed', 'in_progress', 'planned',
 
 <style scoped lang="scss">
 .am-status-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
 }
 
 .am-status-chip {
-  border: 1px solid var(--border-secondary);
-  background: var(--surface-primary);
+  border: 0;
+  background: transparent;
   color: var(--text-secondary);
   border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  min-height: 30px;
+  min-width: 54px;
+  padding: 0 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
 
-  &:hover,
-  &.active {
-    border-color: var(--border-focus);
+  &:hover {
     color: var(--interactive-active);
-    background: var(--bg-secondary);
+  }
+
+  &.active {
+    background: var(--surface-primary);
+    box-shadow: 0 1px 4px rgba(31, 83, 130, 0.12);
+  }
+
+  &--completed.active {
+    color: var(--semantic-success);
+  }
+
+  &--in-progress.active {
+    color: var(--interactive-active);
+  }
+
+  &--interested.active {
+    color: var(--semantic-warning);
   }
 }
 
 .am-status-chips--compact .am-status-chip {
-  padding: 4px 9px;
+  min-height: 28px;
+  min-width: 50px;
   font-size: 0.72rem;
+}
+
+@media (max-width: 680px) {
+  .am-status-chips {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .am-status-chip {
+    min-width: 0;
+    padding: 0 6px;
+  }
 }
 </style>

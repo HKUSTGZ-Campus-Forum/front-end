@@ -50,7 +50,7 @@
     "feedback": "Feedback",
     "admin": "Admin",
     "courses": "Courses",
-    "academicMap": "Academic Map",
+    "academicMap": "Degree Progress",
     "activity": "Activities",
     "teamMatching": "Form a team",
     "users": "Users",
@@ -88,8 +88,12 @@
     "description": "Manage feedback reviews, identity verification, and future moderation tools from one shared admin surface.",
     "nav": {
       "overview": "Overview",
+      "users": "Users",
+      "content": "Content",
       "feedback": "Feedback review",
-      "identity": "Identity"
+      "identity": "Identity",
+      "domains": "Data and ops",
+      "audit": "Audit logs"
     }
   },
   "adminOverview": {
@@ -103,14 +107,35 @@
       "pendingFeedback": "Pending feedback",
       "pendingMerge": "Pending merge reviews",
       "pendingIdentity": "Pending identity",
-      "feedbackTotal": "Published feedback"
+      "feedbackTotal": "Published feedback",
+      "activeUsers": "Active users",
+      "usersTotal": "Users",
+      "adminUsers": "Admins",
+      "postsTotal": "Posts",
+      "commentsTotal": "Comments",
+      "coursesTotal": "Courses",
+      "projectsTotal": "Projects",
+      "auditRecent": "Recent logs"
     },
     "status": {
       "loadFailed": "Some admin counts could not be loaded.",
       "moduleError": "Count unavailable"
     },
     "modulesTitle": "Admin modules",
+    "healthTitle": "Domain health",
+    "activityTitle": "Recent admin activity",
+    "activityEmpty": "No admin actions recorded yet",
     "cards": {
+      "users": {
+        "title": "Users and roles",
+        "description": "Search accounts, inspect verification state, change roles, and soft-delete or restore users.",
+        "action": "Open users"
+      },
+      "content": {
+        "title": "Content moderation",
+        "description": "Inspect posts, comments, uploaded files, tags, and wall activity from a single content surface.",
+        "action": "Open content"
+      },
       "feedback": {
         "title": "Feedback review",
         "description": "Review pending feedback, finalize accepted merge proposals, and manage published feedback discussion state.",
@@ -120,8 +145,242 @@
         "title": "Identity verification",
         "description": "Review pending verification requests and inspect approved, rejected, or revoked identity records.",
         "action": "Open identity review"
+      },
+      "domains": {
+        "title": "Course, data, and operations",
+        "description": "Monitor courses, scheduler data, Academic Map, matching, contests, storage, OAuth, and notifications.",
+        "action": "Open data and ops"
+      },
+      "audit": {
+        "title": "Audit logs",
+        "description": "Trace admin mutations with actor, action, target, note, and timestamp.",
+        "action": "Open audit logs"
       }
     }
+  },
+  "adminConsole": {
+    "unknown": "Unknown",
+    "errors": {
+      "loadOverview": "Failed to load admin overview.",
+      "loadAudit": "Failed to load audit logs.",
+      "loadUsers": "Failed to load users.",
+      "updateUser": "Failed to update user.",
+      "loadContent": "Failed to load content.",
+      "updateContent": "Failed to update content."
+    }
+  },
+  "adminUsers": {
+    "title": "User Management",
+    "description": "Search accounts, filter by role and verification state, and manage user roles or soft-deletion state.",
+    "metrics": {
+      "total": "Total users",
+      "verified": "Email verified",
+      "deleted": "Deleted users",
+      "page": "Shown"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Username or email",
+      "role": "Role",
+      "allRoles": "All roles",
+      "deleted": "Deletion state",
+      "allUsers": "All users",
+      "activeOnly": "Active only",
+      "deletedOnly": "Deleted only",
+      "email": "Email",
+      "allEmail": "All email states",
+      "emailVerified": "Verified",
+      "emailUnverified": "Unverified"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "apply": "Apply filters",
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "audit": {
+      "roleChange": "Role changed in admin console",
+      "delete": "User soft-deleted in admin console",
+      "restore": "User restored in admin console"
+    },
+    "confirm": {
+      "delete": "Soft-delete this user?",
+      "restore": "Restore this user?"
+    },
+    "messages": {
+      "roleUpdated": "Role updated.",
+      "deleted": "User deleted.",
+      "restored": "User restored."
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "empty": {
+      "title": "No users",
+      "description": "No users match the current filters."
+    },
+    "pagination": {
+      "label": "User pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    },
+    "noEmail": "No email",
+    "createdAt": "Created {date}",
+    "emailVerified": "Email verified",
+    "emailUnverified": "Email unverified",
+    "deleted": "Deleted"
+  },
+  "adminContent": {
+    "title": "Content Management",
+    "description": "Moderate forum posts and comments while monitoring tags, files, and gugu activity.",
+    "metrics": {
+      "posts": "Posts",
+      "comments": "Comments",
+      "files": "Files",
+      "gugu": "Gugu messages"
+    },
+    "tabs": {
+      "posts": "Posts",
+      "comments": "Comments"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Title or content",
+      "deleted": "State",
+      "all": "All",
+      "active": "Active",
+      "deletedOnly": "Deleted"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "apply": "Apply filters",
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "audit": {
+      "deletePost": "Post soft-deleted in admin console",
+      "restorePost": "Post restored in admin console",
+      "deleteComment": "Comment soft-deleted in admin console",
+      "restoreComment": "Comment restored in admin console"
+    },
+    "confirm": {
+      "deletePost": "Soft-delete this post?",
+      "restorePost": "Restore this post?",
+      "deleteComment": "Soft-delete this comment?",
+      "restoreComment": "Restore this comment?"
+    },
+    "messages": {
+      "postDeleted": "Post deleted.",
+      "postRestored": "Post restored.",
+      "commentDeleted": "Comment deleted.",
+      "commentRestored": "Comment restored."
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "empty": {
+      "title": "No content",
+      "description": "No records match the current filters."
+    },
+    "pagination": {
+      "label": "Content pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    },
+    "createdAt": "Created {date}",
+    "commentPost": "Post #{id}",
+    "deleted": "Deleted",
+    "postStats": {
+      "comments": "{count} comments",
+      "reactions": "{count} reactions",
+      "views": "{count} views"
+    }
+  },
+  "adminDomains": {
+    "title": "Data And Operations",
+    "description": "Monitor course data, Academic Map, matching, contests, storage, OAuth, notifications, and push infrastructure.",
+    "metrics": {
+      "courses": "Courses",
+      "offerings": "Offerings",
+      "projects": "Projects",
+      "submissions": "Submissions"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing..."
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "sections": {
+      "courses": "Courses and scheduler",
+      "academicMap": "Academic Map",
+      "matching": "Matching",
+      "contest": "Contest",
+      "operations": "Operations"
+    },
+    "descriptions": {
+      "courses": "Catalog, offerings, sections, and meeting data health.",
+      "academicMap": "Aggregate curriculum and user record health without exposing private grades.",
+      "matching": "Project and profile health for the team matching subsystem.",
+      "contest": "Contest configuration, organizer, and submission counts.",
+      "operations": "Storage, STS, OAuth, notification, and push infrastructure."
+    },
+    "labels": {
+      "activeCourses": "Active courses",
+      "offerings": "Offerings",
+      "sections": "Sections",
+      "meetings": "Meetings",
+      "programs": "Programs",
+      "requirementGroups": "Requirement groups",
+      "academicProfiles": "Academic profiles",
+      "recordsNeedingReview": "Records needing review",
+      "projects": "Projects",
+      "activeProjects": "Active projects",
+      "profiles": "Profiles",
+      "activeProfiles": "Active profiles",
+      "contests": "Contests",
+      "activeContests": "Active contests",
+      "organizers": "Organizers",
+      "submissions": "Submissions",
+      "files": "Files",
+      "validStsTokens": "Valid STS tokens",
+      "oauthClients": "OAuth clients",
+      "pushSubscriptions": "Push subscriptions"
+    }
+  },
+  "adminAudit": {
+    "title": "Audit Logs",
+    "description": "Trace admin actions by actor, action, target, note, and time.",
+    "filters": {
+      "action": "Action",
+      "actionPlaceholder": "user.role_update",
+      "target": "Target type",
+      "targetPlaceholder": "user, post, comment"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "apply": "Apply filters"
+    },
+    "errors": {
+      "title": "Load failed"
+    },
+    "empty": {
+      "title": "No audit logs",
+      "description": "Admin mutations will appear here after they are recorded."
+    },
+    "pagination": {
+      "label": "Audit log pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}, {total} total"
+    },
+    "noNote": "No note"
   },
   "adminIdentity": {
     "title": "Identity Verification",
@@ -755,21 +1014,21 @@
     }
   },
   "courseUniverse": {
-    "title": "Course Universe",
+    "title": "Course Graph",
     "hubTitle": "Course Graph",
     "hubSubtitle": "Start here to read course relationships, reviews, schedules, and degree progress.",
     "subtitle": "Find your next course through relationships, reviews, schedules, and degree progress.",
     "searchPlaceholder": "Search course code, title, or requirement...",
     "selectedSemester": "Current semester",
     "targetMajor": "Target major",
-    "loading": "Loading Course Universe...",
+    "loading": "Loading Course Graph...",
     "empty": "No course graph data yet.",
     "selectCourse": "Select a course to inspect it",
     "modes": {
-      "universe": "Universe",
+      "universe": "Graph",
       "explore": "Explore",
       "planner": "Planner",
-      "academicMap": "Academic Map"
+      "academicMap": "Degree Progress"
     },
     "legend": {
       "completed": "Completed",
@@ -777,16 +1036,19 @@
       "notTaken": "Not taken",
       "interested": "Want to take",
       "prerequisite": "Prerequisite",
-      "corequisite": "Corequisite (take together)",
-      "exclusion": "Exclusion (cannot take together)",
-      "hollowLogic": "Hollow: choose one",
-      "solidLogic": "Solid: need all"
+      "corequisite": "Must take in same term",
+      "exclusion": "Exclusion",
+      "hollowLogic": "Choose one",
+      "solidLogic": "Need all"
     },
     "statusShort": {
       "completed": "Done",
       "inProgress": "In prog.",
       "notTaken": "Not taken",
       "interested": "Want"
+    },
+    "relation": {
+      "other": "Other"
     },
     "actions": {
       "addToPlanner": "Add to planner",
@@ -796,7 +1058,7 @@
       "openPlanner": "Open planner",
       "openReviews": "View reviews",
       "writeReview": "Write review",
-      "openAcademicMap": "Open Academic Map",
+      "openAcademicMap": "Open Degree Progress",
       "markStatus": "Update academic status",
       "graphControls": "Graph controls",
       "zoomIn": "Zoom in",
@@ -821,7 +1083,7 @@
       "notAvailable": "Not available"
     },
     "errors": {
-      "load": "Course Universe failed to load. Please try again later.",
+      "load": "Course Graph failed to load. Please try again later.",
       "courseDetail": "Failed to load course detail."
     }
   },
@@ -863,7 +1125,7 @@
       "metaTitle": "Course overview",
       "metaDescription": "View the course overview, academic status, and offerings for {course}.",
       "eyebrow": "Course overview",
-      "backToUniverse": "Back to Course Universe",
+      "backToUniverse": "Back to Course Graph",
       "loadFailed": "Failed to load course overview",
       "offeringsEyebrow": "Offerings",
       "offeringsTitle": "Offering terms",
@@ -876,7 +1138,7 @@
       "teacherTbd": "Instructor TBD",
       "openOffering": "View term details",
       "offeringContextTitle": "Term page",
-      "offeringContextCopy": "This page keeps reviews, discussion, and scheduling context for this term. Course-level details and interest live on the course overview.",
+      "offeringContextCopy": "This page keeps reviews, discussion, and scheduling context for this term. Course-level details and want-to-take status live on the course overview.",
       "rulesEyebrow": "Course rules",
       "rulesTitle": "Prerequisites, corequisites, and exclusions",
       "noRules": "No prerequisite, corequisite, or exclusion information yet.",
@@ -889,18 +1151,18 @@
       "academicStatus": {
         "completed": "Completed",
         "in_progress": "In progress",
-        "planned": "Planned",
+        "planned": "Want to take",
         "interested": "Want to take",
         "not_taken": "Not taken"
       },
-      "noAcademicStatus": "This course is not in your Academic Map yet.",
-      "markInterested": "Mark interested",
-      "cancelInterested": "Cancel interest",
-      "loginToMark": "Log in to mark interest",
-      "interestSaved": "Marked as interested.",
-      "interestRemoved": "Interest removed.",
-      "interestFailed": "Failed to update Academic Map.",
-      "strongStatusNote": "Completed, in-progress, or planned status takes priority over interest and is not edited here yet.",
+      "noAcademicStatus": "This course is not in your Degree Progress yet.",
+      "markInterested": "Mark want to take",
+      "cancelInterested": "Cancel want to take",
+      "loginToMark": "Log in to mark want to take",
+      "interestSaved": "Marked as want to take.",
+      "interestRemoved": "Want-to-take status removed.",
+      "interestFailed": "Failed to update Degree Progress.",
+      "strongStatusNote": "Completed or in-progress status takes priority over want-to-take and is not edited here yet.",
       "activePlannerSemester": "Active planner term: {semester}",
       "plannerLoadFailed": "Planner cart status could not be loaded. Please try again later.",
       "plannerStatus": {
@@ -910,7 +1172,7 @@
         "unavailable": "No planner data"
       },
       "mapTitle": "See relationships in the graph",
-      "mapCopy": "Open Course Universe to inspect prerequisite, corequisite, and exclusion relationships around this course.",
+      "mapCopy": "Open Course Graph to inspect prerequisite, corequisite, and exclusion relationships around this course.",
       "openInMap": "View in graph"
     },
     "offeringMissing": "This offering does not exist for the selected course.",
@@ -943,7 +1205,8 @@
       "loadCourse": "Failed to load course details.",
       "loadDiscussions": "Failed to load discussions.",
       "loadReviews": "Failed to load reviews.",
-      "submitReview": "Failed to publish the review. Please try again."
+      "submitReview": "Failed to publish the review. Please try again.",
+      "courseOfferingNotResolved": "We could not resolve the course offering for this review. Please refresh and try again."
     },
     "semester": {
       "spring": "Spring",
@@ -953,15 +1216,15 @@
     }
   },
   "academicMap": {
-    "metaTitle": "Academic Map - UniKorn",
-    "eyebrow": "Academic Map",
-    "title": "Academic Map",
+    "metaTitle": "Degree Progress - UniKorn",
+    "eyebrow": "Degree Progress",
+    "title": "Degree Progress",
     "openCourses": "Go to course reviews",
     "loading": "Loading academic state...",
     "cohort": "Cohort",
     "units": "credits",
     "login": {
-      "title": "Log in to maintain your Academic Map",
+      "title": "Log in to maintain your Degree Progress",
       "copy": "This information belongs to you. Course records and grades are not public, and they will help future planning suggestions become more precise."
     },
     "targetMajors": {
@@ -973,7 +1236,7 @@
       "minimum": "{count}",
       "activeCredits": "{count} credits completed, in progress, or planned",
       "completedCredits": "{completed} credits completed, {inProgress} credits in progress this term",
-      "mapCompleteness": "Map completeness",
+      "mapCompleteness": "Progress completeness",
       "mapCompletenessCopy": "Shows whether future planning has enough context",
       "importedCourses": "Maintained courses",
       "importedCoursesCopy": "Course records from paste import or manual confirmation",
@@ -991,8 +1254,10 @@
       "notUploaded": "Not uploaded"
     },
     "import": {
-      "title": "Import Course History",
-      "copyPrefix": "You can import course history from SIS in one click:",
+      "title": "Import Completed/In-Progress Courses",
+      "copyPrefix": "SIS copy-paste import guide:",
+      "methodLabel": "Import method",
+      "sisMethod": "SIS bulk import",
       "exampleLink": "example",
       "placeholder": "Paste something like: AIAA 2205 Introduction to AI 2024-25 Summer A+ 3.00",
       "parse": "Parse",
@@ -1000,7 +1265,7 @@
       "save": "Save courses",
       "saving": "Saving...",
       "keepGrades": "Upload grades",
-      "keepGradesCopy": "Grades are visible only to you. If you turn this off, GPA calculation and personalized recommendations will no longer work.",
+      "keepGradesCopy": "Grades stay private and power GPA.",
       "previewTitle": "Preview {count} courses",
       "exampleTitle": "Example",
       "example": {
@@ -1023,36 +1288,62 @@
       "courseTitle": "Course title",
       "noTerm": "No term",
       "remove": "Remove course",
-      "needsReview": "This course needs your confirmation."
+      "needsReview": "This course needs your confirmation.",
+      "picker": {
+        "open": "Choose courses",
+        "title": "Choose courses",
+        "search": "Search prefix or code...",
+        "allCourses": "All courses",
+        "cartTitle": "{count} selected",
+        "empty": "No courses selected",
+        "add": "Add",
+        "selected": "Selected",
+        "pendingAdd": "New",
+        "pendingUpdate": "Update",
+        "added": "Imported",
+        "removeImported": "Remove",
+        "pendingRemove": "Pending removal",
+        "cancelRemove": "Cancel removal",
+        "statusLabel": "Course status",
+        "termLabel": "Term",
+        "termPlaceholder": "Choose term (required)",
+        "gradePlaceholder": "Grade/GPA optional",
+        "defaultStatus": "Imports as completed",
+        "missingTerm": "{count} new courses still need a term",
+        "importSelected": "Import {count}",
+        "removeSelected": "Remove {count}",
+        "applyMixed": "Remove {removalCount}, import {importCount}",
+        "loadFailed": "Failed to load courses"
+      }
     },
     "status": {
       "completed": "Completed",
       "in_progress": "In progress",
-      "planned": "Planned",
-      "interested": "Interested",
-      "not_interested": "Not interested"
+      "planned": "Want to take",
+      "interested": "Want to take",
+      "not_interested": "Not taken"
     },
     "privacy": {
       "title": "Grade privacy",
       "copy": "Grades are never shown publicly. You can keep them for future recommendations or delete them now or later.",
       "deleteGrades": "Delete all grades",
       "deleting": "Deleting...",
-      "clearMap": "Clear Academic Map",
+      "clearMap": "Clear Degree Progress",
       "clearingMap": "Clearing...",
       "clearMapConfirm": "Clear course records, cohort, and target majors for the current account? This will not affect other users."
     },
     "future": {
       "title": "Signals for future planning",
-      "copy": "This version does not recommend courses yet. It focuses on building the state map with low effort.",
+      "copy": "This version does not recommend courses yet. It focuses on building your academic state with low effort.",
       "signals": {
         "courseHistory": "Course history",
         "targetMajors": "Target major changes",
-        "statusIntent": "Plans and interest",
+        "statusIntent": "Want-to-take status",
         "privateGrades": "Private grades"
       }
     },
     "requirements": {
-      "title": "Requirement Matrix",
+      "title": "Program Requirements",
       "empty": "Choose a cohort and target major to show the requirement matrix here.",
       "emptyMissingProfile": "Choose a cohort and target major to generate the requirement matrix.",
       "emptyMissingCatalog": "The backend does not have requirement data for this cohort/major yet. Sync the curriculum requirement materials first.",
@@ -1100,7 +1391,7 @@
       "overviewTitle": "Reading the matrix",
       "overviewCopy": "Click any requirement row to inspect its full course pool; click a top metric card for prerequisite or grade details.",
       "gradesTitle": "OCGA / MCGA",
-      "gradesCopy": "Grades stay inside your private Academic Map and are calculated only after upload.",
+      "gradesCopy": "Grades stay inside your private Degree Progress and are calculated only after upload.",
       "ocgaRule": "Overall CGA: equally weighted average of all grade-point courses.",
       "mcgaRule": "Major CGA: equally weighted estimate from courses counted toward the active major.",
       "gradePrivacy": "Grades are not shown publicly and can be deleted anytime. Without uploaded grades, these cards show Not uploaded.",
@@ -1114,40 +1405,48 @@
     },
     "records": {
       "title": "Course status library",
-      "copy": "Mark each course as completed, in progress, planned, or interested so the system can understand your real academic path later.",
+      "copy": "Mark each course as completed, in progress, wanted, or not taken so the system can understand your real academic path later.",
+      "summary": "{count} courses",
       "empty": "No course records yet. Paste your Course History to import a first batch.",
       "noTerm": "No term",
       "untitled": "Untitled course",
       "privateGrade": "Private grade {grade}",
+      "statusLabel": "Status",
+      "gpaLabel": "GPA",
+      "gpaPlaceholder": "-",
+      "gpaAria": "Edit GPA for {course}",
+      "addToCart": "Add {course} to planner cart",
+      "removeFromCart": "Remove {course} from planner cart",
       "delete": "Delete course"
     },
     "messages": {
       "profileSaved": "Target majors updated.",
       "parsed": "Parsed {count} course records. Review and save them when ready.",
       "importSaved": "Course records saved.",
+      "importChangesSaved": "Course changes saved.",
       "recordDeleted": "Course record deleted.",
       "gradesDeleted": "Deleted grades from {count} records.",
       "recordsCleared": "Cleared {count} course records."
     },
     "errors": {
-      "load": "Failed to load Academic Map. Please try again later.",
+      "load": "Failed to load Degree Progress. Please try again later.",
       "profile": "Failed to save target majors. Please try again later.",
       "parse": "Failed to parse the pasted content.",
       "importSave": "Failed to save course records. Please try again later.",
       "record": "Failed to update the course record. Please try again later.",
       "grades": "Failed to delete grades. Please try again later.",
-      "clearRecords": "Failed to clear Academic Map. Please try again later."
+      "clearRecords": "Failed to clear Degree Progress. Please try again later."
     },
     "coursesCta": {
-      "title": "Connect course reviews with your Academic Map",
-      "copy": "While browsing courses, open Academic Map to keep completed, in-progress, planned, and interested courses organized.",
-      "action": "Open Academic Map"
+      "title": "Connect course reviews with your Degree Progress",
+      "copy": "While browsing courses, open Degree Progress to keep completed, in-progress, wanted, and not-taken courses organized.",
+      "action": "Open Degree Progress"
     },
     "courseDetail": {
-      "title": "Add to my Academic Map",
-      "copy": "Mark this course as planned or interested so it becomes planning context later.",
-      "saved": "Updated in Academic Map.",
-      "saveFailed": "Failed to update Academic Map. Please try again later."
+      "title": "Add to my Degree Progress",
+      "copy": "Mark this course as want to take so it becomes planning context later.",
+      "saved": "Updated in Degree Progress.",
+      "saveFailed": "Failed to update Degree Progress. Please try again later."
     }
   },
   "matching": {
