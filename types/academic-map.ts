@@ -25,6 +25,9 @@ export interface AcademicCourseRecord {
   grade?: string | null
   keep_grade?: boolean
   import_source?: string
+  matched_course_code?: string | null
+  matched_course_title?: string | null
+  matched_course_id?: number | null
   needs_review?: boolean
   review_reason?: string | null
   raw?: string

@@ -5,6 +5,7 @@ const props = defineProps<{
   parsing?: boolean
   saving?: boolean
   existingRecords?: AcademicCourseRecord[]
+  draftStorageKey?: string
 }>()
 
 const emit = defineEmits<{
@@ -15,39 +16,20 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const pasteText = ref('')
-const previewRows = ref<AcademicCourseRecord[]>([])
-const keepGrades = ref(true)
 const pickerVisible = ref(false)
+const pickerRef = ref<InstanceType<typeof AcademicMapCoursePickerImport> | null>(null)
 const exampleImageUrl = '/image/academic-map/sis-course-history-example.png'
 
-const hasRows = computed(() => previewRows.value.length > 0)
-
 const setRows = (rows: AcademicCourseRecord[]) => {
-  previewRows.value = rows.map(row => ({
-    ...row,
-    status: row.status || 'completed',
-    keep_grade: keepGrades.value && !!row.grade,
-  }))
-}
-
-const updateRow = (index: number, patch: Partial<AcademicCourseRecord>) => {
-  previewRows.value[index] = { ...previewRows.value[index], ...patch }
-}
-
-const removeRow = (index: number) => {
-  previewRows.value = previewRows.value.filter((_, rowIndex) => rowIndex !== index)
+  pickerVisible.value = true
+  nextTick(() => {
+    pickerRef.value?.mergeImportedRows(rows)
+  })
 }
 
 const parse = () => {
   if (!pasteText.value.trim()) return
   emit('parse', pasteText.value)
-}
-
-const save = () => {
-  emit('save', {
-    records: previewRows.value,
-    keepGrades: keepGrades.value,
-  })
 }
 
 const savePickedCourses = (payload: { records: AcademicCourseRecord[]; keepGrades: boolean; deleteRecords?: AcademicCourseRecord[] }) => {
@@ -96,63 +78,12 @@ defineExpose({ setRows })
       </button>
     </div>
 
-    <label class="am-grade-toggle">
-      <input v-model="keepGrades" type="checkbox" />
-      <span>
-        <strong>{{ t('academicMap.import.keepGrades') }}</strong>
-        <small>{{ t('academicMap.import.keepGradesCopy') }}</small>
-      </span>
-    </label>
-
-    <div v-if="hasRows" class="am-preview">
-      <div class="am-preview-head">
-        <h3>{{ t('academicMap.import.previewTitle', { count: previewRows.length }) }}</h3>
-        <button class="am-primary-btn" :disabled="props.saving || previewRows.length === 0" type="button" @click="save">
-          {{ props.saving ? t('academicMap.import.saving') : t('academicMap.import.save') }}
-        </button>
-      </div>
-
-      <div class="am-preview-list">
-        <article v-for="(row, index) in previewRows" :key="`${row.course_code}-${index}`" class="am-preview-row">
-          <div class="am-row-main">
-            <input
-              :value="row.course_code"
-              class="am-code-input"
-              @input="updateRow(index, { course_code: ($event.target as HTMLInputElement).value.toUpperCase() })"
-            />
-            <div class="am-row-copy">
-              <input
-                :value="row.course_title || ''"
-                class="am-title-input"
-                :placeholder="t('academicMap.import.courseTitle')"
-                @input="updateRow(index, { course_title: ($event.target as HTMLInputElement).value })"
-              />
-              <span>{{ row.term_label || t('academicMap.import.noTerm') }} / {{ row.units || 0 }} {{ t('academicMap.units') }}</span>
-            </div>
-          </div>
-
-          <div class="am-row-side">
-            <AcademicMapCourseStatusChips
-              :model-value="row.status"
-              compact
-              @update:model-value="updateRow(index, { status: $event })"
-            />
-            <span v-if="keepGrades && row.grade" class="am-grade-pill">{{ row.grade }}</span>
-            <button class="am-icon-btn" type="button" :aria-label="t('academicMap.import.remove')" @click="removeRow(index)">
-              x
-            </button>
-          </div>
-
-          <p v-if="row.needs_review" class="am-review-note">
-            {{ row.review_reason || t('academicMap.import.needsReview') }}
-          </p>
-        </article>
-      </div>
-    </div>
     <AcademicMapCoursePickerImport
+      ref="pickerRef"
       :visible="pickerVisible"
       :saving="props.saving"
       :existing-records="props.existingRecords || []"
+      :draft-storage-key="props.draftStorageKey"
       @close="pickerVisible = false"
       @save="savePickedCourses"
     />

@@ -3,8 +3,8 @@ const { t } = useI18n()
 
 const items = [
   { key: 'prerequisite', className: 'is-prerequisite', type: 'line' },
-  { key: 'corequisite', className: 'is-corequisite', type: 'line' },
   { key: 'exclusion', className: 'is-exclusion', type: 'line' },
+  { key: 'corequisite', className: 'is-corequisite', type: 'line' },
   { key: 'hollowLogic', className: 'is-hollow-logic', type: 'logic' },
   { key: 'solidLogic', className: 'is-solid-logic', type: 'logic' },
 ]

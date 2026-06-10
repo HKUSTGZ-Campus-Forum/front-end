@@ -35,6 +35,24 @@ export function buildCourseListBackQuery(query: Record<string, unknown>): Record
   return out
 }
 
+export function findOfferingTagForSemester(
+  semesters: CourseOffering[],
+  semesterCode: string,
+): string | undefined {
+  return semesters.find((semester) => semester.code === semesterCode)?.offering_tag
+}
+
+export function buildCourseExploreCardPath(
+  courseCode: string,
+  selectedSemester: string,
+  semesters: CourseOffering[],
+) {
+  const compactCode = String(courseCode || "").replace(/\[\d+\]$/, "").replace(/[^A-Za-z0-9]+/g, "")
+  const offeringTag = findOfferingTagForSemester(semesters, selectedSemester)
+  if (!offeringTag) return `/courses/${compactCode}`
+  return `/courses/${compactCode}/offerings/${offeringTag}`
+}
+
 export function getTagLabel(tag: TagLike): string {
   if (tag && typeof tag === "object") {
     return tag.name || tag.tag_name || ""

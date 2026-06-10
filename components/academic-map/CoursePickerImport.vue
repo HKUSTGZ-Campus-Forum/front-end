@@ -1,18 +1,24 @@
 <script setup lang="ts">
-import type { AcademicCourseRecord, AcademicCourseStatus } from '~/types/academic-map'
+import type { AcademicCourseRecord } from '~/types/academic-map'
 import {
   ACADEMIC_MAP_MANUAL_TERM_OPTIONS,
+  buildAcademicMapDraftStoragePayload,
   buildAcademicMapManualRecord,
   buildAcademicMapPickerActionState,
+  buildAcademicMapPickerDraftFromImportRows,
   buildAcademicMapPrefixOptions,
   normalizeAcademicMapCatalogCourses,
+  restoreAcademicMapDraftStoragePayload,
   type AcademicMapCatalogCourse,
+  type AcademicMapPickerDraft,
+  type AcademicMapPickerMeta,
 } from '~/utils/academicMapManualImport'
 
 const props = defineProps<{
   visible: boolean
   saving?: boolean
   existingRecords?: AcademicCourseRecord[]
+  draftStorageKey?: string
 }>()
 
 const emit = defineEmits<{
@@ -27,10 +33,11 @@ const courses = ref<AcademicMapCatalogCourse[]>([])
 const selectedPrefix = ref('')
 const searchQuery = ref('')
 const selectedCourses = ref<Map<string, AcademicMapCatalogCourse>>(new Map())
-const selectedMeta = ref<Map<string, { status: AcademicCourseStatus; grade: string; termLabel: string }>>(new Map())
+const selectedMeta = ref<Map<string, AcademicMapPickerMeta>>(new Map())
 const pendingRemovalRecords = ref<Map<string, AcademicCourseRecord>>(new Map())
 const loading = ref(false)
 const errorMessage = ref('')
+const isRestoringDraft = ref(false)
 
 const compactCode = (value: string) => value.replace(/\s+/g, '').toUpperCase()
 
@@ -76,8 +83,21 @@ const canSaveSelection = computed(() => actionState.value.hasChanges && missingT
 watch(
   () => props.visible,
   visible => {
-    if (visible) loadCourses()
+    if (visible) {
+      restoreDraft()
+      loadCourses()
+    }
   },
+)
+
+watch(
+  () => props.draftStorageKey,
+  () => restoreDraft(),
+)
+
+watch(
+  [selectedCourses, selectedMeta, pendingRemovalRecords],
+  () => persistDraft(),
 )
 
 watch(prefixOptions, options => {
@@ -101,6 +121,10 @@ async function loadCourses() {
 }
 
 function toggleCourse(course: AcademicMapCatalogCourse) {
+  if (selectedCourses.value.has(course.compactCode)) {
+    removeCourse(course)
+    return
+  }
   if (existingCodeSet.value.has(course.compactCode)) {
     const record = existingRecordMap.value.get(course.compactCode)
     if (record) toggleExistingRemoval(record)
@@ -113,7 +137,7 @@ function toggleCourse(course: AcademicMapCatalogCourse) {
     nextMeta.delete(course.compactCode)
   } else {
     next.set(course.compactCode, course)
-    nextMeta.set(course.compactCode, { status: 'completed', grade: '', termLabel: '' })
+    nextMeta.set(course.compactCode, { status: 'completed', grade: '', termCode: '' })
   }
   selectedCourses.value = next
   selectedMeta.value = nextMeta
@@ -139,8 +163,8 @@ function toggleExistingRemoval(record: AcademicCourseRecord) {
   pendingRemovalRecords.value = next
 }
 
-function updateSelectedMeta(course: AcademicMapCatalogCourse, patch: Partial<{ status: AcademicCourseStatus; grade: string; termLabel: string }>) {
-  const current = selectedMeta.value.get(course.compactCode) || { status: 'completed', grade: '', termLabel: '' }
+function updateSelectedMeta(course: AcademicMapCatalogCourse, patch: Partial<AcademicMapPickerMeta>) {
+  const current = selectedMeta.value.get(course.compactCode) || { status: 'completed', grade: '', termCode: '' }
   selectedMeta.value = new Map(selectedMeta.value).set(course.compactCode, { ...current, ...patch })
 }
 
@@ -153,7 +177,7 @@ function selectedGrade(course: AcademicMapCatalogCourse) {
 }
 
 function selectedTerm(course: AcademicMapCatalogCourse) {
-  return selectedMeta.value.get(course.compactCode)?.termLabel || ''
+  return selectedMeta.value.get(course.compactCode)?.termCode || ''
 }
 
 function isPendingRemoval(course: AcademicMapCatalogCourse) {
@@ -167,8 +191,76 @@ function resetSelection() {
 }
 
 function closePicker() {
-  resetSelection()
   emit('close')
+}
+
+function storageKey() {
+  return props.draftStorageKey || ''
+}
+
+function currentDraft(): AcademicMapPickerDraft {
+  return {
+    items: selectedList.value.map(course => ({
+      course,
+      meta: selectedMeta.value.get(course.compactCode) || { status: 'completed', grade: '', termCode: '' },
+    })),
+    removals: pendingRemovalList.value,
+  }
+}
+
+function applyDraft(draft: AcademicMapPickerDraft) {
+  isRestoringDraft.value = true
+  selectedCourses.value = new Map(draft.items.map(item => [item.course.compactCode, item.course]))
+  selectedMeta.value = new Map(draft.items.map(item => [
+    item.course.compactCode,
+    {
+      status: item.meta.status || 'completed',
+      grade: item.meta.grade || '',
+      termCode: item.meta.termCode || '',
+    },
+  ]))
+  pendingRemovalRecords.value = new Map(draft.removals.map(record => [compactCode(record.course_code), record]))
+  nextTick(() => {
+    isRestoringDraft.value = false
+  })
+}
+
+function restoreDraft() {
+  const key = storageKey()
+  if (!process.client || !key) return
+  const draft = restoreAcademicMapDraftStoragePayload(window.localStorage.getItem(key))
+  if (draft) applyDraft(draft)
+}
+
+function persistDraft() {
+  const key = storageKey()
+  if (!process.client || !key || isRestoringDraft.value) return
+  const draft = currentDraft()
+  if (!draft.items.length && !draft.removals.length) {
+    window.localStorage.removeItem(key)
+    return
+  }
+  window.localStorage.setItem(key, JSON.stringify(buildAcademicMapDraftStoragePayload(draft)))
+}
+
+function clearPersistedDraft() {
+  const key = storageKey()
+  if (process.client && key) window.localStorage.removeItem(key)
+}
+
+function mergeImportedRows(rows: AcademicCourseRecord[]) {
+  const importedDraft = buildAcademicMapPickerDraftFromImportRows(rows)
+  if (!importedDraft.items.length) return importedDraft
+
+  const nextCourses = new Map(selectedCourses.value)
+  const nextMeta = new Map(selectedMeta.value)
+  for (const item of importedDraft.items) {
+    nextCourses.set(item.course.compactCode, item.course)
+    nextMeta.set(item.course.compactCode, item.meta)
+  }
+  selectedCourses.value = nextCourses
+  selectedMeta.value = nextMeta
+  return importedDraft
 }
 
 function saveSelection() {
@@ -180,7 +272,10 @@ function saveSelection() {
     deleteRecords: pendingRemovalList.value,
   })
   resetSelection()
+  clearPersistedDraft()
 }
+
+defineExpose({ mergeImportedRows, restoreDraft })
 </script>
 
 <template>
@@ -244,22 +339,22 @@ function saveSelection() {
                     <strong>{{ course.code }}</strong>
                     <span>{{ course.title || t('academicMap.records.untitled') }}</span>
                     <small v-if="course.credits !== null">{{ course.credits }} {{ t('academicMap.units') }}</small>
-                  </div>
-                  <button
-                    v-if="existingCodeSet.has(course.compactCode)"
-                    class="am-picker__course-action am-picker__course-action--danger"
-                    type="button"
-                    @click.stop="toggleExistingRemoval(existingRecordMap.get(course.compactCode)!)"
+	                  </div>
+	                  <button
+	                    v-if="existingCodeSet.has(course.compactCode) && !selectedCourses.has(course.compactCode)"
+	                    class="am-picker__course-action am-picker__course-action--danger"
+	                    type="button"
+	                    @click.stop="toggleExistingRemoval(existingRecordMap.get(course.compactCode)!)"
                   >
                     {{ isPendingRemoval(course)
                         ? t('academicMap.import.picker.pendingRemove')
                         : t('academicMap.import.picker.removeImported') }}
-                  </button>
-                  <button v-else class="am-picker__course-action" type="button">
-                    {{ selectedCourses.has(course.compactCode)
-                        ? t('academicMap.import.picker.pendingAdd')
-                        : t('academicMap.import.picker.add') }}
-                  </button>
+	                  </button>
+	                  <button v-else class="am-picker__course-action" type="button">
+	                    {{ selectedCourses.has(course.compactCode)
+	                        ? t(existingCodeSet.has(course.compactCode) ? 'academicMap.import.picker.pendingUpdate' : 'academicMap.import.picker.pendingAdd')
+	                        : t('academicMap.import.picker.add') }}
+	                  </button>
                 </article>
               </div>
             </main>
@@ -272,21 +367,21 @@ function saveSelection() {
               <div v-else class="am-picker__cart-list">
                 <article v-for="course in selectedList" :key="course.compactCode" class="am-picker__cart-item">
                   <div class="am-picker__cart-main">
-                    <div class="am-picker__cart-title-row">
-                      <strong>{{ course.code }}</strong>
-                      <small class="am-picker__change-pill am-picker__change-pill--add">
-                        {{ t('academicMap.import.picker.pendingAdd') }}
-                      </small>
-                    </div>
+	                    <div class="am-picker__cart-title-row">
+	                      <strong>{{ course.code }}</strong>
+	                      <small class="am-picker__change-pill am-picker__change-pill--add">
+	                        {{ t(existingCodeSet.has(course.compactCode) ? 'academicMap.import.picker.pendingUpdate' : 'academicMap.import.picker.pendingAdd') }}
+	                      </small>
+	                    </div>
                     <span>{{ course.title || t('academicMap.records.untitled') }}</span>
                     <div class="am-picker__cart-fields">
                       <select
                         :value="selectedTerm(course)"
                         class="am-picker__term-select"
-                        :aria-label="t('academicMap.import.picker.termLabel')"
-                        required
-                        @change="updateSelectedMeta(course, { termLabel: ($event.target as HTMLSelectElement).value })"
-                      >
+	                        :aria-label="t('academicMap.import.picker.termLabel')"
+	                        required
+	                        @change="updateSelectedMeta(course, { termCode: ($event.target as HTMLSelectElement).value })"
+	                      >
                         <option value="" disabled>{{ t('academicMap.import.picker.termPlaceholder') }}</option>
                         <option
                           v-for="term in ACADEMIC_MAP_MANUAL_TERM_OPTIONS"

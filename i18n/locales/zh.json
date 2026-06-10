@@ -1036,10 +1036,10 @@
       "notTaken": "未修",
       "interested": "想修",
       "prerequisite": "先修关系",
-      "corequisite": "共修关系（需同时修）",
-      "exclusion": "互斥关系（不可同修）",
-      "hollowLogic": "空心：任选其一",
-      "solidLogic": "实心：需全部满足"
+      "corequisite": "需同一学期修",
+      "exclusion": "互斥关系",
+      "hollowLogic": "任选其一",
+      "solidLogic": "需全部满足"
     },
     "statusShort": {
       "completed": "已修",
@@ -1299,6 +1299,7 @@
         "add": "加入",
         "selected": "已选",
         "pendingAdd": "新增",
+        "pendingUpdate": "更新",
         "added": "已导入",
         "removeImported": "移除",
         "pendingRemove": "待移除",

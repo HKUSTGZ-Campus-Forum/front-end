@@ -11,11 +11,12 @@ import {
   getCourseUniverseActiveSchedulerSemester,
   getCourseUniverseSchedulerSemesterLabel,
 } from '~/utils/courseUniverse'
+import { buildAcademicMapRecordGroups } from '~/utils/academicMapManualImport'
 
 definePageMeta({ layout: 'keguang' })
 
 const { t } = useI18n()
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, user } = useAuth()
 const { locale, getLocalePath } = useAppLocale()
 const {
   clearRecords,
@@ -61,20 +62,14 @@ const activeSchedulerSemesterLabel = computed(() => {
   if (!semester) return activeSchedulerSemester.value
   return getCourseUniverseSchedulerSemesterLabel(semester, locale.value)
 })
+const importDraftStorageKey = computed(() => (
+  user.value?.id ? `unikorn:academic-map:picker-draft:v1:${user.value.id}` : ''
+))
 const plannerCourseCodes = computed(() => new Set(
   plannerCourses.value.map(item => compactCourseCode(item.course_code)),
 ))
 
-const groupedRecords = computed(() => {
-  const groups = new Map<string, AcademicCourseRecord[]>()
-  for (const record of records.value) {
-    const term = record.term_label || t('academicMap.records.noTerm')
-    groups.set(term, [...(groups.get(term) || []), record])
-  }
-  return Array.from(groups.entries())
-    .map(([term, items]) => ({ term, items }))
-    .sort((a, b) => termSortValue(b.term) - termSortValue(a.term))
-})
+const groupedRecords = computed(() => buildAcademicMapRecordGroups(records.value, t('academicMap.records.noTerm')))
 
 const recordKey = (record: AcademicCourseRecord) => String(record.id || compactCourseCode(record.course_code))
 const normalizedCourseCode = (record: AcademicCourseRecord) => compactCourseCode(record.course_code)
@@ -82,23 +77,6 @@ const gradeDraft = (record: AcademicCourseRecord) => gradeDrafts.value[recordKey
 const isSavingGrade = (record: AcademicCourseRecord) => savingGradeKeys.value.has(recordKey(record))
 const isInPlannerCart = (record: AcademicCourseRecord) => plannerCourseCodes.value.has(normalizedCourseCode(record))
 const isCartUpdating = (record: AcademicCourseRecord) => cartUpdatingCodes.value.has(normalizedCourseCode(record))
-const termSortValue = (term: string) => {
-  const normalized = String(term || '').trim()
-  const yearMatch = normalized.match(/(\d{2,4})\s*[-/]\s*(\d{2,4})/)
-  if (!yearMatch) return -1
-
-  const rawStartYear = Number(yearMatch[1])
-  const startYear = rawStartYear < 100 ? 2000 + rawStartYear : rawStartYear
-  const zhSeasonPattern = (codePoint: number) => new RegExp(String.fromCharCode(codePoint))
-  const seasonRank = [
-    { patterns: [/fall/i, zhSeasonPattern(0x79cb)], value: 1 },
-    { patterns: [/winter/i, zhSeasonPattern(0x51ac)], value: 2 },
-    { patterns: [/spring/i, zhSeasonPattern(0x6625)], value: 3 },
-    { patterns: [/summer/i, zhSeasonPattern(0x590f)], value: 4 },
-  ].find(item => item.patterns.some(pattern => pattern.test(normalized)))?.value || 0
-
-  return startYear * 10 + seasonRank
-}
 
 watch(summary, value => {
   const targetMajors = value?.profile?.target_majors || []
@@ -391,6 +369,7 @@ useHead({
             :parsing="isParsing"
             :saving="isSavingImport"
             :existing-records="records"
+            :draft-storage-key="importDraftStorageKey"
             @parse="handleParse"
             @save="handleImportSave"
           />

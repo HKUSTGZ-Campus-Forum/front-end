@@ -1036,10 +1036,10 @@
       "notTaken": "Not taken",
       "interested": "Want to take",
       "prerequisite": "Prerequisite",
-      "corequisite": "Corequisite (take together)",
-      "exclusion": "Exclusion (cannot take together)",
-      "hollowLogic": "Hollow: choose one",
-      "solidLogic": "Solid: need all"
+      "corequisite": "Must take in same term",
+      "exclusion": "Exclusion",
+      "hollowLogic": "Choose one",
+      "solidLogic": "Need all"
     },
     "statusShort": {
       "completed": "Done",
@@ -1299,6 +1299,7 @@
         "add": "Add",
         "selected": "Selected",
         "pendingAdd": "New",
+        "pendingUpdate": "Update",
         "added": "Imported",
         "removeImported": "Remove",
         "pendingRemove": "Pending removal",

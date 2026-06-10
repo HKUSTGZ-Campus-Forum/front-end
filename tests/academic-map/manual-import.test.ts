@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
   ACADEMIC_MAP_MANUAL_TERM_OPTIONS,
+  buildAcademicMapDraftStoragePayload,
   buildAcademicMapPickerActionState,
+  buildAcademicMapPickerDraftFromImportRows,
   buildAcademicMapManualRecord,
   buildAcademicMapPrefixOptions,
+  buildAcademicMapRecordGroups,
   normalizeAcademicMapCatalogCourses,
+  normalizeAcademicMapTerm,
+  restoreAcademicMapDraftStoragePayload,
 } from '../../utils/academicMapManualImport'
 
 describe('academic map manual import helpers', () => {
@@ -97,21 +102,25 @@ describe('academic map manual import helpers', () => {
     })
   })
 
-  it('offers manual import terms from 2023-2024 fall through 2025-2026 summer', () => {
+  it('offers manual import terms as scheduler semester ids', () => {
     expect(ACADEMIC_MAP_MANUAL_TERM_OPTIONS.map(option => option.value)).toEqual([
-      '2023-2024 Fall',
-      '2023-2024 Winter',
-      '2023-2024 Spring',
-      '2023-2024 Summer',
-      '2024-2025 Fall',
-      '2024-2025 Winter',
-      '2024-2025 Spring',
-      '2024-2025 Summer',
-      '2025-2026 Fall',
-      '2025-2026 Winter',
-      '2025-2026 Spring',
-      '2025-2026 Summer',
+      '2310',
+      '2320',
+      '2330',
+      '2340',
+      '2410',
+      '2420',
+      '2430',
+      '2440',
+      '2510',
+      '2520',
+      '2530',
+      '2540',
     ])
+    expect(ACADEMIC_MAP_MANUAL_TERM_OPTIONS[7]).toEqual({
+      value: '2440',
+      label: '2024-25 Summer',
+    })
   })
 
   it('adds the selected manual import term to the record', () => {
@@ -119,10 +128,122 @@ describe('academic map manual import helpers', () => {
       { course_code: 'UFUG 1102', course_title: 'Calculus I', credits: 3 },
     ])
 
-    expect(buildAcademicMapManualRecord(course, { termLabel: '2025-2026 Summer' })).toMatchObject({
+    expect(buildAcademicMapManualRecord(course, { termCode: '2540' })).toMatchObject({
       course_code: 'UFUG 1102',
-      term_label: '2025-2026 Summer',
+      term_code: '2540',
+      term_label: '2025-26 Summer',
     })
+  })
+
+  it('normalizes SIS and manual term labels into the scheduler semester id format', () => {
+    expect(normalizeAcademicMapTerm('2024-25 Summer')).toEqual({
+      termCode: '2440',
+      termLabel: '2024-25 Summer',
+    })
+    expect(normalizeAcademicMapTerm('2024-2025 Spring')).toEqual({
+      termCode: '2430',
+      termLabel: '2024-25 Spring',
+    })
+    expect(normalizeAcademicMapTerm('not a term')).toBeNull()
+  })
+
+  it('places records without assigned terms before dated term groups', () => {
+    const groups = buildAcademicMapRecordGroups([
+      {
+        id: 1,
+        course_code: 'UFUG 1105',
+        course_title: 'Honors Calculus I',
+        units: 3,
+        status: 'completed',
+        term_label: '2024-25 Fall',
+      },
+      {
+        id: 2,
+        course_code: 'UFUG 1504',
+        course_title: 'Honors General Physics II',
+        units: 3,
+        status: 'planned',
+      },
+      {
+        id: 3,
+        course_code: 'UFUG 2601',
+        course_title: 'C++ Programming',
+        units: 4,
+        status: 'completed',
+        term_label: '2025-26 Summer',
+      },
+    ], 'No assigned term')
+
+    expect(groups.map(group => group.term)).toEqual([
+      'No assigned term',
+      '2025-26 Summer',
+      '2024-25 Fall',
+    ])
+  })
+
+  it('builds a picker draft from matched SIS rows and lets the last duplicate win', () => {
+    const draft = buildAcademicMapPickerDraftFromImportRows([
+      {
+        course_code: 'AIAA 2205',
+        course_title: 'Old AI Title',
+        units: 3,
+        status: 'completed',
+        grade: 'B+',
+        term_label: '2024-25 Spring',
+        matched_course_code: 'AIAA2205',
+      },
+      {
+        course_code: 'AIAA2205',
+        course_title: 'Introduction to Artificial Intelligence',
+        units: 3,
+        status: 'completed',
+        grade: 'A',
+        term_label: '2024-25 Summer',
+        matched_course_code: 'AIAA2205',
+      },
+      {
+        course_code: 'NOPE 0000',
+        course_title: 'Unknown',
+        units: 3,
+        status: 'completed',
+        grade: 'A',
+        matched_course_code: null,
+      },
+    ])
+
+    expect(draft.items).toHaveLength(1)
+    expect(draft.ignoredCount).toBe(1)
+    expect(draft.items[0]).toEqual({
+      course: {
+        code: 'AIAA 2205',
+        compactCode: 'AIAA2205',
+        prefix: 'AIAA',
+        title: 'Introduction to Artificial Intelligence',
+        credits: 3,
+      },
+      meta: {
+        status: 'completed',
+        grade: 'A',
+        termCode: '2440',
+      },
+    })
+  })
+
+  it('serializes and restores picker drafts while dropping expired payloads', () => {
+    const now = 100_000
+    const [course] = normalizeAcademicMapCatalogCourses([
+      { course_code: 'AIAA 2205', course_title: 'Introduction to AI', credits: 3 },
+    ])
+    const payload = buildAcademicMapDraftStoragePayload({
+      items: [{ course, meta: { status: 'completed', grade: 'A', termCode: '2440' } }],
+      removals: [],
+    }, now)
+
+    expect(restoreAcademicMapDraftStoragePayload(JSON.stringify(payload), now + 1_000)).toEqual({
+      items: [{ course, meta: { status: 'completed', grade: 'A', termCode: '2440' } }],
+      removals: [],
+    })
+    expect(restoreAcademicMapDraftStoragePayload(JSON.stringify(payload), now + 31 * 24 * 60 * 60 * 1000)).toBeNull()
   })
 
   it('summarizes pending picker changes by import and removal counts', () => {
