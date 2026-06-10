@@ -145,7 +145,7 @@ export default defineNuxtConfig({
     },
     // preset: "static",
     prerender: {
-      crawlLinks: true, // prevent crawler from following <a> to /users etc.
+      crawlLinks: false, // SSR deployment does not need link crawling during build.
       failOnError: false, // ignore 404 during prerender
       // routes: ["/", "/login", "/register"], // optional: define known static routes
       ignore: [
