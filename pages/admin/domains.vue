@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { AdminOverviewResponse } from "~/types/admin";
+import type {
+  AdminContestSummary,
+  AdminCoursesSummary,
+  AdminMatchingSummary,
+  AdminOperationsSummary,
+} from "~/types/admin";
 
 definePageMeta({
   middleware: "admin",
@@ -7,43 +12,38 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-const { getOverview } = useAdminConsole();
+const { getCoursesSummary, getMatchingSummary, getContestSummary, getOperationsSummary } = useAdminConsole();
 
-const overview = ref<AdminOverviewResponse | null>(null);
+const coursesSummary = ref<AdminCoursesSummary | null>(null);
+const matchingSummary = ref<AdminMatchingSummary | null>(null);
+const contestSummary = ref<AdminContestSummary | null>(null);
+const operationsSummary = ref<AdminOperationsSummary | null>(null);
 const loading = ref(true);
 const error = ref("");
 
 const metricItems = computed(() => [
-  { key: "courses", label: t("adminDomains.metrics.courses"), value: overview.value?.metrics.courses.courses ?? 0 },
-  { key: "offerings", label: t("adminDomains.metrics.offerings"), value: overview.value?.metrics.courses.offerings ?? 0 },
-  { key: "projects", label: t("adminDomains.metrics.projects"), value: overview.value?.metrics.matching.projects ?? 0 },
-  { key: "submissions", label: t("adminDomains.metrics.submissions"), value: overview.value?.metrics.contest.submissions ?? 0 },
+  { key: "courses", label: t("adminDomains.metrics.courses"), value: coursesSummary.value?.courses ?? 0 },
+  { key: "offerings", label: t("adminDomains.metrics.offerings"), value: coursesSummary.value?.offerings ?? 0 },
+  { key: "projects", label: t("adminDomains.metrics.projects"), value: matchingSummary.value?.projects ?? 0 },
+  { key: "submissions", label: t("adminDomains.metrics.submissions"), value: contestSummary.value?.submissions ?? 0 },
 ]);
 
 const sections = computed(() => {
-  const metrics = overview.value?.metrics;
-  if (!metrics) return [];
+  const courses = coursesSummary.value;
+  const matching = matchingSummary.value;
+  const contest = contestSummary.value;
+  const operations = operationsSummary.value;
+  if (!courses || !matching || !contest || !operations) return [];
   return [
     {
       key: "courses",
       title: t("adminDomains.sections.courses"),
       description: t("adminDomains.descriptions.courses"),
       rows: [
-        [t("adminDomains.labels.activeCourses"), metrics.courses.active_courses],
-        [t("adminDomains.labels.offerings"), metrics.courses.offerings],
-        [t("adminDomains.labels.sections"), metrics.courses.sections],
-        [t("adminDomains.labels.meetings"), metrics.courses.meetings],
-      ],
-    },
-    {
-      key: "academic",
-      title: t("adminDomains.sections.academicMap"),
-      description: t("adminDomains.descriptions.academicMap"),
-      rows: [
-        [t("adminDomains.labels.programs"), metrics.academic_map.programs],
-        [t("adminDomains.labels.requirementGroups"), metrics.academic_map.requirement_groups],
-        [t("adminDomains.labels.academicProfiles"), metrics.academic_map.user_profiles],
-        [t("adminDomains.labels.recordsNeedingReview"), metrics.academic_map.records_needing_review],
+        [t("adminDomains.labels.activeCourses"), courses.active_courses],
+        [t("adminDomains.labels.offerings"), courses.offerings],
+        [t("adminDomains.labels.sections"), courses.sections],
+        [t("adminDomains.labels.meetings"), courses.meetings],
       ],
     },
     {
@@ -51,10 +51,10 @@ const sections = computed(() => {
       title: t("adminDomains.sections.matching"),
       description: t("adminDomains.descriptions.matching"),
       rows: [
-        [t("adminDomains.labels.projects"), metrics.matching.projects],
-        [t("adminDomains.labels.activeProjects"), metrics.matching.active_projects],
-        [t("adminDomains.labels.profiles"), metrics.matching.profiles],
-        [t("adminDomains.labels.activeProfiles"), metrics.matching.active_profiles],
+        [t("adminDomains.labels.projects"), matching.projects],
+        [t("adminDomains.labels.activeProjects"), matching.active_projects],
+        [t("adminDomains.labels.profiles"), matching.profiles],
+        [t("adminDomains.labels.activeProfiles"), matching.active_profiles],
       ],
     },
     {
@@ -62,10 +62,10 @@ const sections = computed(() => {
       title: t("adminDomains.sections.contest"),
       description: t("adminDomains.descriptions.contest"),
       rows: [
-        [t("adminDomains.labels.contests"), metrics.contest.contests],
-        [t("adminDomains.labels.activeContests"), metrics.contest.active_contests],
-        [t("adminDomains.labels.organizers"), metrics.contest.organizers],
-        [t("adminDomains.labels.submissions"), metrics.contest.submissions],
+        [t("adminDomains.labels.contests"), contest.contests],
+        [t("adminDomains.labels.activeContests"), contest.active_contests],
+        [t("adminDomains.labels.organizers"), contest.organizers],
+        [t("adminDomains.labels.submissions"), contest.submissions],
       ],
     },
     {
@@ -73,10 +73,10 @@ const sections = computed(() => {
       title: t("adminDomains.sections.operations"),
       description: t("adminDomains.descriptions.operations"),
       rows: [
-        [t("adminDomains.labels.files"), metrics.operations.files],
-        [t("adminDomains.labels.validStsTokens"), metrics.operations.valid_sts_tokens],
-        [t("adminDomains.labels.oauthClients"), metrics.operations.oauth_clients],
-        [t("adminDomains.labels.pushSubscriptions"), metrics.operations.push_subscriptions],
+        [t("adminDomains.labels.files"), operations.files],
+        [t("adminDomains.labels.validStsTokens"), operations.valid_sts_tokens],
+        [t("adminDomains.labels.oauthClients"), operations.oauth_clients],
+        [t("adminDomains.labels.pushSubscriptions"), operations.push_subscriptions],
       ],
     },
   ];
@@ -86,9 +86,18 @@ async function loadOverview() {
   loading.value = true;
   error.value = "";
   try {
-    overview.value = await getOverview();
+    const [courses, matching, contest, operations] = await Promise.all([
+      getCoursesSummary(),
+      getMatchingSummary(),
+      getContestSummary(),
+      getOperationsSummary(),
+    ]);
+    coursesSummary.value = courses;
+    matchingSummary.value = matching;
+    contestSummary.value = contest;
+    operationsSummary.value = operations;
   } catch (err) {
-    error.value = err instanceof Error ? err.message : t("adminConsole.errors.loadOverview");
+    error.value = err instanceof Error ? err.message : t("adminConsole.errors.loadDomains");
   } finally {
     loading.value = false;
   }
@@ -108,7 +117,7 @@ onMounted(loadOverview);
     </AdminPageHeader>
 
     <AdminMetricStrip :items="metricItems" />
-    <AdminStateBlock v-if="loading && !overview" :title="t('common.loading')" />
+    <AdminStateBlock v-if="loading && !coursesSummary" :title="t('common.loading')" />
     <AdminStateBlock v-else-if="error" tone="error" :title="t('adminDomains.errors.title')" :message="error" />
 
     <div v-else class="admin-domains__grid">

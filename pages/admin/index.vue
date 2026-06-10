@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import type { AdminOverviewResponse } from "~/types/admin";
+import type {
+  AdminOverviewResponse,
+  AdminOverviewTrendPoint,
+  AdminOverviewTrendsPayload,
+} from "~/types/admin";
+
+type TrendMetricDefinition = {
+  key: string
+  label: string
+  paths: string[]
+};
 
 const { t } = useI18n();
 const { getLocalePath } = useAppLocale();
-const { getOverview } = useAdminConsole();
+const { getOverview, getOverviewTrends } = useAdminConsole();
 
 definePageMeta({
   middleware: "admin",
@@ -13,11 +23,43 @@ definePageMeta({
 const loading = ref(false);
 const loadError = ref<string | null>(null);
 const overview = ref<AdminOverviewResponse | null>(null);
+const selectedTrendDays = ref(7);
+const trendPoints = ref<AdminOverviewTrendPoint[]>([]);
+const trendLoadError = ref(false);
+const trendDayOptions = [7, 30];
 
-const metricValue = (value: number | null) => {
-  if (value !== null) return value;
+const metricValue = (value: number | null | undefined) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value.toLocaleString();
   return loading.value ? "..." : "-";
 };
+
+const trendMetricDefinitions = computed<TrendMetricDefinition[]>(() => [
+  {
+    key: "users",
+    label: t("adminOverview.trends.metrics.users"),
+    paths: ["users", "new_users", "registrations", "users.new", "users.total"],
+  },
+  {
+    key: "posts",
+    label: t("adminOverview.trends.metrics.posts"),
+    paths: ["posts", "new_posts", "content.posts", "content.posts.total"],
+  },
+  {
+    key: "comments",
+    label: t("adminOverview.trends.metrics.comments"),
+    paths: ["comments", "new_comments", "content.comments", "content.comments.total"],
+  },
+  {
+    key: "files",
+    label: t("adminOverview.trends.metrics.files"),
+    paths: ["files", "new_files", "content.files", "content.files.total"],
+  },
+  {
+    key: "gugu",
+    label: t("adminOverview.trends.metrics.gugu"),
+    paths: ["gugu", "gugu_messages", "new_gugu", "content.gugu", "content.gugu.messages"],
+  },
+]);
 
 const metricItems = computed(() => [
   {
@@ -38,7 +80,7 @@ const metricItems = computed(() => [
   {
     key: "active-users",
     label: t("adminOverview.metrics.activeUsers"),
-    value: metricValue(overview.value?.metrics.users.active ?? null),
+    value: metricValue(overview.value?.metrics.users.active),
   },
 ]);
 
@@ -49,8 +91,8 @@ const cards = computed(() => [
     action: t("adminOverview.cards.users.action"),
     to: getLocalePath("/admin/users"),
     stats: [
-      { label: t("adminOverview.metrics.usersTotal"), value: metricValue(overview.value?.metrics.users.total ?? null) },
-      { label: t("adminOverview.metrics.adminUsers"), value: metricValue(overview.value?.metrics.users.admins ?? null) },
+      { label: t("adminOverview.metrics.usersTotal"), value: metricValue(overview.value?.metrics.users.total) },
+      { label: t("adminOverview.metrics.adminUsers"), value: metricValue(overview.value?.metrics.users.admins) },
     ],
   },
   {
@@ -59,8 +101,9 @@ const cards = computed(() => [
     action: t("adminOverview.cards.content.action"),
     to: getLocalePath("/admin/content"),
     stats: [
-      { label: t("adminOverview.metrics.postsTotal"), value: metricValue(overview.value?.metrics.content.posts.total ?? null) },
-      { label: t("adminOverview.metrics.commentsTotal"), value: metricValue(overview.value?.metrics.content.comments.total ?? null) },
+      { label: t("adminOverview.metrics.postsTotal"), value: metricValue(overview.value?.metrics.content.posts.total) },
+      { label: t("adminOverview.metrics.guguMessages"), value: metricValue(overview.value?.metrics.content.gugu.messages) },
+      { label: t("adminOverview.metrics.filesTotal"), value: metricValue(overview.value?.metrics.content.files.total) },
     ],
   },
   {
@@ -97,8 +140,9 @@ const cards = computed(() => [
     action: t("adminOverview.cards.domains.action"),
     to: getLocalePath("/admin/domains"),
     stats: [
-      { label: t("adminOverview.metrics.coursesTotal"), value: metricValue(overview.value?.metrics.courses.courses ?? null) },
-      { label: t("adminOverview.metrics.projectsTotal"), value: metricValue(overview.value?.metrics.matching.projects ?? null) },
+      { label: t("adminOverview.metrics.coursesTotal"), value: metricValue(overview.value?.metrics.courses.courses) },
+      { label: t("adminOverview.metrics.projectsTotal"), value: metricValue(overview.value?.metrics.matching.projects) },
+      { label: t("adminOverview.metrics.validTokens"), value: metricValue(overview.value?.metrics.operations.valid_sts_tokens) },
     ],
   },
   {
@@ -116,25 +160,147 @@ const healthRows = computed(() => {
   const metrics = overview.value?.metrics;
   if (!metrics) return [];
   return [
-    { key: "courses", label: t("adminDomains.sections.courses"), value: metrics.courses.offerings },
-    { key: "academic", label: t("adminDomains.sections.academicMap"), value: metrics.academic_map.user_profiles },
-    { key: "matching", label: t("adminDomains.sections.matching"), value: metrics.matching.active_projects },
-    { key: "contest", label: t("adminDomains.sections.contest"), value: metrics.contest.submissions },
-    { key: "operations", label: t("adminDomains.sections.operations"), value: metrics.operations.valid_sts_tokens },
+    {
+      key: "courses",
+      label: t("adminOverview.healthRows.courses"),
+      value: metricValue(metrics.courses.offerings),
+      caption: t("adminOverview.healthRows.courseCaption"),
+    },
+    {
+      key: "academic",
+      label: t("adminOverview.healthRows.academicMap"),
+      value: metricValue(metrics.academic_map.records_needing_review),
+      caption: t("adminOverview.healthRows.academicCaption"),
+    },
+    {
+      key: "matching",
+      label: t("adminOverview.healthRows.matching"),
+      value: metricValue(metrics.matching.active_projects),
+      caption: t("adminOverview.healthRows.matchingCaption"),
+    },
+    {
+      key: "contest",
+      label: t("adminOverview.healthRows.contest"),
+      value: metricValue(metrics.contest.submissions),
+      caption: t("adminOverview.healthRows.contestCaption"),
+    },
+    {
+      key: "operations",
+      label: t("adminOverview.healthRows.operations"),
+      value: metricValue(metrics.operations.valid_sts_tokens),
+      caption: t("adminOverview.healthRows.operationsCaption"),
+    },
   ];
 });
+
+function readNumberPath(source: unknown, path: string) {
+  let current: unknown = source;
+  for (const part of path.split(".")) {
+    if (!current || typeof current !== "object" || !(part in current)) return null;
+    current = (current as Record<string, unknown>)[part];
+  }
+
+  if (typeof current === "number" && Number.isFinite(current)) return current;
+  if (typeof current === "string" && current.trim()) {
+    const parsed = Number(current);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function getTrendValue(point: AdminOverviewTrendPoint, paths: string[]) {
+  for (const path of paths) {
+    const value = readNumberPath(point, path);
+    if (value !== null) return value;
+  }
+  return 0;
+}
+
+function normalizeTrendPayload(payload?: AdminOverviewTrendsPayload | AdminOverviewTrendPoint[] | null) {
+  if (!payload) return [];
+  const points = Array.isArray(payload) ? payload : (payload.items || payload.trends);
+  return Array.isArray(points)
+    ? points.filter((point): point is AdminOverviewTrendPoint => Boolean(point?.date))
+    : [];
+}
+
+const trendTotals = computed(() => trendMetricDefinitions.value.map((metric) => {
+  const total = trendPoints.value.reduce((sum, point) => sum + getTrendValue(point, metric.paths), 0);
+  return {
+    key: metric.key,
+    label: metric.label,
+    total,
+    value: trendPoints.value.length ? total.toLocaleString() : (loading.value ? "..." : "-"),
+  };
+}));
+
+const trendChartRows = computed(() => trendMetricDefinitions.value.map((metric) => {
+  const points = trendPoints.value.map((point) => ({
+    date: point.date,
+    value: getTrendValue(point, metric.paths),
+  }));
+  const total = points.reduce((sum, point) => sum + point.value, 0);
+  return {
+    key: metric.key,
+    label: metric.label,
+    total,
+    max: Math.max(1, ...points.map((point) => point.value)),
+    points,
+  };
+}));
+
+const hasTrendPoints = computed(() => trendPoints.value.length > 0);
+
+const trendEmptyMessage = computed(() => trendLoadError.value
+  ? t("adminOverview.trends.loadPartial")
+  : t("adminOverview.trends.emptyDescription")
+);
+
+const trendBarHeight = (value: number, max: number) => {
+  if (value <= 0) return "3px";
+  return `${Math.max(8, Math.round((value / Math.max(max, 1)) * 100))}%`;
+};
+
+const formatTrendDate = (date: string) => {
+  const parts = date.split("-");
+  return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : date;
+};
 
 const loadOverview = async () => {
   loading.value = true;
   loadError.value = null;
+  trendLoadError.value = false;
 
   try {
-    overview.value = await getOverview();
+    const data = await getOverview({ days: selectedTrendDays.value });
+    overview.value = data;
+
+    const inlineTrends = normalizeTrendPayload(data.trends);
+    if (inlineTrends.length) {
+      trendPoints.value = inlineTrends;
+    } else {
+      try {
+        const trendPayload = await getOverviewTrends({ days: selectedTrendDays.value });
+        trendPoints.value = normalizeTrendPayload(trendPayload);
+        trendLoadError.value = !trendPoints.value.length;
+      } catch {
+        trendPoints.value = [];
+        trendLoadError.value = true;
+      }
+    }
   } catch {
     loadError.value = t("adminOverview.status.loadFailed");
+    trendPoints.value = [];
+    trendLoadError.value = true;
   } finally {
     loading.value = false;
   }
+};
+
+const setTrendDays = (days: number) => {
+  if (selectedTrendDays.value === days || loading.value) return;
+  selectedTrendDays.value = days;
+  loadOverview();
 };
 
 onMounted(loadOverview);
@@ -161,6 +327,62 @@ onMounted(loadOverview);
       :message="loadError"
       tone="error"
     />
+
+    <section class="admin-overview__trends" :aria-label="t('adminOverview.trends.title')">
+      <div class="admin-overview__section-head">
+        <div>
+          <h2>{{ t("adminOverview.trends.title") }}</h2>
+          <p>{{ t("adminOverview.trends.description", { days: selectedTrendDays }) }}</p>
+        </div>
+        <div class="admin-overview__day-switcher" :aria-label="t('adminOverview.trends.daySwitcher')">
+          <button
+            v-for="days in trendDayOptions"
+            :key="days"
+            type="button"
+            :class="{ 'admin-overview__day-button--active': selectedTrendDays === days }"
+            :disabled="loading"
+            @click="setTrendDays(days)"
+          >
+            {{ t("adminOverview.trends.days", { days }) }}
+          </button>
+        </div>
+      </div>
+
+      <div class="admin-overview__trend-totals">
+        <article v-for="metric in trendTotals" :key="metric.key">
+          <span>{{ metric.label }}</span>
+          <strong>{{ metric.value }}</strong>
+          <small>{{ t("adminOverview.trends.incrementLabel", { days: selectedTrendDays }) }}</small>
+        </article>
+      </div>
+
+      <AdminStateBlock
+        v-if="!hasTrendPoints"
+        :title="t('adminOverview.trends.emptyTitle')"
+        :message="trendEmptyMessage"
+      />
+
+      <div v-else class="admin-overview__trend-chart">
+        <article v-for="row in trendChartRows" :key="row.key" class="admin-overview__trend-row">
+          <div class="admin-overview__trend-row-label">
+            <span>{{ row.label }}</span>
+            <strong>{{ row.total.toLocaleString() }}</strong>
+          </div>
+          <div class="admin-overview__trend-bars">
+            <div
+              v-for="point in row.points"
+              :key="`${row.key}-${point.date}`"
+              class="admin-overview__trend-point"
+              :title="t('adminOverview.trends.pointTitle', { label: row.label, date: point.date, count: point.value })"
+            >
+              <span class="admin-overview__trend-value">{{ point.value }}</span>
+              <span class="admin-overview__trend-bar" :style="{ height: trendBarHeight(point.value, row.max) }" />
+              <span class="admin-overview__trend-date">{{ formatTrendDate(point.date) }}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <section class="admin-overview__modules" :aria-label="t('adminOverview.modulesTitle')">
       <h2>{{ t("adminOverview.modulesTitle") }}</h2>
@@ -192,6 +414,7 @@ onMounted(loadOverview);
         <article v-for="row in healthRows" :key="row.key">
           <span>{{ row.label }}</span>
           <strong>{{ row.value }}</strong>
+          <small>{{ row.caption }}</small>
         </article>
       </div>
     </section>
@@ -219,7 +442,8 @@ onMounted(loadOverview);
 }
 
 .admin-overview__refresh,
-.admin-overview__action {
+.admin-overview__action,
+.admin-overview__day-switcher button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -230,7 +454,8 @@ onMounted(loadOverview);
   text-decoration: none;
 }
 
-.admin-overview__refresh {
+.admin-overview__refresh,
+.admin-overview__day-switcher button {
   border: 0;
   background: var(--interactive-primary);
   color: #fff;
@@ -239,6 +464,18 @@ onMounted(loadOverview);
   &:disabled {
     cursor: wait;
     opacity: 0.7;
+  }
+}
+
+.admin-overview__day-switcher button {
+  border: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+
+  &.admin-overview__day-button--active {
+    border-color: var(--interactive-primary);
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
   }
 }
 
@@ -257,6 +494,151 @@ onMounted(loadOverview);
     color: var(--text-primary);
     font-size: 1.1rem;
   }
+}
+
+.admin-overview__trends {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+  border: var(--card-border);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  box-shadow: var(--card-shadow);
+}
+
+.admin-overview__section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0.35rem 0 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+}
+
+.admin-overview__day-switcher,
+.admin-overview__trend-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.admin-overview__trend-totals {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  article {
+    padding: 0.85rem;
+    border-radius: 8px;
+    background: var(--surface-secondary);
+  }
+
+  span,
+  small {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  strong {
+    display: block;
+    margin: 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+}
+
+.admin-overview__trend-chart {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-overview__trend-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.admin-overview__trend-row-label {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  min-width: 0;
+
+  span {
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+
+  strong {
+    margin-top: 0.25rem;
+    color: var(--text-primary);
+    font-size: 1.15rem;
+  }
+}
+
+.admin-overview__trend-bars {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(34px, 1fr);
+  align-items: end;
+  min-height: 120px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--interactive-primary) 5%, var(--surface-secondary));
+  overflow-x: auto;
+}
+
+.admin-overview__trend-point {
+  display: grid;
+  grid-template-rows: 1.2rem 1fr 1rem;
+  align-items: end;
+  justify-items: center;
+  gap: 0.35rem;
+  min-width: 34px;
+  height: 100%;
+}
+
+.admin-overview__trend-value,
+.admin-overview__trend-date {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.admin-overview__trend-value {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.admin-overview__trend-point:hover .admin-overview__trend-value {
+  opacity: 1;
+}
+
+.admin-overview__trend-bar {
+  display: block;
+  width: 12px;
+  min-height: 3px;
+  border-radius: 999px 999px 3px 3px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--semantic-success) 75%, var(--interactive-primary)),
+    var(--interactive-primary)
+  );
 }
 
 .admin-overview__grid {
@@ -304,6 +686,14 @@ onMounted(loadOverview);
     margin-top: 0.35rem;
     color: var(--text-primary);
     font-size: 1.35rem;
+  }
+
+  small {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.4;
   }
 }
 
@@ -378,6 +768,11 @@ onMounted(loadOverview);
 }
 
 @media (max-width: 768px) {
+  .admin-overview__section-head {
+    flex-direction: column;
+  }
+
+  .admin-overview__trend-totals,
   .admin-overview__grid {
     grid-template-columns: 1fr;
   }
@@ -389,6 +784,10 @@ onMounted(loadOverview);
   .admin-overview__activity-list article {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .admin-overview__trend-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
