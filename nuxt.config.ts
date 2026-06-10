@@ -7,6 +7,12 @@ const appBuildVersion =
   process.env.VERCEL_GIT_COMMIT_SHA ||
   process.env.CF_PAGES_COMMIT_SHA ||
   pkg.version;
+const apiBaseUrl = (
+  process.env.NUXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "development"
+    ? "http://localhost:8000"
+    : "https://unikorn.axfff.com")
+).replace(/\/$/, "");
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
@@ -133,7 +139,7 @@ export default defineNuxtConfig({
     // 否则 /api/auth/login 会变成上游 /auth/login 导致 404。
     devProxy: {
       "/api": {
-        target: "https://dev.unikorn.axfff.com/api",
+        target: `${apiBaseUrl}/api`,
         changeOrigin: true,
       },
     },
@@ -168,11 +174,7 @@ export default defineNuxtConfig({
     public: {
       appVersion: pkg.version,
       appBuildVersion,
-      apiBaseUrl:
-        process.env.NUXT_PUBLIC_API_BASE_URL ||
-        (process.env.NODE_ENV === "development"
-          ? "http://localhost:3000"
-          : "https://unikorn.axfff.com"),
+      apiBaseUrl,
     },
   },
   ssr: true,
