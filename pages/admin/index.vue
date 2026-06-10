@@ -28,7 +28,7 @@ const trendPoints = ref<AdminOverviewTrendPoint[]>([]);
 const trendLoadError = ref(false);
 const trendDayOptions = [7, 30];
 
-const metricValue = (value: number | null | undefined) => {
+const metricValue = (value: unknown) => {
   if (typeof value === "number" && Number.isFinite(value)) return value.toLocaleString();
   return loading.value ? "..." : "-";
 };
@@ -55,9 +55,24 @@ const trendMetricDefinitions = computed<TrendMetricDefinition[]>(() => [
     paths: ["files", "new_files", "content.files", "content.files.total"],
   },
   {
-    key: "gugu",
-    label: t("adminOverview.trends.metrics.gugu"),
-    paths: ["gugu", "gugu_messages", "new_gugu", "content.gugu", "content.gugu.messages"],
+    key: "feedbacks",
+    label: t("adminOverview.trends.metrics.feedbacks"),
+    paths: ["feedbacks", "feedback", "new_feedbacks"],
+  },
+  {
+    key: "identity_requests",
+    label: t("adminOverview.trends.metrics.identityRequests"),
+    paths: ["identity_requests", "identity", "new_identity_requests"],
+  },
+  {
+    key: "course_records",
+    label: t("adminOverview.trends.metrics.courseRecords"),
+    paths: ["course_records", "academic_map.course_records", "new_course_records"],
+  },
+  {
+    key: "projects",
+    label: t("adminOverview.trends.metrics.projects"),
+    paths: ["projects", "matching.projects", "new_projects"],
   },
 ]);
 
@@ -249,17 +264,19 @@ const trendChartRows = computed(() => trendMetricDefinitions.value.map((metric) 
   };
 }));
 
+const trendChartCategories = computed(() => trendPoints.value.map((point) => formatTrendDate(point.date)));
+
+const trendChartSeries = computed(() => trendChartRows.value.map((row) => ({
+  name: row.label,
+  data: row.points.map((point) => point.value),
+})));
+
 const hasTrendPoints = computed(() => trendPoints.value.length > 0);
 
 const trendEmptyMessage = computed(() => trendLoadError.value
   ? t("adminOverview.trends.loadPartial")
   : t("adminOverview.trends.emptyDescription")
 );
-
-const trendBarHeight = (value: number, max: number) => {
-  if (value <= 0) return "3px";
-  return `${Math.max(8, Math.round((value / Math.max(max, 1)) * 100))}%`;
-};
 
 const formatTrendDate = (date: string) => {
   const parts = date.split("-");
@@ -362,26 +379,13 @@ onMounted(loadOverview);
         :message="trendEmptyMessage"
       />
 
-      <div v-else class="admin-overview__trend-chart">
-        <article v-for="row in trendChartRows" :key="row.key" class="admin-overview__trend-row">
-          <div class="admin-overview__trend-row-label">
-            <span>{{ row.label }}</span>
-            <strong>{{ row.total.toLocaleString() }}</strong>
-          </div>
-          <div class="admin-overview__trend-bars">
-            <div
-              v-for="point in row.points"
-              :key="`${row.key}-${point.date}`"
-              class="admin-overview__trend-point"
-              :title="t('adminOverview.trends.pointTitle', { label: row.label, date: point.date, count: point.value })"
-            >
-              <span class="admin-overview__trend-value">{{ point.value }}</span>
-              <span class="admin-overview__trend-bar" :style="{ height: trendBarHeight(point.value, row.max) }" />
-              <span class="admin-overview__trend-date">{{ formatTrendDate(point.date) }}</span>
-            </div>
-          </div>
-        </article>
-      </div>
+      <AdminAreaChart
+        v-else
+        :title="t('adminOverview.trends.chartTitle')"
+        :description="t('adminOverview.trends.chartDescription')"
+        :categories="trendChartCategories"
+        :series="trendChartSeries"
+      />
     </section>
 
     <section class="admin-overview__modules" :aria-label="t('adminOverview.modulesTitle')">
@@ -534,7 +538,7 @@ onMounted(loadOverview);
 
 .admin-overview__trend-totals {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 
   article {
     padding: 0.85rem;
@@ -557,88 +561,6 @@ onMounted(loadOverview);
     font-size: 1.35rem;
     line-height: 1;
   }
-}
-
-.admin-overview__trend-chart {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.admin-overview__trend-row {
-  display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-  gap: 1rem;
-  align-items: stretch;
-  min-width: 0;
-}
-
-.admin-overview__trend-row-label {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  min-width: 0;
-
-  span {
-    color: var(--text-secondary);
-    font-size: 0.84rem;
-    font-weight: 700;
-  }
-
-  strong {
-    margin-top: 0.25rem;
-    color: var(--text-primary);
-    font-size: 1.15rem;
-  }
-}
-
-.admin-overview__trend-bars {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(34px, 1fr);
-  align-items: end;
-  min-height: 120px;
-  padding: 0.75rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--interactive-primary) 5%, var(--surface-secondary));
-  overflow-x: auto;
-}
-
-.admin-overview__trend-point {
-  display: grid;
-  grid-template-rows: 1.2rem 1fr 1rem;
-  align-items: end;
-  justify-items: center;
-  gap: 0.35rem;
-  min-width: 34px;
-  height: 100%;
-}
-
-.admin-overview__trend-value,
-.admin-overview__trend-date {
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.admin-overview__trend-value {
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.admin-overview__trend-point:hover .admin-overview__trend-value {
-  opacity: 1;
-}
-
-.admin-overview__trend-bar {
-  display: block;
-  width: 12px;
-  min-height: 3px;
-  border-radius: 999px 999px 3px 3px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--semantic-success) 75%, var(--interactive-primary)),
-    var(--interactive-primary)
-  );
 }
 
 .admin-overview__grid {
@@ -784,10 +706,6 @@ onMounted(loadOverview);
   .admin-overview__activity-list article {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .admin-overview__trend-row {
-    grid-template-columns: 1fr;
   }
 }
 </style>

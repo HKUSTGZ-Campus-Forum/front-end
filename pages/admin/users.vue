@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminRole, AdminUser } from "~/types/admin";
+import type { AdminChartDatum, AdminDistributionCounts, AdminMetricCounts, AdminRole, AdminUser } from "~/types/admin";
 
 definePageMeta({
   middleware: "admin",
@@ -12,7 +12,7 @@ const { getUsers, updateUserRole, setUserDeleted } = useAdminConsole();
 
 const users = ref<AdminUser[]>([]);
 const roles = ref<AdminRole[]>([]);
-const counts = ref<Record<string, number>>({});
+const counts = ref<AdminMetricCounts>({});
 const loading = ref(true);
 const error = ref("");
 const notice = ref<{ type: "success" | "error"; message: string } | null>(null);
@@ -27,11 +27,37 @@ const totalItems = ref(0);
 const perPage = 12;
 
 const metricItems = computed(() => [
-  { key: "total", label: t("adminUsers.metrics.total"), value: counts.value.total || 0 },
-  { key: "verified", label: t("adminUsers.metrics.verified"), value: counts.value.email_verified || 0 },
-  { key: "deleted", label: t("adminUsers.metrics.deleted"), value: counts.value.deleted || 0 },
+  { key: "total", label: t("adminUsers.metrics.total"), value: numberCount("total") },
+  { key: "verified", label: t("adminUsers.metrics.verified"), value: numberCount("email_verified") },
+  { key: "deleted", label: t("adminUsers.metrics.deleted"), value: numberCount("deleted") },
   { key: "page", label: t("adminUsers.metrics.page"), value: users.value.length },
 ]);
+
+function numberCount(key: string) {
+  const value = counts.value[key];
+  return typeof value === "number" ? value : 0;
+}
+
+function distributionCount(key: string): AdminDistributionCounts {
+  const value = counts.value[key];
+  return value && typeof value === "object" ? value as AdminDistributionCounts : {};
+}
+
+function distributionItems(source: AdminDistributionCounts, labels: Record<string, string> = {}): AdminChartDatum[] {
+  return Object.entries(source)
+    .map(([label, value]) => ({ label: labels[label] || label, value }))
+    .filter((item) => item.value > 0);
+}
+
+const roleDistribution = computed(() => distributionItems(distributionCount("roles")));
+const statusDistribution = computed(() => distributionItems(distributionCount("status"), {
+  active: t("adminUsers.charts.labels.active"),
+  deleted: t("adminUsers.charts.labels.deleted"),
+}));
+const emailDistribution = computed(() => distributionItems(distributionCount("email"), {
+  verified: t("adminUsers.charts.labels.emailVerified"),
+  unverified: t("adminUsers.charts.labels.emailUnverified"),
+}));
 
 function setNotice(type: "success" | "error", message: string) {
   notice.value = { type, message };
@@ -118,6 +144,12 @@ onMounted(loadUsers);
     </AdminPageHeader>
 
     <AdminMetricStrip :items="metricItems" />
+
+    <div class="admin-users__charts">
+      <AdminDonutChart :title="t('adminUsers.charts.roles')" :items="roleDistribution" />
+      <AdminDonutChart :title="t('adminUsers.charts.status')" :items="statusDistribution" />
+      <AdminDonutChart :title="t('adminUsers.charts.email')" :items="emailDistribution" />
+    </div>
 
     <AdminFilterBar>
       <label>
@@ -264,6 +296,12 @@ onMounted(loadUsers);
   }
 }
 
+.admin-users__charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .admin-users__list {
   display: grid;
   gap: 0.8rem;
@@ -318,6 +356,10 @@ onMounted(loadUsers);
 }
 
 @media (max-width: 860px) {
+  .admin-users__charts {
+    grid-template-columns: 1fr;
+  }
+
   .admin-users__card {
     grid-template-columns: 1fr;
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminAuditLog } from "~/types/admin";
+import type { AdminAuditLog, AdminAuditSummary, AdminChartDatum, AdminDistributionCounts } from "~/types/admin";
 
 definePageMeta({
   middleware: "admin",
@@ -8,9 +8,10 @@ definePageMeta({
 
 const { t } = useI18n();
 const { formatDate } = useDateFormat();
-const { getAuditLogs } = useAdminConsole();
+const { getAuditLogs, getAuditSummary } = useAdminConsole();
 
 const logs = ref<AdminAuditLog[]>([]);
+const summary = ref<AdminAuditSummary | null>(null);
 const loading = ref(true);
 const error = ref("");
 const action = ref("");
@@ -20,17 +21,30 @@ const totalPages = ref(1);
 const totalItems = ref(0);
 const perPage = 20;
 
+function distributionItems(source?: AdminDistributionCounts): AdminChartDatum[] {
+  return Object.entries(source || {})
+    .map(([label, value]) => ({ label, value }))
+    .filter((item) => item.value > 0);
+}
+
+const actionData = computed(() => distributionItems(summary.value?.actions));
+const targetTypeData = computed(() => distributionItems(summary.value?.target_types));
+
 async function loadLogs() {
   loading.value = true;
   error.value = "";
   try {
-    const response = await getAuditLogs({
+    const [response, summaryResponse] = await Promise.all([
+      getAuditLogs({
       action: action.value,
       target_type: targetType.value,
       page: currentPage.value,
       per_page: perPage,
-    });
+      }),
+      getAuditSummary(),
+    ]);
     logs.value = response.logs;
+    summary.value = summaryResponse;
     totalItems.value = response.total;
     totalPages.value = Math.max(1, response.pages || 1);
   } catch (err) {
@@ -57,6 +71,11 @@ onMounted(loadLogs);
         </button>
       </template>
     </AdminPageHeader>
+
+    <div class="admin-audit__charts">
+      <AdminBarChart :title="t('adminAudit.charts.actions')" :items="actionData" horizontal />
+      <AdminDonutChart :title="t('adminAudit.charts.targets')" :items="targetTypeData" />
+    </div>
 
     <AdminFilterBar>
       <label>
@@ -134,6 +153,12 @@ onMounted(loadLogs);
   }
 }
 
+.admin-audit__charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 1rem;
+}
+
 .admin-audit input {
   min-height: 40px;
   min-width: 180px;
@@ -193,6 +218,10 @@ onMounted(loadLogs);
 }
 
 @media (max-width: 820px) {
+  .admin-audit__charts {
+    grid-template-columns: 1fr;
+  }
+
   .admin-audit__card {
     grid-template-columns: 1fr;
   }

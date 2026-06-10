@@ -3,7 +3,16 @@ export interface AdminMetricGroup {
 }
 
 export interface AdminMetricCounts {
+  [key: string]: number | AdminDistributionCounts | undefined
+}
+
+export interface AdminDistributionCounts {
   [key: string]: number
+}
+
+export interface AdminChartDatum {
+  label: string
+  value: number
 }
 
 export interface AdminContentSummary {
@@ -20,6 +29,9 @@ export interface AdminCoursesSummary extends AdminMetricCounts {
   offerings: number
   sections: number
   meetings: number
+  deleted_courses?: number
+  inactive_courses?: number
+  course_status?: AdminDistributionCounts
 }
 
 export interface AdminAcademicMapSummary extends AdminMetricCounts {
@@ -35,6 +47,9 @@ export interface AdminMatchingSummary extends AdminMetricCounts {
   active_projects: number
   profiles: number
   active_profiles: number
+  project_status?: AdminDistributionCounts
+  project_types?: AdminDistributionCounts
+  difficulty?: AdminDistributionCounts
 }
 
 export interface AdminContestSummary extends AdminMetricCounts {
@@ -42,6 +57,8 @@ export interface AdminContestSummary extends AdminMetricCounts {
   active_contests: number
   organizers: number
   submissions: number
+  contest_status?: AdminDistributionCounts
+  submission_tracks?: AdminDistributionCounts
 }
 
 export interface AdminOperationsSummary extends AdminMetricCounts {
@@ -53,6 +70,15 @@ export interface AdminOperationsSummary extends AdminMetricCounts {
   notifications: number
   unread_notifications: number
   push_subscriptions: number
+  sts_token_status?: AdminDistributionCounts
+  notification_status?: AdminDistributionCounts
+  file_status?: AdminDistributionCounts
+}
+
+export interface AdminAuditSummary {
+  total: number
+  actions: AdminDistributionCounts
+  target_types: AdminDistributionCounts
 }
 
 export interface AdminOverviewTrendPoint {
@@ -137,7 +163,7 @@ export interface AdminRole {
 export interface AdminUsersResponse extends AdminListResponse<AdminUser> {
   users: AdminUser[]
   roles: AdminRole[]
-  counts: Record<string, number>
+  counts: AdminMetricCounts
 }
 
 export interface AdminPost {

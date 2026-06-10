@@ -175,8 +175,14 @@
         "posts": "Posts",
         "comments": "Comments",
         "files": "Files",
-        "gugu": "Gugu"
-      }
+        "gugu": "Gugu",
+        "feedbacks": "Feedback",
+        "identityRequests": "Identity requests",
+        "courseRecords": "Course records",
+        "projects": "Projects"
+      },
+      "chartTitle": "Campus activity growth",
+      "chartDescription": "Compare daily additions for users, content, feedback, identity requests, course records, and projects."
     },
     "healthRows": {
       "courses": "Courses and scheduler",
@@ -264,7 +270,18 @@
     "createdAt": "Created {date}",
     "emailVerified": "Email verified",
     "emailUnverified": "Email unverified",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "charts": {
+      "roles": "Role distribution",
+      "status": "Account status",
+      "email": "Email verification",
+      "labels": {
+        "active": "Active accounts",
+        "deleted": "Deleted accounts",
+        "emailVerified": "Verified email",
+        "emailUnverified": "Unverified email"
+      }
+    }
   },
   "adminContent": {
     "title": "Content Management",
@@ -353,6 +370,16 @@
     "fileStats": {
       "size": "{size} bytes",
       "unknownMime": "Unknown type"
+    },
+    "charts": {
+      "volume": "Content volume",
+      "deletion": "Soft deletion share",
+      "fileStatus": "File status distribution",
+      "fileTypes": "File type distribution",
+      "labels": {
+        "active": "Visible content",
+        "deleted": "Soft-deleted"
+      }
     }
   },
   "adminDomains": {
@@ -406,6 +433,28 @@
       "validStsTokens": "Valid STS tokens",
       "oauthClients": "OAuth clients",
       "pushSubscriptions": "Push subscriptions"
+    },
+    "charts": {
+      "volume": "Campus operations volume",
+      "courseStatus": "Course status distribution",
+      "projectStatus": "Project status",
+      "contestTracks": "Contest submission tracks",
+      "operations": "System operations metrics",
+      "labels": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "deleted": "Deleted",
+        "recruiting": "Recruiting",
+        "projectActive": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "techTrack": "Tech track",
+        "funTrack": "Fun track",
+        "validTokens": "Valid STS",
+        "unreadNotifications": "Unread notifications",
+        "pushSubscriptions": "Push subscriptions",
+        "oauthClients": "OAuth clients"
+      }
     }
   },
   "adminAudit": {
@@ -435,7 +484,11 @@
       "next": "Next",
       "page": "Page {page} of {pages}, {total} total"
     },
-    "noNote": "No note"
+    "noNote": "No note",
+    "charts": {
+      "actions": "Action distribution",
+      "targets": "Target distribution"
+    }
   },
   "adminIdentity": {
     "title": "Identity Verification",
@@ -536,6 +589,10 @@
       "previous": "Previous",
       "next": "Next",
       "page": "Page {page} of {pages}, {total} total"
+    },
+    "charts": {
+      "status": "Verification status distribution",
+      "types": "Identity type request distribution"
     }
   },
   "adminFeedback": {
@@ -616,7 +673,16 @@
     "feedbackId": "Feedback #{id}",
     "commentsEnded": "Comments ended",
     "emptyExcerpt": "No content preview available.",
-    "notePlaceholder": "Admin review note"
+    "notePlaceholder": "Admin review note",
+    "charts": {
+      "feedbackStatus": "Feedback status distribution",
+      "mergeStatus": "Merge proposal status distribution",
+      "pendingQueues": "Pending queues",
+      "labels": {
+        "pendingFeedback": "Pending feedback",
+        "pendingMerge": "Pending merge reviews"
+      }
+    }
   },
   "footer": {
     "title": "UniKorn",
@@ -1997,5 +2063,9 @@
       "sat": "Sat",
       "sun": "Sun"
     }
+  },
+  "adminCharts": {
+    "emptyTitle": "No chart data",
+    "emptyDescription": "There is not enough data to render this visualization yet."
   }
 }
