@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { AdminComment, AdminContentSummary, AdminPost } from "~/types/admin";
+import type {
+  AdminChartDatum,
+  AdminComment,
+  AdminContentSummary,
+  AdminDistributionCounts,
+  AdminFile,
+  AdminGuguMessage,
+  AdminPost,
+} from "~/types/admin";
 
 definePageMeta({
   middleware: "admin",
@@ -8,12 +16,26 @@ definePageMeta({
 
 const { t } = useI18n();
 const { formatDate } = useDateFormat();
-const { getContentSummary, getPosts, getComments, setPostDeleted, setCommentDeleted } = useAdminConsole();
+const {
+  getContentSummary,
+  getPosts,
+  getComments,
+  getFiles,
+  getGuguMessages,
+  setPostDeleted,
+  setCommentDeleted,
+  setFileDeleted,
+  setGuguDeleted,
+} = useAdminConsole();
 
-const activeTab = ref<"posts" | "comments">("posts");
+type ContentTab = "posts" | "comments" | "gugu" | "files";
+
+const activeTab = ref<ContentTab>("posts");
 const summary = ref<AdminContentSummary | null>(null);
 const posts = ref<AdminPost[]>([]);
 const comments = ref<AdminComment[]>([]);
+const guguMessages = ref<AdminGuguMessage[]>([]);
+const files = ref<AdminFile[]>([]);
 const loading = ref(true);
 const error = ref("");
 const notice = ref<{ type: "success" | "error"; message: string } | null>(null);
@@ -32,6 +54,40 @@ const metricItems = computed(() => [
   { key: "gugu", label: t("adminContent.metrics.gugu"), value: summary.value?.gugu.messages ?? 0 },
 ]);
 
+function metricNumber(source: Record<string, unknown> | undefined, key: string) {
+  const value = source?.[key];
+  return typeof value === "number" ? value : 0;
+}
+
+function distributionItems(source?: AdminDistributionCounts, labels: Record<string, string> = {}): AdminChartDatum[] {
+  return Object.entries(source || {})
+    .map(([label, value]) => ({ label: labels[label] || label, value }))
+    .filter((item) => item.value > 0);
+}
+
+const contentVolumeData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminContent.tabs.posts"), value: metricNumber(summary.value?.posts, "total") },
+  { label: t("adminContent.tabs.comments"), value: metricNumber(summary.value?.comments, "total") },
+  { label: t("adminContent.tabs.gugu"), value: metricNumber(summary.value?.gugu, "messages") },
+  { label: t("adminContent.tabs.files"), value: metricNumber(summary.value?.files, "total") },
+]);
+
+const deletionData = computed<AdminChartDatum[]>(() => {
+  const blocks = [
+    summary.value?.posts,
+    summary.value?.comments,
+    summary.value?.gugu,
+    summary.value?.files,
+  ] as Array<Record<string, unknown> | undefined>;
+  return [
+    { label: t("adminContent.charts.labels.active"), value: blocks.reduce((sum, block) => sum + metricNumber(block, "active"), 0) },
+    { label: t("adminContent.charts.labels.deleted"), value: blocks.reduce((sum, block) => sum + metricNumber(block, "deleted"), 0) },
+  ];
+});
+
+const fileStatusData = computed(() => distributionItems(summary.value?.files.status as AdminDistributionCounts | undefined));
+const fileTypeData = computed(() => distributionItems(summary.value?.files.file_type as AdminDistributionCounts | undefined));
+
 function setNotice(type: "success" | "error", message: string) {
   notice.value = { type, message };
   window.setTimeout(() => {
@@ -49,17 +105,30 @@ async function loadContent() {
       page: currentPage.value,
       per_page: perPage,
     };
+    const listRequest = {
+      posts: () => getPosts(query),
+      comments: () => getComments(query),
+      gugu: () => getGuguMessages(query),
+      files: () => getFiles(query),
+    }[activeTab.value];
+
     const [summaryData, listData] = await Promise.all([
       getContentSummary(),
-      activeTab.value === "posts" ? getPosts(query) : getComments(query),
+      listRequest(),
     ]);
     summary.value = summaryData;
+    posts.value = [];
+    comments.value = [];
+    guguMessages.value = [];
+    files.value = [];
     if (activeTab.value === "posts") {
       posts.value = (listData as any).posts || [];
-      comments.value = [];
-    } else {
+    } else if (activeTab.value === "comments") {
       comments.value = (listData as any).comments || [];
-      posts.value = [];
+    } else if (activeTab.value === "gugu") {
+      guguMessages.value = (listData as any).gugu || (listData as any).messages || [];
+    } else {
+      files.value = (listData as any).files || [];
     }
     totalItems.value = listData.total;
     totalPages.value = Math.max(1, listData.pages || 1);
@@ -69,6 +138,8 @@ async function loadContent() {
     loading.value = false;
   }
 }
+
+const hasAnyRows = computed(() => posts.value.length || comments.value.length || guguMessages.value.length || files.value.length);
 
 function resetAndLoad() {
   currentPage.value = 1;
@@ -105,6 +176,36 @@ async function toggleComment(comment: AdminComment) {
   }
 }
 
+async function toggleGugu(message: AdminGuguMessage) {
+  const nextDeleted = !message.is_deleted;
+  if (!window.confirm(nextDeleted ? t("adminContent.confirm.deleteGugu") : t("adminContent.confirm.restoreGugu"))) return;
+  busyKey.value = `gugu-${message.id}`;
+  try {
+    await setGuguDeleted(message.id, nextDeleted, nextDeleted ? t("adminContent.audit.deleteGugu") : t("adminContent.audit.restoreGugu"));
+    setNotice("success", nextDeleted ? t("adminContent.messages.guguDeleted") : t("adminContent.messages.guguRestored"));
+    await loadContent();
+  } catch (err) {
+    setNotice("error", err instanceof Error ? err.message : t("adminConsole.errors.updateContent"));
+  } finally {
+    busyKey.value = "";
+  }
+}
+
+async function toggleFile(file: AdminFile) {
+  const nextDeleted = !file.is_deleted;
+  if (!window.confirm(nextDeleted ? t("adminContent.confirm.deleteFile") : t("adminContent.confirm.restoreFile"))) return;
+  busyKey.value = `file-${file.id}`;
+  try {
+    await setFileDeleted(file.id, nextDeleted, nextDeleted ? t("adminContent.audit.deleteFile") : t("adminContent.audit.restoreFile"));
+    setNotice("success", nextDeleted ? t("adminContent.messages.fileDeleted") : t("adminContent.messages.fileRestored"));
+    await loadContent();
+  } catch (err) {
+    setNotice("error", err instanceof Error ? err.message : t("adminConsole.errors.updateContent"));
+  } finally {
+    busyKey.value = "";
+  }
+}
+
 watch([activeTab, selectedDeleted], resetAndLoad);
 onMounted(loadContent);
 </script>
@@ -121,10 +222,19 @@ onMounted(loadContent);
 
     <AdminMetricStrip :items="metricItems" />
 
+    <div class="admin-content__charts">
+      <AdminBarChart :title="t('adminContent.charts.volume')" :items="contentVolumeData" />
+      <AdminDonutChart :title="t('adminContent.charts.deletion')" :items="deletionData" />
+      <AdminDonutChart :title="t('adminContent.charts.fileStatus')" :items="fileStatusData" />
+      <AdminBarChart :title="t('adminContent.charts.fileTypes')" :items="fileTypeData" horizontal />
+    </div>
+
     <AdminFilterBar>
       <div class="admin-content__tabs">
         <button type="button" :class="{ active: activeTab === 'posts' }" @click="activeTab = 'posts'">{{ t("adminContent.tabs.posts") }}</button>
         <button type="button" :class="{ active: activeTab === 'comments' }" @click="activeTab = 'comments'">{{ t("adminContent.tabs.comments") }}</button>
+        <button type="button" :class="{ active: activeTab === 'gugu' }" @click="activeTab = 'gugu'">{{ t("adminContent.tabs.gugu") }}</button>
+        <button type="button" :class="{ active: activeTab === 'files' }" @click="activeTab = 'files'">{{ t("adminContent.tabs.files") }}</button>
       </div>
       <label>
         <span>{{ t("adminContent.filters.search") }}</span>
@@ -144,7 +254,7 @@ onMounted(loadContent);
     </AdminFilterBar>
 
     <p v-if="notice" class="admin-content__notice" :class="`admin-content__notice--${notice.type}`">{{ notice.message }}</p>
-    <AdminStateBlock v-if="loading && !posts.length && !comments.length" :title="t('common.loading')" />
+    <AdminStateBlock v-if="loading && !hasAnyRows" :title="t('common.loading')" />
     <AdminStateBlock v-else-if="error" tone="error" :title="t('adminContent.errors.title')" :message="error" />
 
     <div v-else-if="activeTab === 'posts'" class="admin-content__list">
@@ -165,7 +275,7 @@ onMounted(loadContent);
       </article>
     </div>
 
-    <div v-else class="admin-content__list">
+    <div v-else-if="activeTab === 'comments'" class="admin-content__list">
       <AdminStateBlock v-if="!comments.length" :title="t('adminContent.empty.title')" :message="t('adminContent.empty.description')" />
       <article v-for="comment in comments" v-else :key="comment.id" class="admin-content__card" :class="{ 'admin-content__card--deleted': comment.is_deleted }">
         <div>
@@ -178,6 +288,41 @@ onMounted(loadContent);
         </div>
         <button type="button" :disabled="!!busyKey" @click="toggleComment(comment)">
           {{ comment.is_deleted ? t("adminContent.actions.restore") : t("adminContent.actions.delete") }}
+        </button>
+      </article>
+    </div>
+
+    <div v-else-if="activeTab === 'gugu'" class="admin-content__list">
+      <AdminStateBlock v-if="!guguMessages.length" :title="t('adminContent.empty.title')" :message="t('adminContent.empty.description')" />
+      <article v-for="message in guguMessages" v-else :key="message.id" class="admin-content__card" :class="{ 'admin-content__card--deleted': message.is_deleted }">
+        <div>
+          <strong>{{ message.content }}</strong>
+          <p>{{ message.author || t("adminConsole.unknown") }} · {{ t("adminContent.createdAt", { date: formatDate(message.created_at, { year: 'numeric', month: 'short', day: 'numeric' }) }) }}</p>
+        </div>
+        <div class="admin-content__stats">
+          <span>{{ t("adminContent.guguStats.replyTo", { id: message.reply_to_message_id || "-" }) }}</span>
+          <span v-if="message.is_deleted">{{ t("adminContent.deleted") }}</span>
+        </div>
+        <button type="button" :disabled="!!busyKey" @click="toggleGugu(message)">
+          {{ message.is_deleted ? t("adminContent.actions.restore") : t("adminContent.actions.delete") }}
+        </button>
+      </article>
+    </div>
+
+    <div v-else class="admin-content__list">
+      <AdminStateBlock v-if="!files.length" :title="t('adminContent.empty.title')" :message="t('adminContent.empty.description')" />
+      <article v-for="file in files" v-else :key="file.id" class="admin-content__card" :class="{ 'admin-content__card--deleted': file.is_deleted }">
+        <div>
+          <strong>{{ file.original_filename }}</strong>
+          <p>{{ file.owner || t("adminConsole.unknown") }} · {{ file.file_type }} · {{ file.status }}</p>
+        </div>
+        <div class="admin-content__stats">
+          <span>{{ t("adminContent.fileStats.size", { size: file.file_size ?? 0 }) }}</span>
+          <span>{{ file.mime_type || t("adminContent.fileStats.unknownMime") }}</span>
+          <span v-if="file.is_deleted">{{ t("adminContent.deleted") }}</span>
+        </div>
+        <button type="button" :disabled="!!busyKey" @click="toggleFile(file)">
+          {{ file.is_deleted ? t("adminContent.actions.restore") : t("adminContent.actions.delete") }}
         </button>
       </article>
     </div>
@@ -254,6 +399,12 @@ onMounted(loadContent);
   gap: 0.65rem;
 }
 
+.admin-content__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .admin-content__notice {
   margin: 0;
   padding: 0.8rem 1rem;
@@ -311,6 +462,10 @@ onMounted(loadContent);
 }
 
 @media (max-width: 900px) {
+  .admin-content__charts {
+    grid-template-columns: 1fr;
+  }
+
   .admin-content__card {
     grid-template-columns: 1fr;
   }

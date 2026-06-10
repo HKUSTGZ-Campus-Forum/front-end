@@ -189,7 +189,7 @@ describe('course universe helpers', () => {
     const canvasSource = readFileSync(
       new URL('../../components/courses/universe/CourseUniverseCanvas.vue', import.meta.url),
       'utf8',
-    )
+    ).replace(/\r\n/g, '\n')
 
     expect(canvasSource).not.toContain('<foreignObject')
     expect(canvasSource).toContain('<g\n            v-for="node in visibleNodes"')

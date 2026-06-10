@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import type { AdminOverviewResponse } from "~/types/admin";
+import type {
+  AdminChartDatum,
+  AdminContestSummary,
+  AdminCoursesSummary,
+  AdminDistributionCounts,
+  AdminMatchingSummary,
+  AdminOperationsSummary,
+} from "~/types/admin";
 
 definePageMeta({
   middleware: "admin",
@@ -7,43 +14,77 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-const { getOverview } = useAdminConsole();
+const { getCoursesSummary, getMatchingSummary, getContestSummary, getOperationsSummary } = useAdminConsole();
 
-const overview = ref<AdminOverviewResponse | null>(null);
+const coursesSummary = ref<AdminCoursesSummary | null>(null);
+const matchingSummary = ref<AdminMatchingSummary | null>(null);
+const contestSummary = ref<AdminContestSummary | null>(null);
+const operationsSummary = ref<AdminOperationsSummary | null>(null);
 const loading = ref(true);
 const error = ref("");
 
 const metricItems = computed(() => [
-  { key: "courses", label: t("adminDomains.metrics.courses"), value: overview.value?.metrics.courses.courses ?? 0 },
-  { key: "offerings", label: t("adminDomains.metrics.offerings"), value: overview.value?.metrics.courses.offerings ?? 0 },
-  { key: "projects", label: t("adminDomains.metrics.projects"), value: overview.value?.metrics.matching.projects ?? 0 },
-  { key: "submissions", label: t("adminDomains.metrics.submissions"), value: overview.value?.metrics.contest.submissions ?? 0 },
+  { key: "courses", label: t("adminDomains.metrics.courses"), value: coursesSummary.value?.courses ?? 0 },
+  { key: "offerings", label: t("adminDomains.metrics.offerings"), value: coursesSummary.value?.offerings ?? 0 },
+  { key: "projects", label: t("adminDomains.metrics.projects"), value: matchingSummary.value?.projects ?? 0 },
+  { key: "submissions", label: t("adminDomains.metrics.submissions"), value: contestSummary.value?.submissions ?? 0 },
+]);
+
+function distributionItems(source?: AdminDistributionCounts, labels: Record<string, string> = {}): AdminChartDatum[] {
+  return Object.entries(source || {})
+    .map(([label, value]) => ({ label: labels[label] || label, value }))
+    .filter((item) => item.value > 0);
+}
+
+const domainVolumeData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminDomains.sections.courses"), value: coursesSummary.value?.courses ?? 0 },
+  { label: t("adminDomains.labels.offerings"), value: coursesSummary.value?.offerings ?? 0 },
+  { label: t("adminDomains.sections.matching"), value: matchingSummary.value?.projects ?? 0 },
+  { label: t("adminDomains.sections.contest"), value: contestSummary.value?.submissions ?? 0 },
+  { label: t("adminDomains.labels.files"), value: operationsSummary.value?.files ?? 0 },
+]);
+
+const courseStatusData = computed(() => distributionItems(coursesSummary.value?.course_status, {
+  active: t("adminDomains.charts.labels.active"),
+  inactive: t("adminDomains.charts.labels.inactive"),
+  deleted: t("adminDomains.charts.labels.deleted"),
+}));
+
+const projectStatusData = computed(() => distributionItems(matchingSummary.value?.project_status, {
+  recruiting: t("adminDomains.charts.labels.recruiting"),
+  active: t("adminDomains.charts.labels.projectActive"),
+  completed: t("adminDomains.charts.labels.completed"),
+  cancelled: t("adminDomains.charts.labels.cancelled"),
+}));
+
+const contestTrackData = computed(() => distributionItems(contestSummary.value?.submission_tracks, {
+  tech: t("adminDomains.charts.labels.techTrack"),
+  fun: t("adminDomains.charts.labels.funTrack"),
+}));
+
+const operationsHealthData = computed<AdminChartDatum[]>(() => [
+  { label: t("adminDomains.charts.labels.validTokens"), value: operationsSummary.value?.valid_sts_tokens ?? 0 },
+  { label: t("adminDomains.charts.labels.unreadNotifications"), value: operationsSummary.value?.unread_notifications ?? 0 },
+  { label: t("adminDomains.charts.labels.pushSubscriptions"), value: operationsSummary.value?.push_subscriptions ?? 0 },
+  { label: t("adminDomains.charts.labels.oauthClients"), value: operationsSummary.value?.oauth_clients ?? 0 },
 ]);
 
 const sections = computed(() => {
-  const metrics = overview.value?.metrics;
-  if (!metrics) return [];
+  const courses = coursesSummary.value;
+  const matching = matchingSummary.value;
+  const contest = contestSummary.value;
+  const operations = operationsSummary.value;
+  if (!courses || !matching || !contest || !operations) return [];
   return [
     {
       key: "courses",
       title: t("adminDomains.sections.courses"),
       description: t("adminDomains.descriptions.courses"),
       rows: [
-        [t("adminDomains.labels.activeCourses"), metrics.courses.active_courses],
-        [t("adminDomains.labels.offerings"), metrics.courses.offerings],
-        [t("adminDomains.labels.sections"), metrics.courses.sections],
-        [t("adminDomains.labels.meetings"), metrics.courses.meetings],
-      ],
-    },
-    {
-      key: "academic",
-      title: t("adminDomains.sections.academicMap"),
-      description: t("adminDomains.descriptions.academicMap"),
-      rows: [
-        [t("adminDomains.labels.programs"), metrics.academic_map.programs],
-        [t("adminDomains.labels.requirementGroups"), metrics.academic_map.requirement_groups],
-        [t("adminDomains.labels.academicProfiles"), metrics.academic_map.user_profiles],
-        [t("adminDomains.labels.recordsNeedingReview"), metrics.academic_map.records_needing_review],
+        [t("adminDomains.labels.activeCourses"), courses.active_courses],
+        [t("adminDomains.labels.offerings"), courses.offerings],
+        [t("adminDomains.labels.sections"), courses.sections],
+        [t("adminDomains.labels.meetings"), courses.meetings],
       ],
     },
     {
@@ -51,10 +92,10 @@ const sections = computed(() => {
       title: t("adminDomains.sections.matching"),
       description: t("adminDomains.descriptions.matching"),
       rows: [
-        [t("adminDomains.labels.projects"), metrics.matching.projects],
-        [t("adminDomains.labels.activeProjects"), metrics.matching.active_projects],
-        [t("adminDomains.labels.profiles"), metrics.matching.profiles],
-        [t("adminDomains.labels.activeProfiles"), metrics.matching.active_profiles],
+        [t("adminDomains.labels.projects"), matching.projects],
+        [t("adminDomains.labels.activeProjects"), matching.active_projects],
+        [t("adminDomains.labels.profiles"), matching.profiles],
+        [t("adminDomains.labels.activeProfiles"), matching.active_profiles],
       ],
     },
     {
@@ -62,10 +103,10 @@ const sections = computed(() => {
       title: t("adminDomains.sections.contest"),
       description: t("adminDomains.descriptions.contest"),
       rows: [
-        [t("adminDomains.labels.contests"), metrics.contest.contests],
-        [t("adminDomains.labels.activeContests"), metrics.contest.active_contests],
-        [t("adminDomains.labels.organizers"), metrics.contest.organizers],
-        [t("adminDomains.labels.submissions"), metrics.contest.submissions],
+        [t("adminDomains.labels.contests"), contest.contests],
+        [t("adminDomains.labels.activeContests"), contest.active_contests],
+        [t("adminDomains.labels.organizers"), contest.organizers],
+        [t("adminDomains.labels.submissions"), contest.submissions],
       ],
     },
     {
@@ -73,10 +114,10 @@ const sections = computed(() => {
       title: t("adminDomains.sections.operations"),
       description: t("adminDomains.descriptions.operations"),
       rows: [
-        [t("adminDomains.labels.files"), metrics.operations.files],
-        [t("adminDomains.labels.validStsTokens"), metrics.operations.valid_sts_tokens],
-        [t("adminDomains.labels.oauthClients"), metrics.operations.oauth_clients],
-        [t("adminDomains.labels.pushSubscriptions"), metrics.operations.push_subscriptions],
+        [t("adminDomains.labels.files"), operations.files],
+        [t("adminDomains.labels.validStsTokens"), operations.valid_sts_tokens],
+        [t("adminDomains.labels.oauthClients"), operations.oauth_clients],
+        [t("adminDomains.labels.pushSubscriptions"), operations.push_subscriptions],
       ],
     },
   ];
@@ -86,9 +127,18 @@ async function loadOverview() {
   loading.value = true;
   error.value = "";
   try {
-    overview.value = await getOverview();
+    const [courses, matching, contest, operations] = await Promise.all([
+      getCoursesSummary(),
+      getMatchingSummary(),
+      getContestSummary(),
+      getOperationsSummary(),
+    ]);
+    coursesSummary.value = courses;
+    matchingSummary.value = matching;
+    contestSummary.value = contest;
+    operationsSummary.value = operations;
   } catch (err) {
-    error.value = err instanceof Error ? err.message : t("adminConsole.errors.loadOverview");
+    error.value = err instanceof Error ? err.message : t("adminConsole.errors.loadDomains");
   } finally {
     loading.value = false;
   }
@@ -108,23 +158,33 @@ onMounted(loadOverview);
     </AdminPageHeader>
 
     <AdminMetricStrip :items="metricItems" />
-    <AdminStateBlock v-if="loading && !overview" :title="t('common.loading')" />
+    <AdminStateBlock v-if="loading && !coursesSummary" :title="t('common.loading')" />
     <AdminStateBlock v-else-if="error" tone="error" :title="t('adminDomains.errors.title')" :message="error" />
 
-    <div v-else class="admin-domains__grid">
-      <article v-for="section in sections" :key="section.key" class="admin-domains__card">
-        <div>
-          <h2>{{ section.title }}</h2>
-          <p>{{ section.description }}</p>
-        </div>
-        <dl>
-          <div v-for="row in section.rows" :key="row[0]">
-            <dt>{{ row[0] }}</dt>
-            <dd>{{ row[1] }}</dd>
+    <template v-else>
+      <div class="admin-domains__charts">
+        <AdminBarChart :title="t('adminDomains.charts.volume')" :items="domainVolumeData" />
+        <AdminDonutChart :title="t('adminDomains.charts.courseStatus')" :items="courseStatusData" />
+        <AdminDonutChart :title="t('adminDomains.charts.projectStatus')" :items="projectStatusData" />
+        <AdminBarChart :title="t('adminDomains.charts.contestTracks')" :items="contestTrackData" />
+        <AdminBarChart :title="t('adminDomains.charts.operations')" :items="operationsHealthData" horizontal />
+      </div>
+
+      <div class="admin-domains__grid">
+        <article v-for="section in sections" :key="section.key" class="admin-domains__card">
+          <div>
+            <h2>{{ section.title }}</h2>
+            <p>{{ section.description }}</p>
           </div>
-        </dl>
-      </article>
-    </div>
+          <dl>
+            <div v-for="row in section.rows" :key="row[0]">
+              <dt>{{ row[0] }}</dt>
+              <dd>{{ row[1] }}</dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+    </template>
   </section>
 </template>
 
@@ -151,6 +211,12 @@ onMounted(loadOverview);
 }
 
 .admin-domains__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-domains__charts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
@@ -198,6 +264,7 @@ onMounted(loadOverview);
 }
 
 @media (max-width: 820px) {
+  .admin-domains__charts,
   .admin-domains__grid,
   .admin-domains__card dl {
     grid-template-columns: 1fr;

@@ -84,21 +84,21 @@
     }
   },
   "adminShell": {
-    "title": "Site Administration",
-    "description": "Manage feedback reviews, identity verification, and future moderation tools from one shared admin surface.",
+    "title": "Campus Forum Administration",
+    "description": "Keep users, content, course collaboration, and operational health in one clear campus admin surface.",
     "nav": {
       "overview": "Overview",
       "users": "Users",
       "content": "Content",
       "feedback": "Feedback review",
       "identity": "Identity",
-      "domains": "Data and ops",
+      "domains": "Courses and ops",
       "audit": "Audit logs"
     }
   },
   "adminOverview": {
-    "title": "Admin overview",
-    "description": "Track the moderation queues that need attention and jump into each admin workspace.",
+    "title": "Campus forum overview",
+    "description": "Track campus community queues, recent growth, and course-collaboration health so admins can see what needs attention first.",
     "actions": {
       "refresh": "Refresh",
       "refreshing": "Refreshing..."
@@ -115,14 +115,17 @@
       "commentsTotal": "Comments",
       "coursesTotal": "Courses",
       "projectsTotal": "Projects",
-      "auditRecent": "Recent logs"
+      "auditRecent": "Recent logs",
+      "guguMessages": "Gugu messages",
+      "filesTotal": "Files",
+      "validTokens": "Valid STS"
     },
     "status": {
       "loadFailed": "Some admin counts could not be loaded.",
       "moduleError": "Count unavailable"
     },
-    "modulesTitle": "Admin modules",
-    "healthTitle": "Domain health",
+    "modulesTitle": "Admin workspaces",
+    "healthTitle": "Course and ops health",
     "activityTitle": "Recent admin activity",
     "activityEmpty": "No admin actions recorded yet",
     "cards": {
@@ -133,7 +136,7 @@
       },
       "content": {
         "title": "Content moderation",
-        "description": "Inspect posts, comments, uploaded files, tags, and wall activity from a single content surface.",
+        "description": "Inspect forum posts, comments, uploads, tags, and gugu wall activity to keep campus discussion readable.",
         "action": "Open content"
       },
       "feedback": {
@@ -147,15 +150,51 @@
         "action": "Open identity review"
       },
       "domains": {
-        "title": "Course, data, and operations",
-        "description": "Monitor courses, scheduler data, Academic Map, matching, contests, storage, OAuth, and notifications.",
-        "action": "Open data and ops"
+        "title": "Course and ops health",
+        "description": "Monitor courses, scheduling, team matching, contest submissions, files, notifications, and operational infrastructure.",
+        "action": "Open health panel"
       },
       "audit": {
         "title": "Audit logs",
         "description": "Trace admin mutations with actor, action, target, note, and timestamp.",
         "action": "Open audit logs"
       }
+    },
+    "trends": {
+      "title": "Growth trends",
+      "description": "Review daily additions across core campus forum activity for the last {days} days.",
+      "daySwitcher": "Trend range",
+      "days": "{days} days",
+      "incrementLabel": "Added in {days} days",
+      "emptyTitle": "No trend data",
+      "emptyDescription": "No new records are available for the selected range yet.",
+      "loadPartial": "Trend data is temporarily unavailable; the rest of the overview is still usable.",
+      "pointTitle": "{label} on {date}: {count}",
+      "metrics": {
+        "users": "Users",
+        "posts": "Posts",
+        "comments": "Comments",
+        "files": "Files",
+        "gugu": "Gugu",
+        "feedbacks": "Feedback",
+        "identityRequests": "Identity requests",
+        "courseRecords": "Course records",
+        "projects": "Projects"
+      },
+      "chartTitle": "Campus activity growth",
+      "chartDescription": "Compare daily additions for users, content, feedback, identity requests, course records, and projects."
+    },
+    "healthRows": {
+      "courses": "Courses and scheduler",
+      "courseCaption": "Offering and section data",
+      "academicMap": "Degree progress",
+      "academicCaption": "Records needing review",
+      "matching": "Team matching",
+      "matchingCaption": "Active projects",
+      "contest": "Activities and contests",
+      "contestCaption": "Submission records",
+      "operations": "Operations",
+      "operationsCaption": "Available STS tokens"
     }
   },
   "adminConsole": {
@@ -166,7 +205,8 @@
       "loadUsers": "Failed to load users.",
       "updateUser": "Failed to update user.",
       "loadContent": "Failed to load content.",
-      "updateContent": "Failed to update content."
+      "updateContent": "Failed to update content.",
+      "loadDomains": "Failed to load course and operations data."
     }
   },
   "adminUsers": {
@@ -230,11 +270,22 @@
     "createdAt": "Created {date}",
     "emailVerified": "Email verified",
     "emailUnverified": "Email unverified",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "charts": {
+      "roles": "Role distribution",
+      "status": "Account status",
+      "email": "Email verification",
+      "labels": {
+        "active": "Active accounts",
+        "deleted": "Deleted accounts",
+        "emailVerified": "Verified email",
+        "emailUnverified": "Unverified email"
+      }
+    }
   },
   "adminContent": {
     "title": "Content Management",
-    "description": "Moderate forum posts and comments while monitoring tags, files, and gugu activity.",
+    "description": "Moderate forum posts, comments, Gugu messages, and uploaded files. High-risk actions use soft deletion and audit logs.",
     "metrics": {
       "posts": "Posts",
       "comments": "Comments",
@@ -243,7 +294,9 @@
     },
     "tabs": {
       "posts": "Posts",
-      "comments": "Comments"
+      "comments": "Comments",
+      "gugu": "Gugu",
+      "files": "Files"
     },
     "filters": {
       "search": "Search",
@@ -264,19 +317,31 @@
       "deletePost": "Post soft-deleted in admin console",
       "restorePost": "Post restored in admin console",
       "deleteComment": "Comment soft-deleted in admin console",
-      "restoreComment": "Comment restored in admin console"
+      "restoreComment": "Comment restored in admin console",
+      "deleteGugu": "Gugu message soft-deleted in admin console",
+      "restoreGugu": "Gugu message restored in admin console",
+      "deleteFile": "File soft-deleted in admin console",
+      "restoreFile": "File restored in admin console"
     },
     "confirm": {
       "deletePost": "Soft-delete this post?",
       "restorePost": "Restore this post?",
       "deleteComment": "Soft-delete this comment?",
-      "restoreComment": "Restore this comment?"
+      "restoreComment": "Restore this comment?",
+      "deleteGugu": "Soft-delete this Gugu message?",
+      "restoreGugu": "Restore this Gugu message?",
+      "deleteFile": "Soft-delete this file?",
+      "restoreFile": "Restore this file?"
     },
     "messages": {
       "postDeleted": "Post deleted.",
       "postRestored": "Post restored.",
       "commentDeleted": "Comment deleted.",
-      "commentRestored": "Comment restored."
+      "commentRestored": "Comment restored.",
+      "guguDeleted": "Gugu message deleted.",
+      "guguRestored": "Gugu message restored.",
+      "fileDeleted": "File deleted.",
+      "fileRestored": "File restored."
     },
     "errors": {
       "title": "Load failed"
@@ -298,11 +363,28 @@
       "comments": "{count} comments",
       "reactions": "{count} reactions",
       "views": "{count} views"
+    },
+    "guguStats": {
+      "replyTo": "Reply to #{id}"
+    },
+    "fileStats": {
+      "size": "{size} bytes",
+      "unknownMime": "Unknown type"
+    },
+    "charts": {
+      "volume": "Content volume",
+      "deletion": "Soft deletion share",
+      "fileStatus": "File status distribution",
+      "fileTypes": "File type distribution",
+      "labels": {
+        "active": "Visible content",
+        "deleted": "Soft-deleted"
+      }
     }
   },
   "adminDomains": {
-    "title": "Data And Operations",
-    "description": "Monitor course data, Academic Map, matching, contests, storage, OAuth, notifications, and push infrastructure.",
+    "title": "Courses And Operations",
+    "description": "Monitor courses, scheduler data, matching, contests, storage, OAuth, notifications, and push infrastructure.",
     "metrics": {
       "courses": "Courses",
       "offerings": "Offerings",
@@ -319,16 +401,16 @@
     "sections": {
       "courses": "Courses and scheduler",
       "academicMap": "Academic Map",
-      "matching": "Matching",
-      "contest": "Contest",
-      "operations": "Operations"
+      "matching": "Team collaboration",
+      "contest": "Campus contests",
+      "operations": "Operational infrastructure"
     },
     "descriptions": {
       "courses": "Catalog, offerings, sections, and meeting data health.",
       "academicMap": "Aggregate curriculum and user record health without exposing private grades.",
-      "matching": "Project and profile health for the team matching subsystem.",
-      "contest": "Contest configuration, organizer, and submission counts.",
-      "operations": "Storage, STS, OAuth, notification, and push infrastructure."
+      "matching": "Project and profile health for course projects and campus collaboration.",
+      "contest": "Campus contest configuration, organizer, and submission counts.",
+      "operations": "File storage, STS, OAuth, notification, and push infrastructure."
     },
     "labels": {
       "activeCourses": "Active courses",
@@ -351,6 +433,28 @@
       "validStsTokens": "Valid STS tokens",
       "oauthClients": "OAuth clients",
       "pushSubscriptions": "Push subscriptions"
+    },
+    "charts": {
+      "volume": "Campus operations volume",
+      "courseStatus": "Course status distribution",
+      "projectStatus": "Project status",
+      "contestTracks": "Contest submission tracks",
+      "operations": "System operations metrics",
+      "labels": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "deleted": "Deleted",
+        "recruiting": "Recruiting",
+        "projectActive": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "techTrack": "Tech track",
+        "funTrack": "Fun track",
+        "validTokens": "Valid STS",
+        "unreadNotifications": "Unread notifications",
+        "pushSubscriptions": "Push subscriptions",
+        "oauthClients": "OAuth clients"
+      }
     }
   },
   "adminAudit": {
@@ -380,7 +484,11 @@
       "next": "Next",
       "page": "Page {page} of {pages}, {total} total"
     },
-    "noNote": "No note"
+    "noNote": "No note",
+    "charts": {
+      "actions": "Action distribution",
+      "targets": "Target distribution"
+    }
   },
   "adminIdentity": {
     "title": "Identity Verification",
@@ -481,6 +589,10 @@
       "previous": "Previous",
       "next": "Next",
       "page": "Page {page} of {pages}, {total} total"
+    },
+    "charts": {
+      "status": "Verification status distribution",
+      "types": "Identity type request distribution"
     }
   },
   "adminFeedback": {
@@ -561,7 +673,16 @@
     "feedbackId": "Feedback #{id}",
     "commentsEnded": "Comments ended",
     "emptyExcerpt": "No content preview available.",
-    "notePlaceholder": "Admin review note"
+    "notePlaceholder": "Admin review note",
+    "charts": {
+      "feedbackStatus": "Feedback status distribution",
+      "mergeStatus": "Merge proposal status distribution",
+      "pendingQueues": "Pending queues",
+      "labels": {
+        "pendingFeedback": "Pending feedback",
+        "pendingMerge": "Pending merge reviews"
+      }
+    }
   },
   "footer": {
     "title": "UniKorn",
@@ -1942,5 +2063,9 @@
       "sat": "Sat",
       "sun": "Sun"
     }
+  },
+  "adminCharts": {
+    "emptyTitle": "No chart data",
+    "emptyDescription": "There is not enough data to render this visualization yet."
   }
 }

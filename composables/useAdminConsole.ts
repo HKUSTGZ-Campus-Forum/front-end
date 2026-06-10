@@ -1,8 +1,17 @@
 import type {
   AdminAuditLog,
+  AdminAuditSummary,
   AdminCommentsResponse,
+  AdminContestSummary,
   AdminContentSummary,
+  AdminCoursesSummary,
+  AdminFilesResponse,
+  AdminGuguMessagesResponse,
+  AdminMatchingSummary,
   AdminOverviewResponse,
+  AdminOverviewQuery,
+  AdminOverviewTrendsPayload,
+  AdminOperationsSummary,
   AdminPostsResponse,
   AdminQuery,
   AdminUsersResponse,
@@ -42,8 +51,14 @@ export function useAdminConsole() {
     return data as T;
   }
 
-  const getOverview = () => request<AdminOverviewResponse>(
-    "/api/admin/overview",
+  const getOverview = (query: AdminOverviewQuery = {}) => request<AdminOverviewResponse>(
+    `/api/admin/overview${buildQuery(query)}`,
+    {},
+    t("adminConsole.errors.loadOverview")
+  );
+
+  const getOverviewTrends = (query: AdminOverviewQuery = {}) => request<AdminOverviewTrendsPayload>(
+    `/api/admin/overview/trends${buildQuery(query)}`,
     {},
     t("adminConsole.errors.loadOverview")
   );
@@ -56,6 +71,12 @@ export function useAdminConsole() {
     per_page: number
   }>(
     `/api/admin/audit-logs${buildQuery(query)}`,
+    {},
+    t("adminConsole.errors.loadAudit")
+  );
+
+  const getAuditSummary = () => request<AdminAuditSummary>(
+    "/api/admin/audit-logs/summary",
     {},
     t("adminConsole.errors.loadAudit")
   );
@@ -84,6 +105,30 @@ export function useAdminConsole() {
     t("adminConsole.errors.loadContent")
   );
 
+  const getCoursesSummary = () => request<AdminCoursesSummary>(
+    "/api/admin/courses/summary",
+    {},
+    t("adminConsole.errors.loadDomains")
+  );
+
+  const getMatchingSummary = () => request<AdminMatchingSummary>(
+    "/api/admin/matching/summary",
+    {},
+    t("adminConsole.errors.loadDomains")
+  );
+
+  const getContestSummary = () => request<AdminContestSummary>(
+    "/api/admin/contest/summary",
+    {},
+    t("adminConsole.errors.loadDomains")
+  );
+
+  const getOperationsSummary = () => request<AdminOperationsSummary>(
+    "/api/admin/operations/summary",
+    {},
+    t("adminConsole.errors.loadDomains")
+  );
+
   const getPosts = (query: AdminQuery = {}) => request<AdminPostsResponse>(
     `/api/admin/content/posts${buildQuery(query)}`,
     {},
@@ -92,6 +137,18 @@ export function useAdminConsole() {
 
   const getComments = (query: AdminQuery = {}) => request<AdminCommentsResponse>(
     `/api/admin/content/comments${buildQuery(query)}`,
+    {},
+    t("adminConsole.errors.loadContent")
+  );
+
+  const getFiles = (query: AdminQuery = {}) => request<AdminFilesResponse>(
+    `/api/admin/content/files${buildQuery(query)}`,
+    {},
+    t("adminConsole.errors.loadContent")
+  );
+
+  const getGuguMessages = (query: AdminQuery = {}) => request<AdminGuguMessagesResponse>(
+    `/api/admin/content/gugu${buildQuery(query)}`,
     {},
     t("adminConsole.errors.loadContent")
   );
@@ -108,17 +165,39 @@ export function useAdminConsole() {
     t("adminConsole.errors.updateContent")
   );
 
+  const setFileDeleted = (fileId: number, deleted: boolean, note = "") => request<{ file: unknown }>(
+    `/api/admin/content/files/${fileId}/${deleted ? "delete" : "restore"}`,
+    { method: "POST", body: { note } as any },
+    t("adminConsole.errors.updateContent")
+  );
+
+  const setGuguDeleted = (messageId: number, deleted: boolean, note = "") => request<{ gugu: unknown }>(
+    `/api/admin/content/gugu/${messageId}/${deleted ? "delete" : "restore"}`,
+    { method: "POST", body: { note } as any },
+    t("adminConsole.errors.updateContent")
+  );
+
   return {
     getOverview,
+    getOverviewTrends,
     getAuditLogs,
+    getAuditSummary,
     getUsers,
     updateUserRole,
     setUserDeleted,
     getContentSummary,
+    getCoursesSummary,
+    getMatchingSummary,
+    getContestSummary,
+    getOperationsSummary,
     getPosts,
     getComments,
+    getFiles,
+    getGuguMessages,
     setPostDeleted,
     setCommentDeleted,
+    setFileDeleted,
+    setGuguDeleted,
   };
 }
 
