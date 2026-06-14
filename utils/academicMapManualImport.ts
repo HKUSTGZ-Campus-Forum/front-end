@@ -235,6 +235,34 @@ const academicMapTermSortValue = (term: string) => {
   return startYear * 10 + seasonRank
 }
 
+const academicMapStatusRank = (status: AcademicCourseStatus | undefined) => {
+  const ranks: Record<AcademicCourseStatus, number> = {
+    completed: 0,
+    in_progress: 1,
+    planned: 2,
+    interested: 3,
+    withdrawn: 4,
+    not_interested: 5,
+  }
+  return status ? ranks[status] ?? 6 : 6
+}
+
+const academicMapDraftItemRank = (item: AcademicMapPickerDraftItem) => {
+  const statusRank = academicMapStatusRank(item.meta.status)
+  const termRank = Number(item.meta.termCode || -1)
+  return [statusRank, -termRank] as const
+}
+
+const shouldReplaceImportedDraftItem = (
+  candidate: AcademicMapPickerDraftItem,
+  existing: AcademicMapPickerDraftItem,
+) => {
+  const candidateRank = academicMapDraftItemRank(candidate)
+  const existingRank = academicMapDraftItemRank(existing)
+  if (candidateRank[0] !== existingRank[0]) return candidateRank[0] < existingRank[0]
+  return candidateRank[1] <= existingRank[1]
+}
+
 export const buildAcademicMapRecordGroups = (
   records: AcademicCourseRecord[],
   noTermLabel: string,
@@ -304,14 +332,18 @@ export const buildAcademicMapPickerDraftFromImportRows = (
       continue
     }
     const term = normalizeAcademicMapTerm(record.term_code || record.term_label)
-    itemsByCode.set(course.compactCode, {
+    const item = {
       course,
       meta: {
         status: record.status || 'completed',
         grade: record.grade || '',
         termCode: term?.termCode || '',
       },
-    })
+    }
+    const existing = itemsByCode.get(course.compactCode)
+    if (!existing || shouldReplaceImportedDraftItem(item, existing)) {
+      itemsByCode.set(course.compactCode, item)
+    }
   }
 
   return {

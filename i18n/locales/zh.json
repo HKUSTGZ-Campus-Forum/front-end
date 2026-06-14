@@ -1274,7 +1274,8 @@
         "in_progress": "在修",
         "planned": "想修",
         "interested": "想修",
-        "not_taken": "未修"
+        "not_taken": "未修",
+        "withdrawn": "已退课"
       },
       "noAcademicStatus": "这门课还没有加入你的学业进度。",
       "markInterested": "标记想修",
@@ -1442,7 +1443,8 @@
       "in_progress": "在修",
       "planned": "想修",
       "interested": "想修",
-      "not_interested": "未修"
+      "not_interested": "未修",
+      "withdrawn": "已退课"
     },
     "privacy": {
       "title": "成绩隐私",

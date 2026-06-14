@@ -17,7 +17,7 @@ export function getCourseOverviewAcademicState(record: Pick<AcademicCourseRecord
     : record?.status === 'not_interested'
     ? 'not_taken'
     : record?.status || 'not_taken'
-  const canToggleInterest = status === 'not_taken' || status === 'interested'
+  const canToggleInterest = status === 'not_taken' || status === 'interested' || status === 'withdrawn'
 
   return {
     status,
