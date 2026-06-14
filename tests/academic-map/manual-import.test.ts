@@ -181,7 +181,7 @@ describe('academic map manual import helpers', () => {
     ])
   })
 
-  it('builds a picker draft from matched SIS rows and lets the last duplicate win', () => {
+  it('builds a picker draft from matched SIS rows and keeps the newest duplicate when statuses match', () => {
     const draft = buildAcademicMapPickerDraftFromImportRows([
       {
         course_code: 'AIAA 2205',
@@ -226,6 +226,36 @@ describe('academic map manual import helpers', () => {
         grade: 'A',
         termCode: '2440',
       },
+    })
+  })
+
+  it('keeps the strongest duplicate SIS row when a withdrawn attempt appears after a retake', () => {
+    const draft = buildAcademicMapPickerDraftFromImportRows([
+      {
+        course_code: 'AIAA2205',
+        course_title: 'Introduction to Artificial Intelligence',
+        units: 3,
+        status: 'completed',
+        grade: 'A',
+        term_label: '2024-25 Summer',
+        matched_course_code: 'AIAA2205',
+      },
+      {
+        course_code: 'AIAA 2205',
+        course_title: 'Introduction to Artificial Intelligence',
+        units: 3,
+        status: 'withdrawn',
+        grade: 'W',
+        term_label: '2024-25 Fall',
+        matched_course_code: 'AIAA2205',
+      },
+    ])
+
+    expect(draft.items).toHaveLength(1)
+    expect(draft.items[0].meta).toEqual({
+      status: 'completed',
+      grade: 'A',
+      termCode: '2440',
     })
   })
 

@@ -4,6 +4,7 @@ export type AcademicCourseStatus =
   | 'planned'
   | 'interested'
   | 'not_interested'
+  | 'withdrawn'
 
 export interface AcademicProfile {
   id?: number

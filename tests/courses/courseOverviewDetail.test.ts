@@ -41,6 +41,12 @@ describe('course overview detail helpers', () => {
       canToggleInterest: true,
       isInterested: true,
     })
+
+    expect(getCourseOverviewAcademicState({ course_code: 'UCUG 052S', status: 'withdrawn' })).toEqual({
+      status: 'withdrawn',
+      canToggleInterest: true,
+      isInterested: false,
+    })
   })
 
   it('enables planner cart actions only for the active scheduler semester', () => {

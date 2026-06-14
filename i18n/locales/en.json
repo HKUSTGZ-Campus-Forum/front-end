@@ -1274,7 +1274,8 @@
         "in_progress": "In progress",
         "planned": "Want to take",
         "interested": "Want to take",
-        "not_taken": "Not taken"
+        "not_taken": "Not taken",
+        "withdrawn": "Withdrawn"
       },
       "noAcademicStatus": "This course is not in your Degree Progress yet.",
       "markInterested": "Mark want to take",
@@ -1442,7 +1443,8 @@
       "in_progress": "In progress",
       "planned": "Want to take",
       "interested": "Want to take",
-      "not_interested": "Not taken"
+      "not_interested": "Not taken",
+      "withdrawn": "Withdrawn"
     },
     "privacy": {
       "title": "Grade privacy",
