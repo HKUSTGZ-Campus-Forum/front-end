@@ -1489,8 +1489,29 @@
       "projectedCourseProgress": "计划后 {courses} / {requiredCourses} 门",
       "creditProgress": "当前 {credits} / {requiredCredits} 学分",
       "projectedCreditProgress": "计划后 {credits} / {requiredCredits} 学分",
+      "creditsShort": "学分",
+      "coursesShort": "门",
       "creditToConfirm": "学分待核对",
       "countedToward": "已计入：{section}",
+      "categories": {
+        "common_core": "通识",
+        "fundamental": "基础",
+        "major_required": "专业必修",
+        "major_elective": "专业选修",
+        "major": "专业"
+      },
+      "areas": {
+        "CTDL": "批判思维与数据素养",
+        "HMW": "习惯、心态与身心健康",
+        "E-Comm": "英语沟通",
+        "C-Comm": "中文沟通",
+        "A": "艺术",
+        "H": "人文",
+        "S": "科学",
+        "T": "技术",
+        "SA": "社会分析",
+        "UxOP": "体验课程"
+      },
       "sectionKinds": {
         "required": "必修",
         "choice": "选项",

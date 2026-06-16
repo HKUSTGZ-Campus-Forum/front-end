@@ -93,6 +93,8 @@ export interface AcademicRequirementCell {
   counted_toward?: string | null
   credits?: number | null
   credit_source?: 'catalog' | 'record' | null
+  area?: string | null
+  section_area?: string | null
   status?: AcademicRequirementCellStatus
   raw_status?: AcademicCourseStatus | null
   shared_majors?: string[]
