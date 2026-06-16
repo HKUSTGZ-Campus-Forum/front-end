@@ -81,6 +81,10 @@ const sectionLabel = (section: AcademicRequirementSection) => {
   return locale.value === 'zh' ? section.label_zh || section.label_en : section.label_en
 }
 
+const categoryLabel = (category: string) => {
+  return t(`academicMap.requirements.categories.${category}`, category)
+}
+
 const sectionKindLabel = (section: AcademicRequirementSection) => {
   return t(`academicMap.requirements.sectionKinds.${section.kind}`)
 }
@@ -163,9 +167,27 @@ const progressLabel = (progress: AcademicRequirementProgress, projected = false)
   })
 }
 
+const compactProgressLabel = (progress: AcademicRequirementProgress) => {
+  if (progress.required_credits) {
+    return `${progress.counted_credits} / ${progress.required_credits}`
+  }
+  return `${progress.counted_courses} / ${progress.required_courses || '-'}`
+}
+
+const compactProgressUnit = (progress: AcademicRequirementProgress) => {
+  return progress.required_credits
+    ? t('academicMap.requirements.creditsShort')
+    : t('academicMap.requirements.coursesShort')
+}
+
 const cellState = (cell: AcademicRequirementCell) => {
   if (cell.allocation_status === 'counted' && cell.record_status) return cell.record_status
   return cell.allocation_status
+}
+
+const areaLabel = (area?: string | null) => {
+  if (!area) return ''
+  return t(`academicMap.requirements.areas.${area}`, area)
 }
 
 const toggleRow = (row: AcademicRequirementRow) => {
@@ -224,7 +246,7 @@ watch(activeMajorCode, () => {
           @keydown.enter.prevent="toggleRow(row)"
         >
           <div class="am-row-copy">
-            <span class="am-category">{{ row.category }}</span>
+            <span class="am-category">{{ categoryLabel(row.category) }}</span>
             <h3>{{ rowTitle(row) }}</h3>
             <small>{{ progressLabel(row.current) }}</small>
             <small v-if="hasProjectedChange(row.current, row.projected)" class="am-projected-copy">
@@ -240,7 +262,7 @@ watch(activeMajorCode, () => {
                 :class="['am-section-chip', `is-${section.kind}`]"
               >
                 <strong>{{ sectionLabel(section) }}</strong>
-                <small>{{ section.current.counted_courses }} / {{ section.current.required_courses || '-' }}</small>
+                <small>{{ compactProgressLabel(section.current) }} {{ compactProgressUnit(section.current) }}</small>
               </span>
               <span
                 v-if="hiddenSectionCount(row)"
@@ -271,7 +293,8 @@ watch(activeMajorCode, () => {
 
           <div class="am-progress-group">
             <div :class="['am-progress-ring', { 'is-satisfied': row.current.satisfied }]">
-              {{ row.current.counted_courses }} / {{ row.current.required_courses || '-' }}
+              <strong>{{ compactProgressLabel(row.current) }}</strong>
+              <small>{{ compactProgressUnit(row.current) }}</small>
             </div>
             <span class="am-expand-indicator">{{ expandedRowKey === row.key ? t('academicMap.requirements.collapse') : t('academicMap.requirements.expand') }}</span>
           </div>
@@ -311,6 +334,7 @@ watch(activeMajorCode, () => {
                   <strong>{{ cellLabel(cell) }}</strong>
                   <small>{{ cellTitle(cell) }}</small>
                   <small class="am-cell-status">{{ t(`academicMap.requirements.status.${cellState(cell)}`) }}</small>
+                  <small v-if="cell.area" class="am-cell-area">{{ areaLabel(cell.area) }}</small>
                   <small v-if="cell.allocation_status === 'excluded_duplicate' && cell.counted_toward">
                     {{ t('academicMap.requirements.countedToward', { section: cell.counted_toward }) }}
                   </small>
@@ -628,6 +652,22 @@ watch(activeMajorCode, () => {
   text-align: center;
   white-space: nowrap;
 
+  strong,
+  small {
+    display: block;
+    line-height: 1.05;
+  }
+
+  strong {
+    font-size: 0.82rem;
+  }
+
+  small {
+    font-size: 0.62rem;
+    font-weight: 850;
+    margin-top: 2px;
+  }
+
   &.is-satisfied {
     background:
       radial-gradient(circle, var(--surface-primary) 58%, transparent 60%),
@@ -751,6 +791,11 @@ watch(activeMajorCode, () => {
   .am-cell-status {
     color: var(--text-secondary);
     font-weight: 750;
+  }
+
+  .am-cell-area {
+    color: var(--interactive-active);
+    font-weight: 850;
   }
 
   em {

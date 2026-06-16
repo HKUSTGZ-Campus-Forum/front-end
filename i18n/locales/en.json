@@ -1489,8 +1489,29 @@
       "projectedCourseProgress": "With plan {courses} / {requiredCourses} courses",
       "creditProgress": "Current {credits} / {requiredCredits} credits",
       "projectedCreditProgress": "With plan {credits} / {requiredCredits} credits",
+      "creditsShort": "cr",
+      "coursesShort": "courses",
       "creditToConfirm": "Credit to confirm",
       "countedToward": "Counted toward: {section}",
+      "categories": {
+        "common_core": "Common Core",
+        "fundamental": "Fundamental",
+        "major_required": "Major required",
+        "major_elective": "Major elective",
+        "major": "Major"
+      },
+      "areas": {
+        "CTDL": "CTDL",
+        "HMW": "HMW",
+        "E-Comm": "E-Comm",
+        "C-Comm": "C-Comm",
+        "A": "Arts",
+        "H": "Humanities",
+        "S": "Science",
+        "T": "Technology",
+        "SA": "Social Analysis",
+        "UxOP": "UxOP"
+      },
       "sectionKinds": {
         "required": "Required",
         "choice": "Choice",
