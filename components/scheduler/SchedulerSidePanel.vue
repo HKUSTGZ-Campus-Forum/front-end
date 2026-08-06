@@ -2,7 +2,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartCourse } from '~/utils/scheduler'
+import type { CartCourse, SchedulerPopularityByCourse } from '~/utils/scheduler'
+import { getSchedulerCoursePopularity } from '~/utils/scheduler'
 
 type DisplayOption = 'name' | 'section' | 'location' | 'instructor' | 'duration'
 
@@ -10,6 +11,9 @@ const props = defineProps<{
   courseList: CartCourse[]
   currentPlan: { courseIndex: number; bundleId: number; layer: number }[]
   displayOptions: Record<DisplayOption, boolean>
+  popularityByCourse: SchedulerPopularityByCourse
+  popularityGeneratedAt: string | null
+  showPopularity: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const activeTab = ref<'main' | 'klms'>('main')
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const displayOptionKeys: DisplayOption[] = ['name', 'section', 'location', 'instructor', 'duration']
 
 const filteredCourses = computed(() => {
@@ -46,6 +50,19 @@ const currentSelectionMap = computed(() => {
 const totalCredits = computed(() =>
   props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + c.credit, 0)
 )
+
+const popularityUpdatedAt = computed(() => {
+  if (!props.popularityGeneratedAt) return ''
+  const generatedAt = new Date(props.popularityGeneratedAt)
+  if (Number.isNaN(generatedAt.getTime())) return ''
+  return t('scheduler.popularityUpdatedAt', {
+    time: new Intl.DateTimeFormat(locale.value, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(generatedAt),
+  })
+})
 
 function updateDisplayOption(key: DisplayOption, event: Event) {
   emit('update:display-option', key, (event.target as HTMLInputElement).checked)
@@ -79,6 +96,12 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
       </label>
     </details>
 
+    <div v-if="showPopularity" class="side-panel__popularity-note">
+      <strong>{{ t('scheduler.popularity') }}</strong>
+      <span>{{ t('scheduler.popularityExplanation') }}</span>
+      <span v-if="popularityUpdatedAt">{{ popularityUpdatedAt }}</span>
+    </div>
+
     <div class="side-panel__list">
       <SchedulerCourseCard
         v-for="(course, i) in filteredCourses"
@@ -86,6 +109,8 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :course="course"
         :course-index="courseList.indexOf(course)"
         :current-selection="currentSelectionMap[course.course_code]"
+        :popularity="getSchedulerCoursePopularity(popularityByCourse, course.course_code)"
+        :show-popularity="showPopularity"
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
@@ -219,6 +244,22 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     color: var(--text-secondary);
     font-size: 0.76rem;
     font-weight: 700;
+  }
+
+  &__popularity-note {
+    display: grid;
+    gap: 3px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-secondary);
+    background: color-mix(in srgb, var(--interactive-primary) 5%, var(--surface-primary));
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    line-height: 1.4;
+
+    strong {
+      color: var(--text-primary);
+      font-size: 0.76rem;
+    }
   }
 
   &__empty {

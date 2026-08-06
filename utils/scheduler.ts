@@ -80,6 +80,68 @@ export interface SemesterInfo {
   section_count: number
 }
 
+export interface SchedulerPopularityCounts {
+  looking_count: number
+  scheduling_count: number
+}
+
+export interface SchedulerSectionPopularity extends SchedulerPopularityCounts {
+  section_id: string
+}
+
+export interface SchedulerCoursePopularity extends SchedulerPopularityCounts {
+  course_code: string
+  sections: SchedulerSectionPopularity[]
+}
+
+export interface SchedulerPopularityResponse {
+  semester_id: string
+  generated_at: string
+  courses: SchedulerCoursePopularity[]
+}
+
+export interface IndexedSchedulerCoursePopularity extends SchedulerPopularityCounts {
+  course_code: string
+  sections: Record<string, SchedulerPopularityCounts>
+}
+
+export type SchedulerPopularityByCourse = Record<string, IndexedSchedulerCoursePopularity>
+
+export function schedulerCourseKey(courseCode: string): string {
+  return courseCode.replace(/\s+/g, '').toUpperCase()
+}
+
+export function indexSchedulerPopularity(
+  response: SchedulerPopularityResponse,
+): SchedulerPopularityByCourse {
+  const indexed: SchedulerPopularityByCourse = {}
+
+  for (const course of response.courses) {
+    const sections: Record<string, SchedulerPopularityCounts> = {}
+    for (const section of course.sections) {
+      sections[section.section_id] = {
+        looking_count: section.looking_count,
+        scheduling_count: section.scheduling_count,
+      }
+    }
+    indexed[schedulerCourseKey(course.course_code)] = {
+      course_code: course.course_code,
+      looking_count: course.looking_count,
+      scheduling_count: course.scheduling_count,
+      sections,
+    }
+  }
+
+  return indexed
+}
+
+export function getSchedulerCoursePopularity(
+  popularity: SchedulerPopularityByCourse,
+  courseCode: string,
+): IndexedSchedulerCoursePopularity | undefined {
+  return popularity[schedulerCourseKey(courseCode)]
+}
+
 // --- Constants ---
 
 export const SEMESTER_IDS = ['2430', '2440', '2510', '2530'] as const

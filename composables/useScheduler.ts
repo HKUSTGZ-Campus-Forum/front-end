@@ -1,5 +1,10 @@
 import type {
-  CartCourse, CourseDetail, SchedulerSubject, SearchResponse, SemesterInfo
+  CartCourse,
+  CourseDetail,
+  SchedulerPopularityResponse,
+  SchedulerSubject,
+  SearchResponse,
+  SemesterInfo,
 } from '~/utils/scheduler'
 
 export function useScheduler() {
@@ -83,6 +88,20 @@ export function useScheduler() {
     if (!resp.ok) throw new Error('Failed to toggle layer')
   }
 
+  async function getPopularity(
+    semester: string,
+    courseCodes: readonly string[],
+  ): Promise<SchedulerPopularityResponse | null> {
+    const sortedCodes = [...new Set(courseCodes.map(code => code.trim()).filter(Boolean))].sort()
+    const params = new URLSearchParams({ course_codes: sortedCodes.join(',') })
+    const resp = await fetchWithAuth(`/api/scheduler/popularity/${semester}?${params}`, {
+      cache: 'no-store',
+    })
+    if (resp.status === 403) return null
+    if (!resp.ok) throw new Error('Failed to fetch scheduler popularity')
+    return resp.json()
+  }
+
   async function getMapComponents() {
     const resp = await fetchPublic('/api/scheduler/map/components')
     if (!resp.ok) throw new Error('Map components failed')
@@ -112,6 +131,7 @@ export function useScheduler() {
     toggleCourse,
     toggleBundle,
     toggleLayer,
+    getPopularity,
     getMapComponents,
     getMapLines,
     getMapCourses,
