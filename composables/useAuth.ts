@@ -66,7 +66,9 @@ function safeLocalStorage(
   key: string,
   value?: string
 ): string | null {
-  if (process.client) {
+  if (!process.client) return null;
+
+  try {
     if (action === "get") {
       return localStorage.getItem(key);
     } else if (action === "set" && value !== undefined) {
@@ -75,6 +77,8 @@ function safeLocalStorage(
     } else if (action === "remove") {
       localStorage.removeItem(key);
     }
+  } catch (storageError) {
+    console.warn(`Unable to ${action} browser authentication storage`, storageError);
   }
   return null;
 }
@@ -241,60 +245,62 @@ async function refreshAccessToken() {
 function init() {
   if (!process.client || authInitialized.value) return;
 
-  const storedAccessToken = safeLocalStorage("get", "auth_token");
-  const storedRefreshToken = safeLocalStorage("get", "refresh_token");
-  const storedUserInfo = safeLocalStorage("get", "user_info");
+  try {
+    const storedAccessToken = safeLocalStorage("get", "auth_token");
+    const storedRefreshToken = safeLocalStorage("get", "refresh_token");
+    const storedUserInfo = safeLocalStorage("get", "user_info");
 
-  if (storedAccessToken && storedRefreshToken) {
-    accessToken.value = storedAccessToken;
-    refreshToken.value = storedRefreshToken;
+    if (storedAccessToken && storedRefreshToken) {
+      accessToken.value = storedAccessToken;
+      refreshToken.value = storedRefreshToken;
 
-    if (storedUserInfo) {
-      try {
-        const savedUser = JSON.parse(storedUserInfo);
-        user.value = savedUser;
-        console.log("👤 Restored user from localStorage:", savedUser.username);
-      } catch (e) {
-        console.error("Failed to parse stored user info:", e);
+      if (storedUserInfo) {
+        try {
+          const savedUser = JSON.parse(storedUserInfo);
+          user.value = savedUser;
+          console.log("👤 Restored user from localStorage:", savedUser.username);
+        } catch (e) {
+          console.error("Failed to parse stored user info:", e);
+        }
       }
-    }
 
-    if (!user.value) {
+      if (!user.value) {
+        try {
+          const tokenParts = storedAccessToken.split(".");
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            user.value = {
+              id: payload.sub || payload.id,
+              username: payload.username || "",
+              isFirstLogin: false,
+            };
+            console.log("🔑 Parsed user from token:", user.value.username);
+          }
+        } catch (e) {
+          console.error("Failed to parse token:", e);
+        }
+      }
+
       try {
         const tokenParts = storedAccessToken.split(".");
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
-          user.value = {
-            id: payload.sub || payload.id,
-            username: payload.username || "",
-            isFirstLogin: false,
-          };
-          console.log("🔑 Parsed user from token:", user.value.username);
+          const currentTime = Math.floor(Date.now() / 1000);
+
+          if (payload.exp - currentTime < 300) {
+            console.log("🔄 Token expires soon, refreshing...");
+            refreshAccessToken().catch(console.error);
+          }
         }
       } catch (e) {
-        console.error("Failed to parse token:", e);
+        console.error("Failed to check token expiry:", e);
       }
+
+      fetchUserProfile(storedAccessToken);
     }
-
-    try {
-      const tokenParts = storedAccessToken.split(".");
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(atob(tokenParts[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-
-        if (payload.exp - currentTime < 300) {
-          console.log("🔄 Token expires soon, refreshing...");
-          refreshAccessToken().catch(console.error);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to check token expiry:", e);
-    }
-
-    fetchUserProfile(storedAccessToken);
+  } finally {
+    authInitialized.value = true;
   }
-
-  authInitialized.value = true;
 }
 
 async function updateUserProfile(userData: Partial<User>) {
