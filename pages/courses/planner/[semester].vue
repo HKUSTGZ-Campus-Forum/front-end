@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { CartCourse } from '~/utils/scheduler'
 
@@ -7,21 +7,25 @@ definePageMeta({ layout: 'keguang' })
 
 const route = useRoute()
 const { getCart } = useScheduler()
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, authInitialized } = useAuth()
 
 const semesterId = route.params.semester as string
 const courseList = ref<CartCourse[]>([])
 const loading = ref(true)
 
-onMounted(async () => {
+watch([authInitialized, isLoggedIn], async ([ready, loggedIn]) => {
+  if (!ready) return
+  loading.value = true
   try {
-    if (isLoggedIn.value) {
+    if (loggedIn) {
       courseList.value = await getCart(semesterId)
+    } else {
+      courseList.value = []
     }
   } finally {
     loading.value = false
   }
-})
+}, { immediate: true })
 </script>
 
 <template>

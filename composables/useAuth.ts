@@ -19,6 +19,7 @@ const refreshToken = ref<string | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const isRefreshing = ref(false);
+const authInitialized = ref(false);
 let refreshPromise: Promise<string | null> | null = null;
 
 const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
@@ -238,7 +239,7 @@ async function refreshAccessToken() {
 }
 
 function init() {
-  if (!process.client) return;
+  if (!process.client || authInitialized.value) return;
 
   const storedAccessToken = safeLocalStorage("get", "auth_token");
   const storedRefreshToken = safeLocalStorage("get", "refresh_token");
@@ -292,6 +293,8 @@ function init() {
 
     fetchUserProfile(storedAccessToken);
   }
+
+  authInitialized.value = true;
 }
 
 async function updateUserProfile(userData: Partial<User>) {
@@ -653,6 +656,7 @@ export function useAuth() {
     loading,
     error,
     isLoggedIn,
+    authInitialized,
     login,
     logout,
     register,
