@@ -597,8 +597,11 @@ const changeEmail = async () => {
 
     // Refresh user data to get updated email
     await refreshUser()
-    
-    emailSuccess.value = '邮箱更换成功，正在发送验证邮件...'
+
+    const verificationEmailSent = await resendVerificationEmail()
+    emailSuccess.value = verificationEmailSent
+      ? '邮箱更换成功，验证码已发送。'
+      : '邮箱已更换，但验证码发送失败；请点击重新发送。'
     
     // Show verification modal
     showEmailVerification.value = true
@@ -622,7 +625,7 @@ const cancelChangeEmail = () => {
 
 // Resend verification email
 const resendVerificationEmail = async () => {
-  if (!user.value?.id || resendCooldown.value > 0) return
+  if (!user.value?.id || resendCooldown.value > 0) return false
   
   isResending.value = true
   
@@ -647,10 +650,12 @@ const resendVerificationEmail = async () => {
     
     // Show verification modal after successful email send
     showEmailVerification.value = true
+    return true
     
   } catch (err) {
     console.error('Resend verification error:', err)
-    // Handle error display
+    emailError.value = err instanceof Error ? err.message : '发送验证邮件失败'
+    return false
   } finally {
     isResending.value = false
   }
