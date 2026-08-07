@@ -14,13 +14,21 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
-const { getCourseDetail } = useScheduler()
+const { getCourseDetail, getPopularity } = useScheduler()
+const loggedIn = toRef(props, 'isLoggedIn')
 const cart = useSchedulerCart(
   props.semesterId,
-  toRef(props, 'isLoggedIn'),
+  loggedIn,
   toRef(props, 'initialCourseList'),
 )
 const courseList = cart.courses
+const popularityCourseCodes = computed(() => courseList.value.map(course => course.course_code))
+const popularity = useSchedulerPopularity({
+  semesterId: props.semesterId,
+  isLoggedIn: loggedIn,
+  courseCodes: popularityCourseCodes,
+  getPopularity,
+})
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
@@ -82,7 +90,10 @@ async function handleCartAction(action: () => Promise<void>) {
     await action()
   } catch {
     cartError.value = t('scheduler.cartFailed')
+    return
   }
+
+  await popularity.refresh()
 }
 
 function toggleBan(day: number, period: number) {
@@ -121,6 +132,10 @@ function toggleBan(day: number, period: number) {
       <button type="button" :aria-label="t('scheduler.close')" @click="showGuestHint = false">&times;</button>
     </div>
 
+    <div v-if="popularity.forbidden.value" class="dashboard__notice dashboard__notice--warning">
+      {{ t('scheduler.popularityVerifiedOnly') }}
+    </div>
+
     <div v-if="cartError || planMessage" class="dashboard__notice">
       {{ cartError || planMessage }}
     </div>
@@ -136,6 +151,8 @@ function toggleBan(day: number, period: number) {
             :filter-mode="filterMode"
             :display-options="displayOptions"
             :max-day-num="maxDayNum"
+            :popularity-by-course="popularity.popularityByCourse.value"
+            :show-popularity="popularity.canShowPopularity.value"
             @toggle-ban="toggleBan"
           />
           <div v-else class="dashboard__loading">{{ t('scheduler.loading') }}</div>
@@ -152,6 +169,9 @@ function toggleBan(day: number, period: number) {
           :course-list="courseList"
           :current-plan="currentPlan"
           :display-options="displayOptions"
+          :popularity-by-course="popularity.popularityByCourse.value"
+          :popularity-generated-at="popularity.generatedAt.value"
+          :show-popularity="popularity.canShowPopularity.value"
           @toggle-course="(code, enabled) => handleCartAction(() => cart.toggleCourse(code, enabled))"
           @toggle-bundle="(code, bundleId, layer, enabled) => handleCartAction(() => cart.toggleBundle(code, bundleId, layer, enabled))"
           @toggle-layer="(code, layer, enabled) => handleCartAction(() => cart.toggleLayer(code, layer, enabled))"

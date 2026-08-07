@@ -2,8 +2,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartCourse } from '~/utils/scheduler'
-import { TIME_SLOTS, getTopOffset, getHeight, getCourseColor } from '~/utils/scheduler'
+import type {
+  CartCourse,
+  SchedulerPopularityByCourse,
+  SchedulerPopularityCounts,
+} from '~/utils/scheduler'
+import {
+  TIME_SLOTS,
+  getCourseColor,
+  getHeight,
+  getSchedulerCoursePopularity,
+  getTopOffset,
+} from '~/utils/scheduler'
 
 const props = defineProps<{
   courseList: CartCourse[]
@@ -12,6 +22,8 @@ const props = defineProps<{
   filterMode: boolean
   displayOptions: { name: boolean; section: boolean; location: boolean; instructor: boolean; duration: boolean }
   maxDayNum: number
+  popularityByCourse: SchedulerPopularityByCourse
+  showPopularity: boolean
 }>()
 
 const emit = defineEmits<{
@@ -73,10 +85,12 @@ interface LectureBlock {
   instructor: string
   courseCode: string
   courseTitle: string
+  sectionId: string
   sectionName: string
   color: string
   isMain: boolean
   credit: number
+  popularity?: SchedulerPopularityCounts
 }
 
 const lectureBlocks = computed(() => {
@@ -89,16 +103,22 @@ const lectureBlocks = computed(() => {
     const bundle = bundles.find(b => b.id === selection.bundleId)
     if (!bundle) continue
     const color = getCourseColor(selection.courseIndex)
+    const coursePopularity = getSchedulerCoursePopularity(
+      props.popularityByCourse,
+      course.course_code,
+    )
     for (const section of bundle.sections) {
       for (const lecture of section.lectures) {
         blocks.push({
           ...lecture,
           courseCode: course.course_code,
           courseTitle: course.course_title,
+          sectionId: section.section_id,
           sectionName: section.name,
           color,
           isMain: section.is_main,
           credit: course.credit,
+          popularity: coursePopularity?.sections[section.section_id],
         })
       }
     }
@@ -191,7 +211,7 @@ function isBanned(day: number, period: number): boolean {
     <!-- Lecture blocks -->
     <div
       v-for="(block, i) in lectureBlocks"
-      :key="i"
+      :key="`${block.courseCode}-${block.sectionId}-${block.day}-${block.start_time}-${i}`"
       class="timetable__block"
       :style="getBlockStyle(block)"
     >
@@ -205,6 +225,12 @@ function isBanned(day: number, period: number): boolean {
           {{ formatTime(block.start_time) }}-{{ formatTime(block.end_time) }}
         </div>
       </template>
+      <SchedulerPopularityBadge
+        v-if="showPopularity && block.popularity"
+        class="timetable__block-popularity"
+        :counts="block.popularity"
+        compact
+      />
     </div>
   </div>
 </template>
@@ -322,6 +348,10 @@ function isBanned(day: number, period: number): boolean {
     &-section, &-room, &-instructor, &-time {
       font-size: 0.65rem;
       opacity: 0.8;
+    }
+
+    &-popularity {
+      margin-top: 4px;
     }
   }
 }

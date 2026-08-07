@@ -1,12 +1,19 @@
 <!-- front-end/components/scheduler/SchedulerCourseCard.vue -->
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { CartCourse, BundleData } from '~/utils/scheduler'
+import type {
+  BundleData,
+  CartCourse,
+  IndexedSchedulerCoursePopularity,
+  SchedulerSection,
+} from '~/utils/scheduler'
 
 const props = defineProps<{
   course: CartCourse
   courseIndex: number
   currentSelection?: Record<number, number>
+  popularity?: IndexedSchedulerCoursePopularity
+  showPopularity: boolean
 }>()
 const { t } = useI18n()
 
@@ -20,6 +27,11 @@ const emit = defineEmits<{
 function getBundleLabel(bundle: BundleData): string {
   return bundle.sections.map(s => s.section_type + s.name.replace(/\D/g, '')).join('/')
 }
+
+function getSectionLabel(section: SchedulerSection): string {
+  return section.section_type + section.name.replace(/\D/g, '')
+}
+
 </script>
 
 <template>
@@ -29,6 +41,11 @@ function getBundleLabel(bundle: BundleData): string {
       <div class="course-card__info">
         <div class="course-card__code">{{ course.course_code }}</div>
         <div class="course-card__title">{{ course.course_title }}</div>
+        <SchedulerPopularityBadge
+          v-if="showPopularity && popularity"
+          class="course-card__popularity"
+          :counts="popularity"
+        />
       </div>
       <span class="course-card__credits">{{ t('scheduler.credits', { count: course.credit }) }}</span>
       <button class="course-card__detail" type="button" @click.stop="emit('show-info', course.course_code)">
@@ -36,7 +53,10 @@ function getBundleLabel(bundle: BundleData): string {
       </button>
     </div>
 
-    <div v-if="course.enabled" class="course-card__bundles">
+    <div
+      v-if="course.enabled || (showPopularity && popularity)"
+      class="course-card__bundles"
+    >
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
         <div class="course-card__layer-header">
           <span>{{ t('scheduler.layer', { layer }) }}</span>
@@ -55,7 +75,20 @@ function getBundleLabel(bundle: BundleData): string {
             type="button"
             @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), !bundle.enabled)"
           >
-            {{ getBundleLabel(bundle) }}
+            <template v-if="showPopularity && popularity">
+              <span
+                v-for="section in bundle.sections"
+                :key="section.section_id"
+                class="course-card__section-popularity"
+              >
+                <span>{{ getSectionLabel(section) }}</span>
+                <SchedulerPopularityBadge
+                  v-if="popularity.sections[section.section_id]"
+                  :counts="popularity.sections[section.section_id]"
+                />
+              </span>
+            </template>
+            <template v-else>{{ getBundleLabel(bundle) }}</template>
           </button>
         </div>
       </div>
@@ -78,8 +111,8 @@ function getBundleLabel(bundle: BundleData): string {
   }
 
   &--disabled {
-    opacity: 0.58;
     box-shadow: none;
+    background: color-mix(in srgb, var(--surface-secondary) 42%, var(--surface-primary));
   }
 
   &__header {
@@ -125,6 +158,10 @@ function getBundleLabel(bundle: BundleData): string {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &__popularity {
+    margin-top: 6px;
   }
 
   &__detail {
@@ -195,11 +232,16 @@ function getBundleLabel(bundle: BundleData): string {
   }
 
   &__bundle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
     background: var(--surface-secondary);
     border: 1px solid var(--border-secondary);
     border-radius: 999px;
     min-height: 28px;
-    padding: 0 10px;
+    padding: 5px 10px;
     font-size: 0.75rem;
     cursor: pointer;
     color: var(--text-primary);
@@ -228,6 +270,19 @@ function getBundleLabel(bundle: BundleData): string {
     }
 
     &:hover { background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); }
+  }
+
+  &__section-popularity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    width: 100%;
+
+    > span:first-child {
+      flex-shrink: 0;
+      font-weight: 700;
+    }
   }
 }
 
