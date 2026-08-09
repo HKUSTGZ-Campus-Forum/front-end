@@ -16,8 +16,10 @@ export function useSchedulerCartLoader({
 }: SchedulerCartLoaderOptions) {
   const courseList = ref<CartCourse[]>([])
   const loading = ref(true)
+  const loadError = ref(false)
+  const reloadToken = ref(0)
 
-  watch([authInitialized, isLoggedIn], async ([ready, loggedIn], _previous, onCleanup) => {
+  watch([authInitialized, isLoggedIn, reloadToken], async ([ready, loggedIn], _previous, onCleanup) => {
     if (!ready) return
 
     let active = true
@@ -26,6 +28,7 @@ export function useSchedulerCartLoader({
     })
 
     loading.value = true
+    loadError.value = false
     try {
       if (!loggedIn) {
         courseList.value = []
@@ -36,6 +39,8 @@ export function useSchedulerCartLoader({
       if (active && isLoggedIn.value) {
         courseList.value = nextCourseList
       }
+    } catch {
+      if (active) loadError.value = true
     } finally {
       if (active) {
         loading.value = false
@@ -43,5 +48,9 @@ export function useSchedulerCartLoader({
     }
   }, { immediate: true })
 
-  return { courseList, loading }
+  function reload() {
+    reloadToken.value += 1
+  }
+
+  return { courseList, loading, loadError, reload }
 }

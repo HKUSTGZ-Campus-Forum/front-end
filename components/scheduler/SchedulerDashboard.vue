@@ -1,15 +1,21 @@
 <!-- front-end/components/scheduler/SchedulerDashboard.vue -->
 <script setup lang="ts">
-import { ref, computed, toRef, watch } from 'vue'
+import { ref, computed, onUnmounted, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartCourse, CourseDetail } from '~/utils/scheduler'
 import { getMaxDayNum, solvePlans } from '~/utils/scheduler'
+import { createLatestRequestTracker } from '~/utils/schedulerAsync'
 
 const props = defineProps<{
   semesterId: string
   initialCourseList: CartCourse[]
   isLoggedIn: boolean
   loading: boolean
+  cartLoadError: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'retry-cart-load'): void
 }>()
 
 const { t } = useI18n()
@@ -38,6 +44,9 @@ const showCartPanel = ref(false)
 const showGuestHint = ref(true)
 const selectedCourse = ref<CourseDetail | null>(null)
 const showCourseDetail = ref(false)
+const courseDetailStatus = ref<'loading' | 'ready' | 'error'>('loading')
+const requestedCourseCode = ref('')
+const detailRequests = createLatestRequestTracker()
 const cartError = ref('')
 const displayOptions = ref({
   name: true,
@@ -49,6 +58,13 @@ const displayOptions = ref({
 
 const solverResult = computed(() => solvePlans(courseList.value, bannedPeriods.value))
 const planList = computed(() => solverResult.value.status === 'ok' ? solverResult.value.plans : [])
+const plansTruncated = computed(() => solverResult.value.status === 'ok' && solverResult.value.truncated)
+const planCountLabel = computed(() => {
+  if (!plansTruncated.value || solverResult.value.status !== 'ok') return String(planList.value.length)
+  return solverResult.value.truncationReason === 'plan-limit'
+    ? t('scheduler.planCountTruncated', { count: planList.value.length })
+    : t('scheduler.planCountIncomplete', { count: planList.value.length })
+})
 const enabledCourses = computed(() => courseList.value.filter(course => course.enabled))
 const totalCredits = computed(() => enabledCourses.value.reduce((sum, course) => sum + course.credit, 0))
 
@@ -60,6 +76,7 @@ const currentPlan = computed(() => {
 const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
 
 const planMessage = computed(() => {
+  if (props.loading || props.cartLoadError) return null
   if (solverResult.value.status === 'empty-cart') return t('scheduler.emptyCartHint')
   if (solverResult.value.status === 'all-disabled') return t('scheduler.allDisabled')
   if (solverResult.value.status === 'unavailable-layer') {
@@ -68,7 +85,13 @@ const planMessage = computed(() => {
       layer: solverResult.value.layer,
     })
   }
+  if (solverResult.value.status === 'search-limit') return t('scheduler.searchLimited')
   if (solverResult.value.status === 'no-solution') return t('scheduler.noSolution')
+  if (solverResult.value.status === 'ok' && solverResult.value.truncated) {
+    return solverResult.value.truncationReason === 'plan-limit'
+      ? t('scheduler.plansTruncated', { count: solverResult.value.plans.length })
+      : t('scheduler.searchLimited')
+  }
   return null
 })
 
@@ -79,9 +102,34 @@ watch(planList, (plans) => {
   }
 })
 
+watch(() => props.semesterId, () => {
+  closeCourseDetail()
+})
+
 async function handleShowInfo(code: string) {
-  selectedCourse.value = await getCourseDetail(code, props.semesterId)
+  const request = detailRequests.begin()
+  requestedCourseCode.value = code
+  selectedCourse.value = null
+  courseDetailStatus.value = 'loading'
   showCourseDetail.value = true
+  try {
+    const course = await getCourseDetail(code, props.semesterId, request.signal)
+    if (!request.isCurrent() || requestedCourseCode.value !== code) return
+    selectedCourse.value = course
+    courseDetailStatus.value = 'ready'
+  } catch {
+    if (request.isCurrent()) courseDetailStatus.value = 'error'
+  }
+}
+
+function closeCourseDetail() {
+  detailRequests.invalidate()
+  showCourseDetail.value = false
+  selectedCourse.value = null
+}
+
+function retryCourseDetail() {
+  if (requestedCourseCode.value) void handleShowInfo(requestedCourseCode.value)
 }
 
 async function handleCartAction(action: () => Promise<void>) {
@@ -96,9 +144,19 @@ async function handleCartAction(action: () => Promise<void>) {
   await popularity.refresh()
 }
 
+function handleAddCourse(code: string) {
+  return handleCartAction(() => cart.add(code))
+}
+
+function handleRemoveCourse(code: string) {
+  return handleCartAction(() => cart.remove(code))
+}
+
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
+
+onUnmounted(() => detailRequests.invalidate())
 </script>
 
 <template>
@@ -118,7 +176,7 @@ function toggleBan(day: number, period: number) {
         </div>
         <div class="dashboard__summary-item">
           <span>{{ t('scheduler.planCount') }}</span>
-          <strong>{{ planList.length }}</strong>
+          <strong>{{ planCountLabel }}</strong>
         </div>
         <div class="dashboard__summary-item">
           <span>{{ t('scheduler.totalCredits') }}</span>
@@ -136,15 +194,19 @@ function toggleBan(day: number, period: number) {
       {{ t('scheduler.popularityVerifiedOnly') }}
     </div>
 
+    <div v-if="cartLoadError" class="dashboard__notice dashboard__notice--error" role="alert">
+      <span>{{ t('scheduler.cartLoadFailed') }}</span>
+      <button type="button" @click="emit('retry-cart-load')">{{ t('common.retry') }}</button>
+    </div>
+
     <div v-if="cartError || planMessage" class="dashboard__notice">
       {{ cartError || planMessage }}
     </div>
 
-    <div class="dashboard__body">
+    <div v-if="!cartLoadError && !loading" class="dashboard__body">
       <div class="dashboard__left">
         <div class="dashboard__timetable-card">
           <SchedulerTimetable
-            v-if="!loading"
             :course-list="courseList"
             :current-plan="currentPlan"
             :banned-periods="bannedPeriods"
@@ -155,7 +217,6 @@ function toggleBan(day: number, period: number) {
             :show-popularity="popularity.canShowPopularity.value"
             @toggle-ban="toggleBan"
           />
-          <div v-else class="dashboard__loading">{{ t('scheduler.loading') }}</div>
           <SchedulerBottomPanel
             :current-index="viewIndex"
             :total-plans="planList.length"
@@ -182,21 +243,24 @@ function toggleBan(day: number, period: number) {
         />
       </div>
     </div>
+    <div v-else-if="loading" class="dashboard__loading">{{ t('scheduler.loading') }}</div>
 
     <!-- Cart Panel Modal -->
     <SchedulerCartPanel
       :semester-id="semesterId"
       :course-list="courseList"
-      :visible="showCartPanel"
+      :visible="showCartPanel && !loading && !cartLoadError"
+      :add-course="handleAddCourse"
+      :remove-course="handleRemoveCourse"
       @close="showCartPanel = false"
-      @add="(code) => handleCartAction(() => cart.add(code))"
-      @remove="(code) => handleCartAction(() => cart.remove(code))"
     />
 
     <SchedulerCourseDetail
       :visible="showCourseDetail"
       :course="selectedCourse"
-      @close="showCourseDetail = false"
+      :status="courseDetailStatus"
+      @close="closeCourseDetail"
+      @retry="retryCourseDetail"
     />
   </div>
 </template>
@@ -310,6 +374,22 @@ function toggleBan(day: number, period: number) {
       &:hover {
         border-color: color-mix(in srgb, var(--semantic-warning) 35%, transparent);
         background: color-mix(in srgb, var(--surface-primary) 70%, transparent);
+      }
+    }
+
+    &--error {
+      background: color-mix(in srgb, var(--semantic-error) 10%, var(--surface-primary));
+      border-color: color-mix(in srgb, var(--semantic-error) 24%, var(--border-secondary));
+      color: var(--text-primary);
+
+      button {
+        width: auto;
+        height: 32px;
+        padding: 0 12px;
+        border-color: color-mix(in srgb, var(--semantic-error) 30%, var(--border-secondary));
+        background: var(--surface-primary);
+        font-size: 0.82rem;
+        font-weight: 700;
       }
     }
   }

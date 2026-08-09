@@ -13,6 +13,7 @@ const { getSemesters } = useScheduler()
 
 const semesters = ref<SemesterInfo[]>([])
 const loading = ref(true)
+const loadError = ref(false)
 
 const sortedSemesters = computed(() =>
   [...semesters.value].sort((a, b) => Number(b.id) - Number(a.id))
@@ -24,13 +25,19 @@ const totalSections = computed(() =>
 
 const latestSemester = computed(() => sortedSemesters.value[0])
 
-onMounted(async () => {
+async function loadSemesters() {
+  loading.value = true
+  loadError.value = false
   try {
     semesters.value = await getSemesters()
+  } catch {
+    loadError.value = true
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(() => void loadSemesters())
 
 function groupByYear(sems: SemesterInfo[]) {
   const groups: Record<string, SemesterInfo[]> = {}
@@ -68,6 +75,11 @@ function getSemesterName(sem: SemesterInfo) {
 
     <div v-if="loading" class="scheduler-home__panel scheduler-home__loading">
       {{ t('scheduler.loading') }}
+    </div>
+
+    <div v-else-if="loadError" class="scheduler-home__panel scheduler-home__error" role="alert">
+      <span>{{ t('scheduler.semestersLoadFailed') }}</span>
+      <button type="button" @click="loadSemesters">{{ t('common.retry') }}</button>
     </div>
 
     <template v-else>
@@ -187,6 +199,28 @@ function getSemesterName(sem: SemesterInfo) {
     text-align: center;
     color: var(--text-secondary);
     padding: 3rem;
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    padding: 3rem;
+    color: var(--semantic-error);
+    text-align: center;
+
+    button {
+      min-height: 38px;
+      padding: 0 16px;
+      border: 1px solid var(--border-primary);
+      border-radius: 10px;
+      background: var(--surface-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: 700;
+    }
   }
 
   &__timeline {

@@ -167,11 +167,29 @@ export interface PlanSelection {
   layer: number
 }
 
+export const SCHEDULER_PLAN_LIMIT = 1000
+export const SCHEDULER_SEARCH_NODE_LIMIT = 100_000
+
+export interface SolverOptions {
+  maxPlans?: number
+  maxSearchNodes?: number
+}
+
+export type SolverTruncationReason = 'plan-limit' | 'search-limit'
+
 export type SolverResult =
-  | { status: 'ok'; plans: PlanSelection[][] }
+  | {
+      status: 'ok'
+      plans: PlanSelection[][]
+      truncated: boolean
+      truncationReason: SolverTruncationReason | null
+      limit: number
+      searchNodeLimit: number
+    }
   | { status: 'empty-cart'; plans: [] }
   | { status: 'all-disabled'; plans: [] }
   | { status: 'unavailable-layer'; plans: []; courseCode: string; layer: number }
+  | { status: 'search-limit'; plans: []; searchNodeLimit: number }
   | { status: 'no-solution'; plans: [] }
 
 function overlapsBanned(lectures: SchedulerLecture[], bannedPeriods: boolean[][]): boolean {
@@ -190,7 +208,20 @@ function overlapsBanned(lectures: SchedulerLecture[], bannedPeriods: boolean[][]
   })
 }
 
-export function solvePlans(courseList: CartCourse[], bannedPeriods: boolean[][]): SolverResult {
+export function solvePlans(
+  courseList: CartCourse[],
+  bannedPeriods: boolean[][],
+  options: SolverOptions = {},
+): SolverResult {
+  const limit = options.maxPlans ?? SCHEDULER_PLAN_LIMIT
+  if (!Number.isSafeInteger(limit) || limit < 1) {
+    throw new RangeError('maxPlans must be a positive integer')
+  }
+  const searchNodeLimit = options.maxSearchNodes ?? SCHEDULER_SEARCH_NODE_LIMIT
+  if (!Number.isSafeInteger(searchNodeLimit) || searchNodeLimit < 1) {
+    throw new RangeError('maxSearchNodes must be a positive integer')
+  }
+
   if (courseList.length === 0) return { status: 'empty-cart', plans: [] }
 
   const enabledCourses = courseList
@@ -229,6 +260,8 @@ export function solvePlans(courseList: CartCourse[], bannedPeriods: boolean[][])
   const plans: PlanSelection[][] = []
   const bucket = new Map<number, { start: number; end: number }[]>()
   const selected: PlanSelection[] = []
+  let searchNodes = 0
+  let truncationReason: SolverTruncationReason | null = null
 
   function canPlace(lectures: SchedulerLecture[]) {
     return lectures.every(lecture =>
@@ -238,27 +271,50 @@ export function solvePlans(courseList: CartCourse[], bannedPeriods: boolean[][])
     )
   }
 
-  function search(index: number) {
+  function search(index: number): boolean {
     if (index === choices.length) {
+      if (plans.length >= limit) {
+        truncationReason = 'plan-limit'
+        return true
+      }
       plans.push(selected.map(selection => ({ ...selection })))
-      return
+      return false
     }
 
     for (const bundle of choices[index].bundles) {
+      if (searchNodes >= searchNodeLimit) {
+        truncationReason = 'search-limit'
+        return true
+      }
+      searchNodes += 1
       if (!canPlace(bundle.lectures)) continue
       for (const lecture of bundle.lectures) {
         if (!bucket.has(lecture.day)) bucket.set(lecture.day, [])
         bucket.get(lecture.day)!.push({ start: lecture.start_time, end: lecture.end_time })
       }
       selected.push(bundle.selection)
-      search(index + 1)
+      const shouldStop = search(index + 1)
       selected.pop()
       for (const lecture of bundle.lectures) bucket.get(lecture.day)!.pop()
+      if (shouldStop) return true
     }
+    return false
   }
 
   search(0)
-  return plans.length ? { status: 'ok', plans } : { status: 'no-solution', plans: [] }
+  if (plans.length) {
+    return {
+      status: 'ok',
+      plans,
+      truncated: truncationReason !== null,
+      truncationReason,
+      limit,
+      searchNodeLimit,
+    }
+  }
+  return truncationReason === 'search-limit'
+    ? { status: 'search-limit', plans: [], searchNodeLimit }
+    : { status: 'no-solution', plans: [] }
 }
 
 export function getMaxDayNum(courseList: CartCourse[], plan: PlanSelection[]): number {
