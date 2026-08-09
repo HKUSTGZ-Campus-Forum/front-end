@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getSchedulerMapLinePath } from '~/utils/scheduler'
 
 interface MapComponent {
   id: string
@@ -133,6 +134,13 @@ function getLineDash(line: MapLine): string {
   return line.line_type ? '' : '6,4'
 }
 
+function getLinePath(line: MapLine): string {
+  const start = componentMap.value[line.start_id]
+  const end = componentMap.value[line.end_id]
+  if (!start || !end) return ''
+  return getSchedulerMapLinePath(start, end, line.x_coordinate)
+}
+
 function getNodeColor(comp: MapComponent): string {
   if (comp.category === 1) return 'var(--text-primary)'
   if (comp.category === 2) return 'var(--semantic-info)'
@@ -166,13 +174,11 @@ function getNodeColor(comp: MapComponent): string {
         <svg width="6000" height="2400" viewBox="0 0 6000 2400">
           <!-- Lines -->
           <g>
-            <line
+            <path
               v-for="line in filteredLines"
               :key="line.id"
-              :x1="componentMap[line.start_id]?.x_coordinate || 0"
-              :y1="componentMap[line.start_id]?.y_coordinate || 0"
-              :x2="componentMap[line.end_id]?.x_coordinate || 0"
-              :y2="componentMap[line.end_id]?.y_coordinate || 0"
+              :d="getLinePath(line)"
+              fill="none"
               :stroke="getLineColor(line)"
               :stroke-width="isLineHighlighted(line) ? 3 : 1.5"
               :stroke-dasharray="getLineDash(line)"

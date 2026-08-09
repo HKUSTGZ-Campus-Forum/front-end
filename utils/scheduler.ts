@@ -8,6 +8,11 @@ export interface SchedulerLecture {
   instructor: string
 }
 
+export interface SchedulerMapPoint {
+  x_coordinate: number
+  y_coordinate: number
+}
+
 export interface SchedulerSection {
   semester_id: string
   section_id: string
@@ -338,11 +343,22 @@ export function timeToHours(time: number): number {
 }
 
 export function getTopOffset(startTime: number): number {
-  return timeToHours(startTime) - 9
+  const scheduleStart = timeToHours(TIME_SLOTS[0].start)
+  const slotDuration = timeToHours(TIME_SLOTS[0].end) - scheduleStart
+  return (timeToHours(startTime) - scheduleStart) / slotDuration
 }
 
 export function getHeight(startTime: number, endTime: number): number {
-  return timeToHours(endTime) - timeToHours(startTime)
+  const slotDuration = timeToHours(TIME_SLOTS[0].end) - timeToHours(TIME_SLOTS[0].start)
+  return (timeToHours(endTime) - timeToHours(startTime)) / slotDuration
+}
+
+export function getSchedulerMapLinePath(
+  start: SchedulerMapPoint,
+  end: SchedulerMapPoint,
+  elbowX: number,
+): string {
+  return `M ${start.x_coordinate},${start.y_coordinate} H ${elbowX} V ${end.y_coordinate} H ${end.x_coordinate}`
 }
 
 export function getCourseColor(index: number, isDark: boolean = false): string {
