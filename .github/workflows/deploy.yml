@@ -69,10 +69,13 @@ jobs:
         run: |
           set -Eeuo pipefail
           bash -n deploy/atomic-release.sh
+          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("deploy/atomic-release-lock.py").read_text())'
           node --check deploy/ecosystem.dev.config.cjs
           ssh-keygen -lf deploy/ssh_known_hosts -E sha256 | grep -Fq 'SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg'
-          cd .output
-          find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > ../deploy/output.sha256
+          find .output deploy -type f ! -path 'deploy/release.sha256' \
+            ! -path 'deploy/.gitignore' ! -path 'deploy/README.md' \
+            ! -path '*/__pycache__/*' -print0 | \
+            LC_ALL=C sort -z | xargs -0 sha256sum > deploy/release.sha256
 
       - name: Configure pinned OpenSSH transport
         env:

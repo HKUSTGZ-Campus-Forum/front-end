@@ -2,15 +2,18 @@
 
 The development and production deployment workflows upload each Nuxt build to a unique
 `.incoming/<git-sha>-<run-id>-<attempt>` directory. `atomic-release.sh` verifies
-the complete file manifest, serializes cutovers with `flock`, moves the staged
-directory into `releases/`, and atomically switches the `current` symlink.
+the complete file manifest, serializes cutovers with a no-follow, close-on-exec
+lock holder, moves the staged directory into `releases/`, and atomically
+switches the `current` symlink.
 
 PM2 always starts `current/.output/server/index.mjs`. Development uses one fork
 process on port 3001; production preserves its historical `max` cluster on port
 3000, public bind address, and `/var/unikorn/prod_log` paths. A deployment
 succeeds only when every PM2 process reports the immutable Git SHA and repeated
-`/health` probes identify that same SHA. If
-reload or validation fails, the controller restores the previous symlink and
+`/health` probes identify that same SHA. Production also requires the public
+HTTPS health endpoint to report that SHA and its root and planner routes to be
+reachable before the rollback window closes. If reload or validation fails,
+the controller restores the previous symlink and
 restarts from that previous release's own validated PM2 config. The first
 cutover preserves the historical top-level `.output` via
 `releases/legacy-in-place` and freezes its validated PM2 config alongside the

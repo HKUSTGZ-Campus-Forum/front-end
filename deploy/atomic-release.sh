@@ -29,6 +29,7 @@ port=$5
 keep_releases=${6:-3}
 pm2_config_relative=${7:-deploy/ecosystem.dev.config.cjs}
 health_attempts=${DEPLOY_HEALTH_ATTEMPTS:-20}
+lock_wait_seconds=${DEPLOY_LOCK_WAIT_SECONDS:-120}
 
 [[ "$app_root" == /* && "$app_root" != "/" && "$app_root" != *[[:space:]]* ]] ||
   die "APP_ROOT must be an absolute, non-root path without whitespace"
@@ -44,10 +45,16 @@ health_attempts=${DEPLOY_HEALTH_ATTEMPTS:-20}
   die "PM2_CONFIG must be a deploy/ecosystem.<name>.config.cjs path"
 [[ "$health_attempts" =~ ^[0-9]+$ ]] && (( health_attempts >= 1 && health_attempts <= 20 )) ||
   die "DEPLOY_HEALTH_ATTEMPTS must be between 1 and 20"
+[[ "$lock_wait_seconds" =~ ^[0-9]+$ ]] && (( lock_wait_seconds >= 1 && lock_wait_seconds <= 120 )) ||
+  die "DEPLOY_LOCK_WAIT_SECONDS must be between 1 and 120"
 
-for command_name in curl flock node pm2 sha256sum; do
+for command_name in curl node pm2 python3 sha256sum; do
   command -v "$command_name" >/dev/null 2>&1 || die "required command not found: $command_name"
 done
+
+expected_max_instances=${DEPLOY_EXPECTED_MAX_INSTANCES:-$(node -p 'require("node:os").cpus().length')}
+[[ "$expected_max_instances" =~ ^[1-9][0-9]*$ ]] && (( expected_max_instances <= 1024 )) ||
+  die "DEPLOY_EXPECTED_MAX_INSTANCES must be between 1 and 1024"
 
 incoming_root="$app_root/.incoming"
 releases_root="$app_root/releases"
@@ -57,13 +64,44 @@ current_link="$app_root/current"
 legacy_release="$releases_root/legacy-in-place"
 legacy_config_path="$app_root/ecosystem.config.js"
 legacy_frozen_config="$releases_root/legacy-ecosystem.config.cjs"
-manifest_relative="deploy/output.sha256"
+manifest_relative="deploy/release.sha256"
 health_url="http://127.0.0.1:$port/health"
 root_url="http://127.0.0.1:$port/"
+public_health_url=${DEPLOY_PUBLIC_HEALTH_URL:-}
+public_root_url=${DEPLOY_PUBLIC_ROOT_URL:-}
+public_planner_url=${DEPLOY_PUBLIC_PLANNER_URL:-}
 
-mkdir -p "$incoming_root" "$releases_root"
-exec 9>"$app_root/.deploy.lock"
-flock -w 120 9 || die "another deployment still holds $app_root/.deploy.lock"
+[[ -d "$app_root" && ! -L "$app_root" ]] || die "APP_ROOT must be a real directory"
+
+if [[ -n "$public_health_url" || -n "$public_root_url" || -n "$public_planner_url" ]]; then
+  [[ "$public_health_url" == https://* && "$public_health_url" != *[[:space:]]* ]] ||
+    die "DEPLOY_PUBLIC_HEALTH_URL must be a whitespace-free HTTPS URL"
+  [[ "$public_root_url" == https://* && "$public_root_url" != *[[:space:]]* ]] ||
+    die "DEPLOY_PUBLIC_ROOT_URL must be a whitespace-free HTTPS URL"
+  [[ "$public_planner_url" == https://* && "$public_planner_url" != *[[:space:]]* ]] ||
+    die "DEPLOY_PUBLIC_PLANNER_URL must be a whitespace-free HTTPS URL"
+fi
+
+if [[ ${ATOMIC_RELEASE_LOCK_HELD:-} != "1" ]]; then
+  controller_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+  controller_path="$controller_dir/$(basename -- "${BASH_SOURCE[0]}")"
+  lock_helper="$controller_dir/atomic-release-lock.py"
+  [[ -f "$controller_path" && ! -L "$controller_path" ]] || die "release controller must be a regular file"
+  [[ -f "$lock_helper" && ! -L "$lock_helper" ]] || die "deployment lock helper is missing"
+  exec python3 "$lock_helper" "$app_root" "$lock_wait_seconds" "$controller_path" "$@"
+fi
+unset ATOMIC_RELEASE_LOCK_HELD
+
+for managed_root in "$incoming_root" "$releases_root"; do
+  if [[ -e "$managed_root" || -L "$managed_root" ]]; then
+    [[ -d "$managed_root" && ! -L "$managed_root" ]] ||
+      die "$managed_root must be a real directory"
+  else
+    mkdir -- "$managed_root"
+    [[ -d "$managed_root" && ! -L "$managed_root" ]] ||
+      die "could not create safe managed directory: $managed_root"
+  fi
+done
 
 [[ -d "$staging_dir" && ! -L "$staging_dir" ]] || die "staging directory is missing"
 [[ ! -e "$release_dir" && ! -L "$release_dir" ]] || die "release already exists: $release_id"
@@ -79,7 +117,7 @@ asset_count=$(find "$staging_dir/.output/public/_nuxt" -type f | wc -l)
 
 echo "Verifying staged release checksums..."
 (
-  cd "$staging_dir/.output"
+  cd "$staging_dir"
   sha256sum --check --strict --quiet "$staging_dir/$manifest_relative"
 ) || die "staged release checksum verification failed"
 
@@ -104,8 +142,14 @@ activate() {
 }
 
 read_health_version() {
+  read_health_version_at "$health_url"
+}
+
+read_health_version_at() {
+  local target_url=$1
   local response
-  response=$(curl --fail --silent --show-error --max-time 5 "$health_url" 2>/dev/null) || return 1
+  response=$(curl --fail --silent --show-error --max-time 5 \
+    -H 'Cache-Control: no-cache' "$target_url" 2>/dev/null) || return 1
   [[ -n "$response" ]] || return 1
   node -e '
       const payload = JSON.parse(process.argv[1]);
@@ -118,6 +162,39 @@ read_health_version() {
       }
       process.stdout.write(payload.version);
     ' "$response" 2>/dev/null
+}
+
+wait_for_public_acceptance() {
+  local expected_version=$1
+  local process_count=${2:-1}
+  local actual_version
+  local accepted
+  local attempt
+  local probe
+  local probe_count=$process_count
+
+  [[ -n "$public_health_url" ]] || return 0
+  (( probe_count >= 3 )) || probe_count=3
+  (( probe_count <= 10 )) || probe_count=10
+
+  for attempt in $(seq 1 "$health_attempts"); do
+    accepted=true
+    for probe in $(seq 1 "$probe_count"); do
+      actual_version=$(read_health_version_at "$public_health_url" || true)
+      if [[ "$actual_version" != "$expected_version" ]]; then
+        accepted=false
+        break
+      fi
+    done
+    if [[ "$accepted" == true ]] && \
+      curl --fail --silent --show-error --max-time 10 -H 'Cache-Control: no-cache' "$public_root_url" >/dev/null 2>&1 && \
+      curl --fail --silent --show-error --max-time 10 -H 'Cache-Control: no-cache' "$public_planner_url" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 3
+  done
+
+  return 1
 }
 
 wait_for_health_version() {
@@ -264,7 +341,8 @@ wait_for_running_release() {
     if [[ "$state" == *$'\t'* && "$count" =~ ^[1-9][0-9]*$ && \
       "$script" == "$expected_script" && "$cwd" == "$expected_cwd" && \
       "$mode" == "$expected_mode" && "$release_sha" == "$expected_release_sha" && \
-      ( "$expected_instances" == "max" || "$count" == "$expected_instances" ) ]]; then
+      ( ( "$expected_instances" == "max" && "$count" == "$expected_max_instances" ) || \
+        ( "$expected_instances" != "max" && "$count" == "$expected_instances" ) ) ]]; then
       printf '%s' "$count"
       return 0
     fi
@@ -393,7 +471,7 @@ rollback() {
         "$previous_health_version" || return 1
       start_known_config "$previous_config_path" "$previous_health_version" || return 1
       [[ -n "$previous_health_version" ]] || return 1
-      process_count=$(wait_for_running_release "$app_root/current/.output/server/index.mjs" "$app_root/current" "${previous_mode}_mode" "$previous_instances" "$previous_pm2_release_sha") || return 1
+      process_count=$(wait_for_running_release "$app_root/current/.output/server/index.mjs" "$app_root/current" "${previous_mode}_mode" "$previous_instances" "$previous_health_version") || return 1
       wait_for_health_version "$previous_health_version" "$process_count" || return 1
     fi
     pm2 save --force >/dev/null
@@ -613,6 +691,11 @@ if ! wait_for_health_version "$expected_sha" "$new_process_count"; then
   pm2 logs "$pm2_app" --nostream --lines 100 || true
   perform_rollback || die "deployment and rollback both failed"
   die "new release did not become healthy; previous release restored"
+fi
+if ! wait_for_public_acceptance "$expected_sha" "$new_process_count"; then
+  pm2 logs "$pm2_app" --nostream --lines 100 || true
+  perform_rollback || die "public acceptance and rollback both failed"
+  die "public health, root, or planner acceptance failed; previous release restored"
 fi
 
 if ! pm2 save --force >/dev/null; then

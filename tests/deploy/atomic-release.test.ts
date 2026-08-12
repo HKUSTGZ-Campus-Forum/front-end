@@ -11,6 +11,8 @@ const productionWorkflow = readFileSync(
 );
 const controllerPath = resolve(root, "deploy/atomic-release.sh");
 const controller = readFileSync(controllerPath, "utf8");
+const lockHelperPath = resolve(root, "deploy/atomic-release-lock.py");
+const lockHelper = readFileSync(lockHelperPath, "utf8");
 const pm2Config = readFileSync(resolve(root, "deploy/ecosystem.dev.config.cjs"), "utf8");
 const productionPm2Config = readFileSync(
   resolve(root, "deploy/ecosystem.prod.config.cjs"),
@@ -21,6 +23,13 @@ const knownHostsPath = resolve(root, "deploy/ssh_known_hosts");
 describe("atomic frontend deployment", () => {
   it("keeps the release controller valid Bash", () => {
     expect(() => execFileSync("bash", ["-n", controllerPath])).not.toThrow();
+    expect(() =>
+      execFileSync("python3", [
+        "-c",
+        "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_text())",
+        lockHelperPath,
+      ]),
+    ).not.toThrow();
   });
 
   it("uploads to a unique staging directory instead of overlaying live output", () => {
@@ -30,6 +39,8 @@ describe("atomic frontend deployment", () => {
     expect(workflow).toContain('tar -xzf - --no-same-owner --no-same-permissions -C "$remote_staging"');
     expect(workflow).toContain("Create release checksum manifest");
     expect(workflow).toContain("bash -n deploy/atomic-release.sh");
+    expect(workflow).toContain("find .output deploy -type f");
+    expect(workflow).toContain("deploy/release.sha256");
   });
 
   it("uses native OpenSSH with strict pinned host-key verification", () => {
@@ -52,7 +63,7 @@ describe("atomic frontend deployment", () => {
   });
 
   it("serializes, verifies, atomically activates, and can roll back releases", () => {
-    expect(controller).toContain("flock -w 120");
+    expect(controller).toContain('exec python3 "$lock_helper"');
     expect(controller).toContain("sha256sum --check --strict --quiet");
     expect(controller).toContain('node --check "$staging_dir/.output/server/index.mjs"');
     expect(controller).toContain(".release-complete");
@@ -72,6 +83,7 @@ describe("atomic frontend deployment", () => {
     expect(controller).toContain('legacy release root is not healthy before deployment');
     expect(controller).toContain('[[ "$previous_exec_path" == "$legacy_script" ]]');
     expect(controller).toContain("wait_for_root");
+    expect(controller).toContain("wait_for_public_acceptance");
     expect(controller).toContain("rollback \"$previous_target\"");
     expect(controller).toContain("legacy-in-place");
     expect(controller).not.toMatch(/rm -rf[^\n]*(current|\.output)/);
@@ -90,9 +102,29 @@ describe("atomic frontend deployment", () => {
     expect(productionWorkflow).toContain(
       'remote_staging="/data/prod_unikorn/front-end/.incoming/$RELEASE_ID"',
     );
+    expect(productionWorkflow).toContain('[[ -d "$incoming_root" && ! -L "$incoming_root" ]]');
+    expect(productionWorkflow).toContain('[[ $(dirname -- "$staging_dir") == "$incoming_root" ]]');
+    expect(productionWorkflow).toContain('mkdir -- "$staging_dir"');
+    expect(productionWorkflow).not.toContain('mkdir -p -- "$staging_dir"');
     expect(productionWorkflow).toContain('"prod-unikorn-frontend"');
     expect(productionWorkflow).toContain('"3000"');
     expect(productionWorkflow).toContain('"deploy/ecosystem.prod.config.cjs"');
+    expect(productionWorkflow).toContain("Confirm public production from external runner");
+    expect(productionWorkflow).toContain(
+      'export DEPLOY_PUBLIC_HEALTH_URL="https://unikorn.axfff.com/health"',
+    );
+    expect(productionWorkflow).toContain(
+      'export DEPLOY_PUBLIC_ROOT_URL="https://unikorn.axfff.com/"',
+    );
+    expect(productionWorkflow).toContain(
+      'export DEPLOY_PUBLIC_PLANNER_URL="https://unikorn.axfff.com/courses/planner"',
+    );
+    expect(productionWorkflow).toContain('health_url="https://unikorn.axfff.com/health"');
+    expect(productionWorkflow).toContain('root_url="https://unikorn.axfff.com/"');
+    expect(productionWorkflow).toContain(
+      'planner_url="https://unikorn.axfff.com/courses/planner"',
+    );
+    expect(productionWorkflow).toContain('payload.version !== expected');
     expect(productionWorkflow).not.toContain("appleboy/");
     expect(productionWorkflow).not.toMatch(/mv \/data\/prod_unikorn\/front-end\/\.output/);
 
@@ -101,6 +133,28 @@ describe("atomic frontend deployment", () => {
     expect(productionPm2Config).toContain('HOST: "0.0.0.0"');
     expect(productionPm2Config).toContain('error_file: "/var/unikorn/prod_log/pm2-error.log"');
     expect(productionPm2Config).toContain('out_file: "/var/unikorn/prod_log/pm2-out.log"');
+  });
+
+  it("opens release roots and the deployment lock without following symlinks", () => {
+    expect(controller).toContain('[[ -d "$app_root" && ! -L "$app_root" ]]');
+    expect(controller).toContain('for managed_root in "$incoming_root" "$releases_root"');
+    expect(controller).toContain('[[ -d "$managed_root" && ! -L "$managed_root" ]]');
+    expect(lockHelper).toContain("os.O_NOFOLLOW");
+    expect(lockHelper).toContain("os.O_NONBLOCK");
+    expect(lockHelper).toContain("os.O_CLOEXEC");
+    expect(lockHelper).toContain('os.open(".deploy.lock", flags, 0o600, dir_fd=root_fd)');
+    expect(lockHelper).toContain("close_fds=True");
+    expect(lockHelper).toContain("os.fchmod(lock_fd, 0o600)");
+    expect(controller).not.toMatch(/exec [0-9]+<>/);
+  });
+
+  it("keeps public acceptance inside the rollback window", () => {
+    const publicAcceptance = controller.indexOf('if ! wait_for_public_acceptance "$expected_sha"');
+    const persistState = controller.indexOf("if ! pm2 save --force");
+    const commitActivation = controller.indexOf("activation_committed=false", persistState);
+    expect(publicAcceptance).toBeGreaterThan(0);
+    expect(publicAcceptance).toBeLessThan(persistState);
+    expect(persistState).toBeLessThan(commitActivation);
   });
 
   it("runs the dev process from current on port 3001 and probes that port", () => {

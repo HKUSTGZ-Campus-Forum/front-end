@@ -77,10 +77,13 @@ jobs:
         run: |
           set -Eeuo pipefail
           bash -n deploy/atomic-release.sh
+          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("deploy/atomic-release-lock.py").read_text())'
           node --check deploy/ecosystem.prod.config.cjs
           ssh-keygen -lf deploy/ssh_known_hosts -E sha256 | grep -Fq 'SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg'
-          cd .output
-          find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > ../deploy/output.sha256
+          find .output deploy -type f ! -path 'deploy/release.sha256' \
+            ! -path 'deploy/.gitignore' ! -path 'deploy/README.md' \
+            ! -path '*/__pycache__/*' -print0 | \
+            LC_ALL=C sort -z | xargs -0 sha256sum > deploy/release.sha256
 
       - name: Configure pinned OpenSSH transport
         env:
@@ -128,7 +131,7 @@ jobs:
           source "$NVM_DIR/nvm.sh"
           nvm use 20
 
-          for command_name in curl flock node pm2 sha256sum tar; do
+          for command_name in curl node pm2 python3 sha256sum tar; do
             command -v "$command_name" >/dev/null
           done
           [[ -d /data/prod_unikorn/front-end && -w /data/prod_unikorn/front-end ]]
@@ -162,8 +165,19 @@ jobs:
           set -Eeuo pipefail
           staging_dir=$1
           [[ "$staging_dir" =~ ^/data/prod_unikorn/front-end/\.incoming/[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          app_root=/data/prod_unikorn/front-end
+          incoming_root="$app_root/.incoming"
+          [[ -d "$app_root" && ! -L "$app_root" ]]
+          if [[ -e "$incoming_root" || -L "$incoming_root" ]]; then
+            [[ -d "$incoming_root" && ! -L "$incoming_root" ]]
+          else
+            mkdir -- "$incoming_root"
+            [[ -d "$incoming_root" && ! -L "$incoming_root" ]]
+          fi
+          [[ $(dirname -- "$staging_dir") == "$incoming_root" ]]
           [[ ! -e "$staging_dir" && ! -L "$staging_dir" ]]
-          mkdir -p -- "$staging_dir"
+          mkdir -- "$staging_dir"
+          [[ -d "$staging_dir" && ! -L "$staging_dir" ]]
           REMOTE_PREPARE
 
           tar -czf - .output deploy | \
@@ -193,6 +207,9 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           source "$NVM_DIR/nvm.sh"
           nvm use 20
+          export DEPLOY_PUBLIC_HEALTH_URL="https://unikorn.axfff.com/health"
+          export DEPLOY_PUBLIC_ROOT_URL="https://unikorn.axfff.com/"
+          export DEPLOY_PUBLIC_PLANNER_URL="https://unikorn.axfff.com/courses/planner"
           exec bash "$remote_script" \
             "/data/prod_unikorn/front-end" \
             "$release_id" \
@@ -202,3 +219,35 @@ jobs:
             "3" \
             "deploy/ecosystem.prod.config.cjs"
           REMOTE_ACTIVATE
+
+      # Atomic acceptance already ran on-host while rollback was armed. This
+      # redundant probe confirms the same routes from the external runner.
+      - name: Confirm public production from external runner
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          health_url="https://unikorn.axfff.com/health"
+          root_url="https://unikorn.axfff.com/"
+          planner_url="https://unikorn.axfff.com/courses/planner"
+
+          for attempt in $(seq 1 20); do
+            response=$(curl --fail --silent --show-error --max-time 10 \
+              -H 'Cache-Control: no-cache' "$health_url" 2>/dev/null || true)
+            if node -e '
+              const payload = JSON.parse(process.argv[1]);
+              const expected = process.argv[2];
+              if (payload.status !== "ok" || payload.service !== "campus-forum-frontend" || payload.version !== expected) {
+                process.exit(1);
+              }
+            ' "$response" "$EXPECTED_SHA" 2>/dev/null && \
+              curl --fail --silent --show-error --max-time 10 "$root_url" >/dev/null && \
+              curl --fail --silent --show-error --max-time 10 "$planner_url" >/dev/null; then
+              exit 0
+            fi
+            sleep 3
+          done
+
+          echo "Public production did not expose build $EXPECTED_SHA with reachable root and planner routes" >&2
+          exit 1
