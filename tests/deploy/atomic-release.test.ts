@@ -60,6 +60,9 @@ describe("atomic frontend deployment", () => {
     expect(controller).toContain('NUXT_HOST="127.0.0.1"');
     expect(controller).toContain("previous_health_version=$(capture_health_version)");
     expect(controller).toContain('previous_exec_path=$(get_running_script)');
+    expect(controller).toContain('legacy release root is not healthy before deployment');
+    expect(controller).toContain('[[ $(get_running_script) == "$legacy_script" ]]');
+    expect(controller).toContain("wait_for_root");
     expect(controller).toContain("rollback \"$previous_target\"");
     expect(controller).toContain("legacy-in-place");
     expect(controller).not.toMatch(/rm -rf[^\n]*(current|\.output)/);
