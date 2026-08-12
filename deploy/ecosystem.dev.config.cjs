@@ -18,7 +18,7 @@ module.exports = {
   apps: [
     {
       name: appName,
-      script: ".output/server/index.mjs",
+      script: path.join(appRoot, "current", ".output/server/index.mjs"),
       cwd: path.join(appRoot, "current"),
       instances: 1,
       exec_mode: "fork",

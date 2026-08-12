@@ -49,17 +49,29 @@ describe("atomic frontend deployment", () => {
     expect(controller).toContain('node --check "$staging_dir/.output/server/index.mjs"');
     expect(controller).toContain(".release-complete");
     expect(controller).toContain('mv -Tf -- "$next_link" "$current_link"');
-    expect(controller).toContain("wait_for_expected_health");
-    expect(controller).toContain("payload.version !== expected");
+    expect(controller).toContain("wait_for_health_version");
+    expect(controller).toContain('actual_version" == "$expected_version');
+    expect(controller).toContain('pm2 jlist | node -e');
+    expect(controller).toContain('"$running_script" != "$expected_script"');
+    expect(controller).toContain('pm2 delete "$pm2_app"');
+    expect(controller).toContain(
+      'pm2 start "$legacy_script" --name "$pm2_app" --cwd "$app_root" --update-env',
+    );
+    expect(controller).toContain('NUXT_HOST="127.0.0.1"');
+    expect(controller).toContain("previous_health_version=$(capture_health_version)");
+    expect(controller).toContain('previous_exec_path=$(get_running_script)');
     expect(controller).toContain("rollback \"$previous_target\"");
     expect(controller).toContain("legacy-in-place");
     expect(controller).not.toMatch(/rm -rf[^\n]*(current|\.output)/);
   });
 
   it("runs the dev process from current on port 3001 and probes that port", () => {
-    expect(pm2Config).toContain('path.join(appRoot, "current")');
+    expect(pm2Config).toContain('path.join(appRoot, "current", ".output/server/index.mjs")');
     expect(pm2Config).toContain('CAMPUS_FRONTEND_PORT || "3001"');
     expect(workflow).toContain('"3001"');
     expect(workflow).not.toContain("127.0.0.1:3000/health");
+    expect(workflow).toContain("Verify built readiness endpoint");
+    expect(workflow).toContain("http://127.0.0.1:3100/health");
+    expect(workflow).toContain('payload.version !== expected');
   });
 });
