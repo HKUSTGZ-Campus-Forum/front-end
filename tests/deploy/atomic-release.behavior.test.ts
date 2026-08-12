@@ -80,6 +80,7 @@ if [[ "$command_name" == "jlist" ]]; then
 elif [[ "$command_name" == "delete" ]]; then
   : > "$TEST_PM2_STATE"
 elif [[ "$command_name" == "start" ]]; then
+  printf 'NUXT_HOST=%s\n' "\${NUXT_HOST:-}" >> "$TEST_PM2_LOG"
   script_or_config=\${2:-}
   if [[ "$script_or_config" == *.mjs ]]; then
     printf '%s\\n' "$script_or_config" > "$TEST_PM2_STATE"
@@ -96,7 +97,18 @@ exit 0
   const curl = join(bin, "curl");
   writeFileSync(
     curl,
-    "#!/usr/bin/env bash\nif [[ \"${*: -1}\" == */health ]]; then printf '{\"status\":\"ok\",\"service\":\"campus-forum-frontend\",\"version\":\"%s\"}' \"$TEST_HEALTH_VERSION\"; fi\n",
+    `#!/usr/bin/env bash
+if [[ "\${*: -1}" == */health ]]; then
+  version=$TEST_HEALTH_VERSION
+  if [[ -L "$TEST_APP_ROOT/current" ]]; then
+    current_target=$(readlink "$TEST_APP_ROOT/current")
+    if [[ "$current_target" != *"$TEST_EXPECTED_SHA"* ]]; then
+      version=$TEST_PREVIOUS_HEALTH_VERSION
+    fi
+  fi
+  printf '{"status":"ok","service":"campus-forum-frontend","version":"%s"}' "$version"
+fi
+`,
   );
   chmodSync(curl, 0o755);
   const sleep = join(bin, "sleep");
@@ -150,6 +162,9 @@ function runController(
         ...process.env,
         PATH: `${stubBin}:${process.env.PATH}`,
         TEST_HEALTH_VERSION: healthVersion,
+        TEST_PREVIOUS_HEALTH_VERSION: shaA,
+        TEST_EXPECTED_SHA: sha,
+        TEST_APP_ROOT: appRoot,
         TEST_PM2_LOG: pm2Log,
         TEST_PM2_STATE: pm2State,
         TEST_PM2_INITIAL_EXEC_PATH: initialExecPath,
@@ -202,7 +217,10 @@ describe("atomic release controller behavior", () => {
     expect(readFileSync(result.pm2State, "utf8").trim()).toBe(legacyScript);
     const pm2Log = readFileSync(result.pm2Log, "utf8");
     expect(pm2Log.match(/delete unikorn-dev/g)?.length).toBe(2);
-    expect(pm2Log).toContain(`start ${legacyScript} --name unikorn-dev --update-env`);
+    expect(pm2Log).toContain(
+      `start ${legacyScript} --name unikorn-dev --cwd ${appRoot} --update-env`,
+    );
+    expect(pm2Log).toContain("NUXT_HOST=127.0.0.1");
   }, 20_000);
 
   it("restores the previous release when exact-build health validation fails", () => {
@@ -214,12 +232,17 @@ describe("atomic release controller behavior", () => {
     symlinkSync(`releases/${oldId}`, join(appRoot, "current"));
     const releaseId = createRelease(appRoot, shaB, 102, 1);
 
-    const result = runController(appRoot, releaseId, shaB, "wrong-build");
+    const result = runController(
+      appRoot,
+      releaseId,
+      shaB,
+      "wrong-build",
+      join(appRoot, "current", ".output", "server", "index.mjs"),
+    );
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("previous release restored");
     expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${oldId}`);
-    expect(readFileSync(result.pm2Log, "utf8")).toContain("start ");
     expect(readFileSync(result.pm2Log, "utf8")).toContain("startOrReload");
   }, 20_000);
 
