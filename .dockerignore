@@ -1,0 +1,44 @@
+# Version-control and editor metadata
+.git
+.github
+.idea
+.fleet
+.vscode
+**/.DS_Store
+
+# Local dependencies and generated output
+node_modules
+.nuxt
+.output
+.nitro
+.data
+.cache
+coverage
+*.tsbuildinfo
+
+# Local environment and logs
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Development-only material
+docs
+tests
+scripts
+CLAUDE.md
+README.md
+PWA_IMPLEMENTATION.md
+PWA_NOTIFICATION_SETUP.md
+ecosystem.config.js
+pnpm-lock.yaml

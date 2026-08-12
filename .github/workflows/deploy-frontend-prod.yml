@@ -6,19 +6,28 @@ on:
       - production
   workflow_dispatch:  # Allow manual triggers
 
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-production-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     environment: production  # GitHub environment protection
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: '20.19.5'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -38,6 +47,7 @@ jobs:
         env:
           NODE_ENV: production
           NUXT_PUBLIC_API_BASE_URL: https://unikorn.axfff.com
+          NUXT_PUBLIC_APP_BUILD_VERSION: ${{ github.sha }}
 
       - name: Verify build completeness
         run: |
@@ -54,7 +64,7 @@ jobs:
           echo "Build verification complete"
 
       - name: Backup previous version
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
@@ -65,7 +75,7 @@ jobs:
             fi
 
       - name: Upload .output via SSH
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
@@ -76,12 +86,13 @@ jobs:
           overwrite: true
 
       - name: Deploy and restart production server
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
+            set -Eeuo pipefail
             # Ensure NVM is loaded
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
@@ -118,6 +129,12 @@ jobs:
               pm2 save
             fi
             
-            # Health check
-            sleep 5
-            curl -f http://localhost:3000/health || echo "Health endpoint not configured, skipping check"
+            # Fail hard unless the exact deployed runtime becomes healthy.
+            for attempt in $(seq 1 20); do
+              if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/health >/dev/null; then
+                exit 0
+              fi
+              sleep 3
+            done
+            pm2 logs prod-unikorn-frontend --nostream --lines 100 || true
+            exit 1

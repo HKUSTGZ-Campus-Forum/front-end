@@ -1,5 +1,6 @@
 // composables/useAuth.ts
 import { ref, computed } from "vue";
+import { selectApiBaseUrl } from "../utils/apiBaseUrl";
 
 interface User {
   id: string;
@@ -25,7 +26,7 @@ let refreshPromise: Promise<string | null> | null = null;
 const isLoggedIn = computed(() => !!user.value && !!accessToken.value);
 
 function resolveAuthApiUrl(path: string): string {
-  const apiBaseUrl = useRuntimeConfig().public.apiBaseUrl;
+  const apiBaseUrl = selectApiBaseUrl(useRuntimeConfig(), import.meta.client);
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const clean = path.startsWith("/") ? path : `/${path}`;
   if (import.meta.client) {
@@ -33,7 +34,7 @@ function resolveAuthApiUrl(path: string): string {
       try {
         const base = new URL(String(apiBaseUrl));
         if (base.origin !== window.location.origin) {
-          return `${String(apiBaseUrl).replace(/\/$/, "")}${clean}`;
+          return `${apiBaseUrl}${clean}`;
         }
       } catch {
         /* ignore malformed base url */
@@ -41,8 +42,7 @@ function resolveAuthApiUrl(path: string): string {
     }
     return clean;
   }
-  const base = String(apiBaseUrl || "").replace(/\/$/, "");
-  return base ? `${base}${clean}` : clean;
+  return apiBaseUrl ? `${apiBaseUrl}${clean}` : clean;
 }
 
 async function authFetch(url: string, options: RequestInit = {}) {

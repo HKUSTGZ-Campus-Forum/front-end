@@ -1,4 +1,5 @@
 import { useAuth } from './useAuth';
+import { selectApiBaseUrl } from '../utils/apiBaseUrl';
 
 export function useApi() {
   const { accessToken, refreshToken, refreshAccessToken, logout } = useAuth();
@@ -19,7 +20,7 @@ export function useApi() {
   // Helper function to get full API URL
   function getApiUrl(url: string): string {
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-    const baseUrl = String(config.public.apiBaseUrl || '').replace(/\/$/, '');
+    const baseUrl = selectApiBaseUrl(config, import.meta.client);
 
     // 相对路径：浏览器走同源 /api/...；SSR 拼上配置的绝对 base
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
