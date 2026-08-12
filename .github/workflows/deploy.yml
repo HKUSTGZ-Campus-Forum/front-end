@@ -160,5 +160,6 @@ jobs:
             "$expected_sha" \
             "unikorn-dev" \
             "3001" \
-            "3"
+            "3" \
+            "deploy/ecosystem.dev.config.cjs"
           REMOTE_ACTIVATE

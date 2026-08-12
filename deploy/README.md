@@ -1,20 +1,24 @@
 # Atomic frontend releases
 
-The development deployment workflow uploads each Nuxt build to a unique
+The development and production deployment workflows upload each Nuxt build to a unique
 `.incoming/<git-sha>-<run-id>-<attempt>` directory. `atomic-release.sh` verifies
 the complete file manifest, serializes cutovers with `flock`, moves the staged
 directory into `releases/`, and atomically switches the `current` symlink.
 
-PM2 always starts `current/.output/server/index.mjs`. A deployment succeeds only
-when port 3001 `/health` identifies the exact Git SHA that triggered the run. If
+PM2 always starts `current/.output/server/index.mjs`. Development uses one fork
+process on port 3001; production preserves its historical `max` cluster on port
+3000, public bind address, and `/var/unikorn/prod_log` paths. A deployment
+succeeds only when every PM2 process reports the immutable Git SHA and repeated
+`/health` probes identify that same SHA. If
 reload or validation fails, the controller restores the previous symlink and
-reloads it. The first cutover preserves the historical top-level `.output` via
-`releases/legacy-in-place`, so migrating to this layout does not delete the
-existing deployment.
+restarts from that previous release's own validated PM2 config. The first
+cutover preserves the historical top-level `.output` via
+`releases/legacy-in-place` and freezes its validated PM2 config alongside the
+release metadata, so migrating to this layout does not delete or reinterpret
+the existing deployment.
 
 The controller is parameterized by application root, release ID, expected SHA,
-PM2 application name, port, and retention count. Production can adopt the same
-controller with a production-specific PM2 config after its workflow is migrated.
+PM2 application name, port, retention count, and a validated PM2 config path.
 
 The workflow uses the GitHub runner's built-in OpenSSH client for both transfer
 and activation, so deployment does not depend on downloading helper binaries at
