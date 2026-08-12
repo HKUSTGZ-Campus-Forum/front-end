@@ -3,7 +3,11 @@
 import { ref, computed, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartCourse, CourseDetail } from '~/utils/scheduler'
-import { getMaxDayNum, solvePlans } from '~/utils/scheduler'
+import {
+  getMaxDayNum,
+  POPULARITY_HISTORY_SEMESTER_ID,
+  solvePlans,
+} from '~/utils/scheduler'
 
 const props = defineProps<{
   semesterId: string
@@ -14,7 +18,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
-const { getCourseDetail, getPopularity } = useScheduler()
+const { getCourseDetail, getPopularity, getPopularityHistory } = useScheduler()
 const loggedIn = toRef(props, 'isLoggedIn')
 const cart = useSchedulerCart(
   props.semesterId,
@@ -29,6 +33,10 @@ const popularity = useSchedulerPopularity({
   courseCodes: popularityCourseCodes,
   getPopularity,
 })
+const canShowPopularityHistory = computed(() => (
+  props.semesterId === POPULARITY_HISTORY_SEMESTER_ID
+  && popularity.canShowPopularity.value
+))
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
@@ -38,7 +46,10 @@ const showCartPanel = ref(false)
 const showGuestHint = ref(true)
 const selectedCourse = ref<CourseDetail | null>(null)
 const showCourseDetail = ref(false)
+const historyCourse = ref<CartCourse | null>(null)
+const showPopularityHistory = ref(false)
 const cartError = ref('')
+const historyAccessError = ref('')
 const displayOptions = ref({
   name: true,
   section: true,
@@ -46,6 +57,23 @@ const displayOptions = ref({
   instructor: false,
   duration: false,
 })
+
+watch(canShowPopularityHistory, (authorized) => {
+  if (!authorized) closePopularityHistory()
+}, { flush: 'sync' })
+
+watch(
+  () => courseList.value.map(course => course.course_code).sort().join('\u0000'),
+  () => {
+    if (
+      historyCourse.value
+      && !courseList.value.some(course => course.course_code === historyCourse.value?.course_code)
+    ) {
+      closePopularityHistory()
+    }
+  },
+  { flush: 'sync' },
+)
 
 const solverResult = computed(() => solvePlans(courseList.value, bannedPeriods.value))
 const planList = computed(() => solverResult.value.status === 'ok' ? solverResult.value.plans : [])
@@ -96,6 +124,30 @@ async function handleCartAction(action: () => Promise<void>) {
   await popularity.refresh()
 }
 
+function handleShowPopularityHistory(code: string) {
+  const course = courseList.value.find(item => item.course_code === code)
+  if (!course || !canShowPopularityHistory.value) return
+  historyAccessError.value = ''
+  historyCourse.value = course
+  showPopularityHistory.value = true
+}
+
+function closePopularityHistory() {
+  showPopularityHistory.value = false
+  historyCourse.value = null
+}
+
+function handlePopularityHistoryAccessLost(kind: 'authentication' | 'authorization' | 'scope') {
+  historyAccessError.value = t(`scheduler.popularityHistory${
+    kind === 'authentication'
+      ? 'AuthenticationLost'
+      : kind === 'authorization'
+        ? 'AuthorizationLost'
+        : 'ScopeLost'
+  }`)
+  closePopularityHistory()
+}
+
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
@@ -136,8 +188,8 @@ function toggleBan(day: number, period: number) {
       {{ t('scheduler.popularityVerifiedOnly') }}
     </div>
 
-    <div v-if="cartError || planMessage" class="dashboard__notice">
-      {{ cartError || planMessage }}
+    <div v-if="cartError || historyAccessError || planMessage" class="dashboard__notice">
+      {{ cartError || historyAccessError || planMessage }}
     </div>
 
     <div class="dashboard__body">
@@ -172,10 +224,12 @@ function toggleBan(day: number, period: number) {
           :popularity-by-course="popularity.popularityByCourse.value"
           :popularity-generated-at="popularity.generatedAt.value"
           :show-popularity="popularity.canShowPopularity.value"
+          :show-popularity-history="canShowPopularityHistory"
           @toggle-course="(code, enabled) => handleCartAction(() => cart.toggleCourse(code, enabled))"
           @toggle-bundle="(code, bundleId, layer, enabled) => handleCartAction(() => cart.toggleBundle(code, bundleId, layer, enabled))"
           @toggle-layer="(code, layer, enabled) => handleCartAction(() => cart.toggleLayer(code, layer, enabled))"
           @show-info="handleShowInfo"
+          @show-popularity-history="handleShowPopularityHistory"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
           @update:display-option="(key, value) => displayOptions[key] = value"
@@ -197,6 +251,15 @@ function toggleBan(day: number, period: number) {
       :visible="showCourseDetail"
       :course="selectedCourse"
       @close="showCourseDetail = false"
+    />
+
+    <SchedulerPopularityHistory
+      :visible="showPopularityHistory"
+      :semester-id="semesterId"
+      :course="historyCourse"
+      :get-history="getPopularityHistory"
+      @close="closePopularityHistory"
+      @access-lost="handlePopularityHistoryAccessLost"
     />
   </div>
 </template>

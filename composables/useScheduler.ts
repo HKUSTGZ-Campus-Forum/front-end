@@ -1,10 +1,12 @@
-import type {
-  CartCourse,
-  CourseDetail,
-  SchedulerPopularityResponse,
-  SchedulerSubject,
-  SearchResponse,
-  SemesterInfo,
+import {
+  SchedulerPopularityHistoryAccessError,
+  type CartCourse,
+  type CourseDetail,
+  type SchedulerPopularityHistoryResponse,
+  type SchedulerPopularityResponse,
+  type SchedulerSubject,
+  type SearchResponse,
+  type SemesterInfo,
 } from '~/utils/scheduler'
 
 export function useScheduler() {
@@ -102,6 +104,38 @@ export function useScheduler() {
     return resp.json()
   }
 
+  async function getPopularityHistory(
+    semester: string,
+    courseCode: string,
+    options: { sectionId?: string; from: string; to: string; resolution?: 'auto'; signal?: AbortSignal },
+  ): Promise<SchedulerPopularityHistoryResponse> {
+    const params = new URLSearchParams({
+      course_code: courseCode,
+      resolution: options.resolution || 'auto',
+    })
+    if (options.sectionId) params.set('section_id', options.sectionId)
+    params.set('from', options.from)
+    params.set('to', options.to)
+
+    let resp: Response
+    try {
+      resp = await fetchWithAuth(`/api/scheduler/popularity/${semester}/history?${params}`, {
+        cache: 'no-store',
+        signal: options.signal,
+      })
+    } catch (requestError) {
+      if (requestError instanceof Error && requestError.message.startsWith('Authentication')) {
+        throw new SchedulerPopularityHistoryAccessError('authentication', 401)
+      }
+      throw requestError
+    }
+    if (resp.status === 401) throw new SchedulerPopularityHistoryAccessError('authentication', 401)
+    if (resp.status === 403) throw new SchedulerPopularityHistoryAccessError('authorization', 403)
+    if (resp.status === 404) throw new SchedulerPopularityHistoryAccessError('scope', 404)
+    if (!resp.ok) throw new Error('Failed to fetch scheduler popularity history')
+    return resp.json()
+  }
+
   async function getMapComponents() {
     const resp = await fetchPublic('/api/scheduler/map/components')
     if (!resp.ok) throw new Error('Map components failed')
@@ -132,6 +166,7 @@ export function useScheduler() {
     toggleBundle,
     toggleLayer,
     getPopularity,
+    getPopularityHistory,
     getMapComponents,
     getMapLines,
     getMapCourses,
