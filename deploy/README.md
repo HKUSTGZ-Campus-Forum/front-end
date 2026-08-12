@@ -15,3 +15,10 @@ existing deployment.
 The controller is parameterized by application root, release ID, expected SHA,
 PM2 application name, port, and retention count. Production can adopt the same
 controller with a production-specific PM2 config after its workflow is migrated.
+
+The workflow uses the GitHub runner's built-in OpenSSH client for both transfer
+and activation, so deployment does not depend on downloading helper binaries at
+runtime. `ssh_known_hosts` pins the server's Ed25519 host key; `HostKeyAlias`
+keeps that verification stable when the connection address is stored in a
+GitHub secret. Rotate the checked-in key only after verifying a planned host-key
+change through an independent trusted channel.
