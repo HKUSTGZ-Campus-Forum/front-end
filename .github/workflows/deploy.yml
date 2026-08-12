@@ -40,34 +40,95 @@ jobs:
           set -Eeuo pipefail
           bash -n deploy/atomic-release.sh
           node --check deploy/ecosystem.dev.config.cjs
+          ssh-keygen -lf deploy/ssh_known_hosts -E sha256 | grep -Fq 'SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg'
           cd .output
           find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > ../deploy/output.sha256
 
-      - name: Upload immutable release staging via SSH
-        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".output/,deploy/"
-          target: "/data/dev_unikorn/front-end/.incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/"
+      - name: Configure pinned OpenSSH transport
+        env:
+          DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9._:-]+$ ]]
+          [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]]
+
+          ssh_dir="$RUNNER_TEMP/frontend-deploy-ssh"
+          install -d -m 0700 "$ssh_dir"
+          install -m 0600 /dev/null "$ssh_dir/id_deploy"
+          printf '%s\n' "$DEPLOY_PRIVATE_KEY" > "$ssh_dir/id_deploy"
+          ssh-keygen -y -f "$ssh_dir/id_deploy" >/dev/null
+          install -m 0600 deploy/ssh_known_hosts "$ssh_dir/known_hosts"
+
+          install -m 0600 /dev/null "$ssh_dir/config"
+          {
+            printf 'Host unikorn-deploy\n'
+            printf '  HostName %s\n' "$DEPLOY_HOST"
+            printf '  User %s\n' "$DEPLOY_USER"
+            printf '  HostKeyAlias unikorn.axfff.com\n'
+            printf '  IdentityFile %s\n' "$ssh_dir/id_deploy"
+            printf '  UserKnownHostsFile %s\n' "$ssh_dir/known_hosts"
+            printf '  StrictHostKeyChecking yes\n'
+            printf '  IdentitiesOnly yes\n'
+            printf '  BatchMode yes\n'
+            printf '  ConnectTimeout 30\n'
+            printf '  ConnectionAttempts 3\n'
+            printf '  ServerAliveInterval 15\n'
+            printf '  ServerAliveCountMax 4\n'
+          } > "$ssh_dir/config"
+          ssh -G -F "$ssh_dir/config" unikorn-deploy >/dev/null
+
+      - name: Upload immutable release staging with OpenSSH
+        env:
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_ID" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          ssh_config="$RUNNER_TEMP/frontend-deploy-ssh/config"
+          remote_staging="/data/dev_unikorn/front-end/.incoming/$RELEASE_ID"
+
+          ssh -F "$ssh_config" unikorn-deploy \
+            bash -s -- "$remote_staging" <<'REMOTE_PREPARE'
+          set -Eeuo pipefail
+          staging_dir=$1
+          [[ "$staging_dir" =~ ^/data/dev_unikorn/front-end/\.incoming/[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          [[ ! -e "$staging_dir" && ! -L "$staging_dir" ]]
+          mkdir -p -- "$staging_dir"
+          REMOTE_PREPARE
+
+          tar -czf - .output deploy | \
+            ssh -F "$ssh_config" unikorn-deploy \
+              tar -xzf - --no-same-owner --no-same-permissions -C "$remote_staging"
 
       - name: Atomically activate release
-        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -Eeuo pipefail
-            sleep 2
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-            nvm use 20
-            bash "/data/dev_unikorn/front-end/.incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/deploy/atomic-release.sh" \
-              "/data/dev_unikorn/front-end" \
-              "${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}" \
-              "${{ github.sha }}" \
-              "unikorn-dev" \
-              "3001" \
-              "3"
+        env:
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_ID" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          ssh_config="$RUNNER_TEMP/frontend-deploy-ssh/config"
+          remote_script="/data/dev_unikorn/front-end/.incoming/$RELEASE_ID/deploy/atomic-release.sh"
+
+          ssh -F "$ssh_config" unikorn-deploy \
+            bash -s -- "$remote_script" "$RELEASE_ID" "$EXPECTED_SHA" <<'REMOTE_ACTIVATE'
+          set -Eeuo pipefail
+          remote_script=$1
+          release_id=$2
+          expected_sha=$3
+          [[ "$remote_script" == "/data/dev_unikorn/front-end/.incoming/$release_id/deploy/atomic-release.sh" ]]
+          [[ "$release_id" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          [[ "$expected_sha" =~ ^[0-9a-f]{40}$ ]]
+          export NVM_DIR="$HOME/.nvm"
+          source "$NVM_DIR/nvm.sh"
+          nvm use 20
+          exec bash "$remote_script" \
+            "/data/dev_unikorn/front-end" \
+            "$release_id" \
+            "$expected_sha" \
+            "unikorn-dev" \
+            "3001" \
+            "3"
+          REMOTE_ACTIVATE

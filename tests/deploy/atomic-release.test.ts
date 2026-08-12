@@ -8,6 +8,7 @@ const workflow = readFileSync(resolve(root, ".github/workflows/deploy.yml"), "ut
 const controllerPath = resolve(root, "deploy/atomic-release.sh");
 const controller = readFileSync(controllerPath, "utf8");
 const pm2Config = readFileSync(resolve(root, "deploy/ecosystem.dev.config.cjs"), "utf8");
+const knownHostsPath = resolve(root, "deploy/ssh_known_hosts");
 
 describe("atomic frontend deployment", () => {
   it("keeps the release controller valid Bash", () => {
@@ -15,11 +16,31 @@ describe("atomic frontend deployment", () => {
   });
 
   it("uploads to a unique staging directory instead of overlaying live output", () => {
-    expect(workflow).toContain(".incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}");
-    expect(workflow).toContain('source: ".output/,deploy/"');
-    expect(workflow).not.toContain('target: "/data/dev_unikorn/front-end/"');
+    expect(workflow).toContain("RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}");
+    expect(workflow).toContain('remote_staging="/data/dev_unikorn/front-end/.incoming/$RELEASE_ID"');
+    expect(workflow).toContain("tar -czf - .output deploy");
+    expect(workflow).toContain('tar -xzf - --no-same-owner --no-same-permissions -C "$remote_staging"');
     expect(workflow).toContain("Create release checksum manifest");
     expect(workflow).toContain("bash -n deploy/atomic-release.sh");
+  });
+
+  it("uses native OpenSSH with strict pinned host-key verification", () => {
+    expect(workflow).not.toContain("appleboy/ssh-action");
+    expect(workflow).not.toContain("appleboy/scp-action");
+    expect(workflow).not.toContain("drone-ssh");
+    expect(workflow).not.toContain("drone-scp");
+    expect(workflow).toContain('ssh -F "$ssh_config" unikorn-deploy');
+    expect(workflow).toContain("HostKeyAlias unikorn.axfff.com");
+    expect(workflow).toContain("StrictHostKeyChecking yes");
+    expect(workflow).toContain("IdentitiesOnly yes");
+
+    const fingerprint = execFileSync(
+      "ssh-keygen",
+      ["-lf", knownHostsPath, "-E", "sha256"],
+      { encoding: "utf8" },
+    );
+    expect(fingerprint).toContain("SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg");
+    expect(fingerprint).toContain("ED25519");
   });
 
   it("serializes, verifies, atomically activates, and can roll back releases", () => {
