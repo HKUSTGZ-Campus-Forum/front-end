@@ -768,22 +768,52 @@ fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)`,
   }, 40_000);
 
   it("contends on the same deployment lock file as existing flock users", async () => {
-    if (process.platform === "darwin") return;
     const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-lock-contention-"));
+    const stubBin = createCommandStubs(appRoot);
     const lockPath = join(appRoot, ".deploy.lock");
+    const holderReady = join(appRoot, "lock-holder.ready");
+    const pm2Log = join(appRoot, "pm2.log");
+    const pm2State = join(appRoot, "pm2.state");
     writeFileSync(lockPath, "");
-    const holder = spawn("flock", [lockPath, "sleep", "2"], { stdio: "ignore" });
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const holder = spawn(
+      "python3",
+      [
+        "-c",
+        `import fcntl, pathlib, sys, time
+with open(sys.argv[1], "r+") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    pathlib.Path(sys.argv[2]).write_text("ready\\n")
+    time.sleep(5)`,
+        lockPath,
+        holderReady,
+      ],
+      { stdio: "ignore" },
+    );
+    await waitForPath(holderReady, holder);
 
     const result = spawnSync(
       "bash",
       [controller, appRoot, `${shaA}-111-1`, shaA, "unikorn-dev", "3001", "3"],
       {
         encoding: "utf8",
-        env: { ...process.env, DEPLOY_LOCK_WAIT_SECONDS: "1" },
+        env: {
+          ...process.env,
+          PATH: `${stubBin}:${process.env.PATH}`,
+          TEST_HEALTH_VERSION: shaA,
+          TEST_PREVIOUS_HEALTH_VERSION: shaA,
+          TEST_EXPECTED_SHA: shaA,
+          TEST_APP_ROOT: appRoot,
+          TEST_PM2_LOG: pm2Log,
+          TEST_PM2_STATE: pm2State,
+          TEST_PM2_APP: "unikorn-dev",
+          DEPLOY_EXPECTED_MAX_INSTANCES: "1",
+          DEPLOY_HEALTH_ATTEMPTS: "1",
+          DEPLOY_LOCK_WAIT_SECONDS: "1",
+        },
       },
     );
     holder.kill("SIGTERM");
+    await waitForChild(holder);
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("another deployment still holds");
