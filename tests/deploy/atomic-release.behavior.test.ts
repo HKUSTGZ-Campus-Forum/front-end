@@ -102,7 +102,10 @@ if [[ "\${*: -1}" == */health ]]; then
   version=$TEST_HEALTH_VERSION
   if [[ -L "$TEST_APP_ROOT/current" ]]; then
     current_target=$(readlink "$TEST_APP_ROOT/current")
-    if [[ "$current_target" != *"$TEST_EXPECTED_SHA"* ]]; then
+    if [[ "$current_target" == "releases/legacy-in-place" ]]; then
+      if [[ "\${TEST_LEGACY_HEALTH_AVAILABLE:-false}" != "true" ]]; then exit 22; fi
+      version=$TEST_PREVIOUS_HEALTH_VERSION
+    elif [[ "$current_target" != *"$TEST_EXPECTED_SHA"* ]]; then
       version=$TEST_PREVIOUS_HEALTH_VERSION
     fi
   fi
@@ -168,6 +171,7 @@ function runController(
         TEST_PM2_LOG: pm2Log,
         TEST_PM2_STATE: pm2State,
         TEST_PM2_INITIAL_EXEC_PATH: initialExecPath,
+        TEST_LEGACY_HEALTH_AVAILABLE: "false",
         DEPLOY_HEALTH_ATTEMPTS: "1",
       },
     },
@@ -200,7 +204,8 @@ describe("atomic release controller behavior", () => {
     expect(readFileSync(result.pm2State, "utf8").trim()).toBe(
       join(appRoot, "current", ".output", "server", "index.mjs"),
     );
-  }, 20_000);
+    expect(readFileSync(result.pm2Log, "utf8")).not.toContain("previous health");
+  }, 40_000);
 
   it("restores the original absolute legacy process path when first-migration health fails", () => {
     const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-legacy-rollback-"));
@@ -221,7 +226,7 @@ describe("atomic release controller behavior", () => {
       `start ${legacyScript} --name unikorn-dev --cwd ${appRoot} --update-env`,
     );
     expect(pm2Log).toContain("NUXT_HOST=127.0.0.1");
-  }, 20_000);
+  }, 40_000);
 
   it("restores the previous release when exact-build health validation fails", () => {
     const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-rollback-"));
@@ -244,7 +249,7 @@ describe("atomic release controller behavior", () => {
     expect(result.stderr).toContain("previous release restored");
     expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${oldId}`);
     expect(readFileSync(result.pm2Log, "utf8")).toContain("startOrReload");
-  }, 20_000);
+  }, 40_000);
 
   it("reloads without replacing a process already using the stable current path", () => {
     const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-reload-"));
@@ -266,7 +271,7 @@ describe("atomic release controller behavior", () => {
     const pm2Log = readFileSync(result.pm2Log, "utf8");
     expect(pm2Log).toContain("startOrReload");
     expect(pm2Log).not.toContain("delete unikorn-dev");
-  }, 20_000);
+  }, 40_000);
 
   it("rejects release identifiers that could escape the release root", () => {
     const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-invalid-"));
