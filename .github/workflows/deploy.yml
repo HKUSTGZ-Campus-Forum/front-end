@@ -35,16 +35,24 @@ jobs:
         env:
           NUXT_PUBLIC_APP_BUILD_VERSION: ${{ github.sha }}
 
-      - name: Upload .output via SSH
+      - name: Create release checksum manifest
+        run: |
+          set -Eeuo pipefail
+          bash -n deploy/atomic-release.sh
+          node --check deploy/ecosystem.dev.config.cjs
+          cd .output
+          find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > ../deploy/output.sha256
+
+      - name: Upload immutable release staging via SSH
         uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".output/"
-          target: "/data/dev_unikorn/front-end/"
+          source: ".output/,deploy/"
+          target: "/data/dev_unikorn/front-end/.incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/"
 
-      - name: Restart Nuxt SSR Server (PM2)
+      - name: Atomically activate release
         uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -56,13 +64,10 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
             nvm use 20
-            ls -l /data/dev_unikorn/front-end/.output/server/index.mjs
-            pm2 startOrReload /data/dev_unikorn/front-end/ecosystem.config.js
-            for attempt in $(seq 1 20); do
-              if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/health >/dev/null; then
-                exit 0
-              fi
-              sleep 3
-            done
-            pm2 logs --nostream --lines 100 || true
-            exit 1
+            bash "/data/dev_unikorn/front-end/.incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/deploy/atomic-release.sh" \
+              "/data/dev_unikorn/front-end" \
+              "${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}" \
+              "${{ github.sha }}" \
+              "unikorn-dev" \
+              "3001" \
+              "3"
