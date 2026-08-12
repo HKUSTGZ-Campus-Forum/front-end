@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - production
-  workflow_dispatch:  # Allow manual triggers
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,9 +15,10 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    environment: production  # GitHub environment protection
+    environment: production
 
     steps:
       - name: Checkout code
@@ -32,15 +33,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Skip tests if not configured, or run build as test
-      - name: Verify build
-        run: |
-          if npm run | grep -q "test"; then
-            npm test
-          else
-            echo "No test script found, running build verification"
-            npm run build --dry-run || echo "Build verification complete"
-          fi
+      - name: Run tests
+        run: npm test
 
       - name: Build Nuxt SSR app for production
         run: npm run build
@@ -49,92 +43,211 @@ jobs:
           NUXT_PUBLIC_API_BASE_URL: https://unikorn.axfff.com
           NUXT_PUBLIC_APP_BUILD_VERSION: ${{ github.sha }}
 
-      - name: Verify build completeness
+      - name: Verify built readiness endpoint
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
-          echo "=== Build Verification ==="
-          echo "Checking build output structure..."
-          ls -la .output/
-          echo "Server file exists:"
-          ls -la .output/server/index.mjs
-          echo "Public assets count:"
-          find .output/public/_nuxt -name "*.js" | wc -l
-          find .output/public/_nuxt -name "*.css" | wc -l
-          echo "Sample asset files:"
-          ls .output/public/_nuxt/ | head -10
-          echo "Build verification complete"
+          set -Eeuo pipefail
+          readiness_log="$RUNNER_TEMP/frontend-production-readiness.log"
+          HOST=127.0.0.1 NITRO_HOST=127.0.0.1 PORT=3100 NITRO_PORT=3100 \
+            node .output/server/index.mjs >"$readiness_log" 2>&1 &
+          readiness_pid=$!
+          trap 'kill "$readiness_pid" 2>/dev/null || true; wait "$readiness_pid" 2>/dev/null || true' EXIT
 
-      - name: Backup previous version
-        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
-        with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            if [ -d "/data/prod_unikorn/front-end/.output" ]; then
-              mv /data/prod_unikorn/front-end/.output /data/prod_unikorn/front-end/.output.backup.$(date +%Y%m%d_%H%M%S)
-            fi
+          response=""
+          for attempt in $(seq 1 20); do
+            response=$(curl --fail --silent --show-error --max-time 5 \
+              http://127.0.0.1:3100/health 2>/dev/null || true)
+            if [[ -n "$response" ]]; then break; fi
+            sleep 1
+          done
 
-      - name: Upload .output via SSH
-        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
-        with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          source: ".output/"
-          target: "/data/prod_unikorn/front-end/"
-          strip_components: 0
-          overwrite: true
-
-      - name: Deploy and restart production server
-        uses: appleboy/ssh-action@823bd89e131d8d508129f9443cad5855e9ba96f0 # v1.2.4
-        with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            set -Eeuo pipefail
-            # Ensure NVM is loaded
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-            nvm use 20
-            
-            # Verify deployment
-            echo "=== Deployment Verification ==="
-            if [ ! -f "/data/prod_unikorn/front-end/.output/server/index.mjs" ]; then
-              echo "Deployment verification failed - server file missing!"
-              exit 1
-            fi
-            
-            echo "Checking deployed assets..."
-            asset_count=$(find /data/prod_unikorn/front-end/.output/public/_nuxt -name "*.js" | wc -l)
-            css_count=$(find /data/prod_unikorn/front-end/.output/public/_nuxt -name "*.css" | wc -l)
-            echo "Deployed JS files: $asset_count"
-            echo "Deployed CSS files: $css_count"
-            
-            if [ "$asset_count" -lt 10 ]; then
-              echo "Warning: Low JS asset count ($asset_count), possible incomplete deployment"
-            fi
-            
-            echo "Sample deployed assets:"
-            ls /data/prod_unikorn/front-end/.output/public/_nuxt/ | head -5
-            
-            # Graceful restart with zero downtime
-            if pm2 list | grep -q "prod-unikorn-frontend"; then
-              echo "Reloading existing PM2 process..."
-              pm2 reload prod-unikorn-frontend --update-env
-            else
-              echo "Starting new PM2 process..."
-              cd /data/prod_unikorn/front-end
-              pm2 start ecosystem.config.js
-              pm2 save
-            fi
-            
-            # Fail hard unless the exact deployed runtime becomes healthy.
-            for attempt in $(seq 1 20); do
-              if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/health >/dev/null; then
-                exit 0
-              fi
-              sleep 3
-            done
-            pm2 logs prod-unikorn-frontend --nostream --lines 100 || true
+          if ! node -e '
+            const payload = JSON.parse(process.argv[1]);
+            const expected = process.argv[2];
+            if (payload.status !== "ok" || payload.service !== "campus-forum-frontend" || payload.version !== expected) {
+              process.exit(1);
+            }
+          ' "$response" "$EXPECTED_SHA"; then
+            cat "$readiness_log" >&2
             exit 1
+          fi
+
+      - name: Create release checksum manifest
+        run: |
+          set -Eeuo pipefail
+          bash -n deploy/atomic-release.sh
+          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("deploy/atomic-release-lock.py").read_text())'
+          node --check deploy/ecosystem.prod.config.cjs
+          ssh-keygen -lf deploy/ssh_known_hosts -E sha256 | grep -Fq 'SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg'
+          find .output deploy -type f ! -path 'deploy/release.sha256' \
+            ! -path 'deploy/.gitignore' ! -path 'deploy/README.md' \
+            ! -path '*/__pycache__/*' -print0 | \
+            LC_ALL=C sort -z | xargs -0 sha256sum > deploy/release.sha256
+
+      - name: Configure pinned OpenSSH transport
+        env:
+          DEPLOY_HOST: ${{ secrets.PROD_SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.PROD_SSH_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          [[ -n "$DEPLOY_HOST" && "$DEPLOY_HOST" =~ ^[A-Za-z0-9._:-]+$ ]]
+          [[ -n "$DEPLOY_USER" && "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]]
+          [[ -n "$DEPLOY_PRIVATE_KEY" ]]
+
+          ssh_dir="$RUNNER_TEMP/frontend-production-deploy-ssh"
+          install -d -m 0700 "$ssh_dir"
+          install -m 0600 /dev/null "$ssh_dir/id_deploy"
+          printf '%s\n' "$DEPLOY_PRIVATE_KEY" > "$ssh_dir/id_deploy"
+          ssh-keygen -y -f "$ssh_dir/id_deploy" >/dev/null
+          install -m 0600 deploy/ssh_known_hosts "$ssh_dir/known_hosts"
+
+          install -m 0600 /dev/null "$ssh_dir/config"
+          {
+            printf 'Host unikorn-production-deploy\n'
+            printf '  HostName %s\n' "$DEPLOY_HOST"
+            printf '  User %s\n' "$DEPLOY_USER"
+            printf '  HostKeyAlias unikorn.axfff.com\n'
+            printf '  IdentityFile %s\n' "$ssh_dir/id_deploy"
+            printf '  UserKnownHostsFile %s\n' "$ssh_dir/known_hosts"
+            printf '  StrictHostKeyChecking yes\n'
+            printf '  IdentitiesOnly yes\n'
+            printf '  BatchMode yes\n'
+            printf '  ConnectTimeout 30\n'
+            printf '  ConnectionAttempts 3\n'
+            printf '  ServerAliveInterval 15\n'
+            printf '  ServerAliveCountMax 4\n'
+          } > "$ssh_dir/config"
+          ssh -G -F "$ssh_dir/config" unikorn-production-deploy >/dev/null
+
+      - name: Validate production host preconditions
+        run: |
+          set -Eeuo pipefail
+          ssh_config="$RUNNER_TEMP/frontend-production-deploy-ssh/config"
+          ssh -F "$ssh_config" unikorn-production-deploy bash -s <<'REMOTE_PREFLIGHT'
+          set -Eeuo pipefail
+          export NVM_DIR="$HOME/.nvm"
+          source "$NVM_DIR/nvm.sh"
+          nvm use 20
+
+          for command_name in curl node pm2 python3 sha256sum tar; do
+            command -v "$command_name" >/dev/null
+          done
+          [[ -d /data/prod_unikorn/front-end && -w /data/prod_unikorn/front-end ]]
+          [[ -f /data/prod_unikorn/front-end/ecosystem.config.js ]]
+          [[ -d /var/unikorn/prod_log && -w /var/unikorn/prod_log ]]
+          [[ $(df -Pk /data/prod_unikorn/front-end | awk 'NR == 2 { print $4 }') =~ ^[0-9]+$ ]]
+          (( $(df -Pk /data/prod_unikorn/front-end | awk 'NR == 2 { print $4 }') >= 1048576 ))
+          pm2 jlist >/dev/null
+          curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/ >/dev/null
+          if command -v ss >/dev/null 2>&1; then
+            ss -ltn | awk '$4 ~ /:3000$/ { found=1 } END { exit found ? 0 : 1 }'
+          elif command -v lsof >/dev/null 2>&1; then
+            lsof -nP -iTCP:3000 -sTCP:LISTEN >/dev/null
+          else
+            echo "Could not inspect the port 3000 listener: neither ss nor lsof is installed" >&2
+            exit 1
+          fi
+          REMOTE_PREFLIGHT
+
+      - name: Upload immutable release staging with OpenSSH
+        env:
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_ID" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          ssh_config="$RUNNER_TEMP/frontend-production-deploy-ssh/config"
+          remote_staging="/data/prod_unikorn/front-end/.incoming/$RELEASE_ID"
+
+          ssh -F "$ssh_config" unikorn-production-deploy \
+            bash -s -- "$remote_staging" <<'REMOTE_PREPARE'
+          set -Eeuo pipefail
+          staging_dir=$1
+          [[ "$staging_dir" =~ ^/data/prod_unikorn/front-end/\.incoming/[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          app_root=/data/prod_unikorn/front-end
+          incoming_root="$app_root/.incoming"
+          [[ -d "$app_root" && ! -L "$app_root" ]]
+          if [[ -e "$incoming_root" || -L "$incoming_root" ]]; then
+            [[ -d "$incoming_root" && ! -L "$incoming_root" ]]
+          else
+            mkdir -- "$incoming_root"
+            [[ -d "$incoming_root" && ! -L "$incoming_root" ]]
+          fi
+          [[ $(dirname -- "$staging_dir") == "$incoming_root" ]]
+          [[ ! -e "$staging_dir" && ! -L "$staging_dir" ]]
+          mkdir -- "$staging_dir"
+          [[ -d "$staging_dir" && ! -L "$staging_dir" ]]
+          REMOTE_PREPARE
+
+          tar -czf - .output deploy | \
+            ssh -F "$ssh_config" unikorn-production-deploy \
+              tar -xzf - --no-same-owner --no-same-permissions -C "$remote_staging"
+
+      - name: Atomically activate production release
+        env:
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_ID" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          ssh_config="$RUNNER_TEMP/frontend-production-deploy-ssh/config"
+          remote_script="/data/prod_unikorn/front-end/.incoming/$RELEASE_ID/deploy/atomic-release.sh"
+
+          ssh -F "$ssh_config" unikorn-production-deploy \
+            bash -s -- "$remote_script" "$RELEASE_ID" "$EXPECTED_SHA" <<'REMOTE_ACTIVATE'
+          set -Eeuo pipefail
+          remote_script=$1
+          release_id=$2
+          expected_sha=$3
+          [[ "$remote_script" == "/data/prod_unikorn/front-end/.incoming/$release_id/deploy/atomic-release.sh" ]]
+          [[ "$release_id" =~ ^[0-9a-f]{40}-[0-9]+-[0-9]+$ ]]
+          [[ "$expected_sha" =~ ^[0-9a-f]{40}$ ]]
+          export NVM_DIR="$HOME/.nvm"
+          source "$NVM_DIR/nvm.sh"
+          nvm use 20
+          export DEPLOY_PUBLIC_HEALTH_URL="https://unikorn.axfff.com/health"
+          export DEPLOY_PUBLIC_ROOT_URL="https://unikorn.axfff.com/"
+          export DEPLOY_PUBLIC_PLANNER_URL="https://unikorn.axfff.com/courses/planner"
+          exec bash "$remote_script" \
+            "/data/prod_unikorn/front-end" \
+            "$release_id" \
+            "$expected_sha" \
+            "prod-unikorn-frontend" \
+            "3000" \
+            "3" \
+            "deploy/ecosystem.prod.config.cjs"
+          REMOTE_ACTIVATE
+
+      # Atomic acceptance already ran on-host while rollback was armed. This
+      # redundant probe confirms the same routes from the external runner.
+      - name: Confirm public production from external runner
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          health_url="https://unikorn.axfff.com/health"
+          root_url="https://unikorn.axfff.com/"
+          planner_url="https://unikorn.axfff.com/courses/planner"
+
+          for attempt in $(seq 1 20); do
+            response=$(curl --fail --silent --show-error --max-time 10 \
+              -H 'Cache-Control: no-cache' "$health_url" 2>/dev/null || true)
+            if node -e '
+              const payload = JSON.parse(process.argv[1]);
+              const expected = process.argv[2];
+              if (payload.status !== "ok" || payload.service !== "campus-forum-frontend" || payload.version !== expected) {
+                process.exit(1);
+              }
+            ' "$response" "$EXPECTED_SHA" 2>/dev/null && \
+              curl --fail --silent --show-error --max-time 10 "$root_url" >/dev/null && \
+              curl --fail --silent --show-error --max-time 10 "$planner_url" >/dev/null; then
+              exit 0
+            fi
+            sleep 3
+          done
+
+          echo "Public production did not expose build $EXPECTED_SHA with reachable root and planner routes" >&2
+          exit 1

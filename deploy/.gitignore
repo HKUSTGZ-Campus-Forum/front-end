@@ -1,1 +1,2 @@
-output.sha256
+release.sha256
+__pycache__/
