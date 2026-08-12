@@ -14,6 +14,7 @@ const props = defineProps<{
   popularityByCourse: SchedulerPopularityByCourse
   popularityGeneratedAt: string | null
   showPopularity: boolean
+  showPopularityHistory: boolean
 }>()
 
 const emit = defineEmits<{
@@ -21,6 +22,7 @@ const emit = defineEmits<{
   (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
+  (e: 'show-popularity-history', code: string): void
   (e: 'open-cart'): void
   (e: 'toggle-filter'): void
   (e: 'update:display-option', key: DisplayOption, value: boolean): void
@@ -111,10 +113,12 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :current-selection="currentSelectionMap[course.course_code]"
         :popularity="getSchedulerCoursePopularity(popularityByCourse, course.course_code)"
         :show-popularity="showPopularity"
+        :show-popularity-history="showPopularityHistory"
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
         @show-info="(...args) => emit('show-info', ...args)"
+        @show-popularity-history="(...args) => emit('show-popularity-history', ...args)"
       />
       <div v-if="filteredCourses.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>

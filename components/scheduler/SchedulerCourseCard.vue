@@ -14,6 +14,7 @@ const props = defineProps<{
   currentSelection?: Record<number, number>
   popularity?: IndexedSchedulerCoursePopularity
   showPopularity: boolean
+  showPopularityHistory: boolean
 }>()
 const { t } = useI18n()
 
@@ -22,6 +23,7 @@ const emit = defineEmits<{
   (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
+  (e: 'show-popularity-history', code: string): void
 }>()
 
 function getBundleLabel(bundle: BundleData): string {
@@ -50,6 +52,15 @@ function getSectionLabel(section: SchedulerSection): string {
       <span class="course-card__credits">{{ t('scheduler.credits', { count: course.credit }) }}</span>
       <button class="course-card__detail" type="button" @click.stop="emit('show-info', course.course_code)">
         {{ t('scheduler.details') }}
+      </button>
+      <button
+        v-if="showPopularityHistory"
+        class="course-card__history"
+        type="button"
+        :aria-label="t('scheduler.popularityHistoryOpenFor', { course: course.course_code })"
+        @click.stop="emit('show-popularity-history', course.course_code)"
+      >
+        {{ t('scheduler.popularityHistoryButton') }}
       </button>
     </div>
 
@@ -182,6 +193,23 @@ function getSectionLabel(section: SchedulerSection): string {
     }
   }
 
+  &__history {
+    flex-shrink: 0;
+    min-height: 30px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, var(--border-secondary));
+    border-radius: 999px;
+    background: var(--surface-primary);
+    color: var(--interactive-active);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    &:hover {
+      background: color-mix(in srgb, var(--interactive-primary) 8%, var(--surface-primary));
+    }
+  }
+
   &__bundles {
     margin-top: 10px;
     padding-top: 10px;
@@ -299,7 +327,8 @@ function getSectionLabel(section: SchedulerSection): string {
     }
 
     &__credits,
-    &__detail {
+    &__detail,
+    &__history {
       order: 2;
     }
   }
