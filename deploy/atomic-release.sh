@@ -55,6 +55,7 @@ legacy_release="$releases_root/legacy-in-place"
 pm2_config_relative="deploy/ecosystem.dev.config.cjs"
 manifest_relative="deploy/output.sha256"
 health_url="http://127.0.0.1:$port/health"
+root_url="http://127.0.0.1:$port/"
 
 mkdir -p "$incoming_root" "$releases_root"
 exec 9>"$app_root/.deploy.lock"
@@ -148,6 +149,19 @@ capture_health_version() {
   return 1
 }
 
+wait_for_root() {
+  local attempt
+
+  for attempt in $(seq 1 "$health_attempts"); do
+    if curl --fail --silent --show-error --max-time 5 "$root_url" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 3
+  done
+
+  return 1
+}
+
 get_running_script() {
   pm2 jlist | node -e '
       let input = "";
@@ -229,11 +243,13 @@ rollback() {
           NITRO_PORT="$port" \
           pm2 start "$legacy_script" --name "$pm2_app" --cwd "$app_root" --update-env || return 1
       fi
+      [[ $(get_running_script) == "$legacy_script" ]] || return 1
+      wait_for_root || return 1
     else
       reload_app "$config_path" || return 1
+      [[ -n "$previous_health_version" ]] || return 1
+      wait_for_health_version "$previous_health_version" || return 1
     fi
-    [[ -n "$previous_health_version" ]] || return 1
-    wait_for_health_version "$previous_health_version" || return 1
     pm2 save --force >/dev/null
   else
     rm -f -- "$current_link"
@@ -278,8 +294,15 @@ previous_exec_path=$(get_running_script) || die "could not inspect the existing 
 previous_health_version=""
 if [[ -n "$previous_target" ]]; then
   [[ -n "$previous_exec_path" ]] || die "current release has no running PM2 process"
-  previous_health_version=$(capture_health_version) ||
-    die "could not capture the current release health identity before deployment"
+  if [[ "$previous_target" == "releases/legacy-in-place" ]]; then
+    legacy_script="$app_root/.output/server/index.mjs"
+    [[ "$previous_exec_path" == "$legacy_script" ]] ||
+      die "legacy release is not running from its expected script"
+    wait_for_root || die "legacy release root is not healthy before deployment"
+  else
+    previous_health_version=$(capture_health_version) ||
+      die "could not capture the current release health identity before deployment"
+  fi
 fi
 printf '%s\n' "$expected_sha" > "$staging_dir/.release-complete"
 mv -- "$staging_dir" "$release_dir"
