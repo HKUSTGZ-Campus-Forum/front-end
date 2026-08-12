@@ -132,23 +132,88 @@ wait_for_root() {
   return 1
 }
 
+get_running_script() {
+  pm2 jlist | node -e '
+      let input = "";
+      process.stdin.setEncoding("utf8");
+      process.stdin.on("data", (chunk) => { input += chunk; });
+      process.stdin.on("end", () => {
+        const appName = process.argv[1];
+        const lines = input.split(/\r?\n/);
+        let processes;
+
+        for (let index = 0; index < lines.length; index += 1) {
+          if (!lines[index].trimStart().startsWith("[")) continue;
+          try {
+            const candidate = JSON.parse(lines.slice(index).join("\n"));
+            if (Array.isArray(candidate)) {
+              processes = candidate;
+              break;
+            }
+          } catch {
+            // PM2 may print a version warning before its JSON document.
+          }
+        }
+
+        if (!processes) process.exit(2);
+        const app = processes.find((processInfo) => processInfo.name === appName);
+        if (app?.pm2_env?.pm_exec_path) process.stdout.write(app.pm2_env.pm_exec_path);
+      });
+    ' "$pm2_app"
+}
+
 reload_app() {
   local config_path=$1
+  local expected_script="$app_root/current/.output/server/index.mjs"
+  local running_script
 
-  CAMPUS_FRONTEND_ROOT="$app_root" \
-    CAMPUS_FRONTEND_PORT="$port" \
-    CAMPUS_FRONTEND_PM2_APP="$pm2_app" \
-    pm2 startOrReload "$config_path" --only "$pm2_app" --update-env
+  running_script=$(get_running_script) || return 1
+
+  if [[ -n "$running_script" && "$running_script" != "$expected_script" ]]; then
+    echo "Migrating $pm2_app from $running_script to $expected_script"
+    pm2 delete "$pm2_app" || return 1
+    running_script=""
+  fi
+
+  if [[ -z "$running_script" ]]; then
+    CAMPUS_FRONTEND_ROOT="$app_root" \
+      CAMPUS_FRONTEND_PORT="$port" \
+      CAMPUS_FRONTEND_PM2_APP="$pm2_app" \
+      pm2 start "$config_path" --only "$pm2_app" --update-env
+  else
+    CAMPUS_FRONTEND_ROOT="$app_root" \
+      CAMPUS_FRONTEND_PORT="$port" \
+      CAMPUS_FRONTEND_PM2_APP="$pm2_app" \
+      pm2 startOrReload "$config_path" --only "$pm2_app" --update-env
+  fi
 }
 
 rollback() {
   local previous_target=$1
   local config_path=$2
+  local previous_exec_path=$3
+  local legacy_script="$app_root/.output/server/index.mjs"
+  local running_script
 
   echo "Deployment failed; rolling back $pm2_app to $previous_target" >&2
   if [[ -n "$previous_target" ]]; then
     activate "$previous_target"
-    reload_app "$config_path" || return 1
+    if [[ "$previous_target" == "releases/legacy-in-place" && "$previous_exec_path" == "$legacy_script" ]]; then
+      running_script=$(get_running_script) || return 1
+      if [[ -n "$running_script" && "$running_script" != "$legacy_script" ]]; then
+        pm2 delete "$pm2_app" || return 1
+      fi
+      if [[ "$running_script" != "$legacy_script" ]]; then
+        NODE_ENV="production" \
+          HOST="127.0.0.1" \
+          NITRO_HOST="127.0.0.1" \
+          PORT="$port" \
+          NITRO_PORT="$port" \
+          pm2 start "$legacy_script" --name "$pm2_app" --update-env || return 1
+      fi
+    else
+      reload_app "$config_path" || return 1
+    fi
     wait_for_root || return 1
     pm2 save --force >/dev/null
   else
@@ -190,6 +255,7 @@ if [[ -L "$current_link" ]]; then
   fi
 fi
 
+previous_exec_path=$(get_running_script) || die "could not inspect the existing PM2 process"
 printf '%s\n' "$expected_sha" > "$staging_dir/.release-complete"
 mv -- "$staging_dir" "$release_dir"
 release_target="releases/$release_id"
@@ -199,12 +265,12 @@ activate "$release_target"
 
 if ! reload_app "$config_path" || ! wait_for_expected_health; then
   pm2 logs "$pm2_app" --nostream --lines 100 || true
-  rollback "$previous_target" "$config_path" || die "deployment and rollback both failed"
+  rollback "$previous_target" "$config_path" "$previous_exec_path" || die "deployment and rollback both failed"
   die "new release did not become healthy; previous release restored"
 fi
 
 if ! pm2 save --force >/dev/null; then
-  rollback "$previous_target" "$config_path" || die "PM2 state save and rollback both failed"
+  rollback "$previous_target" "$config_path" "$previous_exec_path" || die "PM2 state save and rollback both failed"
   die "could not persist PM2 state; previous release restored"
 fi
 

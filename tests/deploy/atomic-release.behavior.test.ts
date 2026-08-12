@@ -62,7 +62,36 @@ function createCommandStubs(root: string) {
   const bin = join(root, "test-bin");
   mkdirSync(bin, { recursive: true });
   const pm2 = join(bin, "pm2");
-  writeFileSync(pm2, "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$TEST_PM2_LOG\"\nexit 0\n");
+  writeFileSync(
+    pm2,
+    `#!/usr/bin/env bash
+set -eu
+command_name=\${1:-}
+printf '%s\\n' "$*" >> "$TEST_PM2_LOG"
+if [[ "$command_name" == "jlist" ]]; then
+  script_path=""
+  if [[ -f "$TEST_PM2_STATE" ]]; then script_path=$(<"$TEST_PM2_STATE");
+  elif [[ -n "\${TEST_PM2_INITIAL_EXEC_PATH:-}" ]]; then script_path=$TEST_PM2_INITIAL_EXEC_PATH; fi
+  if [[ -n "$script_path" ]]; then
+    printf 'PM2 version warning\\n[{"name":"unikorn-dev","pm2_env":{"pm_exec_path":"%s"}}]\\n' "$script_path"
+  else
+    printf '[]\\n'
+  fi
+elif [[ "$command_name" == "delete" ]]; then
+  : > "$TEST_PM2_STATE"
+elif [[ "$command_name" == "start" ]]; then
+  script_or_config=\${2:-}
+  if [[ "$script_or_config" == *.mjs ]]; then
+    printf '%s\\n' "$script_or_config" > "$TEST_PM2_STATE"
+  else
+    printf '%s\\n' "$CAMPUS_FRONTEND_ROOT/current/.output/server/index.mjs" > "$TEST_PM2_STATE"
+  fi
+elif [[ "$command_name" == "startOrReload" ]]; then
+  printf '%s\\n' "$CAMPUS_FRONTEND_ROOT/current/.output/server/index.mjs" > "$TEST_PM2_STATE"
+fi
+exit 0
+`,
+  );
   chmodSync(pm2, 0o755);
   const curl = join(bin, "curl");
   writeFileSync(
@@ -102,9 +131,16 @@ function createCommandStubs(root: string) {
   return bin;
 }
 
-function runController(appRoot: string, releaseId: string, sha: string, healthVersion: string) {
+function runController(
+  appRoot: string,
+  releaseId: string,
+  sha: string,
+  healthVersion: string,
+  initialExecPath = "",
+) {
   const stubBin = createCommandStubs(appRoot);
   const pm2Log = join(appRoot, "pm2.log");
+  const pm2State = join(appRoot, "pm2.state");
   const result = spawnSync(
     "bash",
     [controller, appRoot, releaseId, sha, "unikorn-dev", "3001", "3"],
@@ -115,11 +151,13 @@ function runController(appRoot: string, releaseId: string, sha: string, healthVe
         PATH: `${stubBin}:${process.env.PATH}`,
         TEST_HEALTH_VERSION: healthVersion,
         TEST_PM2_LOG: pm2Log,
+        TEST_PM2_STATE: pm2State,
+        TEST_PM2_INITIAL_EXEC_PATH: initialExecPath,
         DEPLOY_HEALTH_ATTEMPTS: "1",
       },
     },
   );
-  return { ...result, pm2Log };
+  return { ...result, pm2Log, pm2State };
 }
 
 describe("atomic release controller behavior", () => {
@@ -129,14 +167,42 @@ describe("atomic release controller behavior", () => {
     writeFileSync(join(appRoot, ".output", "server", "index.mjs"), "export default {};\n");
     const releaseId = createRelease(appRoot, shaA, 101, 1);
 
-    const result = runController(appRoot, releaseId, shaA, shaA);
+    const result = runController(
+      appRoot,
+      releaseId,
+      shaA,
+      shaA,
+      join(appRoot, ".output", "server", "index.mjs"),
+    );
 
     expect(result.stderr).toBe("");
     expect(result.status).toBe(0);
     expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${releaseId}`);
     expect(readlinkSync(join(appRoot, "releases", "legacy-in-place"))).toBe(appRoot);
     expect(lstatSync(join(appRoot, ".output")).isDirectory()).toBe(true);
-    expect(readFileSync(result.pm2Log, "utf8")).toContain("startOrReload");
+    expect(readFileSync(result.pm2Log, "utf8")).toContain("delete unikorn-dev");
+    expect(readFileSync(result.pm2Log, "utf8")).toContain("start ");
+    expect(readFileSync(result.pm2State, "utf8").trim()).toBe(
+      join(appRoot, "current", ".output", "server", "index.mjs"),
+    );
+  }, 20_000);
+
+  it("restores the original absolute legacy process path when first-migration health fails", () => {
+    const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-legacy-rollback-"));
+    const legacyScript = join(appRoot, ".output", "server", "index.mjs");
+    mkdirSync(join(appRoot, ".output", "server"), { recursive: true });
+    writeFileSync(legacyScript, "export default {};\n");
+    const releaseId = createRelease(appRoot, shaB, 104, 1);
+
+    const result = runController(appRoot, releaseId, shaB, "wrong-build", legacyScript);
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("previous release restored");
+    expect(readlinkSync(join(appRoot, "current"))).toBe("releases/legacy-in-place");
+    expect(readFileSync(result.pm2State, "utf8").trim()).toBe(legacyScript);
+    const pm2Log = readFileSync(result.pm2Log, "utf8");
+    expect(pm2Log.match(/delete unikorn-dev/g)?.length).toBe(2);
+    expect(pm2Log).toContain(`start ${legacyScript} --name unikorn-dev --update-env`);
   }, 20_000);
 
   it("restores the previous release when exact-build health validation fails", () => {
@@ -153,7 +219,30 @@ describe("atomic release controller behavior", () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("previous release restored");
     expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${oldId}`);
-    expect(readFileSync(result.pm2Log, "utf8").match(/startOrReload/g)?.length).toBe(2);
+    expect(readFileSync(result.pm2Log, "utf8")).toContain("start ");
+    expect(readFileSync(result.pm2Log, "utf8")).toContain("startOrReload");
+  }, 20_000);
+
+  it("reloads without replacing a process already using the stable current path", () => {
+    const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-reload-"));
+    const oldId = `${shaA}-98-1`;
+    mkdirSync(join(appRoot, "releases", oldId), { recursive: true });
+    symlinkSync(`releases/${oldId}`, join(appRoot, "current"));
+    const releaseId = createRelease(appRoot, shaB, 103, 1);
+
+    const result = runController(
+      appRoot,
+      releaseId,
+      shaB,
+      shaB,
+      join(appRoot, "current", ".output", "server", "index.mjs"),
+    );
+
+    expect(result.status).toBe(0);
+    expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${releaseId}`);
+    const pm2Log = readFileSync(result.pm2Log, "utf8");
+    expect(pm2Log).toContain("startOrReload");
+    expect(pm2Log).not.toContain("delete unikorn-dev");
   }, 20_000);
 
   it("rejects release identifiers that could escape the release root", () => {
@@ -169,6 +258,7 @@ describe("atomic release controller behavior", () => {
           PATH: `${stubBin}:${process.env.PATH}`,
           TEST_HEALTH_VERSION: shaA,
           TEST_PM2_LOG: join(appRoot, "pm2.log"),
+          TEST_PM2_STATE: join(appRoot, "pm2.state"),
         },
       },
     );
