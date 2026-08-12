@@ -100,6 +100,54 @@ export interface SchedulerPopularityResponse {
   courses: SchedulerCoursePopularity[]
 }
 
+export interface SchedulerPopularityHistoryPoint extends SchedulerPopularityCounts {
+  sampled_at: string
+}
+
+export interface SchedulerPopularityHistoryResponse {
+  semester_id: string
+  course_code: string
+  section_id: string | null
+  tracking_started_at: string | null
+  tracking_ends_at: string
+  source_interval_seconds: number
+  effective_interval_seconds: number
+  generated_at: string
+  points: SchedulerPopularityHistoryPoint[]
+}
+
+export type SchedulerPopularityHistoryRange = '24h' | '7d' | '30d' | 'all'
+export type SchedulerPopularityHistoryDataState = 'not-started' | 'empty' | 'ready'
+export type SchedulerPopularityHistoryAccessKind = 'authentication' | 'authorization' | 'scope'
+
+export const POPULARITY_HISTORY_SEMESTER_ID = '2610'
+export const POPULARITY_HISTORY_CAMPAIGN_START = '2026-08-12T00:00:00.000Z'
+export const POPULARITY_HISTORY_CAMPAIGN_END = '2026-09-30T15:59:00.000Z'
+export const POPULARITY_HISTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+export const POPULARITY_HISTORY_REFRESH_DELAY_MS = 10 * 1000
+export const POPULARITY_HISTORY_TERMINAL_SETTLE_MS = 130 * 1000
+
+export class SchedulerPopularityHistoryAccessError extends Error {
+  readonly name = 'SchedulerPopularityHistoryAccessError'
+
+  constructor(
+    readonly kind: SchedulerPopularityHistoryAccessKind,
+    readonly status: 401 | 403 | 404,
+  ) {
+    super(`Scheduler popularity history access failed (${status})`)
+  }
+}
+
+export interface SchedulerPopularityHistoryChartPoint {
+  x: number
+  y: number | null
+}
+
+export interface SchedulerPopularityHistorySeries {
+  looking: SchedulerPopularityHistoryChartPoint[]
+  scheduling: SchedulerPopularityHistoryChartPoint[]
+}
+
 export interface IndexedSchedulerCoursePopularity extends SchedulerPopularityCounts {
   course_code: string
   sections: Record<string, SchedulerPopularityCounts>
@@ -140,6 +188,102 @@ export function getSchedulerCoursePopularity(
   courseCode: string,
 ): IndexedSchedulerCoursePopularity | undefined {
   return popularity[schedulerCourseKey(courseCode)]
+}
+
+export function getPopularityHistoryWindow(
+  range: SchedulerPopularityHistoryRange,
+  now: Date = new Date(),
+): { from: string; to: string } {
+  const campaignStartMs = Date.parse(POPULARITY_HISTORY_CAMPAIGN_START)
+  const campaignEndMs = Date.parse(POPULARITY_HISTORY_CAMPAIGN_END)
+  const boundedNowMs = Math.min(
+    campaignEndMs,
+    Math.max(campaignStartMs, now.getTime()),
+  )
+  const to = new Date(boundedNowMs).toISOString()
+  if (range === 'all') {
+    return { from: POPULARITY_HISTORY_CAMPAIGN_START, to }
+  }
+
+  const durationMs = {
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+  }[range]
+  const fromMs = Math.max(campaignStartMs, boundedNowMs - durationMs)
+  return { from: new Date(fromMs).toISOString(), to }
+}
+
+export function getNextPopularityHistoryRefreshDelay(
+  nowMs: number = Date.now(),
+  intervalMs: number = POPULARITY_HISTORY_REFRESH_INTERVAL_MS,
+  delayMs: number = POPULARITY_HISTORY_REFRESH_DELAY_MS,
+): number | null {
+  const campaignEndMs = Date.parse(POPULARITY_HISTORY_CAMPAIGN_END)
+  const terminalRefreshAtMs = campaignEndMs + Math.max(
+    delayMs,
+    POPULARITY_HISTORY_TERMINAL_SETTLE_MS,
+  )
+  if (
+    !Number.isFinite(nowMs)
+    || !Number.isFinite(intervalMs)
+    || !Number.isFinite(delayMs)
+    || intervalMs <= 0
+    || delayMs < 0
+    || nowMs >= terminalRefreshAtMs
+  ) {
+    return null
+  }
+
+  const currentBoundaryMs = Math.floor(nowMs / intervalMs) * intervalMs
+  if (nowMs >= campaignEndMs) return terminalRefreshAtMs - nowMs
+  let refreshAtMs = currentBoundaryMs + delayMs
+  if (refreshAtMs <= nowMs) refreshAtMs += intervalMs
+  // The required 23:59 terminal sample is intentionally not aligned to the
+  // regular five-minute cadence. Ensure an already-open chart fetches it once,
+  // after the terminal sampler's bounded commit window, then stops refreshing.
+  refreshAtMs = Math.min(refreshAtMs, terminalRefreshAtMs)
+  return refreshAtMs - nowMs
+}
+
+export function getPopularityHistoryDataState(
+  response: SchedulerPopularityHistoryResponse,
+): SchedulerPopularityHistoryDataState {
+  if (response.points.length > 0) return 'ready'
+  return response.tracking_started_at === null ? 'not-started' : 'empty'
+}
+
+/**
+ * Insert explicit null samples so time-series charts do not draw lines across
+ * periods where no snapshot was recorded.
+ */
+export function buildPopularityHistorySeries(
+  response: SchedulerPopularityHistoryResponse,
+): SchedulerPopularityHistorySeries {
+  const looking: SchedulerPopularityHistoryChartPoint[] = []
+  const scheduling: SchedulerPopularityHistoryChartPoint[] = []
+  const intervalMs = Math.max(1, response.effective_interval_seconds) * 1000
+  const points = [...response.points]
+    .map(point => ({ ...point, timestamp: Date.parse(point.sampled_at) }))
+    .filter(point => Number.isFinite(point.timestamp))
+    .sort((a, b) => a.timestamp - b.timestamp)
+
+  let previousTimestamp: number | null = null
+  let previousBucket: number | null = null
+  for (const point of points) {
+    const bucket = Math.floor(point.timestamp / intervalMs)
+    if (previousTimestamp !== null && previousBucket !== null && bucket - previousBucket > 1) {
+      const gapTimestamp = previousTimestamp + intervalMs
+      looking.push({ x: gapTimestamp, y: null })
+      scheduling.push({ x: gapTimestamp, y: null })
+    }
+    looking.push({ x: point.timestamp, y: point.looking_count })
+    scheduling.push({ x: point.timestamp, y: point.scheduling_count })
+    previousTimestamp = point.timestamp
+    previousBucket = bucket
+  }
+
+  return { looking, scheduling }
 }
 
 // --- Constants ---
