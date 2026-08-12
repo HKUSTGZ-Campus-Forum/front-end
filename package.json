@@ -44,11 +44,13 @@
     "vue3-apexcharts": "^1.11.1"
   },
   "overrides": {
-    "linkify-it": "5.0.2"
+    "linkify-it": "5.0.2",
+    "markdown-it": "14.2.0"
   },
   "pnpm": {
     "overrides": {
-      "linkify-it": "5.0.2"
+      "linkify-it": "5.0.2",
+      "markdown-it": "14.2.0"
     }
   },
   "devDependencies": {
