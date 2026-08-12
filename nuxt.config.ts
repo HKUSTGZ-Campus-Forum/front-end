@@ -9,9 +9,7 @@ const appBuildVersion =
   pkg.version;
 const apiBaseUrl = (
   process.env.NUXT_PUBLIC_API_BASE_URL ||
-  (process.env.NODE_ENV === "development"
-    ? "http://localhost:8000"
-    : "https://unikorn.axfff.com")
+  (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "")
 ).replace(/\/$/, "");
 
 export default defineNuxtConfig({
@@ -171,6 +169,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Nuxt maps NUXT_API_INTERNAL_BASE_URL at runtime. Keep the default empty
+    // so SSR can fall back to the runtime public base rather than a build-time URL.
+    apiInternalBaseUrl: "",
     public: {
       appVersion: pkg.version,
       appBuildVersion,

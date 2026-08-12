@@ -432,10 +432,6 @@ const appsSuccessMessage = ref('')
 
 let cooldownTimer: NodeJS.Timeout | null = null
 
-// Get API base URL
-const config = useRuntimeConfig()
-const apiBaseUrl = config.public.apiBaseUrl
-
 // Email validation
 const isValidNewEmail = computed(() => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -529,7 +525,7 @@ const addEmail = async () => {
   emailSuccess.value = ''
   
   try {
-    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value?.id}/add-email`, {
+    const response = await fetchWithAuth(`/api/users/${user.value?.id}/add-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -579,7 +575,7 @@ const changeEmail = async () => {
   emailSuccess.value = ''
   
   try {
-    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value?.id}`, {
+    const response = await fetchWithAuth(`/api/users/${user.value?.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -630,7 +626,7 @@ const resendVerificationEmail = async () => {
   isResending.value = true
   
   try {
-    const response = await fetchWithAuth(`${apiBaseUrl}/api/auth/resend-verification`, {
+    const response = await fetchWithAuth('/api/auth/resend-verification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -687,7 +683,7 @@ const changePassword = async () => {
   passwordChangeSuccess.value = ''
   
   try {
-    const response = await fetchWithAuth(`${apiBaseUrl}/api/auth/change-password`, {
+    const response = await fetchWithAuth('/api/auth/change-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -746,7 +742,7 @@ const loadConnectedApps = async () => {
   appsError.value = ''
   
   try {
-    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value.id}/oauth-tokens`)
+    const response = await fetchWithAuth(`/api/users/${user.value.id}/oauth-tokens`)
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -774,7 +770,7 @@ const revokeAppAccess = async (app) => {
   appsSuccessMessage.value = ''
   
   try {
-    const response = await fetchWithAuth(`${apiBaseUrl}/api/users/${user.value.id}/oauth-tokens/${app.id}/revoke`, {
+    const response = await fetchWithAuth(`/api/users/${user.value.id}/oauth-tokens/${app.id}/revoke`, {
       method: 'POST'
     })
     
