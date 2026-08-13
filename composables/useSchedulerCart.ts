@@ -1,12 +1,12 @@
 import { ref, watch, type Ref } from 'vue'
-import type { CartCourse } from '~/utils/scheduler'
+import type { CartCourse } from '../utils/scheduler'
 import {
   addGuestCourse,
   removeGuestCourse,
   setGuestBundleEnabled,
   setGuestCourseEnabled,
   setGuestLayerEnabled,
-} from '~/utils/schedulerCart'
+} from '../utils/schedulerCart'
 
 export function useSchedulerCart(
   semesterId: string,
@@ -15,13 +15,24 @@ export function useSchedulerCart(
 ) {
   const api = useScheduler()
   const courses = ref<CartCourse[]>([...initial.value])
+  let refreshGeneration = 0
 
   watch(initial, value => {
+    refreshGeneration += 1
     courses.value = [...value]
   })
 
   async function refresh() {
-    if (loggedIn.value) courses.value = await api.getCart(semesterId)
+    if (!loggedIn.value) return
+    const generation = ++refreshGeneration
+    try {
+      const nextCourses = await api.getCart(semesterId)
+      if (generation === refreshGeneration && loggedIn.value) {
+        courses.value = nextCourses
+      }
+    } catch (error) {
+      if (generation === refreshGeneration && loggedIn.value) throw error
+    }
   }
 
   async function add(code: string) {

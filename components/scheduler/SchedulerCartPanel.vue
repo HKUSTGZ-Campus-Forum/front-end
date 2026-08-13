@@ -1,19 +1,20 @@
 <!-- front-end/components/scheduler/SchedulerCartPanel.vue -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartCourse, SchedulerSubject, SearchResult, SearchResponse } from '~/utils/scheduler'
+import { createLatestRequestTracker, runPendingSchedulerAction } from '~/utils/schedulerAsync'
 
 const props = defineProps<{
   semesterId: string
   courseList: CartCourse[]
   visible: boolean
+  addCourse: (code: string) => Promise<void>
+  removeCourse: (code: string) => Promise<void>
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'add', code: string): void
-  (e: 'remove', code: string): void
 }>()
 
 const { t } = useI18n()
@@ -26,53 +27,94 @@ const totalResults = ref(0)
 const currentPage = ref(1)
 const pageSize = 8
 const searching = ref(false)
-const addingCodes = ref<Set<string>>(new Set())
-const removingCodes = ref<Set<string>>(new Set())
+const pendingCodes = ref<Set<string>>(new Set())
 const showCartDrawer = ref(false)
 const errorMessage = ref('')
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+const subjectRequests = createLatestRequestTracker()
+const searchRequests = createLatestRequestTracker()
 
 watch(
   () => [props.visible, props.semesterId] as const,
   ([visible]) => {
-    if (visible) loadSubjectFilters()
+    subjectRequests.invalidate()
+    if (visible) {
+      void loadSubjectFilters()
+    } else {
+      subjectFilters.value = []
+    }
   },
   { immediate: true },
 )
 
-watch(searchQuery, () => {
+watch([searchQuery, () => props.semesterId, () => props.visible], ([query, _semesterId, visible]) => {
   if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => doSearch(1), 300)
+  debounceTimer = null
+  searchRequests.invalidate()
+  searching.value = false
+  errorMessage.value = ''
+  currentPage.value = 1
+  searchResults.value = []
+  totalResults.value = 0
+
+  if (!visible || !query.trim()) {
+    return
+  }
+
+  searching.value = true
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null
+    void doSearch(1)
+  }, 300)
 })
 
 async function loadSubjectFilters() {
+  const semesterId = props.semesterId
+  const request = subjectRequests.begin()
   try {
-    subjectFilters.value = await getSubjects(props.semesterId)
+    const subjects = await getSubjects(semesterId, request.signal)
+    if (request.isCurrent() && props.visible && props.semesterId === semesterId) {
+      subjectFilters.value = subjects
+    }
   } catch {
-    subjectFilters.value = []
+    if (request.isCurrent()) subjectFilters.value = []
   }
 }
 
 async function doSearch(page: number) {
-  errorMessage.value = ''
-  if (!searchQuery.value.trim()) {
+  const query = searchQuery.value.trim()
+  const semesterId = props.semesterId
+  if (!props.visible || !query) {
+    searchRequests.invalidate()
     searchResults.value = []
     totalResults.value = 0
+    searching.value = false
     return
   }
+
+  const request = searchRequests.begin()
+  errorMessage.value = ''
   searching.value = true
   currentPage.value = page
   try {
-    const result: SearchResponse = await searchCourses(searchQuery.value, props.semesterId, page, pageSize)
+    const result: SearchResponse = await searchCourses(
+      query,
+      semesterId,
+      page,
+      pageSize,
+      request.signal,
+    )
+    if (!request.isCurrent() || !props.visible || searchQuery.value.trim() !== query || props.semesterId !== semesterId) return
     searchResults.value = result.items
     totalResults.value = result.total
   } catch {
+    if (!request.isCurrent()) return
     searchResults.value = []
     totalResults.value = 0
     errorMessage.value = t('scheduler.searchFailed')
   } finally {
-    searching.value = false
+    if (request.isCurrent()) searching.value = false
   }
 }
 
@@ -81,22 +123,18 @@ function inCart(code: string): boolean {
 }
 
 async function handleAdd(code: string) {
-  addingCodes.value.add(code)
-  try {
-    emit('add', code)
-  } finally {
-    addingCodes.value.delete(code)
-  }
+  await runPendingSchedulerAction(pendingCodes.value, code, () => props.addCourse(code))
 }
 
 async function handleRemove(code: string) {
-  removingCodes.value.add(code)
-  try {
-    emit('remove', code)
-  } finally {
-    removingCodes.value.delete(code)
-  }
+  await runPendingSchedulerAction(pendingCodes.value, code, () => props.removeCourse(code))
 }
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  subjectRequests.invalidate()
+  searchRequests.invalidate()
+})
 </script>
 
 <template>
@@ -148,8 +186,8 @@ async function handleRemove(code: string) {
                   <span class="cart-panel__result-title">{{ item.course_title }}</span>
                 </div>
                 <div class="cart-panel__result-actions">
-                  <button v-if="!inCart(item.course_code)" type="button" class="cart-panel__add-btn" :disabled="addingCodes.has(item.course_code)" @click="handleAdd(item.course_code)">+</button>
-                  <button v-else type="button" class="cart-panel__remove-btn" :disabled="removingCodes.has(item.course_code)" @click="handleRemove(item.course_code)">&#x2212;</button>
+                  <button v-if="!inCart(item.course_code)" type="button" class="cart-panel__add-btn" :disabled="pendingCodes.has(item.course_code)" @click="handleAdd(item.course_code)">+</button>
+                  <button v-else type="button" class="cart-panel__remove-btn" :disabled="pendingCodes.has(item.course_code)" @click="handleRemove(item.course_code)">&#x2212;</button>
                 </div>
               </div>
             </div>
@@ -170,7 +208,7 @@ async function handleRemove(code: string) {
           <div v-if="showCartDrawer" class="cart-panel__drawer">
             <div v-for="course in courseList" :key="course.course_code" class="cart-panel__drawer-item">
               <span>{{ course.course_code }} - {{ course.course_title }}</span>
-              <button type="button" @click="handleRemove(course.course_code)">{{ t('scheduler.remove') }}</button>
+              <button type="button" :disabled="pendingCodes.has(course.course_code)" @click="handleRemove(course.course_code)">{{ t('scheduler.remove') }}</button>
             </div>
             <div v-if="courseList.length === 0" class="cart-panel__drawer-empty">{{ t('scheduler.emptyCart') }}</div>
           </div>

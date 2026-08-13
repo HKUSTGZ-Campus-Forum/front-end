@@ -77,6 +77,11 @@ const rowHeight = computed(() => {
   return Math.max(46, available / 8)
 })
 
+const timetableGridStyle = computed(() => ({
+  backgroundSize: `${dayColWidth.value}px ${rowHeight.value}px`,
+  backgroundPosition: `${timeColWidth + decorationWidth}px ${headerHeight + decorationWidth}px`,
+}))
+
 interface LectureBlock {
   day: number
   start_time: number
@@ -155,7 +160,7 @@ function isBanned(day: number, period: number): boolean {
 </script>
 
 <template>
-  <div ref="containerRef" class="timetable">
+  <div ref="containerRef" class="timetable" :style="timetableGridStyle">
     <!-- Day headers -->
     <div
       v-for="d in maxDayNum"
@@ -245,8 +250,6 @@ function isBanned(day: number, period: number): boolean {
   background-image:
     linear-gradient(to right, transparent calc(100% - 1px), var(--border-secondary) calc(100% - 1px)),
     linear-gradient(to bottom, transparent calc(100% - 1px), var(--border-secondary) calc(100% - 1px));
-  background-size: calc((100% - 52px) / 5) calc((100% - 36px) / 8);
-  background-position: 52px 36px;
   border: 1px solid var(--border-secondary);
   border-radius: 12px 12px 0 0;
   overflow: hidden;
@@ -275,6 +278,7 @@ function isBanned(day: number, period: number): boolean {
 
   &__cell {
     position: absolute;
+    z-index: 30;
     cursor: pointer;
     transition: background 0.15s;
 
