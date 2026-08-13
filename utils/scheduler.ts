@@ -102,6 +102,21 @@ export interface SchedulerPopularityResponse {
 
 export interface SchedulerPopularityHistoryPoint extends SchedulerPopularityCounts {
   sampled_at: string
+  observed_at: string
+}
+
+export type SchedulerPopularityHistorySamplingState =
+  | 'not_started'
+  | 'fresh'
+  | 'stale'
+  | 'ended_complete'
+  | 'ended_incomplete'
+
+export interface SchedulerPopularityHistoryCoverageBucket {
+  bucket_at: string
+  expected_samples: number
+  observed_samples: number
+  partial: boolean
 }
 
 export interface SchedulerPopularityHistoryResponse {
@@ -113,6 +128,12 @@ export interface SchedulerPopularityHistoryResponse {
   source_interval_seconds: number
   effective_interval_seconds: number
   generated_at: string
+  latest_scheduled_sample_at: string | null
+  latest_observed_sample_at: string | null
+  requested_coverage_end_at: string
+  sampling_state: SchedulerPopularityHistorySamplingState
+  terminal_present: boolean
+  coverage_buckets: SchedulerPopularityHistoryCoverageBucket[]
   points: SchedulerPopularityHistoryPoint[]
 }
 
@@ -121,7 +142,7 @@ export type SchedulerPopularityHistoryDataState = 'not-started' | 'empty' | 'rea
 export type SchedulerPopularityHistoryAccessKind = 'authentication' | 'authorization' | 'scope'
 
 export const POPULARITY_HISTORY_SEMESTER_ID = '2610'
-export const POPULARITY_HISTORY_CAMPAIGN_START = '2026-08-12T00:00:00.000Z'
+export const POPULARITY_HISTORY_CAMPAIGN_START = '2026-07-31T16:00:00.000Z'
 export const POPULARITY_HISTORY_CAMPAIGN_END = '2026-09-30T15:59:00.000Z'
 export const POPULARITY_HISTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 export const POPULARITY_HISTORY_REFRESH_DELAY_MS = 10 * 1000
@@ -141,11 +162,60 @@ export class SchedulerPopularityHistoryAccessError extends Error {
 export interface SchedulerPopularityHistoryChartPoint {
   x: number
   y: number | null
+  partial?: boolean
+  observedAt?: number
 }
 
 export interface SchedulerPopularityHistorySeries {
   looking: SchedulerPopularityHistoryChartPoint[]
   scheduling: SchedulerPopularityHistoryChartPoint[]
+}
+
+export interface SchedulerPopularityHistoryCoverageSummary {
+  expectedSamples: number
+  observedSamples: number
+  missingBuckets: number
+  partialBuckets: number
+  trailingMissingBuckets: number
+  trailingPartial: boolean
+  hasIncompleteCoverage: boolean
+}
+
+export interface SchedulerPopularityHistoryTableRow extends SchedulerPopularityHistoryCoverageBucket {
+  point?: SchedulerPopularityHistoryPoint
+  state: 'complete' | 'partial' | 'missing'
+}
+
+export function buildPopularityHistoryTableRows(
+  response: SchedulerPopularityHistoryResponse,
+): SchedulerPopularityHistoryTableRow[] {
+  const intervalMs = Math.max(1, response.effective_interval_seconds) * 1000
+  const pointsByBucket = new Map<number, SchedulerPopularityHistoryPoint>()
+  for (const point of response.points) {
+    const timestamp = Date.parse(point.sampled_at)
+    if (Number.isFinite(timestamp)) pointsByBucket.set(Math.floor(timestamp / intervalMs), point)
+  }
+
+  return [...response.coverage_buckets]
+    .filter(bucket => bucket.expected_samples > 0 && Number.isFinite(Date.parse(bucket.bucket_at)))
+    .sort((a, b) => Date.parse(b.bucket_at) - Date.parse(a.bucket_at))
+    .map((bucket) => {
+      const point = pointsByBucket.get(Math.floor(Date.parse(bucket.bucket_at) / intervalMs))
+      const state = bucket.observed_samples <= 0 || !point
+        ? 'missing'
+        : bucket.partial || bucket.observed_samples < bucket.expected_samples
+          ? 'partial'
+          : 'complete'
+      return { ...bucket, point, state }
+    })
+}
+
+export function formatPopularityHistoryTooltipValue(
+  value: unknown,
+  missingLabel: string,
+): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return missingLabel
+  return String(Math.max(0, Math.round(value)))
 }
 
 export interface IndexedSchedulerCoursePopularity extends SchedulerPopularityCounts {
@@ -254,8 +324,67 @@ export function getPopularityHistoryDataState(
 }
 
 /**
- * Insert explicit null samples so time-series charts do not draw lines across
- * periods where no snapshot was recorded.
+ * Treat a contradictory terminal-complete response as incomplete. This keeps
+ * the UI conservative if a response is produced during a rolling deployment.
+ */
+export function getPopularityHistoryDisplaySamplingState(
+  response: SchedulerPopularityHistoryResponse,
+): SchedulerPopularityHistorySamplingState {
+  if (response.sampling_state === 'ended_complete' && !response.terminal_present) {
+    return 'ended_incomplete'
+  }
+  return response.sampling_state
+}
+
+export function summarizePopularityHistoryCoverage(
+  response: SchedulerPopularityHistoryResponse,
+): SchedulerPopularityHistoryCoverageSummary {
+  const buckets = [...(response.coverage_buckets || [])]
+    .map(bucket => ({ ...bucket, timestamp: Date.parse(bucket.bucket_at) }))
+    .filter(bucket => Number.isFinite(bucket.timestamp) && bucket.expected_samples > 0)
+    .sort((a, b) => a.timestamp - b.timestamp)
+  let expectedSamples = 0
+  let observedSamples = 0
+  let missingBuckets = 0
+  let partialBuckets = 0
+
+  for (const bucket of buckets) {
+    const expected = Math.max(0, Math.trunc(bucket.expected_samples))
+    const observed = Math.max(0, Math.min(expected, Math.trunc(bucket.observed_samples)))
+    expectedSamples += expected
+    observedSamples += observed
+    if (observed === 0) missingBuckets += 1
+    else if (bucket.partial || observed < expected) partialBuckets += 1
+  }
+
+  let trailingMissingBuckets = 0
+  for (let index = buckets.length - 1; index >= 0; index -= 1) {
+    if (buckets[index].observed_samples > 0) break
+    trailingMissingBuckets += 1
+  }
+  const lastBucket = buckets.at(-1)
+  const trailingPartial = Boolean(
+    lastBucket
+    && lastBucket.observed_samples > 0
+    && (lastBucket.partial || lastBucket.observed_samples < lastBucket.expected_samples),
+  )
+
+  return {
+    expectedSamples,
+    observedSamples,
+    missingBuckets,
+    partialBuckets,
+    trailingMissingBuckets,
+    trailingPartial,
+    hasIncompleteCoverage: missingBuckets > 0 || partialBuckets > 0,
+  }
+}
+
+/**
+ * Build chart points from the server's authoritative coverage buckets. A
+ * completely unobserved bucket is a gap. A partially observed bucket keeps its
+ * real last-value point and ends the current segment immediately afterward so
+ * the chart cannot imply complete forward coverage.
  */
 export function buildPopularityHistorySeries(
   response: SchedulerPopularityHistoryResponse,
@@ -268,19 +397,77 @@ export function buildPopularityHistorySeries(
     .filter(point => Number.isFinite(point.timestamp))
     .sort((a, b) => a.timestamp - b.timestamp)
 
-  let previousTimestamp: number | null = null
-  let previousBucket: number | null = null
+  const pointsByBucket = new Map<number, (typeof points)[number]>()
   for (const point of points) {
-    const bucket = Math.floor(point.timestamp / intervalMs)
-    if (previousTimestamp !== null && previousBucket !== null && bucket - previousBucket > 1) {
-      const gapTimestamp = previousTimestamp + intervalMs
-      looking.push({ x: gapTimestamp, y: null })
-      scheduling.push({ x: gapTimestamp, y: null })
+    pointsByBucket.set(Math.floor(point.timestamp / intervalMs), point)
+  }
+  const coverage = [...(response.coverage_buckets || [])]
+    .map(bucket => ({ ...bucket, timestamp: Date.parse(bucket.bucket_at) }))
+    .filter(bucket => Number.isFinite(bucket.timestamp))
+    .sort((a, b) => a.timestamp - b.timestamp)
+
+  const append = (
+    timestamp: number,
+    lookingValue: number | null,
+    schedulingValue: number | null,
+    partial = false,
+    observedAt?: number,
+  ) => {
+    const previous = looking.at(-1)
+    if (previous?.x === timestamp) {
+      previous.y = lookingValue
+      previous.partial = partial || undefined
+      previous.observedAt = observedAt
+      const previousScheduling = scheduling.at(-1)
+      if (previousScheduling) {
+        previousScheduling.y = schedulingValue
+        previousScheduling.partial = partial || undefined
+        previousScheduling.observedAt = observedAt
+      }
+      return
     }
-    looking.push({ x: point.timestamp, y: point.looking_count })
-    scheduling.push({ x: point.timestamp, y: point.scheduling_count })
-    previousTimestamp = point.timestamp
-    previousBucket = bucket
+    const metadata = {
+      ...(partial ? { partial: true } : {}),
+      ...(observedAt !== undefined ? { observedAt } : {}),
+    }
+    looking.push({ x: timestamp, y: lookingValue, ...metadata })
+    scheduling.push({ x: timestamp, y: schedulingValue, ...metadata })
+  }
+  const requestedEndMs = Date.parse(response.requested_coverage_end_at)
+  const generatedAtMs = Date.parse(response.generated_at)
+  const coverageEndMs = Math.min(
+    Number.isFinite(requestedEndMs) ? requestedEndMs : Number.POSITIVE_INFINITY,
+    Number.isFinite(generatedAtMs) ? generatedAtMs : Number.POSITIVE_INFINITY,
+  )
+
+  for (const bucket of coverage) {
+    if (bucket.expected_samples <= 0) continue
+    const bucketNumber = Math.floor(bucket.timestamp / intervalMs)
+    const point = pointsByBucket.get(bucketNumber)
+    const missing = bucket.observed_samples <= 0 || !point
+    if (missing) {
+      append(bucket.timestamp, null, null)
+      const bucketEnd = Math.min(bucket.timestamp + intervalMs - 1, coverageEndMs)
+      if (bucketEnd > bucket.timestamp) append(bucketEnd, null, null)
+      continue
+    }
+
+    const partial = bucket.partial || bucket.observed_samples < bucket.expected_samples
+    if (partial) {
+      append(point.timestamp - 1, null, null)
+    }
+    const observedAt = Date.parse(point.observed_at)
+    append(
+      point.timestamp,
+      point.looking_count,
+      point.scheduling_count,
+      partial,
+      Number.isFinite(observedAt) ? observedAt : undefined,
+    )
+    if (partial) {
+      const afterTimestamp = Math.min(bucket.timestamp + intervalMs - 1, coverageEndMs)
+      if (afterTimestamp > point.timestamp) append(afterTimestamp, null, null)
+    }
   }
 
   return { looking, scheduling }

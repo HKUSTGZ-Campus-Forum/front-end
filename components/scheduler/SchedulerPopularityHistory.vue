@@ -7,11 +7,14 @@ import type {
   SchedulerPopularityHistoryResponse,
 } from '~/utils/scheduler'
 import {
+  buildPopularityHistoryTableRows,
   buildPopularityHistorySeries,
+  getPopularityHistoryDisplaySamplingState,
   getNextPopularityHistoryRefreshDelay,
   getPopularityHistoryDataState,
   getPopularityHistoryWindow,
   SchedulerPopularityHistoryAccessError,
+  summarizePopularityHistoryCoverage,
 } from '~/utils/scheduler'
 
 const props = defineProps<{
@@ -61,11 +64,60 @@ const chartSeries = computed(() => response.value ? buildPopularityHistorySeries
 const sortedPoints = computed(() => [...(response.value?.points || [])].sort(
   (a, b) => Date.parse(a.sampled_at) - Date.parse(b.sampled_at),
 ))
-const tablePoints = computed(() => [...sortedPoints.value].reverse())
 const latestPoint = computed(() => sortedPoints.value.at(-1))
+const tableRows = computed(() => response.value ? buildPopularityHistoryTableRows(response.value) : [])
+function coverageStateLabel(
+  state: 'complete' | 'partial' | 'missing',
+  observed: number,
+  expected: number,
+) {
+  if (state === 'complete') {
+    return t('scheduler.popularityHistoryCoverageComplete', { observed, expected })
+  }
+  if (state === 'partial') {
+    return t('scheduler.popularityHistoryCoveragePartial', { observed, expected })
+  }
+  return t('scheduler.popularityHistoryCoverageMissing', { observed, expected })
+}
 const scopeLabel = computed(() => {
   if (!selectedSection.value) return t('scheduler.popularityHistoryCourseScope')
-  return uniqueSections.value.find(section => section.id === selectedSection.value)?.label || selectedSection.value
+  const section = uniqueSections.value.find(section => section.id === selectedSection.value)?.label || selectedSection.value
+  return t('scheduler.popularityHistorySectionScope', { section })
+})
+const scopeExplanation = computed(() => selectedSection.value
+  ? t('scheduler.popularityHistorySectionMeaning')
+  : t('scheduler.popularityHistoryCourseMeaning'))
+const displaySamplingState = computed(() => response.value
+  ? getPopularityHistoryDisplaySamplingState(response.value)
+  : 'not_started')
+const samplingStateLabel = computed(() => t({
+  not_started: 'scheduler.popularityHistorySamplingNotStarted',
+  fresh: 'scheduler.popularityHistorySamplingFresh',
+  stale: 'scheduler.popularityHistorySamplingStale',
+  ended_complete: 'scheduler.popularityHistorySamplingEndedComplete',
+  ended_incomplete: 'scheduler.popularityHistorySamplingEndedIncomplete',
+}[displaySamplingState.value]))
+const samplingStateTone = computed(() => {
+  if (displaySamplingState.value === 'fresh' || displaySamplingState.value === 'ended_complete') return 'good'
+  if (displaySamplingState.value === 'stale' || displaySamplingState.value === 'ended_incomplete') return 'warning'
+  return 'neutral'
+})
+const coverageSummary = computed(() => response.value
+  ? summarizePopularityHistoryCoverage(response.value)
+  : null)
+const coverageMessage = computed(() => {
+  const coverage = coverageSummary.value
+  if (!coverage || !coverage.hasIncompleteCoverage) return ''
+  if (coverage.trailingMissingBuckets > 0) {
+    return t('scheduler.popularityHistoryCoverageTrailingMissing', {
+      count: coverage.trailingMissingBuckets,
+    })
+  }
+  if (coverage.trailingPartial) return t('scheduler.popularityHistoryCoverageTrailingPartial')
+  return t('scheduler.popularityHistoryCoverageIncomplete', {
+    missing: coverage.missingBuckets,
+    partial: coverage.partialBuckets,
+  })
 })
 const titleId = computed(() => `popularity-history-${props.course?.course_code.replace(/\W/g, '') || 'course'}`)
 const descriptionId = computed(() => `${titleId.value}-description`)
@@ -323,6 +375,22 @@ onBeforeUnmount(() => {
 
           <main class="history__body">
             <p class="history__sr-only" role="status" aria-live="polite">{{ statusAnnouncement }}</p>
+            <template v-if="response && status !== 'loading' && status !== 'error'">
+              <div class="history__truth">
+                <span class="history__status" :class="`history__status--${samplingStateTone}`">
+                  {{ samplingStateLabel }}
+                </span>
+                <span v-if="response.latest_scheduled_sample_at">
+                  {{ t('scheduler.popularityHistoryLatestScheduledAt', { time: formatDateTime(response.latest_scheduled_sample_at) }) }}
+                </span>
+                <span v-if="response.latest_observed_sample_at">
+                  {{ t('scheduler.popularityHistoryLatestObservedAt', { time: formatDateTime(response.latest_observed_sample_at) }) }}
+                </span>
+              </div>
+              <p v-if="coverageMessage" class="history__coverage-warning" role="status">
+                {{ coverageMessage }}
+              </p>
+            </template>
             <div v-if="status === 'loading'" class="history__state">
               {{ t('scheduler.popularityHistoryLoading') }}
             </div>
@@ -342,8 +410,11 @@ onBeforeUnmount(() => {
                   scope: scopeLabel,
                   looking: latestPoint?.looking_count ?? 0,
                   scheduling: latestPoint?.scheduling_count ?? 0,
+                  scheduled: formatDateTime(latestPoint?.sampled_at || ''),
+                  observed: formatDateTime(latestPoint?.observed_at || ''),
                 }) }}
               </p>
+              <p class="history__scope-explanation">{{ scopeExplanation }}</p>
               <p class="history__sr-only">{{ t('scheduler.popularityHistoryChartLabel', { scope: scopeLabel }) }}</p>
               <div class="history__chart" aria-hidden="true">
                 <ClientOnly>
@@ -351,11 +422,21 @@ onBeforeUnmount(() => {
                     :series="chartSeries"
                     :looking-label="t('scheduler.popularityHistoryLooking')"
                     :scheduling-label="t('scheduler.popularityHistoryPlanning')"
+                    :accounts-label="t('scheduler.popularityHistoryAccountsAxis')"
+                    :scheduled-time-label="t('scheduler.popularityHistoryScheduledTime')"
+                    :observed-time-label="t('scheduler.popularityHistoryObservedTime')"
+                    :partial-label="t('scheduler.popularityHistoryPartialMarker')"
+                    :missing-label="t('scheduler.popularityHistoryMissingValue')"
                     :locale="locale"
                     :reduced-motion="reducedMotion"
                   />
                 </ClientOnly>
               </div>
+              <p class="history__chart-note">
+                {{ t('scheduler.popularityHistoryChartTiming') }}
+                <span class="history__partial-key" aria-hidden="true"></span>
+                {{ t('scheduler.popularityHistoryPartialLegend') }}
+              </p>
               <p class="history__meta">
                 {{ t('scheduler.popularityHistoryTimezone') }} ·
                 <template v-if="response.tracking_started_at">
@@ -363,31 +444,43 @@ onBeforeUnmount(() => {
                 </template>
                 {{ t('scheduler.popularityHistorySourceInterval', { minutes: Math.max(1, Math.round(response.source_interval_seconds / 60)) }) }} ·
                 {{ t('scheduler.popularityHistoryEffectiveInterval', { minutes: Math.max(1, Math.round(response.effective_interval_seconds / 60)) }) }} ·
+                {{ t('scheduler.popularityHistoryCoverageThrough', { time: formatDateTime(response.requested_coverage_end_at) }) }} ·
                 {{ t('scheduler.popularityHistoryGaps') }}
               </p>
-              <details class="history__data">
+            </template>
+            <details
+              v-if="response && tableRows.length > 0 && (status === 'ready' || status === 'empty')"
+              class="history__data"
+            >
                 <summary>{{ t('scheduler.popularityHistoryTableToggle') }}</summary>
                 <div class="history__table-wrap">
                   <table>
-                    <caption>{{ t('scheduler.popularityHistoryTableCaption', { count: tablePoints.length }) }}</caption>
+                    <caption>{{ t('scheduler.popularityHistoryTableCaption', { count: tableRows.length }) }}</caption>
                     <thead>
                       <tr>
-                        <th scope="col">{{ t('scheduler.popularityHistoryTime') }}</th>
+                        <th scope="col">{{ t('scheduler.popularityHistoryDisplayedInterval') }}</th>
+                        <th scope="col">{{ t('scheduler.popularityHistoryScheduledTime') }}</th>
+                        <th scope="col">{{ t('scheduler.popularityHistoryObservedTime') }}</th>
                         <th scope="col">{{ t('scheduler.popularityHistoryLooking') }}</th>
                         <th scope="col">{{ t('scheduler.popularityHistoryPlanning') }}</th>
+                        <th scope="col">{{ t('scheduler.popularityHistoryCoverageStatus') }}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="point in tablePoints" :key="point.sampled_at">
-                        <th scope="row">{{ formatDateTime(point.sampled_at) }}</th>
-                        <td>{{ point.looking_count }}</td>
-                        <td>{{ point.scheduling_count }}</td>
+                      <tr v-for="row in tableRows" :key="row.bucket_at">
+                        <th scope="row">{{ formatDateTime(row.bucket_at) }}</th>
+                        <td>{{ row.point ? formatDateTime(row.point.sampled_at) : '—' }}</td>
+                        <td>{{ row.point ? formatDateTime(row.point.observed_at) : '—' }}</td>
+                        <td>{{ row.point?.looking_count ?? '—' }}</td>
+                        <td>{{ row.point?.scheduling_count ?? '—' }}</td>
+                        <td>
+                          {{ coverageStateLabel(row.state, row.observed_samples, row.expected_samples) }}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-              </details>
-            </template>
+            </details>
           </main>
         </section>
       </div>
@@ -457,7 +550,15 @@ onBeforeUnmount(() => {
   &__state--error { color: var(--semantic-error); }
   &__state button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--interactive-primary); color: var(--text-inverse); cursor: pointer; font-weight: 700; }
   &__summary { margin: 0 0 10px; color: var(--text-secondary); font-size: 0.84rem; line-height: 1.5; }
+  &__scope-explanation { margin: -4px 0 12px; color: var(--text-secondary); font-size: 0.76rem; line-height: 1.5; }
+  &__truth { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; margin-bottom: 10px; color: var(--text-secondary); font-size: 0.75rem; line-height: 1.4; }
+  &__status { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 9px; border: 1px solid var(--border-secondary); border-radius: 999px; background: var(--surface-secondary); color: var(--text-secondary); font-weight: 800; }
+  &__status--good { border-color: color-mix(in srgb, var(--semantic-success) 35%, var(--border-secondary)); background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary)); color: color-mix(in srgb, var(--semantic-success) 76%, var(--text-primary)); }
+  &__status--warning { border-color: color-mix(in srgb, var(--semantic-warning) 40%, var(--border-secondary)); background: color-mix(in srgb, var(--semantic-warning) 11%, var(--surface-primary)); color: color-mix(in srgb, var(--semantic-warning) 68%, var(--text-primary)); }
+  &__coverage-warning { margin: 8px 0 12px; padding: 9px 11px; border-left: 3px solid var(--semantic-warning); border-radius: 6px; background: color-mix(in srgb, var(--semantic-warning) 9%, transparent); color: var(--text-primary); font-size: 0.76rem; line-height: 1.5; }
   &__chart { min-height: 320px; }
+  &__chart-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 0; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; }
+  &__partial-key { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border: 2px solid #92400e; border-radius: 50%; background: var(--surface-primary); }
   &__meta { margin: 8px 0 0; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; }
   &__data { margin-top: 14px; border-top: 1px solid var(--border-secondary); padding-top: 12px; }
   &__data summary { color: var(--interactive-active); cursor: pointer; font-size: 0.8rem; font-weight: 700; }
