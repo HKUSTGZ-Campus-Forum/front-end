@@ -18,6 +18,8 @@ const productionPm2Config = readFileSync(
   resolve(root, "deploy/ecosystem.prod.config.cjs"),
   "utf8",
 );
+const legacyProductionPm2Config = readFileSync(resolve(root, "ecosystem.config.js"), "utf8");
+const deployReadme = readFileSync(resolve(root, "deploy/README.md"), "utf8");
 const knownHostsPath = resolve(root, "deploy/ssh_known_hosts");
 
 describe("atomic frontend deployment", () => {
@@ -109,6 +111,31 @@ describe("atomic frontend deployment", () => {
     expect(productionWorkflow).toContain('lock_uid=$(stat -c \'%u\' -- "$lock_path")');
     expect(productionWorkflow).toContain('lock_links=$(stat -c \'%h\' -- "$lock_path")');
     expect(productionWorkflow).toContain('[[ -f "$lock_path" && ! -L "$lock_path" ]]');
+    expect(productionWorkflow).toContain("pm2_log_root=/var/unikorn/prod_pm2_log");
+    expect(productionWorkflow).toContain(
+      '[[ -d "$pm2_log_root" && ! -L "$pm2_log_root" && -w "$pm2_log_root" ]]',
+    );
+    expect(productionWorkflow).toContain("for log_name in pm2-out.log pm2-error.log");
+    expect(productionWorkflow).toContain(
+      '[[ -f "$log_path" && ! -L "$log_path" && -w "$log_path" ]]',
+    );
+    expect(productionWorkflow).toContain("pm2_log_root_uid=$(stat -c '%u' -- \"$pm2_log_root\")");
+    expect(productionWorkflow).toContain("pm2_log_root_mode=$(stat -c '%a' -- \"$pm2_log_root\")");
+    expect(productionWorkflow).toContain("(( (8#$pm2_log_root_mode & 0022) != 0 ))");
+    expect(productionWorkflow).toContain("log_uid=$(stat -c '%u' -- \"$log_path\")");
+    expect(productionWorkflow).toContain("log_links=$(stat -c '%h' -- \"$log_path\")");
+    expect(productionWorkflow).toContain("validate_legacy_log_targets");
+    expect(productionWorkflow).toContain('[[ -f "$legacy_config" && ! -L "$legacy_config" ]]');
+    expect(productionWorkflow).toContain(
+      '$(readlink -- "$current_link") == "releases/legacy-in-place"',
+    );
+    expect(productionWorkflow).toContain('cmp -s -- "$legacy_config" "$frozen_legacy_config"');
+    expect(productionWorkflow).toContain(
+      'app.error_file !== "/var/unikorn/prod_pm2_log/pm2-error.log"',
+    );
+    expect(productionWorkflow).toContain(
+      'app.out_file !== "/var/unikorn/prod_pm2_log/pm2-out.log"',
+    );
     expect(productionWorkflow).toContain('[[ -d "$incoming_root" && ! -L "$incoming_root" ]]');
     expect(productionWorkflow).toContain('[[ $(dirname -- "$staging_dir") == "$incoming_root" ]]');
     expect(productionWorkflow).toContain('mkdir -- "$staging_dir"');
@@ -134,12 +161,22 @@ describe("atomic frontend deployment", () => {
     expect(productionWorkflow).toContain('payload.version !== expected');
     expect(productionWorkflow).not.toContain("appleboy/");
     expect(productionWorkflow).not.toMatch(/mv \/data\/prod_unikorn\/front-end\/\.output/);
+    expect(productionWorkflow).not.toMatch(/tar -czf - [^\n]*ecosystem\.config\.js/);
 
     expect(productionPm2Config).toContain('instances: "max"');
     expect(productionPm2Config).toContain('exec_mode: "cluster"');
     expect(productionPm2Config).toContain('HOST: "0.0.0.0"');
-    expect(productionPm2Config).toContain('error_file: "/var/unikorn/prod_log/pm2-error.log"');
-    expect(productionPm2Config).toContain('out_file: "/var/unikorn/prod_log/pm2-out.log"');
+    expect(productionPm2Config).toContain(
+      'error_file: "/var/unikorn/prod_pm2_log/pm2-error.log"',
+    );
+    expect(productionPm2Config).toContain(
+      'out_file: "/var/unikorn/prod_pm2_log/pm2-out.log"',
+    );
+    expect(legacyProductionPm2Config).toContain("'/var/unikorn/prod_pm2_log/pm2-error.log'");
+    expect(legacyProductionPm2Config).toContain("'/var/unikorn/prod_pm2_log/pm2-out.log'");
+    expect(deployReadme).toContain("`/var/unikorn/prod_pm2_log`");
+    expect(productionPm2Config).not.toContain("/var/unikorn/prod_log/");
+    expect(legacyProductionPm2Config).not.toContain("/var/unikorn/prod_log/");
   });
 
   it("opens release roots and the deployment lock without following symlinks", () => {
@@ -152,6 +189,15 @@ describe("atomic frontend deployment", () => {
     expect(lockHelper).toContain('os.open(".deploy.lock", flags, 0o600, dir_fd=root_fd)');
     expect(lockHelper).toContain("close_fds=True");
     expect(lockHelper).toContain("os.fchmod(lock_fd, 0o600)");
+    expect(controller).toContain(
+      'expected_error_file="/var/unikorn/prod_pm2_log/pm2-error.log"',
+    );
+    expect(controller).toContain(
+      'expected_out_file="/var/unikorn/prod_pm2_log/pm2-out.log"',
+    );
+    expect(controller).toContain('typeof app.error_file !== "string"');
+    expect(controller).toContain('typeof app.out_file !== "string"');
+    expect(controller).toContain('"$staging_dir/$pm2_config_relative"');
     expect(controller).not.toMatch(/exec [0-9]+<>/);
   });
 

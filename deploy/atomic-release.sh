@@ -358,18 +358,36 @@ validate_pm2_config() {
   local expected_mode=$4
   local expected_instances=$5
   local expected_release_sha=$6
+  local expected_error_file=""
+  local expected_out_file=""
+
+  if [[ "$pm2_config_relative" == "deploy/ecosystem.prod.config.cjs" ]]; then
+    expected_error_file="/var/unikorn/prod_pm2_log/pm2-error.log"
+    expected_out_file="/var/unikorn/prod_pm2_log/pm2-out.log"
+  fi
 
   node --check "$config_path" >/dev/null || return 1
   CAMPUS_FRONTEND_ROOT="$app_root" \
     CAMPUS_FRONTEND_PORT="$port" \
     CAMPUS_FRONTEND_PM2_APP="$pm2_app" \
     CAMPUS_FRONTEND_RELEASE_SHA="$expected_release_sha" \
-    node - "$config_path" "$pm2_app" "$expected_script" "$expected_cwd" "$port" "$expected_mode" "$expected_instances" "$expected_release_sha" <<'NODE'
+    node - "$config_path" "$pm2_app" "$expected_script" "$expected_cwd" "$port" "$expected_mode" "$expected_instances" "$expected_release_sha" "$expected_error_file" "$expected_out_file" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const [configPath, appName, expectedScript, expectedCwd, expectedPort, expectedMode, expectedInstances, expectedReleaseSha] = process.argv.slice(2);
+const [
+  configPath,
+  appName,
+  expectedScript,
+  expectedCwd,
+  expectedPort,
+  expectedMode,
+  expectedInstances,
+  expectedReleaseSha,
+  expectedErrorFile,
+  expectedOutFile,
+] = process.argv.slice(2);
 const moduleRecord = { exports: {} };
 const source = fs.readFileSync(configPath, "utf8");
 vm.runInNewContext(source, {
@@ -394,6 +412,11 @@ if (cwd !== expectedCwd || script !== expectedScript) process.exit(4);
 if (String(app.env?.PORT) !== expectedPort || app.env?.NODE_ENV !== "production") process.exit(5);
 if (app.exec_mode !== expectedMode || String(app.instances) !== expectedInstances) process.exit(6);
 if (expectedReleaseSha !== "legacy" && app.env?.CAMPUS_FRONTEND_RELEASE_SHA !== undefined && app.env.CAMPUS_FRONTEND_RELEASE_SHA !== expectedReleaseSha) process.exit(7);
+if (expectedErrorFile || expectedOutFile) {
+  if (!expectedErrorFile || !expectedOutFile) process.exit(8);
+  if (typeof app.error_file !== "string" || app.error_file !== expectedErrorFile) process.exit(8);
+  if (typeof app.out_file !== "string" || app.out_file !== expectedOutFile) process.exit(9);
+}
 NODE
 }
 
@@ -662,6 +685,21 @@ if [[ -n "$previous_target" ]]; then
       die "could not verify the current release health identity before deployment"
   fi
 fi
+
+new_mode="fork"
+new_instances="1"
+if [[ "$pm2_config_relative" == "deploy/ecosystem.prod.config.cjs" ]]; then
+  new_mode="cluster"
+  new_instances="max"
+fi
+validate_pm2_config \
+  "$staging_dir/$pm2_config_relative" \
+  "$app_root/current/.output/server/index.mjs" \
+  "$app_root/current" \
+  "$new_mode" \
+  "$new_instances" \
+  "$expected_sha" || die "staged PM2 config is invalid"
+
 printf '%s\n' "$expected_sha" > "$staging_dir/.release-complete"
 mv -- "$staging_dir" "$release_dir"
 release_target="releases/$release_id"
@@ -670,12 +708,6 @@ config_path="$release_dir/$pm2_config_relative"
 activation_committed=true
 activate "$release_target"
 
-new_mode="fork"
-new_instances="1"
-if [[ "$pm2_config_relative" == "deploy/ecosystem.prod.config.cjs" ]]; then
-  new_mode="cluster"
-  new_instances="max"
-fi
 if ! reload_app "$config_path" "$new_mode" "$new_instances" "$expected_sha"; then
   pm2 logs "$pm2_app" --nostream --lines 100 || true
   perform_rollback ||

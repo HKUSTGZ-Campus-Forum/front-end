@@ -8,7 +8,8 @@ switches the `current` symlink.
 
 PM2 always starts `current/.output/server/index.mjs`. Development uses one fork
 process on port 3001; production preserves its historical `max` cluster on port
-3000, public bind address, and `/var/unikorn/prod_log` paths. A deployment
+3000 and public bind address, and writes through the deployment-owned
+`/var/unikorn/prod_pm2_log` paths managed by the PM2 logrotate policy. A deployment
 succeeds only when every PM2 process reports the immutable Git SHA and repeated
 `/health` probes identify that same SHA. Production also requires the public
 HTTPS health endpoint to report that SHA and its root and planner routes to be

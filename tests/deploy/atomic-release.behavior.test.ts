@@ -79,6 +79,23 @@ function createLegacyConfig(appRoot: string) {
   );
 }
 
+function createProductionLegacyConfig(appRoot: string, logRoot = "/var/unikorn/prod_pm2_log") {
+  writeFileSync(join(appRoot, "package.json"), '{"type":"module"}\n');
+  writeFileSync(
+    join(appRoot, "ecosystem.config.js"),
+    `module.exports = { apps: [{
+      name: "prod-unikorn-frontend",
+      script: ${JSON.stringify(join(appRoot, ".output", "server", "index.mjs"))},
+      cwd: ${JSON.stringify(appRoot)},
+      instances: "max",
+      exec_mode: "cluster",
+      env: { PORT: "3000", NODE_ENV: "production" },
+      error_file: ${JSON.stringify(`${logRoot}/pm2-error.log`)},
+      out_file: ${JSON.stringify(`${logRoot}/pm2-out.log`)},
+    }] };\n`,
+  );
+}
+
 function createProductionRelease(appRoot: string, sha: string, run: number, attempt: number) {
   const releaseId = createRelease(appRoot, sha, run, attempt);
   cpSync(
@@ -407,6 +424,67 @@ describe("atomic release controller behavior", () => {
     expect(readFileSync(result.pm2Log, "utf8")).toContain(
       "ecosystem.prod.config.cjs --only prod-unikorn-frontend --update-env",
     );
+  }, 40_000);
+
+  it("rejects noncanonical production log targets before activating a candidate", () => {
+    const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-production-logs-"));
+    const releaseId = createProductionRelease(appRoot, shaB, 118, 1);
+    const configPath = join(
+      appRoot,
+      ".incoming",
+      releaseId,
+      "deploy",
+      "ecosystem.prod.config.cjs",
+    );
+    writeFileSync(
+      configPath,
+      readFileSync(configPath, "utf8").replaceAll(
+        "/var/unikorn/prod_pm2_log/",
+        "/var/unikorn/prod_log/",
+      ),
+    );
+    writeManifest(
+      join(appRoot, ".incoming", releaseId),
+      join(appRoot, ".incoming", releaseId, "deploy", "release.sha256"),
+    );
+
+    const result = runController(appRoot, releaseId, shaB, shaB, "", {
+      app: "prod-unikorn-frontend",
+      port: "3000",
+      config: "deploy/ecosystem.prod.config.cjs",
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("staged PM2 config is invalid");
+    expect(existsSync(join(appRoot, "current"))).toBe(false);
+    expect(readFileSync(result.pm2Log, "utf8")).not.toContain("delete prod-unikorn-frontend");
+  }, 40_000);
+
+  it("rejects unsafe frozen legacy log targets before replacing the running process", () => {
+    const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-legacy-logs-"));
+    const legacyScript = join(appRoot, ".output", "server", "index.mjs");
+    mkdirSync(join(appRoot, ".output", "server"), { recursive: true });
+    mkdirSync(join(appRoot, "releases"), { recursive: true });
+    writeFileSync(legacyScript, "export default {};\n");
+    createProductionLegacyConfig(appRoot, "/var/unikorn/prod_log");
+    cpSync(
+      join(appRoot, "ecosystem.config.js"),
+      join(appRoot, "releases", "legacy-ecosystem.config.cjs"),
+    );
+    symlinkSync(appRoot, join(appRoot, "releases", "legacy-in-place"));
+    symlinkSync("releases/legacy-in-place", join(appRoot, "current"));
+    const releaseId = createProductionRelease(appRoot, shaB, 119, 1);
+
+    const result = runController(appRoot, releaseId, shaB, shaB, legacyScript, {
+      app: "prod-unikorn-frontend",
+      port: "3000",
+      config: "deploy/ecosystem.prod.config.cjs",
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("legacy PM2 config does not match");
+    expect(readlinkSync(join(appRoot, "current"))).toBe("releases/legacy-in-place");
+    expect(readFileSync(result.pm2Log, "utf8")).not.toContain("delete prod-unikorn-frontend");
   }, 40_000);
 
   it("rejects a partial production max cluster even when every surviving worker is healthy", () => {
