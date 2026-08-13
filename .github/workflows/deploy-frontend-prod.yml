@@ -131,14 +131,36 @@ jobs:
           source "$NVM_DIR/nvm.sh"
           nvm use 20
 
-          for command_name in curl node pm2 python3 sha256sum tar; do
+          for command_name in curl node pm2 python3 sha256sum stat tar; do
             command -v "$command_name" >/dev/null
           done
-          [[ -d /data/prod_unikorn/front-end && -w /data/prod_unikorn/front-end ]]
-          [[ -f /data/prod_unikorn/front-end/ecosystem.config.js ]]
+          app_root=/data/prod_unikorn/front-end
+          deploy_uid=$(id -u)
+          [[ -d "$app_root" && ! -L "$app_root" && -w "$app_root" ]]
+          app_root_uid=$(stat -c '%u' -- "$app_root")
+          if [[ "$app_root_uid" != "$deploy_uid" ]]; then
+            echo "Production frontend APP_ROOT must be owned by the deployment account (expected UID $deploy_uid, found $app_root_uid)" >&2
+            exit 1
+          fi
+
+          lock_path="$app_root/.deploy.lock"
+          if [[ -e "$lock_path" || -L "$lock_path" ]]; then
+            [[ -f "$lock_path" && ! -L "$lock_path" ]] || {
+              echo "Production frontend deployment lock must be a regular file" >&2
+              exit 1
+            }
+            lock_uid=$(stat -c '%u' -- "$lock_path")
+            lock_links=$(stat -c '%h' -- "$lock_path")
+            if [[ "$lock_uid" != "$deploy_uid" || "$lock_links" != "1" ]]; then
+              echo "Production frontend deployment lock must be owned by UID $deploy_uid and have one hard link" >&2
+              exit 1
+            fi
+          fi
+
+          [[ -f "$app_root/ecosystem.config.js" ]]
           [[ -d /var/unikorn/prod_log && -w /var/unikorn/prod_log ]]
-          [[ $(df -Pk /data/prod_unikorn/front-end | awk 'NR == 2 { print $4 }') =~ ^[0-9]+$ ]]
-          (( $(df -Pk /data/prod_unikorn/front-end | awk 'NR == 2 { print $4 }') >= 1048576 ))
+          [[ $(df -Pk "$app_root" | awk 'NR == 2 { print $4 }') =~ ^[0-9]+$ ]]
+          (( $(df -Pk "$app_root" | awk 'NR == 2 { print $4 }') >= 1048576 ))
           pm2 jlist >/dev/null
           curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/ >/dev/null
           if command -v ss >/dev/null 2>&1; then

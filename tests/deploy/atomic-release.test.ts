@@ -102,6 +102,13 @@ describe("atomic frontend deployment", () => {
     expect(productionWorkflow).toContain(
       'remote_staging="/data/prod_unikorn/front-end/.incoming/$RELEASE_ID"',
     );
+    expect(productionWorkflow).toContain("app_root=/data/prod_unikorn/front-end");
+    expect(productionWorkflow).toContain("deploy_uid=$(id -u)");
+    expect(productionWorkflow).toContain("app_root_uid=$(stat -c '%u' -- \"$app_root\")");
+    expect(productionWorkflow).toContain('lock_path="$app_root/.deploy.lock"');
+    expect(productionWorkflow).toContain('lock_uid=$(stat -c \'%u\' -- "$lock_path")');
+    expect(productionWorkflow).toContain('lock_links=$(stat -c \'%h\' -- "$lock_path")');
+    expect(productionWorkflow).toContain('[[ -f "$lock_path" && ! -L "$lock_path" ]]');
     expect(productionWorkflow).toContain('[[ -d "$incoming_root" && ! -L "$incoming_root" ]]');
     expect(productionWorkflow).toContain('[[ $(dirname -- "$staging_dir") == "$incoming_root" ]]');
     expect(productionWorkflow).toContain('mkdir -- "$staging_dir"');
