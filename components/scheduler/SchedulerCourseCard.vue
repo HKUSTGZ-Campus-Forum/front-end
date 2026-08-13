@@ -15,12 +15,13 @@ const props = defineProps<{
   popularity?: IndexedSchedulerCoursePopularity
   showPopularity: boolean
   showPopularityHistory: boolean
+  mutationsDisabled: boolean
 }>()
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  (e: 'toggle-course', code: string, enabled: boolean): void
-  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
+  (e: 'toggle-course', code: string, currentEnabled: boolean): void
+  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
   (e: 'show-popularity-history', code: string): void
@@ -38,7 +39,7 @@ function getSectionLabel(section: SchedulerSection): string {
 
 <template>
   <div class="course-card" :class="{ 'course-card--disabled': !course.enabled }">
-    <div class="course-card__header" @click="emit('toggle-course', course.course_code, !course.enabled)">
+    <div class="course-card__header" @click="!mutationsDisabled && emit('toggle-course', course.course_code, course.enabled)">
       <div class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
       <div class="course-card__info">
         <div class="course-card__code">{{ course.course_code }}</div>
@@ -71,8 +72,8 @@ function getSectionLabel(section: SchedulerSection): string {
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
         <div class="course-card__layer-header">
           <span>{{ t('scheduler.layer', { layer }) }}</span>
-          <button type="button" class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
-          <button type="button" class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
+          <button type="button" class="course-card__layer-btn" :disabled="mutationsDisabled" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
+          <button type="button" class="course-card__layer-btn" :disabled="mutationsDisabled" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
         </div>
         <div class="course-card__bundle-row">
           <button
@@ -84,7 +85,8 @@ function getSectionLabel(section: SchedulerSection): string {
               'course-card__bundle--selected': currentSelection?.[Number(layer)] === bundle.id,
             }"
             type="button"
-            @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), !bundle.enabled)"
+            :disabled="mutationsDisabled"
+            @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), bundle.enabled)"
           >
             <template v-if="showPopularity && popularity">
               <span

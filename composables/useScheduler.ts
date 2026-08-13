@@ -18,25 +18,31 @@ export function useScheduler() {
     return resp.json()
   }
 
-  async function searchCourses(query: string, semester: string, page = 1, pageSize = 8): Promise<SearchResponse> {
+  async function searchCourses(
+    query: string,
+    semester: string,
+    page = 1,
+    pageSize = 8,
+    signal?: AbortSignal,
+  ): Promise<SearchResponse> {
     const params = new URLSearchParams({ query, page: String(page), pageSize: String(pageSize) })
     if (semester) params.set('semester', semester)
-    const resp = await fetchPublic(`/api/scheduler/courses/search?${params}`)
+    const resp = await fetchPublic(`/api/scheduler/courses/search?${params}`, { signal })
     if (!resp.ok) throw new Error('Search failed')
     return resp.json()
   }
 
-  async function getSubjects(semester: string): Promise<SchedulerSubject[]> {
+  async function getSubjects(semester: string, signal?: AbortSignal): Promise<SchedulerSubject[]> {
     const params = new URLSearchParams()
     if (semester) params.set('semester', semester)
     const query = params.toString()
-    const resp = await fetchPublic(`/api/scheduler/subjects${query ? `?${query}` : ''}`)
+    const resp = await fetchPublic(`/api/scheduler/subjects${query ? `?${query}` : ''}`, { signal })
     if (!resp.ok) throw new Error('Subjects failed')
     return resp.json()
   }
 
-  async function getCourseDetail(code: string, semester: string): Promise<CourseDetail> {
-    const resp = await fetchPublic(`/api/scheduler/courses/${code}?semester=${semester}`)
+  async function getCourseDetail(code: string, semester: string, signal?: AbortSignal): Promise<CourseDetail> {
+    const resp = await fetchPublic(`/api/scheduler/courses/${code}?semester=${semester}`, { signal })
     if (!resp.ok) throw new Error('Course not found')
     return resp.json()
   }

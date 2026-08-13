@@ -2,7 +2,10 @@
 import { computed } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
-import type { SchedulerPopularityHistorySeries } from '~/utils/scheduler'
+import {
+  formatPopularityHistoryTooltipValue,
+  type SchedulerPopularityHistorySeries,
+} from '~/utils/scheduler'
 
 const props = defineProps<{
   series: SchedulerPopularityHistorySeries
@@ -10,6 +13,11 @@ const props = defineProps<{
   schedulingLabel: string
   locale: string
   reducedMotion: boolean
+  accountsLabel: string
+  scheduledTimeLabel: string
+  observedTimeLabel: string
+  partialLabel: string
+  missingLabel: string
 }>()
 
 function formatShanghaiTime(timestamp: number): string {
@@ -28,6 +36,18 @@ const chartSeries = computed(() => [
   { name: props.schedulingLabel, data: props.series.scheduling },
 ])
 
+const partialMarkers = computed(() => [props.series.looking, props.series.scheduling].flatMap(
+  (series, seriesIndex) => series.flatMap((point, dataPointIndex) => point.partial && point.y !== null
+    ? [{
+        seriesIndex,
+        dataPointIndex,
+        fillColor: '#ffffff',
+        strokeColor: '#92400e',
+        size: 5,
+      }]
+    : []),
+))
+
 const chartOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'line',
@@ -43,7 +63,11 @@ const chartOptions = computed<ApexOptions>(() => ({
     width: [2, 2.5],
     dashArray: [7, 0],
   },
-  markers: { size: 0, hover: { sizeOffset: 3 } },
+  markers: {
+    size: 0,
+    discrete: partialMarkers.value,
+    hover: { sizeOffset: 3 },
+  },
   legend: {
     position: 'top',
     horizontalAlign: 'left',
@@ -67,11 +91,31 @@ const chartOptions = computed<ApexOptions>(() => ({
       formatter: value => String(Math.max(0, Math.round(value))),
       style: { colors: 'var(--text-secondary)' },
     },
+    title: {
+      text: props.accountsLabel,
+      style: { color: 'var(--text-secondary)' },
+    },
   },
   tooltip: {
     shared: true,
     intersect: false,
-    x: { formatter: value => formatShanghaiTime(Number(value)) },
+    x: {
+      formatter: value => `${props.scheduledTimeLabel}: ${formatShanghaiTime(Number(value))}`,
+    },
+    y: {
+      formatter: (value, context) => {
+        const point = context?.w?.config?.series?.[context.seriesIndex]?.data?.[context.dataPointIndex]
+        const pointValue = point && typeof point === 'object' && 'y' in point ? point.y : value
+        const formattedValue = formatPopularityHistoryTooltipValue(pointValue, props.missingLabel)
+        if (formattedValue === props.missingLabel) return formattedValue
+        const details = [formattedValue]
+        if (Number.isFinite(point?.observedAt)) {
+          details.push(`${props.observedTimeLabel}: ${formatShanghaiTime(point.observedAt)}`)
+        }
+        if (point?.partial) details.push(props.partialLabel)
+        return details.join(' · ')
+      },
+    },
   },
   grid: {
     borderColor: 'var(--border-primary)',

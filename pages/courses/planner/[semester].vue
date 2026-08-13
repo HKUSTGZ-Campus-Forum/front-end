@@ -8,7 +8,7 @@ const { getCart } = useScheduler()
 const { isLoggedIn, authInitialized } = useAuth()
 
 const semesterId = route.params.semester as string
-const { courseList, loading } = useSchedulerCartLoader({
+const { courseList, loading, loadError, reload } = useSchedulerCartLoader({
   semesterId,
   authInitialized,
   isLoggedIn,
@@ -22,5 +22,7 @@ const { courseList, loading } = useSchedulerCartLoader({
     :initial-course-list="courseList"
     :is-logged-in="isLoggedIn"
     :loading="loading"
+    :cart-load-error="loadError"
+    @retry-cart-load="reload"
   />
 </template>

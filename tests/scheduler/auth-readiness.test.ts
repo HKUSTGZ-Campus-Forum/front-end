@@ -36,7 +36,7 @@ describe('scheduler authentication readiness', () => {
     const authInitialized = ref(true)
     const isLoggedIn = ref(true)
     const getCart = vi.fn(() => pendingCart)
-    const { courseList, loading } = useSchedulerCartLoader({
+    const { courseList, loading, loadError } = useSchedulerCartLoader({
       semesterId: '2540',
       authInitialized,
       isLoggedIn,
@@ -50,11 +50,70 @@ describe('scheduler authentication readiness', () => {
     await nextTick()
     expect(courseList.value).toEqual([])
     expect(loading.value).toBe(false)
+    expect(loadError.value).toBe(false)
 
     resolveCart([{ course_code: 'TEST1001' } as CartCourse])
     await pendingCart
     await nextTick()
 
     expect(courseList.value).toEqual([])
+    expect(loadError.value).toBe(false)
+  })
+
+  it('surfaces cart load failures and clears the error after a successful retry', async () => {
+    const restoredCart = [{ course_code: 'TEST1001' } as CartCourse]
+    const authInitialized = ref(true)
+    const isLoggedIn = ref(true)
+    const getCart = vi.fn()
+      .mockRejectedValueOnce(new Error('network failed'))
+      .mockResolvedValueOnce(restoredCart)
+    const { courseList, loading, loadError, reload } = useSchedulerCartLoader({
+      semesterId: '2540',
+      authInitialized,
+      isLoggedIn,
+      getCart,
+    })
+
+    await vi.waitFor(() => expect(loading.value).toBe(false))
+    expect(loadError.value).toBe(true)
+    expect(courseList.value).toEqual([])
+
+    reload()
+    await vi.waitFor(() => expect(getCart).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(loading.value).toBe(false))
+
+    expect(loadError.value).toBe(false)
+    expect(courseList.value).toEqual(restoredCart)
+  })
+
+  it('ignores an older cart failure after a retry succeeds', async () => {
+    let rejectFirst!: (error: Error) => void
+    const firstRequest = new Promise<CartCourse[]>((_resolve, reject) => {
+      rejectFirst = reject
+    })
+    const restoredCart = [{ course_code: 'TEST1002' } as CartCourse]
+    const authInitialized = ref(true)
+    const isLoggedIn = ref(true)
+    const getCart = vi.fn()
+      .mockReturnValueOnce(firstRequest)
+      .mockResolvedValueOnce(restoredCart)
+    const { courseList, loading, loadError, reload } = useSchedulerCartLoader({
+      semesterId: '2540',
+      authInitialized,
+      isLoggedIn,
+      getCart,
+    })
+
+    reload()
+    await vi.waitFor(() => expect(getCart).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(loading.value).toBe(false))
+    expect(courseList.value).toEqual(restoredCart)
+
+    rejectFirst(new Error('stale failure'))
+    await firstRequest.catch(() => undefined)
+    await nextTick()
+
+    expect(loadError.value).toBe(false)
+    expect(courseList.value).toEqual(restoredCart)
   })
 })
