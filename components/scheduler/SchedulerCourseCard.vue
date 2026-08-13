@@ -14,14 +14,17 @@ const props = defineProps<{
   currentSelection?: Record<number, number>
   popularity?: IndexedSchedulerCoursePopularity
   showPopularity: boolean
+  showPopularityHistory: boolean
+  mutationsDisabled: boolean
 }>()
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  (e: 'toggle-course', code: string, enabled: boolean): void
-  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
+  (e: 'toggle-course', code: string, currentEnabled: boolean): void
+  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
+  (e: 'show-popularity-history', code: string): void
 }>()
 
 function getBundleLabel(bundle: BundleData): string {
@@ -36,7 +39,7 @@ function getSectionLabel(section: SchedulerSection): string {
 
 <template>
   <div class="course-card" :class="{ 'course-card--disabled': !course.enabled }">
-    <div class="course-card__header" @click="emit('toggle-course', course.course_code, !course.enabled)">
+    <div class="course-card__header" @click="!mutationsDisabled && emit('toggle-course', course.course_code, course.enabled)">
       <div class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
       <div class="course-card__info">
         <div class="course-card__code">{{ course.course_code }}</div>
@@ -51,6 +54,15 @@ function getSectionLabel(section: SchedulerSection): string {
       <button class="course-card__detail" type="button" @click.stop="emit('show-info', course.course_code)">
         {{ t('scheduler.details') }}
       </button>
+      <button
+        v-if="showPopularityHistory"
+        class="course-card__history"
+        type="button"
+        :aria-label="t('scheduler.popularityHistoryOpenFor', { course: course.course_code })"
+        @click.stop="emit('show-popularity-history', course.course_code)"
+      >
+        {{ t('scheduler.popularityHistoryButton') }}
+      </button>
     </div>
 
     <div
@@ -60,8 +72,8 @@ function getSectionLabel(section: SchedulerSection): string {
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
         <div class="course-card__layer-header">
           <span>{{ t('scheduler.layer', { layer }) }}</span>
-          <button type="button" class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
-          <button type="button" class="course-card__layer-btn" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
+          <button type="button" class="course-card__layer-btn" :disabled="mutationsDisabled" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
+          <button type="button" class="course-card__layer-btn" :disabled="mutationsDisabled" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
         </div>
         <div class="course-card__bundle-row">
           <button
@@ -73,7 +85,8 @@ function getSectionLabel(section: SchedulerSection): string {
               'course-card__bundle--selected': currentSelection?.[Number(layer)] === bundle.id,
             }"
             type="button"
-            @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), !bundle.enabled)"
+            :disabled="mutationsDisabled"
+            @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), bundle.enabled)"
           >
             <template v-if="showPopularity && popularity">
               <span
@@ -179,6 +192,23 @@ function getSectionLabel(section: SchedulerSection): string {
     &:hover {
       border-color: color-mix(in srgb, var(--interactive-primary) 28%, transparent);
       color: var(--interactive-active);
+    }
+  }
+
+  &__history {
+    flex-shrink: 0;
+    min-height: 30px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, var(--border-secondary));
+    border-radius: 999px;
+    background: var(--surface-primary);
+    color: var(--interactive-active);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    &:hover {
+      background: color-mix(in srgb, var(--interactive-primary) 8%, var(--surface-primary));
     }
   }
 
@@ -299,7 +329,8 @@ function getSectionLabel(section: SchedulerSection): string {
     }
 
     &__credits,
-    &__detail {
+    &__detail,
+    &__history {
       order: 2;
     }
   }

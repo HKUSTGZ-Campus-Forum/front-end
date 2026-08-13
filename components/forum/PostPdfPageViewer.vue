@@ -52,6 +52,8 @@ const pdfDoc = shallowRef<
 >(null);
 
 let pdfjsModule: typeof import("pdfjs-dist") | null = null;
+let pdfLoadingTask: import("pdfjs-dist").PDFDocumentLoadingTask | null = null;
+let pdfLoadSequence = 0;
 
 function isPublicViewUrl(url: string): boolean {
   if (!import.meta.client || !url?.trim()) return false;
@@ -114,10 +116,26 @@ async function fetchPdfData(): Promise<Uint8Array> {
   return new Uint8Array(buf);
 }
 
+async function destroyPdfTask(): Promise<void> {
+  const task = pdfLoadingTask;
+  pdfLoadingTask = null;
+  pdfDoc.value = null;
+  if (task) {
+    try {
+      await task.destroy();
+    } catch {
+      // Cleanup is best-effort; a failed loading task may already be torn down.
+    }
+  }
+}
+
 async function loadAndRender() {
+  const loadSequence = ++pdfLoadSequence;
+  await destroyPdfTask();
+  if (loadSequence !== pdfLoadSequence) return;
+
   errorMsg.value = "";
   loading.value = true;
-  pdfDoc.value = null;
   pageNum.value = 1;
   totalPages.value = 0;
 
@@ -142,7 +160,12 @@ async function loadAndRender() {
       data,
       withCredentials: false,
     });
+    pdfLoadingTask = task;
     const pdf = await task.promise;
+    if (loadSequence !== pdfLoadSequence) {
+      await task.destroy();
+      return;
+    }
     pdfDoc.value = pdf;
     totalPages.value = pdf.numPages || 0;
     if (totalPages.value < 1) {
@@ -153,6 +176,7 @@ async function loadAndRender() {
     await nextTick();
     await paintPage();
   } catch (err) {
+    if (loadSequence !== pdfLoadSequence) return;
     const raw = err instanceof Error ? err.message : String(err);
     if (raw.includes("HTTP_403")) {
       errorMsg.value = "无法加载 PDF。附件链接已失效或无权限访问，请刷新页面后重试。";
@@ -186,13 +210,10 @@ async function paintPage() {
   canvas.style.width = `${Math.floor(viewport.width / outputScale)}px`;
   canvas.style.height = `${Math.floor(viewport.height / outputScale)}px`;
 
-  const ctx = canvas.getContext("2d", { alpha: false });
-  if (!ctx) return;
-
-  // v5 解构：canvas 默认取自 canvasContext.canvas，必须提供 2d context
+  // PDF.js v6 renders from the canvas element directly.
   await page
     .render({
-      canvasContext: ctx,
+      canvas,
       viewport,
       background: "rgb(255, 255, 255)",
     })
@@ -222,8 +243,11 @@ watch(pageNum, () => {
 });
 
 onUnmounted(() => {
-  void pdfDoc.value?.destroy?.();
+  pdfLoadSequence += 1;
+  const task = pdfLoadingTask;
+  pdfLoadingTask = null;
   pdfDoc.value = null;
+  void task?.destroy();
 });
 </script>
 

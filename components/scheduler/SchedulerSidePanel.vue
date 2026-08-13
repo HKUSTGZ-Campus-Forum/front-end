@@ -14,13 +14,16 @@ const props = defineProps<{
   popularityByCourse: SchedulerPopularityByCourse
   popularityGeneratedAt: string | null
   showPopularity: boolean
+  showPopularityHistory: boolean
+  mutationsDisabled: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'toggle-course', code: string, enabled: boolean): void
-  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
+  (e: 'toggle-course', code: string, currentEnabled: boolean): void
+  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
+  (e: 'show-popularity-history', code: string): void
   (e: 'open-cart'): void
   (e: 'toggle-filter'): void
   (e: 'update:display-option', key: DisplayOption, value: boolean): void
@@ -111,15 +114,18 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :current-selection="currentSelectionMap[course.course_code]"
         :popularity="getSchedulerCoursePopularity(popularityByCourse, course.course_code)"
         :show-popularity="showPopularity"
+        :show-popularity-history="showPopularityHistory"
+        :mutations-disabled="mutationsDisabled"
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
         @show-info="(...args) => emit('show-info', ...args)"
+        @show-popularity-history="(...args) => emit('show-popularity-history', ...args)"
       />
       <div v-if="filteredCourses.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>
         <p>{{ t('scheduler.emptyCartDescription') }}</p>
-        <button type="button" class="side-panel__empty-btn" @click="emit('open-cart')">
+        <button type="button" class="side-panel__empty-btn" :disabled="mutationsDisabled" @click="emit('open-cart')">
           {{ t('scheduler.addCourse') }}
         </button>
       </div>
@@ -127,7 +133,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 
     <div class="side-panel__actions">
       <button type="button" class="side-panel__btn" @click="emit('toggle-filter')">{{ t('scheduler.filter') }}</button>
-      <button type="button" class="side-panel__btn side-panel__btn--primary" @click="emit('open-cart')">{{ t('scheduler.cart') }}</button>
+      <button type="button" class="side-panel__btn side-panel__btn--primary" :disabled="mutationsDisabled" @click="emit('open-cart')">{{ t('scheduler.cart') }}</button>
     </div>
   </div>
 </template>

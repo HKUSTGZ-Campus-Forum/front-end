@@ -1,10 +1,12 @@
-import type {
-  CartCourse,
-  CourseDetail,
-  SchedulerPopularityResponse,
-  SchedulerSubject,
-  SearchResponse,
-  SemesterInfo,
+import {
+  SchedulerPopularityHistoryAccessError,
+  type CartCourse,
+  type CourseDetail,
+  type SchedulerPopularityHistoryResponse,
+  type SchedulerPopularityResponse,
+  type SchedulerSubject,
+  type SearchResponse,
+  type SemesterInfo,
 } from '~/utils/scheduler'
 
 export function useScheduler() {
@@ -16,25 +18,31 @@ export function useScheduler() {
     return resp.json()
   }
 
-  async function searchCourses(query: string, semester: string, page = 1, pageSize = 8): Promise<SearchResponse> {
+  async function searchCourses(
+    query: string,
+    semester: string,
+    page = 1,
+    pageSize = 8,
+    signal?: AbortSignal,
+  ): Promise<SearchResponse> {
     const params = new URLSearchParams({ query, page: String(page), pageSize: String(pageSize) })
     if (semester) params.set('semester', semester)
-    const resp = await fetchPublic(`/api/scheduler/courses/search?${params}`)
+    const resp = await fetchPublic(`/api/scheduler/courses/search?${params}`, { signal })
     if (!resp.ok) throw new Error('Search failed')
     return resp.json()
   }
 
-  async function getSubjects(semester: string): Promise<SchedulerSubject[]> {
+  async function getSubjects(semester: string, signal?: AbortSignal): Promise<SchedulerSubject[]> {
     const params = new URLSearchParams()
     if (semester) params.set('semester', semester)
     const query = params.toString()
-    const resp = await fetchPublic(`/api/scheduler/subjects${query ? `?${query}` : ''}`)
+    const resp = await fetchPublic(`/api/scheduler/subjects${query ? `?${query}` : ''}`, { signal })
     if (!resp.ok) throw new Error('Subjects failed')
     return resp.json()
   }
 
-  async function getCourseDetail(code: string, semester: string): Promise<CourseDetail> {
-    const resp = await fetchPublic(`/api/scheduler/courses/${code}?semester=${semester}`)
+  async function getCourseDetail(code: string, semester: string, signal?: AbortSignal): Promise<CourseDetail> {
+    const resp = await fetchPublic(`/api/scheduler/courses/${code}?semester=${semester}`, { signal })
     if (!resp.ok) throw new Error('Course not found')
     return resp.json()
   }
@@ -102,6 +110,38 @@ export function useScheduler() {
     return resp.json()
   }
 
+  async function getPopularityHistory(
+    semester: string,
+    courseCode: string,
+    options: { sectionId?: string; from: string; to: string; resolution?: 'auto'; signal?: AbortSignal },
+  ): Promise<SchedulerPopularityHistoryResponse> {
+    const params = new URLSearchParams({
+      course_code: courseCode,
+      resolution: options.resolution || 'auto',
+    })
+    if (options.sectionId) params.set('section_id', options.sectionId)
+    params.set('from', options.from)
+    params.set('to', options.to)
+
+    let resp: Response
+    try {
+      resp = await fetchWithAuth(`/api/scheduler/popularity/${semester}/history?${params}`, {
+        cache: 'no-store',
+        signal: options.signal,
+      })
+    } catch (requestError) {
+      if (requestError instanceof Error && requestError.message.startsWith('Authentication')) {
+        throw new SchedulerPopularityHistoryAccessError('authentication', 401)
+      }
+      throw requestError
+    }
+    if (resp.status === 401) throw new SchedulerPopularityHistoryAccessError('authentication', 401)
+    if (resp.status === 403) throw new SchedulerPopularityHistoryAccessError('authorization', 403)
+    if (resp.status === 404) throw new SchedulerPopularityHistoryAccessError('scope', 404)
+    if (!resp.ok) throw new Error('Failed to fetch scheduler popularity history')
+    return resp.json()
+  }
+
   async function getMapComponents() {
     const resp = await fetchPublic('/api/scheduler/map/components')
     if (!resp.ok) throw new Error('Map components failed')
@@ -132,6 +172,7 @@ export function useScheduler() {
     toggleBundle,
     toggleLayer,
     getPopularity,
+    getPopularityHistory,
     getMapComponents,
     getMapLines,
     getMapCourses,

@@ -1,20 +1,35 @@
 <!-- front-end/components/scheduler/SchedulerDashboard.vue -->
 <script setup lang="ts">
-import { ref, computed, toRef, watch } from 'vue'
+import { ref, computed, onUnmounted, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartCourse, CourseDetail } from '~/utils/scheduler'
-import { getMaxDayNum, solvePlans } from '~/utils/scheduler'
+import {
+  getMaxDayNum,
+  POPULARITY_HISTORY_SEMESTER_ID,
+  solvePlans,
+} from '~/utils/scheduler'
+import {
+  createBooleanIntentTracker,
+  createLatestRequestTracker,
+  createLatestSettlementTracker,
+  getSchedulerCartMutationFailureKind,
+} from '~/utils/schedulerAsync'
 
 const props = defineProps<{
   semesterId: string
   initialCourseList: CartCourse[]
   isLoggedIn: boolean
   loading: boolean
+  cartLoadError: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'retry-cart-load'): void
 }>()
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
-const { getCourseDetail, getPopularity } = useScheduler()
+const { getCourseDetail, getPopularity, getPopularityHistory } = useScheduler()
 const loggedIn = toRef(props, 'isLoggedIn')
 const cart = useSchedulerCart(
   props.semesterId,
@@ -29,6 +44,10 @@ const popularity = useSchedulerPopularity({
   courseCodes: popularityCourseCodes,
   getPopularity,
 })
+const canShowPopularityHistory = computed(() => (
+  props.semesterId === POPULARITY_HISTORY_SEMESTER_ID
+  && popularity.canShowPopularity.value
+))
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
@@ -38,7 +57,15 @@ const showCartPanel = ref(false)
 const showGuestHint = ref(true)
 const selectedCourse = ref<CourseDetail | null>(null)
 const showCourseDetail = ref(false)
-const cartError = ref('')
+const historyCourse = ref<CartCourse | null>(null)
+const showPopularityHistory = ref(false)
+const courseDetailStatus = ref<'loading' | 'ready' | 'error'>('loading')
+const requestedCourseCode = ref('')
+const detailRequests = createLatestRequestTracker()
+const toggleIntents = createBooleanIntentTracker()
+const cartActionSettlements = createLatestSettlementTracker()
+const cartError = ref<'ambiguous' | 'failed' | 'unverified' | ''>('')
+const historyAccessError = ref('')
 const displayOptions = ref({
   name: true,
   section: true,
@@ -47,8 +74,36 @@ const displayOptions = ref({
   duration: false,
 })
 
+watch(canShowPopularityHistory, (authorized) => {
+  if (!authorized) closePopularityHistory()
+}, { flush: 'sync' })
+
+watch(cart.requiresReload, (locked) => {
+  if (locked) showCartPanel.value = false
+}, { flush: 'sync' })
+
+watch(
+  () => courseList.value.map(course => course.course_code).sort().join('\u0000'),
+  () => {
+    if (
+      historyCourse.value
+      && !courseList.value.some(course => course.course_code === historyCourse.value?.course_code)
+    ) {
+      closePopularityHistory()
+    }
+  },
+  { flush: 'sync' },
+)
+
 const solverResult = computed(() => solvePlans(courseList.value, bannedPeriods.value))
 const planList = computed(() => solverResult.value.status === 'ok' ? solverResult.value.plans : [])
+const plansTruncated = computed(() => solverResult.value.status === 'ok' && solverResult.value.truncated)
+const planCountLabel = computed(() => {
+  if (!plansTruncated.value || solverResult.value.status !== 'ok') return String(planList.value.length)
+  return solverResult.value.truncationReason === 'plan-limit'
+    ? t('scheduler.planCountTruncated', { count: planList.value.length })
+    : t('scheduler.planCountIncomplete', { count: planList.value.length })
+})
 const enabledCourses = computed(() => courseList.value.filter(course => course.enabled))
 const totalCredits = computed(() => enabledCourses.value.reduce((sum, course) => sum + course.credit, 0))
 
@@ -60,6 +115,7 @@ const currentPlan = computed(() => {
 const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
 
 const planMessage = computed(() => {
+  if (props.loading || props.cartLoadError) return null
   if (solverResult.value.status === 'empty-cart') return t('scheduler.emptyCartHint')
   if (solverResult.value.status === 'all-disabled') return t('scheduler.allDisabled')
   if (solverResult.value.status === 'unavailable-layer') {
@@ -68,7 +124,13 @@ const planMessage = computed(() => {
       layer: solverResult.value.layer,
     })
   }
+  if (solverResult.value.status === 'search-limit') return t('scheduler.searchLimited')
   if (solverResult.value.status === 'no-solution') return t('scheduler.noSolution')
+  if (solverResult.value.status === 'ok' && solverResult.value.truncated) {
+    return solverResult.value.truncationReason === 'plan-limit'
+      ? t('scheduler.plansTruncated', { count: solverResult.value.plans.length })
+      : t('scheduler.searchLimited')
+  }
   return null
 })
 
@@ -79,26 +141,157 @@ watch(planList, (plans) => {
   }
 })
 
+watch(() => props.semesterId, () => {
+  closeCourseDetail()
+})
+
 async function handleShowInfo(code: string) {
-  selectedCourse.value = await getCourseDetail(code, props.semesterId)
+  const request = detailRequests.begin()
+  requestedCourseCode.value = code
+  selectedCourse.value = null
+  courseDetailStatus.value = 'loading'
   showCourseDetail.value = true
+  try {
+    const course = await getCourseDetail(code, props.semesterId, request.signal)
+    if (!request.isCurrent() || requestedCourseCode.value !== code) return
+    selectedCourse.value = course
+    courseDetailStatus.value = 'ready'
+  } catch {
+    if (request.isCurrent()) courseDetailStatus.value = 'error'
+  }
+}
+
+function closeCourseDetail() {
+  detailRequests.invalidate()
+  showCourseDetail.value = false
+  selectedCourse.value = null
+}
+
+function retryCourseDetail() {
+  if (requestedCourseCode.value) void handleShowInfo(requestedCourseCode.value)
 }
 
 async function handleCartAction(action: () => Promise<void>) {
-  cartError.value = ''
+  const settlement = cartActionSettlements.begin()
   try {
     await action()
-  } catch {
-    cartError.value = t('scheduler.cartFailed')
-    return
+    if (settlement.isCurrent()) cartError.value = ''
+  } catch (error) {
+    if (!settlement.isCurrent()) return
+    const kind = getSchedulerCartMutationFailureKind(error)
+    cartError.value = kind === 'write-ambiguous-reconciled'
+      ? 'ambiguous'
+      : kind === 'state-unverified' || kind === 'blocked'
+        ? 'unverified'
+        : 'failed'
+  } finally {
+    // A write response can be lost after the server commits. The cart action
+    // reconciles that ambiguity; popularity must follow the same outcome even
+    // when the user still sees the write error.
+    await popularity.refresh()
   }
+}
 
-  await popularity.refresh()
+async function reloadCartAfterUnverifiedMutation() {
+  const settlement = cartActionSettlements.begin()
+  try {
+    await cart.reloadAuthoritative()
+    if (settlement.isCurrent()) cartError.value = ''
+  } catch {
+    if (settlement.isCurrent()) cartError.value = 'unverified'
+  } finally {
+    await popularity.refresh()
+  }
+}
+
+const cartErrorMessage = computed(() => (
+  cartError.value === 'ambiguous'
+    ? t('scheduler.cartMutationAmbiguous')
+    : cartError.value === 'unverified'
+      ? t('scheduler.cartStateUnverified')
+      : cartError.value === 'failed'
+        ? t('scheduler.cartFailed')
+      : ''
+))
+
+async function handleQueuedToggleAction(
+  action: () => Promise<void>,
+  releaseIntent: () => void,
+) {
+  try {
+    await handleCartAction(action)
+  } finally {
+    releaseIntent()
+  }
+}
+
+function handleShowPopularityHistory(code: string) {
+  const course = courseList.value.find(item => item.course_code === code)
+  if (!course || !canShowPopularityHistory.value) return
+  historyAccessError.value = ''
+  historyCourse.value = course
+  showPopularityHistory.value = true
+}
+
+function closePopularityHistory() {
+  showPopularityHistory.value = false
+  historyCourse.value = null
+}
+
+function handlePopularityHistoryAccessLost(kind: 'authentication' | 'authorization' | 'scope') {
+  historyAccessError.value = t(`scheduler.popularityHistory${
+    kind === 'authentication'
+      ? 'AuthenticationLost'
+      : kind === 'authorization'
+        ? 'AuthorizationLost'
+        : 'ScopeLost'
+  }`)
+  closePopularityHistory()
+}
+
+function handleAddCourse(code: string) {
+  return handleCartAction(() => cart.add(code))
+}
+
+function handleRemoveCourse(code: string) {
+  return handleCartAction(() => cart.remove(code))
+}
+
+function handleToggleCourse(code: string, currentEnabled: boolean) {
+  const key = `course:${code}`
+  const intent = toggleIntents.next(key, currentEnabled)
+  void handleQueuedToggleAction(() => cart.toggleCourse(code, intent.value), () => {
+    toggleIntents.clearIfCurrent(key, intent.token)
+  })
+}
+
+function handleToggleBundle(
+  code: string,
+  bundleId: number,
+  layer: number,
+  currentEnabled: boolean,
+) {
+  const key = `bundle:${code}:${bundleId}:${layer}`
+  const intent = toggleIntents.next(key, currentEnabled)
+  void handleQueuedToggleAction(() => cart.toggleBundle(code, bundleId, layer, intent.value), () => {
+    toggleIntents.clearIfCurrent(key, intent.token)
+  })
+}
+
+function handleToggleLayer(code: string, layer: number, enabled: boolean) {
+  const course = courseList.value.find(item => item.course_code === code)
+  const keys = (course?.layers[layer] || []).map(bundle => `bundle:${code}:${bundle.id}:${layer}`)
+  const intents = keys.map(key => [key, toggleIntents.set(key, enabled)] as const)
+  void handleQueuedToggleAction(() => cart.toggleLayer(code, layer, enabled), () => {
+    for (const [key, intent] of intents) toggleIntents.clearIfCurrent(key, intent.token)
+  })
 }
 
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
+
+onUnmounted(() => detailRequests.invalidate())
 </script>
 
 <template>
@@ -118,7 +311,7 @@ function toggleBan(day: number, period: number) {
         </div>
         <div class="dashboard__summary-item">
           <span>{{ t('scheduler.planCount') }}</span>
-          <strong>{{ planList.length }}</strong>
+          <strong>{{ planCountLabel }}</strong>
         </div>
         <div class="dashboard__summary-item">
           <span>{{ t('scheduler.totalCredits') }}</span>
@@ -136,15 +329,32 @@ function toggleBan(day: number, period: number) {
       {{ t('scheduler.popularityVerifiedOnly') }}
     </div>
 
-    <div v-if="cartError || planMessage" class="dashboard__notice">
-      {{ cartError || planMessage }}
+    <div v-if="cartLoadError" class="dashboard__notice dashboard__notice--error" role="alert">
+      <span>{{ t('scheduler.cartLoadFailed') }}</span>
+      <button type="button" @click="emit('retry-cart-load')">{{ t('common.retry') }}</button>
     </div>
 
-    <div class="dashboard__body">
+    <div
+      v-if="cartErrorMessage || historyAccessError || planMessage"
+      class="dashboard__notice"
+      :class="{ 'dashboard__notice--error': cartError === 'unverified' }"
+      :role="cartError === 'unverified' ? 'alert' : undefined"
+    >
+      <span>{{ cartErrorMessage || historyAccessError || planMessage }}</span>
+      <button
+        v-if="cartError === 'unverified'"
+        type="button"
+        :disabled="cart.reloading.value"
+        @click="reloadCartAfterUnverifiedMutation"
+      >
+        {{ cart.reloading.value ? t('scheduler.loading') : t('common.retry') }}
+      </button>
+    </div>
+
+    <div v-if="!cartLoadError && !loading" class="dashboard__body">
       <div class="dashboard__left">
         <div class="dashboard__timetable-card">
           <SchedulerTimetable
-            v-if="!loading"
             :course-list="courseList"
             :current-plan="currentPlan"
             :banned-periods="bannedPeriods"
@@ -155,7 +365,6 @@ function toggleBan(day: number, period: number) {
             :show-popularity="popularity.canShowPopularity.value"
             @toggle-ban="toggleBan"
           />
-          <div v-else class="dashboard__loading">{{ t('scheduler.loading') }}</div>
           <SchedulerBottomPanel
             :current-index="viewIndex"
             :total-plans="planList.length"
@@ -172,31 +381,46 @@ function toggleBan(day: number, period: number) {
           :popularity-by-course="popularity.popularityByCourse.value"
           :popularity-generated-at="popularity.generatedAt.value"
           :show-popularity="popularity.canShowPopularity.value"
-          @toggle-course="(code, enabled) => handleCartAction(() => cart.toggleCourse(code, enabled))"
-          @toggle-bundle="(code, bundleId, layer, enabled) => handleCartAction(() => cart.toggleBundle(code, bundleId, layer, enabled))"
-          @toggle-layer="(code, layer, enabled) => handleCartAction(() => cart.toggleLayer(code, layer, enabled))"
+          :show-popularity-history="canShowPopularityHistory"
+          :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
+          @toggle-course="handleToggleCourse"
+          @toggle-bundle="handleToggleBundle"
+          @toggle-layer="handleToggleLayer"
           @show-info="handleShowInfo"
+          @show-popularity-history="handleShowPopularityHistory"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
           @update:display-option="(key, value) => displayOptions[key] = value"
         />
       </div>
     </div>
+    <div v-else-if="loading" class="dashboard__loading">{{ t('scheduler.loading') }}</div>
 
     <!-- Cart Panel Modal -->
     <SchedulerCartPanel
       :semester-id="semesterId"
       :course-list="courseList"
-      :visible="showCartPanel"
+      :visible="showCartPanel && !loading && !cartLoadError && !cart.requiresReload.value"
+      :add-course="handleAddCourse"
+      :remove-course="handleRemoveCourse"
       @close="showCartPanel = false"
-      @add="(code) => handleCartAction(() => cart.add(code))"
-      @remove="(code) => handleCartAction(() => cart.remove(code))"
     />
 
     <SchedulerCourseDetail
       :visible="showCourseDetail"
       :course="selectedCourse"
-      @close="showCourseDetail = false"
+      :status="courseDetailStatus"
+      @close="closeCourseDetail"
+      @retry="retryCourseDetail"
+    />
+
+    <SchedulerPopularityHistory
+      :visible="showPopularityHistory"
+      :semester-id="semesterId"
+      :course="historyCourse"
+      :get-history="getPopularityHistory"
+      @close="closePopularityHistory"
+      @access-lost="handlePopularityHistoryAccessLost"
     />
   </div>
 </template>
@@ -310,6 +534,22 @@ function toggleBan(day: number, period: number) {
       &:hover {
         border-color: color-mix(in srgb, var(--semantic-warning) 35%, transparent);
         background: color-mix(in srgb, var(--surface-primary) 70%, transparent);
+      }
+    }
+
+    &--error {
+      background: color-mix(in srgb, var(--semantic-error) 10%, var(--surface-primary));
+      border-color: color-mix(in srgb, var(--semantic-error) 24%, var(--border-secondary));
+      color: var(--text-primary);
+
+      button {
+        width: auto;
+        height: 32px;
+        padding: 0 12px;
+        border-color: color-mix(in srgb, var(--semantic-error) 30%, var(--border-secondary));
+        background: var(--surface-primary);
+        font-size: 0.82rem;
+        font-weight: 700;
       }
     }
   }
