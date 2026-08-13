@@ -8,7 +8,7 @@ import {
   POPULARITY_HISTORY_SEMESTER_ID,
   solvePlans,
 } from '~/utils/scheduler'
-import { createLatestRequestTracker } from '~/utils/schedulerAsync'
+import { createBooleanIntentTracker, createLatestRequestTracker } from '~/utils/schedulerAsync'
 
 const props = defineProps<{
   semesterId: string
@@ -57,6 +57,7 @@ const showPopularityHistory = ref(false)
 const courseDetailStatus = ref<'loading' | 'ready' | 'error'>('loading')
 const requestedCourseCode = ref('')
 const detailRequests = createLatestRequestTracker()
+const toggleIntents = createBooleanIntentTracker()
 const cartError = ref('')
 const historyAccessError = ref('')
 const displayOptions = ref({
@@ -166,10 +167,23 @@ async function handleCartAction(action: () => Promise<void>) {
     await action()
   } catch {
     cartError.value = t('scheduler.cartFailed')
-    return
+  } finally {
+    // A write response can be lost after the server commits. The cart action
+    // reconciles that ambiguity; popularity must follow the same outcome even
+    // when the user still sees the write error.
+    await popularity.refresh()
   }
+}
 
-  await popularity.refresh()
+async function handleQueuedToggleAction(
+  action: () => Promise<void>,
+  releaseIntent: () => void,
+) {
+  try {
+    await handleCartAction(action)
+  } finally {
+    releaseIntent()
+  }
 }
 
 function handleShowPopularityHistory(code: string) {
@@ -202,6 +216,36 @@ function handleAddCourse(code: string) {
 
 function handleRemoveCourse(code: string) {
   return handleCartAction(() => cart.remove(code))
+}
+
+function handleToggleCourse(code: string, currentEnabled: boolean) {
+  const key = `course:${code}`
+  const enabled = toggleIntents.next(key, currentEnabled)
+  void handleQueuedToggleAction(() => cart.toggleCourse(code, enabled), () => {
+    toggleIntents.clearIfCurrent(key, enabled)
+  })
+}
+
+function handleToggleBundle(
+  code: string,
+  bundleId: number,
+  layer: number,
+  currentEnabled: boolean,
+) {
+  const key = `bundle:${code}:${bundleId}:${layer}`
+  const enabled = toggleIntents.next(key, currentEnabled)
+  void handleQueuedToggleAction(() => cart.toggleBundle(code, bundleId, layer, enabled), () => {
+    toggleIntents.clearIfCurrent(key, enabled)
+  })
+}
+
+function handleToggleLayer(code: string, layer: number, enabled: boolean) {
+  const course = courseList.value.find(item => item.course_code === code)
+  const keys = (course?.layers[layer] || []).map(bundle => `bundle:${code}:${bundle.id}:${layer}`)
+  for (const key of keys) toggleIntents.set(key, enabled)
+  void handleQueuedToggleAction(() => cart.toggleLayer(code, layer, enabled), () => {
+    for (const key of keys) toggleIntents.clearIfCurrent(key, enabled)
+  })
 }
 
 function toggleBan(day: number, period: number) {
@@ -286,9 +330,9 @@ onUnmounted(() => detailRequests.invalidate())
           :popularity-generated-at="popularity.generatedAt.value"
           :show-popularity="popularity.canShowPopularity.value"
           :show-popularity-history="canShowPopularityHistory"
-          @toggle-course="(code, enabled) => handleCartAction(() => cart.toggleCourse(code, enabled))"
-          @toggle-bundle="(code, bundleId, layer, enabled) => handleCartAction(() => cart.toggleBundle(code, bundleId, layer, enabled))"
-          @toggle-layer="(code, layer, enabled) => handleCartAction(() => cart.toggleLayer(code, layer, enabled))"
+          @toggle-course="handleToggleCourse"
+          @toggle-bundle="handleToggleBundle"
+          @toggle-layer="handleToggleLayer"
           @show-info="handleShowInfo"
           @show-popularity-history="handleShowPopularityHistory"
           @open-cart="showCartPanel = true"

@@ -19,8 +19,8 @@ const props = defineProps<{
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  (e: 'toggle-course', code: string, enabled: boolean): void
-  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
+  (e: 'toggle-course', code: string, currentEnabled: boolean): void
+  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
   (e: 'show-popularity-history', code: string): void
@@ -38,7 +38,7 @@ function getSectionLabel(section: SchedulerSection): string {
 
 <template>
   <div class="course-card" :class="{ 'course-card--disabled': !course.enabled }">
-    <div class="course-card__header" @click="emit('toggle-course', course.course_code, !course.enabled)">
+    <div class="course-card__header" @click="emit('toggle-course', course.course_code, course.enabled)">
       <div class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
       <div class="course-card__info">
         <div class="course-card__code">{{ course.course_code }}</div>
@@ -84,7 +84,7 @@ function getSectionLabel(section: SchedulerSection): string {
               'course-card__bundle--selected': currentSelection?.[Number(layer)] === bundle.id,
             }"
             type="button"
-            @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), !bundle.enabled)"
+            @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), bundle.enabled)"
           >
             <template v-if="showPopularity && popularity">
               <span

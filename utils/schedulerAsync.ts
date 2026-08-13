@@ -8,6 +8,12 @@ export interface LatestRequestTracker {
   invalidate: () => void
 }
 
+export interface BooleanIntentTracker {
+  clearIfCurrent: (key: string, value: boolean) => void
+  next: (key: string, currentValue: boolean) => boolean
+  set: (key: string, value: boolean) => void
+}
+
 export function createLatestRequestTracker(): LatestRequestTracker {
   let generation = 0
   let activeController: AbortController | null = null
@@ -27,6 +33,24 @@ export function createLatestRequestTracker(): LatestRequestTracker {
       generation += 1
       activeController?.abort()
       activeController = null
+    },
+  }
+}
+
+export function createBooleanIntentTracker(): BooleanIntentTracker {
+  const intents = new Map<string, boolean>()
+
+  return {
+    clearIfCurrent(key, value) {
+      if (intents.get(key) === value) intents.delete(key)
+    },
+    next(key, currentValue) {
+      const nextValue = !(intents.get(key) ?? currentValue)
+      intents.set(key, nextValue)
+      return nextValue
+    },
+    set(key, value) {
+      intents.set(key, value)
     },
   }
 }

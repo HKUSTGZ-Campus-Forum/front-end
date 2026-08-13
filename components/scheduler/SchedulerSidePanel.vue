@@ -18,8 +18,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'toggle-course', code: string, enabled: boolean): void
-  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, enabled: boolean): void
+  (e: 'toggle-course', code: string, currentEnabled: boolean): void
+  (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'show-info', code: string): void
   (e: 'show-popularity-history', code: string): void

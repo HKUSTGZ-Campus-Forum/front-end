@@ -1,10 +1,36 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  createBooleanIntentTracker,
   createLatestRequestTracker,
   runPendingSchedulerAction,
 } from '../../utils/schedulerAsync'
 
 describe('scheduler async state helpers', () => {
+  it('derives rapid course and bundle toggles from the last submitted intent', () => {
+    const tracker = createBooleanIntentTracker()
+
+    const courseOn = tracker.next('course:AIAA1001', false)
+    const courseOff = tracker.next('course:AIAA1001', false)
+    expect([courseOn, courseOff]).toEqual([true, false])
+
+    const bundleOff = tracker.next('bundle:AIAA1001:1:0', true)
+    const bundleOn = tracker.next('bundle:AIAA1001:1:0', true)
+    expect([bundleOff, bundleOn]).toEqual([false, true])
+  })
+
+  it('lets a layer intent seed the next bundle click without stale props', () => {
+    const tracker = createBooleanIntentTracker()
+    const key = 'bundle:AIAA1001:1:0'
+
+    tracker.set(key, false)
+    const bundleOnAfterNone = tracker.next(key, true)
+    tracker.clearIfCurrent(key, false)
+    const bundleOffAgain = tracker.next(key, true)
+
+    expect(bundleOnAfterNone).toBe(true)
+    expect(bundleOffAgain).toBe(false)
+  })
+
   it('invalidates and aborts older requests when a newer request starts', () => {
     const tracker = createLatestRequestTracker()
     const first = tracker.begin()

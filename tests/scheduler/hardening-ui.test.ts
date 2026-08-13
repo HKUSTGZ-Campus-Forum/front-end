@@ -66,6 +66,11 @@ describe('scheduler hardening UI contract', () => {
     expect(detail).toContain("$emit('retry')")
     expect(dashboard).toContain('detailRequests = createLatestRequestTracker()')
     expect(dashboard).toContain('detailRequests.invalidate()')
+    expect(dashboard).toContain('finally {')
+    expect(dashboard).toContain('await popularity.refresh()')
+    expect(dashboard).toContain('toggleIntents.next(key, currentEnabled)')
+    expect(dashboard).toContain('@toggle-course="handleToggleCourse"')
+    expect(dashboard).toContain('@toggle-bundle="handleToggleBundle"')
     expect(dashboard).toContain(`watch(() => props.semesterId, () => {
   closeCourseDetail()
 })`)
