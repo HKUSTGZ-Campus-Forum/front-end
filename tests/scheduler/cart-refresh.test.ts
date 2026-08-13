@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useSchedulerCart } from '../../composables/useSchedulerCart'
 import type { CartCourse } from '../../utils/scheduler'
+import { getSchedulerCartMutationFailureKind } from '../../utils/schedulerAsync'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -62,9 +63,13 @@ describe('scheduler cart refresh ordering', () => {
     const initial = [{ course_code: 'AIAA1001', enabled: false } as CartCourse]
     const cart = useSchedulerCart('2610', ref(true), ref(initial))
 
-    await expect(cart.toggleCourse('AIAA1001', true)).rejects.toThrow('response dropped after commit')
+    const outcome = cart.toggleCourse('AIAA1001', true)
+    await expect(outcome).rejects.toSatisfy(error => (
+      getSchedulerCartMutationFailureKind(error) === 'write-ambiguous-reconciled'
+    ))
     expect(getCart).toHaveBeenCalledOnce()
     expect(cart.courses.value[0]?.enabled).toBe(true)
+    expect(cart.requiresReload.value).toBe(false)
   })
 
   it('retries authoritative reconciliation after a successful write and transient GET failure', async () => {
@@ -91,9 +96,23 @@ describe('scheduler cart refresh ordering', () => {
     const initial = [{ course_code: 'AIAA1001', enabled: false } as CartCourse]
     const cart = useSchedulerCart('2610', ref(true), ref(initial))
 
-    await expect(cart.toggleCourse('AIAA1001', true)).rejects.toThrow('GET unavailable')
+    const outcome = cart.toggleCourse('AIAA1001', true)
+    await expect(outcome).rejects.toSatisfy(error => (
+      getSchedulerCartMutationFailureKind(error) === 'state-unverified'
+    ))
     expect(getCart).toHaveBeenCalledTimes(2)
     expect(cart.courses.value).toEqual(initial)
+    expect(cart.requiresReload.value).toBe(true)
+
+    await expect(cart.toggleCourse('AIAA1001', false)).rejects.toSatisfy(error => (
+      getSchedulerCartMutationFailureKind(error) === 'blocked'
+    ))
+    expect(toggleCourse).toHaveBeenCalledOnce()
+
+    getCart.mockResolvedValueOnce([{ ...initial[0], enabled: true }])
+    await expect(cart.reloadAuthoritative()).resolves.toBeUndefined()
+    expect(cart.requiresReload.value).toBe(false)
+    expect(cart.courses.value[0]?.enabled).toBe(true)
   })
 
   it('serializes rapid All then None layer intents so the final intent wins', async () => {
@@ -149,5 +168,40 @@ describe('scheduler cart refresh ordering', () => {
     await Promise.all([bundle, layer])
 
     expect(writes).toEqual(['bundle:start', 'bundle:end', 'layer'])
+  })
+
+  it('serializes cross-key mutations so their authoritative GETs cannot supersede each other', async () => {
+    const courseWrite = deferred<void>()
+    const events: string[] = []
+    const toggleCourse = vi.fn(async () => {
+      events.push('course:write:start')
+      await courseWrite.promise
+      events.push('course:write:end')
+    })
+    const toggleBundle = vi.fn(async () => {
+      events.push('bundle:write')
+    })
+    const getCart = vi.fn(async () => {
+      events.push('get')
+      return []
+    })
+    vi.stubGlobal('useScheduler', () => ({ getCart, toggleBundle, toggleCourse }))
+
+    const cart = useSchedulerCart('2610', ref(true), ref<CartCourse[]>([]))
+    const course = cart.toggleCourse('AIAA1001', true)
+    const bundle = cart.toggleBundle('COMP1001', 1, 0, true)
+
+    await vi.waitFor(() => expect(events).toEqual(['course:write:start']))
+    courseWrite.resolve()
+    await Promise.all([course, bundle])
+
+    expect(events).toEqual([
+      'course:write:start',
+      'course:write:end',
+      'get',
+      'bundle:write',
+      'get',
+    ])
+    expect(cart.requiresReload.value).toBe(false)
   })
 })

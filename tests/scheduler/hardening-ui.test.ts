@@ -55,7 +55,7 @@ describe('scheduler hardening UI contract', () => {
     expect(dashboard).toContain("t('scheduler.cartLoadFailed')")
     expect(dashboard).toContain("emit('retry-cart-load')")
     expect(dashboard).toContain('v-if="!cartLoadError && !loading"')
-    expect(dashboard).toContain(':visible="showCartPanel && !loading && !cartLoadError"')
+    expect(dashboard).toContain(':visible="showCartPanel && !loading && !cartLoadError && !cart.requiresReload.value"')
     expect(semesterIndex).toContain('v-else-if="loadError"')
     expect(semesterIndex).toContain("t('scheduler.semestersLoadFailed')")
     expect(semesterIndex.indexOf('v-else-if="loadError"')).toBeLessThan(
@@ -69,6 +69,16 @@ describe('scheduler hardening UI contract', () => {
     expect(dashboard).toContain('finally {')
     expect(dashboard).toContain('await popularity.refresh()')
     expect(dashboard).toContain('toggleIntents.next(key, currentEnabled)')
+    expect(dashboard).toContain('intent.token')
+    expect(dashboard).toContain('cart.requiresReload.value || cart.reloading.value')
+    expect(dashboard).toContain('reloadCartAfterUnverifiedMutation')
+    expect(dashboard).toContain('watch(cart.requiresReload')
+    expect(dashboard).toContain("kind === 'write-ambiguous-reconciled'")
+    expect(dashboard).toContain("kind === 'state-unverified' || kind === 'blocked'")
+    expect(dashboard).toContain("cartError.value = kind === 'write-ambiguous-reconciled'")
+    expect(dashboard).toContain('settlement.isCurrent()')
+    expect(dashboard).toContain("? 'ambiguous'")
+    expect(dashboard).toContain(": 'failed'")
     expect(dashboard).toContain('@toggle-course="handleToggleCourse"')
     expect(dashboard).toContain('@toggle-bundle="handleToggleBundle"')
     expect(dashboard).toContain(`watch(() => props.semesterId, () => {
@@ -87,11 +97,16 @@ describe('scheduler hardening UI contract', () => {
       'cartLoadFailed',
       'semestersLoadFailed',
       'courseDetailLoadFailed',
+      'cartMutationAmbiguous',
+      'cartStateUnverified',
     ]
 
     for (const key of keys) {
       expect(en[key]).toBeTruthy()
       expect(zh[key]).toBeTruthy()
     }
+
+    expect(en.cartFailed).not.toMatch(/refresh/i)
+    expect(en.cartStateUnverified).toMatch(/locked/i)
   })
 })

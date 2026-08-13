@@ -7,6 +7,7 @@ import {
   setGuestCourseEnabled,
   setGuestLayerEnabled,
 } from '../utils/schedulerCart'
+import { SchedulerCartMutationError } from '../utils/schedulerAsync'
 
 export function useSchedulerCart(
   semesterId: string,
@@ -15,12 +16,15 @@ export function useSchedulerCart(
 ) {
   const api = useScheduler()
   const courses = ref<CartCourse[]>([...initial.value])
-  const mutationTails = new Map<string, Promise<void>>()
+  const requiresReload = ref(false)
+  const reloading = ref(false)
+  let mutationTail: Promise<void> = Promise.resolve()
   let refreshGeneration = 0
 
   watch(initial, value => {
     refreshGeneration += 1
     courses.value = [...value]
+    requiresReload.value = false
   })
 
   async function refresh(): Promise<boolean> {
@@ -30,6 +34,7 @@ export function useSchedulerCart(
       const nextCourses = await api.getCart(semesterId)
       if (generation === refreshGeneration && loggedIn.value) {
         courses.value = nextCourses
+        requiresReload.value = false
         return true
       }
       return false
@@ -56,6 +61,10 @@ export function useSchedulerCart(
   }
 
   async function mutateAuthenticated(write: () => Promise<unknown>) {
+    if (requiresReload.value || reloading.value) {
+      throw new SchedulerCartMutationError('blocked')
+    }
+
     let writeError: unknown
     try {
       await write()
@@ -72,23 +81,44 @@ export function useSchedulerCart(
       reconciliationError = error
     }
 
-    if (writeError) throw writeError
-    if (reconciliationError) throw reconciliationError
+    if (reconciliationError) {
+      requiresReload.value = true
+      throw new SchedulerCartMutationError('state-unverified', reconciliationError)
+    }
+    if (writeError) {
+      throw new SchedulerCartMutationError('write-ambiguous-reconciled', writeError)
+    }
   }
 
-  function enqueueMutation(key: string, mutation: () => Promise<void>): Promise<void> {
-    const previous = mutationTails.get(key) ?? Promise.resolve()
-    const run = previous.catch(() => undefined).then(mutation)
-    const queued = run.finally(() => {
-      if (mutationTails.get(key) === queued) mutationTails.delete(key)
-    })
-    mutationTails.set(key, queued)
+  function enqueueMutation(mutation: () => Promise<void>): Promise<void> {
+    if (requiresReload.value || reloading.value) {
+      return Promise.reject(new SchedulerCartMutationError('blocked'))
+    }
+
+    const queued = mutationTail.catch(() => undefined).then(mutation)
+    mutationTail = queued
     return queued
+  }
+
+  async function reloadAuthoritative() {
+    if (!loggedIn.value) throw new SchedulerCartMutationError('state-unverified')
+    reloading.value = true
+    try {
+      await mutationTail.catch(() => undefined)
+      if (!await refresh()) {
+        throw new Error('Cart reload was superseded')
+      }
+    } catch (error) {
+      requiresReload.value = true
+      throw new SchedulerCartMutationError('state-unverified', error)
+    } finally {
+      reloading.value = false
+    }
   }
 
   async function add(code: string) {
     if (loggedIn.value) {
-      return enqueueMutation(`membership:${code}`, () => (
+      return enqueueMutation(() => (
         mutateAuthenticated(() => api.addToCart(semesterId, code))
       ))
     }
@@ -98,7 +128,7 @@ export function useSchedulerCart(
 
   async function remove(code: string) {
     if (loggedIn.value) {
-      return enqueueMutation(`membership:${code}`, () => (
+      return enqueueMutation(() => (
         mutateAuthenticated(() => api.removeFromCart(semesterId, code))
       ))
     }
@@ -108,7 +138,7 @@ export function useSchedulerCart(
 
   async function toggleCourse(code: string, enabled: boolean) {
     if (loggedIn.value) {
-      return enqueueMutation(`course:${code}`, () => (
+      return enqueueMutation(() => (
         mutateAuthenticated(() => api.toggleCourse(semesterId, code, enabled))
       ))
     }
@@ -118,7 +148,7 @@ export function useSchedulerCart(
 
   async function toggleBundle(code: string, bundleId: number, layer: number, enabled: boolean) {
     if (loggedIn.value) {
-      return enqueueMutation(`selection:${code}:${layer}`, () => (
+      return enqueueMutation(() => (
         mutateAuthenticated(() => api.toggleBundle(semesterId, code, bundleId, layer, enabled))
       ))
     }
@@ -128,7 +158,7 @@ export function useSchedulerCart(
 
   async function toggleLayer(code: string, layer: number, enabled: boolean) {
     if (loggedIn.value) {
-      return enqueueMutation(`selection:${code}:${layer}`, () => (
+      return enqueueMutation(() => (
         mutateAuthenticated(() => api.toggleLayer(semesterId, code, layer, enabled))
       ))
     }
@@ -138,7 +168,10 @@ export function useSchedulerCart(
 
   return {
     courses,
+    requiresReload,
+    reloading,
     refresh,
+    reloadAuthoritative,
     add,
     remove,
     toggleCourse,

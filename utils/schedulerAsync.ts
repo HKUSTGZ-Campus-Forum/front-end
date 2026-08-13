@@ -8,10 +8,46 @@ export interface LatestRequestTracker {
   invalidate: () => void
 }
 
+export interface LatestSettlementToken {
+  isCurrent: () => boolean
+}
+
+export interface LatestSettlementTracker {
+  begin: () => LatestSettlementToken
+}
+
 export interface BooleanIntentTracker {
-  clearIfCurrent: (key: string, value: boolean) => void
-  next: (key: string, currentValue: boolean) => boolean
-  set: (key: string, value: boolean) => void
+  clearIfCurrent: (key: string, token: number) => void
+  next: (key: string, currentValue: boolean) => BooleanIntentSubmission
+  set: (key: string, value: boolean) => BooleanIntentSubmission
+}
+
+export interface BooleanIntentSubmission {
+  token: number
+  value: boolean
+}
+
+export type SchedulerCartMutationFailureKind =
+  | 'write-ambiguous-reconciled'
+  | 'state-unverified'
+  | 'blocked'
+
+export class SchedulerCartMutationError extends Error {
+  readonly kind: SchedulerCartMutationFailureKind
+  readonly originalError: unknown
+
+  constructor(kind: SchedulerCartMutationFailureKind, originalError?: unknown) {
+    super(kind)
+    this.name = 'SchedulerCartMutationError'
+    this.kind = kind
+    this.originalError = originalError
+  }
+}
+
+export function getSchedulerCartMutationFailureKind(
+  error: unknown,
+): SchedulerCartMutationFailureKind | null {
+  return error instanceof SchedulerCartMutationError ? error.kind : null
 }
 
 export function createLatestRequestTracker(): LatestRequestTracker {
@@ -37,20 +73,36 @@ export function createLatestRequestTracker(): LatestRequestTracker {
   }
 }
 
-export function createBooleanIntentTracker(): BooleanIntentTracker {
-  const intents = new Map<string, boolean>()
+export function createLatestSettlementTracker(): LatestSettlementTracker {
+  let generation = 0
 
   return {
-    clearIfCurrent(key, value) {
-      if (intents.get(key) === value) intents.delete(key)
+    begin() {
+      const settlementGeneration = ++generation
+      return { isCurrent: () => settlementGeneration === generation }
+    },
+  }
+}
+
+export function createBooleanIntentTracker(): BooleanIntentTracker {
+  const intents = new Map<string, BooleanIntentSubmission>()
+  let nextToken = 0
+
+  function store(key: string, value: boolean): BooleanIntentSubmission {
+    const submission = { token: ++nextToken, value }
+    intents.set(key, submission)
+    return submission
+  }
+
+  return {
+    clearIfCurrent(key, token) {
+      if (intents.get(key)?.token === token) intents.delete(key)
     },
     next(key, currentValue) {
-      const nextValue = !(intents.get(key) ?? currentValue)
-      intents.set(key, nextValue)
-      return nextValue
+      return store(key, !(intents.get(key)?.value ?? currentValue))
     },
     set(key, value) {
-      intents.set(key, value)
+      return store(key, value)
     },
   }
 }

@@ -8,7 +8,12 @@ import {
   POPULARITY_HISTORY_SEMESTER_ID,
   solvePlans,
 } from '~/utils/scheduler'
-import { createBooleanIntentTracker, createLatestRequestTracker } from '~/utils/schedulerAsync'
+import {
+  createBooleanIntentTracker,
+  createLatestRequestTracker,
+  createLatestSettlementTracker,
+  getSchedulerCartMutationFailureKind,
+} from '~/utils/schedulerAsync'
 
 const props = defineProps<{
   semesterId: string
@@ -58,7 +63,8 @@ const courseDetailStatus = ref<'loading' | 'ready' | 'error'>('loading')
 const requestedCourseCode = ref('')
 const detailRequests = createLatestRequestTracker()
 const toggleIntents = createBooleanIntentTracker()
-const cartError = ref('')
+const cartActionSettlements = createLatestSettlementTracker()
+const cartError = ref<'ambiguous' | 'failed' | 'unverified' | ''>('')
 const historyAccessError = ref('')
 const displayOptions = ref({
   name: true,
@@ -70,6 +76,10 @@ const displayOptions = ref({
 
 watch(canShowPopularityHistory, (authorized) => {
   if (!authorized) closePopularityHistory()
+}, { flush: 'sync' })
+
+watch(cart.requiresReload, (locked) => {
+  if (locked) showCartPanel.value = false
 }, { flush: 'sync' })
 
 watch(
@@ -162,11 +172,18 @@ function retryCourseDetail() {
 }
 
 async function handleCartAction(action: () => Promise<void>) {
-  cartError.value = ''
+  const settlement = cartActionSettlements.begin()
   try {
     await action()
-  } catch {
-    cartError.value = t('scheduler.cartFailed')
+    if (settlement.isCurrent()) cartError.value = ''
+  } catch (error) {
+    if (!settlement.isCurrent()) return
+    const kind = getSchedulerCartMutationFailureKind(error)
+    cartError.value = kind === 'write-ambiguous-reconciled'
+      ? 'ambiguous'
+      : kind === 'state-unverified' || kind === 'blocked'
+        ? 'unverified'
+        : 'failed'
   } finally {
     // A write response can be lost after the server commits. The cart action
     // reconciles that ambiguity; popularity must follow the same outcome even
@@ -174,6 +191,28 @@ async function handleCartAction(action: () => Promise<void>) {
     await popularity.refresh()
   }
 }
+
+async function reloadCartAfterUnverifiedMutation() {
+  const settlement = cartActionSettlements.begin()
+  try {
+    await cart.reloadAuthoritative()
+    if (settlement.isCurrent()) cartError.value = ''
+  } catch {
+    if (settlement.isCurrent()) cartError.value = 'unverified'
+  } finally {
+    await popularity.refresh()
+  }
+}
+
+const cartErrorMessage = computed(() => (
+  cartError.value === 'ambiguous'
+    ? t('scheduler.cartMutationAmbiguous')
+    : cartError.value === 'unverified'
+      ? t('scheduler.cartStateUnverified')
+      : cartError.value === 'failed'
+        ? t('scheduler.cartFailed')
+      : ''
+))
 
 async function handleQueuedToggleAction(
   action: () => Promise<void>,
@@ -220,9 +259,9 @@ function handleRemoveCourse(code: string) {
 
 function handleToggleCourse(code: string, currentEnabled: boolean) {
   const key = `course:${code}`
-  const enabled = toggleIntents.next(key, currentEnabled)
-  void handleQueuedToggleAction(() => cart.toggleCourse(code, enabled), () => {
-    toggleIntents.clearIfCurrent(key, enabled)
+  const intent = toggleIntents.next(key, currentEnabled)
+  void handleQueuedToggleAction(() => cart.toggleCourse(code, intent.value), () => {
+    toggleIntents.clearIfCurrent(key, intent.token)
   })
 }
 
@@ -233,18 +272,18 @@ function handleToggleBundle(
   currentEnabled: boolean,
 ) {
   const key = `bundle:${code}:${bundleId}:${layer}`
-  const enabled = toggleIntents.next(key, currentEnabled)
-  void handleQueuedToggleAction(() => cart.toggleBundle(code, bundleId, layer, enabled), () => {
-    toggleIntents.clearIfCurrent(key, enabled)
+  const intent = toggleIntents.next(key, currentEnabled)
+  void handleQueuedToggleAction(() => cart.toggleBundle(code, bundleId, layer, intent.value), () => {
+    toggleIntents.clearIfCurrent(key, intent.token)
   })
 }
 
 function handleToggleLayer(code: string, layer: number, enabled: boolean) {
   const course = courseList.value.find(item => item.course_code === code)
   const keys = (course?.layers[layer] || []).map(bundle => `bundle:${code}:${bundle.id}:${layer}`)
-  for (const key of keys) toggleIntents.set(key, enabled)
+  const intents = keys.map(key => [key, toggleIntents.set(key, enabled)] as const)
   void handleQueuedToggleAction(() => cart.toggleLayer(code, layer, enabled), () => {
-    for (const key of keys) toggleIntents.clearIfCurrent(key, enabled)
+    for (const [key, intent] of intents) toggleIntents.clearIfCurrent(key, intent.token)
   })
 }
 
@@ -295,8 +334,21 @@ onUnmounted(() => detailRequests.invalidate())
       <button type="button" @click="emit('retry-cart-load')">{{ t('common.retry') }}</button>
     </div>
 
-    <div v-if="cartError || historyAccessError || planMessage" class="dashboard__notice">
-      {{ cartError || historyAccessError || planMessage }}
+    <div
+      v-if="cartErrorMessage || historyAccessError || planMessage"
+      class="dashboard__notice"
+      :class="{ 'dashboard__notice--error': cartError === 'unverified' }"
+      :role="cartError === 'unverified' ? 'alert' : undefined"
+    >
+      <span>{{ cartErrorMessage || historyAccessError || planMessage }}</span>
+      <button
+        v-if="cartError === 'unverified'"
+        type="button"
+        :disabled="cart.reloading.value"
+        @click="reloadCartAfterUnverifiedMutation"
+      >
+        {{ cart.reloading.value ? t('scheduler.loading') : t('common.retry') }}
+      </button>
     </div>
 
     <div v-if="!cartLoadError && !loading" class="dashboard__body">
@@ -330,6 +382,7 @@ onUnmounted(() => detailRequests.invalidate())
           :popularity-generated-at="popularity.generatedAt.value"
           :show-popularity="popularity.canShowPopularity.value"
           :show-popularity-history="canShowPopularityHistory"
+          :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
           @toggle-course="handleToggleCourse"
           @toggle-bundle="handleToggleBundle"
           @toggle-layer="handleToggleLayer"
@@ -347,7 +400,7 @@ onUnmounted(() => detailRequests.invalidate())
     <SchedulerCartPanel
       :semester-id="semesterId"
       :course-list="courseList"
-      :visible="showCartPanel && !loading && !cartLoadError"
+      :visible="showCartPanel && !loading && !cartLoadError && !cart.requiresReload.value"
       :add-course="handleAddCourse"
       :remove-course="handleRemoveCourse"
       @close="showCartPanel = false"
