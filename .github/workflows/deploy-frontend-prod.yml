@@ -157,8 +157,68 @@ jobs:
             fi
           fi
 
-          [[ -f "$app_root/ecosystem.config.js" ]]
-          [[ -d /var/unikorn/prod_log && -w /var/unikorn/prod_log ]]
+          legacy_config="$app_root/ecosystem.config.js"
+          [[ -f "$legacy_config" && ! -L "$legacy_config" ]]
+          pm2_log_root=/var/unikorn/prod_pm2_log
+          [[ -d "$pm2_log_root" && ! -L "$pm2_log_root" && -w "$pm2_log_root" ]]
+          pm2_log_root_uid=$(stat -c '%u' -- "$pm2_log_root")
+          pm2_log_root_mode=$(stat -c '%a' -- "$pm2_log_root")
+          if [[ "$pm2_log_root_uid" != "$deploy_uid" ]] || (( (8#$pm2_log_root_mode & 0022) != 0 )); then
+            echo "Production frontend PM2 log directory must be deployment-owned and not group/other-writable" >&2
+            exit 1
+          fi
+          for log_name in pm2-out.log pm2-error.log; do
+            log_path="$pm2_log_root/$log_name"
+            if [[ -e "$log_path" || -L "$log_path" ]]; then
+              [[ -f "$log_path" && ! -L "$log_path" && -w "$log_path" ]] || {
+                echo "Production frontend PM2 log must be a writable regular file: $log_path" >&2
+                exit 1
+              }
+              log_uid=$(stat -c '%u' -- "$log_path")
+              log_links=$(stat -c '%h' -- "$log_path")
+              if [[ "$log_uid" != "$deploy_uid" || "$log_links" != "1" ]]; then
+                echo "Production frontend PM2 log must be owned by UID $deploy_uid and have one hard link: $log_path" >&2
+                exit 1
+              fi
+            fi
+          done
+
+          validate_legacy_log_targets() {
+            CAMPUS_FRONTEND_ROOT="$app_root" \
+              CAMPUS_FRONTEND_PORT=3000 \
+              CAMPUS_FRONTEND_PM2_APP=prod-unikorn-frontend \
+              CAMPUS_FRONTEND_RELEASE_SHA=legacy \
+              node - "$1" <<'NODE'
+          const fs = require("node:fs");
+          const vm = require("node:vm");
+          const configPath = process.argv[2];
+          const moduleRecord = { exports: {} };
+          vm.runInNewContext(fs.readFileSync(configPath, "utf8"), {
+            module: moduleRecord,
+            exports: moduleRecord.exports,
+            process: { env: process.env },
+          }, { filename: configPath, timeout: 1000 });
+          const apps = moduleRecord.exports?.apps;
+          const matches = Array.isArray(apps)
+            ? apps.filter((app) => app?.name === "prod-unikorn-frontend")
+            : [];
+          if (matches.length !== 1) process.exit(2);
+          const app = matches[0];
+          if (
+            app.error_file !== "/var/unikorn/prod_pm2_log/pm2-error.log" ||
+            app.out_file !== "/var/unikorn/prod_pm2_log/pm2-out.log"
+          ) process.exit(3);
+          NODE
+          }
+          validate_legacy_log_targets "$legacy_config"
+
+          current_link="$app_root/current"
+          if [[ -L "$current_link" && $(readlink -- "$current_link") == "releases/legacy-in-place" ]]; then
+            frozen_legacy_config="$app_root/releases/legacy-ecosystem.config.cjs"
+            [[ -f "$frozen_legacy_config" && ! -L "$frozen_legacy_config" ]]
+            cmp -s -- "$legacy_config" "$frozen_legacy_config"
+            validate_legacy_log_targets "$frozen_legacy_config"
+          fi
           [[ $(df -Pk "$app_root" | awk 'NR == 2 { print $4 }') =~ ^[0-9]+$ ]]
           (( $(df -Pk "$app_root" | awk 'NR == 2 { print $4 }') >= 1048576 ))
           pm2 jlist >/dev/null
