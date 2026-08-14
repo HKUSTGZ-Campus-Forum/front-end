@@ -48,7 +48,7 @@ lock_wait_seconds=${DEPLOY_LOCK_WAIT_SECONDS:-120}
 [[ "$lock_wait_seconds" =~ ^[0-9]+$ ]] && (( lock_wait_seconds >= 1 && lock_wait_seconds <= 120 )) ||
   die "DEPLOY_LOCK_WAIT_SECONDS must be between 1 and 120"
 
-for command_name in curl node pm2 python3 sha256sum; do
+for command_name in cmp curl mktemp node pm2 python3 sha256sum sort; do
   command -v "$command_name" >/dev/null 2>&1 || die "required command not found: $command_name"
 done
 
@@ -65,21 +65,25 @@ legacy_release="$releases_root/legacy-in-place"
 legacy_config_path="$app_root/ecosystem.config.js"
 legacy_frozen_config="$releases_root/legacy-ecosystem.config.cjs"
 manifest_relative="deploy/release.sha256"
+public_asset_verifier_relative="deploy/verify-public-assets.sh"
 health_url="http://127.0.0.1:$port/health"
 root_url="http://127.0.0.1:$port/"
 public_health_url=${DEPLOY_PUBLIC_HEALTH_URL:-}
 public_root_url=${DEPLOY_PUBLIC_ROOT_URL:-}
 public_planner_url=${DEPLOY_PUBLIC_PLANNER_URL:-}
+public_planner_en_url=${DEPLOY_PUBLIC_PLANNER_EN_URL:-}
 
 [[ -d "$app_root" && ! -L "$app_root" ]] || die "APP_ROOT must be a real directory"
 
-if [[ -n "$public_health_url" || -n "$public_root_url" || -n "$public_planner_url" ]]; then
+if [[ -n "$public_health_url" || -n "$public_root_url" || -n "$public_planner_url" || -n "$public_planner_en_url" ]]; then
   [[ "$public_health_url" == https://* && "$public_health_url" != *[[:space:]]* ]] ||
     die "DEPLOY_PUBLIC_HEALTH_URL must be a whitespace-free HTTPS URL"
   [[ "$public_root_url" == https://* && "$public_root_url" != *[[:space:]]* ]] ||
     die "DEPLOY_PUBLIC_ROOT_URL must be a whitespace-free HTTPS URL"
   [[ "$public_planner_url" == https://* && "$public_planner_url" != *[[:space:]]* ]] ||
     die "DEPLOY_PUBLIC_PLANNER_URL must be a whitespace-free HTTPS URL"
+  [[ "$public_planner_en_url" == https://* && "$public_planner_en_url" != *[[:space:]]* ]] ||
+    die "DEPLOY_PUBLIC_PLANNER_EN_URL must be a whitespace-free HTTPS URL"
 fi
 
 if [[ ${ATOMIC_RELEASE_LOCK_HELD:-} != "1" ]]; then
@@ -109,8 +113,11 @@ done
 [[ -d "$staging_dir/.output/public/_nuxt" ]] || die "staged Nuxt assets are missing"
 [[ -f "$staging_dir/$pm2_config_relative" ]] || die "staged PM2 config is missing"
 [[ -f "$staging_dir/$manifest_relative" ]] || die "staged checksum manifest is missing"
+[[ -f "$staging_dir/$public_asset_verifier_relative" && ! -L "$staging_dir/$public_asset_verifier_relative" ]] ||
+  die "staged public asset verifier is missing"
 
 node --check "$staging_dir/.output/server/index.mjs" >/dev/null || die "staged server entry point is invalid"
+bash -n "$staging_dir/$public_asset_verifier_relative" || die "staged public asset verifier is invalid"
 
 asset_count=$(find "$staging_dir/.output/public/_nuxt" -type f | wc -l)
 (( asset_count >= 10 )) || die "staged Nuxt asset count is unexpectedly low: $asset_count"
@@ -169,6 +176,7 @@ wait_for_public_acceptance() {
   local process_count=${2:-1}
   local actual_version
   local accepted
+  local asset_result=""
   local attempt
   local probe
   local probe_count=$process_count
@@ -186,14 +194,19 @@ wait_for_public_acceptance() {
         break
       fi
     done
-    if [[ "$accepted" == true ]] && \
-      curl --fail --silent --show-error --max-time 10 -H 'Cache-Control: no-cache' "$public_root_url" >/dev/null 2>&1 && \
-      curl --fail --silent --show-error --max-time 10 -H 'Cache-Control: no-cache' "$public_planner_url" >/dev/null 2>&1; then
-      return 0
+    if [[ "$accepted" == true ]]; then
+      if asset_result=$(bash "$release_dir/$public_asset_verifier_relative" \
+        "$release_dir/.output/public" \
+        "$public_root_url" \
+        "$public_planner_url" \
+        "$public_planner_en_url" 2>&1); then
+        return 0
+      fi
     fi
     sleep 3
   done
 
+  [[ -z "$asset_result" ]] || printf '%s\n' "$asset_result" >&2
   return 1
 }
 
@@ -727,7 +740,7 @@ fi
 if ! wait_for_public_acceptance "$expected_sha" "$new_process_count"; then
   pm2 logs "$pm2_app" --nostream --lines 100 || true
   perform_rollback || die "public acceptance and rollback both failed"
-  die "public health, root, or planner acceptance failed; previous release restored"
+  die "public health or release-matched asset acceptance failed; previous release restored"
 fi
 
 if ! pm2 save --force >/dev/null; then

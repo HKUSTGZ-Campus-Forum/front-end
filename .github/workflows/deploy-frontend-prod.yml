@@ -77,6 +77,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           bash -n deploy/atomic-release.sh
+          bash -n deploy/verify-public-assets.sh
           python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("deploy/atomic-release-lock.py").read_text())'
           node --check deploy/ecosystem.prod.config.cjs
           ssh-keygen -lf deploy/ssh_known_hosts -E sha256 | grep -Fq 'SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg'
@@ -131,7 +132,7 @@ jobs:
           source "$NVM_DIR/nvm.sh"
           nvm use 20
 
-          for command_name in curl node pm2 python3 sha256sum stat tar; do
+          for command_name in cmp curl grep mktemp node pm2 python3 readlink sha256sum sort stat tar; do
             command -v "$command_name" >/dev/null
           done
           app_root=/data/prod_unikorn/front-end
@@ -140,6 +141,25 @@ jobs:
           app_root_uid=$(stat -c '%u' -- "$app_root")
           if [[ "$app_root_uid" != "$deploy_uid" ]]; then
             echo "Production frontend APP_ROOT must be owned by the deployment account (expected UID $deploy_uid, found $app_root_uid)" >&2
+            exit 1
+          fi
+
+          nginx_site=/etc/nginx/sites-enabled/prod-unikorn
+          [[ -r "$nginx_site" ]] || {
+            echo "Production Nginx site must be readable: $nginx_site" >&2
+            exit 1
+          }
+          nginx_site_real=$(readlink -f -- "$nginx_site")
+          [[ "$nginx_site_real" == /etc/nginx/sites-available/* && -f "$nginx_site_real" && ! -L "$nginx_site_real" ]] || {
+            echo "Production Nginx site must resolve to a real sites-available file" >&2
+            exit 1
+          }
+          current_static_root="root /data/prod_unikorn/front-end/current/.output/public;"
+          legacy_static_root="root /data/prod_unikorn/front-end/.output/public;"
+          current_static_root_count=$(grep -F -c -- "$current_static_root" "$nginx_site_real" || true)
+          legacy_static_root_count=$(grep -F -c -- "$legacy_static_root" "$nginx_site_real" || true)
+          if [[ "$current_static_root_count" != "2" || "$legacy_static_root_count" != "0" ]]; then
+            echo "Production Nginx static roots must follow current/.output/public (expected 2 current roots and 0 legacy roots)" >&2
             exit 1
           fi
 
@@ -292,6 +312,7 @@ jobs:
           export DEPLOY_PUBLIC_HEALTH_URL="https://unikorn.axfff.com/health"
           export DEPLOY_PUBLIC_ROOT_URL="https://unikorn.axfff.com/"
           export DEPLOY_PUBLIC_PLANNER_URL="https://unikorn.axfff.com/courses/planner"
+          export DEPLOY_PUBLIC_PLANNER_EN_URL="https://unikorn.axfff.com/en/courses/planner"
           exec bash "$remote_script" \
             "/data/prod_unikorn/front-end" \
             "$release_id" \
@@ -313,6 +334,7 @@ jobs:
           health_url="https://unikorn.axfff.com/health"
           root_url="https://unikorn.axfff.com/"
           planner_url="https://unikorn.axfff.com/courses/planner"
+          planner_en_url="https://unikorn.axfff.com/en/courses/planner"
 
           for attempt in $(seq 1 20); do
             response=$(curl --fail --silent --show-error --max-time 10 \
@@ -324,12 +346,15 @@ jobs:
                 process.exit(1);
               }
             ' "$response" "$EXPECTED_SHA" 2>/dev/null && \
-              curl --fail --silent --show-error --max-time 10 "$root_url" >/dev/null && \
-              curl --fail --silent --show-error --max-time 10 "$planner_url" >/dev/null; then
+              bash deploy/verify-public-assets.sh \
+                .output/public \
+                "$root_url" \
+                "$planner_url" \
+                "$planner_en_url" >/dev/null; then
               exit 0
             fi
             sleep 3
           done
 
-          echo "Public production did not expose build $EXPECTED_SHA with reachable root and planner routes" >&2
+          echo "Public production did not expose build $EXPECTED_SHA with release-matched assets" >&2
           exit 1

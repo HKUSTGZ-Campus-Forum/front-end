@@ -20,6 +20,7 @@ import { describe, expect, it } from "vitest";
 const repositoryRoot = resolve(import.meta.dirname, "../..");
 const controller = resolve(repositoryRoot, "deploy/atomic-release.sh");
 const lockHelper = resolve(repositoryRoot, "deploy/atomic-release-lock.py");
+const publicAssetVerifier = resolve(repositoryRoot, "deploy/verify-public-assets.sh");
 const pm2Config = resolve(repositoryRoot, "deploy/ecosystem.dev.config.cjs");
 const productionPm2Config = resolve(repositoryRoot, "deploy/ecosystem.prod.config.cjs");
 const shaA = "a".repeat(40);
@@ -57,9 +58,11 @@ function createRelease(appRoot: string, sha: string, run: number, attempt: numbe
   for (let asset = 0; asset < 10; asset += 1) {
     writeFileSync(join(output, "public", "_nuxt", `asset-${asset}.js`), `export default ${asset};\n`);
   }
+  writeFileSync(join(output, "public", "_nuxt", "asset.css"), "body { color: #123456; }\n");
   cpSync(pm2Config, join(staging, "deploy", "ecosystem.dev.config.cjs"));
   cpSync(controller, join(staging, "deploy", "atomic-release.sh"));
   cpSync(lockHelper, join(staging, "deploy", "atomic-release-lock.py"));
+  cpSync(publicAssetVerifier, join(staging, "deploy", "verify-public-assets.sh"));
   writeManifest(staging, join(staging, "deploy", "release.sha256"));
   return releaseId;
 }
@@ -177,7 +180,17 @@ exit 0
   writeFileSync(
     curl,
     `#!/usr/bin/env bash
+set -eu
+output_file=""
+previous=""
+for argument in "$@"; do
+  if [[ "$previous" == "-o" || "$previous" == "--output" ]]; then output_file=$argument; fi
+  previous=$argument
+done
 target_url=\${*: -1}
+write_payload() {
+  if [[ -n "$output_file" ]]; then printf '%s' "$1" > "$output_file"; else printf '%s' "$1"; fi
+}
 if [[ "$target_url" == */health ]]; then
   version=$TEST_HEALTH_VERSION
   if [[ "$target_url" == https://* && -n "\${TEST_PUBLIC_HEALTH_VERSION:-}" ]]; then
@@ -191,7 +204,21 @@ if [[ "$target_url" == */health ]]; then
       version=$TEST_PREVIOUS_HEALTH_VERSION
     fi
   fi
-  printf '{"status":"ok","service":"campus-forum-frontend","version":"%s"}' "$version"
+  if [[ -n "$output_file" ]]; then
+    printf '{"status":"ok","service":"campus-forum-frontend","version":"%s"}' "$version" > "$output_file"
+  else
+    printf '{"status":"ok","service":"campus-forum-frontend","version":"%s"}' "$version"
+  fi
+elif [[ "$target_url" == https://public.test/_nuxt/* ]]; then
+  mode=\${TEST_PUBLIC_ASSET_MODE:-ok}
+  if [[ "$mode" == "missing" ]]; then exit 22; fi
+  if [[ "$mode" == "mismatch" ]]; then write_payload "wrong public asset"; exit 0; fi
+  asset_name=\${target_url##*/}
+  asset_path="$TEST_APP_ROOT/current/.output/public/_nuxt/$asset_name"
+  [[ -f "$asset_path" ]] || exit 22
+  if [[ -n "$output_file" ]]; then /bin/cp "$asset_path" "$output_file"; else /bin/cat "$asset_path"; fi
+elif [[ "$target_url" == https://public.test/* ]]; then
+  write_payload '<!doctype html><link rel="stylesheet" href="/_nuxt/asset.css"><script type="module" src="/_nuxt/asset-0.js"></script>'
 fi
 `,
   );
@@ -242,6 +269,7 @@ function runController(
     markerless?: boolean;
     daemonize?: boolean;
     publicHealthVersion?: string;
+    publicAssetMode?: "ok" | "missing" | "mismatch";
     expectedMaxInstances?: string;
   } = {},
 ) {
@@ -278,6 +306,7 @@ function runController(
         TEST_MARKERLESS_UNTIL_RESTART: options.markerless ? "true" : "false",
         TEST_PM2_DAEMONIZE: options.daemonize ? "true" : "false",
         TEST_PUBLIC_HEALTH_VERSION: options.publicHealthVersion ?? "",
+        TEST_PUBLIC_ASSET_MODE: options.publicAssetMode ?? "ok",
         ATOMIC_RELEASE_TESTING: "1",
         DEPLOY_EXPECTED_MAX_INSTANCES:
           options.expectedMaxInstances ??
@@ -287,6 +316,7 @@ function runController(
               DEPLOY_PUBLIC_HEALTH_URL: "https://public.test/health",
               DEPLOY_PUBLIC_ROOT_URL: "https://public.test/",
               DEPLOY_PUBLIC_PLANNER_URL: "https://public.test/courses/planner",
+              DEPLOY_PUBLIC_PLANNER_EN_URL: "https://public.test/en/courses/planner",
             }
           : {}),
         DEPLOY_HEALTH_ATTEMPTS: "1",
@@ -625,13 +655,67 @@ describe("atomic release controller behavior", () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain(
-      "public health, root, or planner acceptance failed; previous release restored",
+      "public health or release-matched asset acceptance failed; previous release restored",
     );
     expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${oldId}`);
     expect(readFileSync(result.pm2Log, "utf8")).toContain(
       "ecosystem.prod.config.cjs --only prod-unikorn-frontend --update-env",
     );
   }, 40_000);
+
+  it("accepts a release only when public JavaScript and CSS match the candidate", () => {
+    const appRoot = mkdtempSync(join(tmpdir(), "frontend-atomic-public-assets-"));
+    const releaseId = createProductionRelease(appRoot, shaB, 120, 1);
+
+    const result = runController(appRoot, releaseId, shaB, shaB, "", {
+      app: "prod-unikorn-frontend",
+      port: "3000",
+      config: "deploy/ecosystem.prod.config.cjs",
+      publicHealthVersion: shaB,
+    });
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+    expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${releaseId}`);
+  }, 40_000);
+
+  for (const publicAssetMode of ["missing", "mismatch"] as const) {
+    it(`rolls back while armed when a public asset is ${publicAssetMode}`, () => {
+      const appRoot = mkdtempSync(join(tmpdir(), `frontend-atomic-public-${publicAssetMode}-`));
+      const oldId = `${shaA}-93-1`;
+      const oldRelease = join(appRoot, "releases", oldId);
+      mkdirSync(join(oldRelease, ".output", "server"), { recursive: true });
+      mkdirSync(join(oldRelease, "deploy"), { recursive: true });
+      writeFileSync(join(oldRelease, ".output", "server", "index.mjs"), "export default {};\n");
+      cpSync(productionPm2Config, join(oldRelease, "deploy", "ecosystem.prod.config.cjs"));
+      symlinkSync(`releases/${oldId}`, join(appRoot, "current"));
+      const releaseId = createProductionRelease(appRoot, shaB, publicAssetMode === "missing" ? 121 : 122, 1);
+
+      const result = runController(
+        appRoot,
+        releaseId,
+        shaB,
+        shaB,
+        join(appRoot, "current", ".output", "server", "index.mjs"),
+        {
+          app: "prod-unikorn-frontend",
+          port: "3000",
+          config: "deploy/ecosystem.prod.config.cjs",
+          publicHealthVersion: shaB,
+          publicAssetMode,
+        },
+      );
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(
+        "public health or release-matched asset acceptance failed; previous release restored",
+      );
+      expect(readlinkSync(join(appRoot, "current"))).toBe(`releases/${oldId}`);
+      expect(readFileSync(result.pm2State, "utf8").trim()).toBe(
+        join(appRoot, "current", ".output", "server", "index.mjs"),
+      );
+    }, 40_000);
+  }
 
   it("rejects symlinked incoming and releases roots without touching their targets", () => {
     for (const managedName of [".incoming", "releases"]) {
