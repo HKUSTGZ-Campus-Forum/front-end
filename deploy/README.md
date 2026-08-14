@@ -12,14 +12,26 @@ process on port 3001; production preserves its historical `max` cluster on port
 `/var/unikorn/prod_pm2_log` paths managed by the PM2 logrotate policy. A deployment
 succeeds only when every PM2 process reports the immutable Git SHA and repeated
 `/health` probes identify that same SHA. Production also requires the public
-HTTPS health endpoint to report that SHA and its root and planner routes to be
-reachable before the rollback window closes. If reload or validation fails,
+HTTPS health endpoint to report that SHA. Before the rollback window closes,
+`verify-public-assets.sh` extracts every Nuxt JavaScript and CSS reference from
+the public root and localized planner pages and compares each response byte for
+byte with the candidate release. HTML success with missing, stale, or
+mismatched assets therefore triggers rollback. If reload or validation fails,
 the controller restores the previous symlink and
 restarts from that previous release's own validated PM2 config. The first
 cutover preserves the historical top-level `.output` via
 `releases/legacy-in-place` and freezes its validated PM2 config alongside the
 release metadata, so migrating to this layout does not delete or reinterpret
 the existing deployment.
+
+The host Nginx static locations must follow the atomic `current` symlink, never
+the preserved top-level legacy `.output`. The reviewed contract is stored at
+`deploy/nginx/prod-unikorn-static-locations.conf`; production preflight rejects
+a legacy root before uploading a release. Installing or changing the root-owned
+host vhost remains an explicit operator action: back it up, verify that the
+Nginx worker can traverse the target, run privileged `nginx -t`, gracefully
+reload, and verify public asset bytes. Do not replace the legacy `.output`
+directory because it is the first-cutover rollback anchor.
 
 The controller is parameterized by application root, release ID, expected SHA,
 PM2 application name, port, retention count, and a validated PM2 config path.
