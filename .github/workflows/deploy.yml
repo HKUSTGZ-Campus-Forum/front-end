@@ -69,6 +69,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           bash -n deploy/atomic-release.sh
+          bash -n deploy/verify-public-assets.sh
           python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("deploy/atomic-release-lock.py").read_text())'
           node --check deploy/ecosystem.dev.config.cjs
           ssh-keygen -lf deploy/ssh_known_hosts -E sha256 | grep -Fq 'SHA256:mG33HUMsz+94mAc8vjSe9aIpRoiVhvwiMI9NrC1sgTg'

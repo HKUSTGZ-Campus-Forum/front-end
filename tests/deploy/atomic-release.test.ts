@@ -13,6 +13,12 @@ const controllerPath = resolve(root, "deploy/atomic-release.sh");
 const controller = readFileSync(controllerPath, "utf8");
 const lockHelperPath = resolve(root, "deploy/atomic-release-lock.py");
 const lockHelper = readFileSync(lockHelperPath, "utf8");
+const publicAssetVerifierPath = resolve(root, "deploy/verify-public-assets.sh");
+const publicAssetVerifier = readFileSync(publicAssetVerifierPath, "utf8");
+const nginxStaticContract = readFileSync(
+  resolve(root, "deploy/nginx/prod-unikorn-static-locations.conf"),
+  "utf8",
+);
 const pm2Config = readFileSync(resolve(root, "deploy/ecosystem.dev.config.cjs"), "utf8");
 const productionPm2Config = readFileSync(
   resolve(root, "deploy/ecosystem.prod.config.cjs"),
@@ -25,6 +31,7 @@ const knownHostsPath = resolve(root, "deploy/ssh_known_hosts");
 describe("atomic frontend deployment", () => {
   it("keeps the release controller valid Bash", () => {
     expect(() => execFileSync("bash", ["-n", controllerPath])).not.toThrow();
+    expect(() => execFileSync("bash", ["-n", publicAssetVerifierPath])).not.toThrow();
     expect(() =>
       execFileSync("python3", [
         "-c",
@@ -41,6 +48,7 @@ describe("atomic frontend deployment", () => {
     expect(workflow).toContain('tar -xzf - --no-same-owner --no-same-permissions -C "$remote_staging"');
     expect(workflow).toContain("Create release checksum manifest");
     expect(workflow).toContain("bash -n deploy/atomic-release.sh");
+    expect(workflow).toContain("bash -n deploy/verify-public-assets.sh");
     expect(workflow).toContain("find .output deploy -type f");
     expect(workflow).toContain("deploy/release.sha256");
   });
@@ -68,6 +76,8 @@ describe("atomic frontend deployment", () => {
     expect(controller).toContain('exec python3 "$lock_helper"');
     expect(controller).toContain("sha256sum --check --strict --quiet");
     expect(controller).toContain('node --check "$staging_dir/.output/server/index.mjs"');
+    expect(controller).toContain('bash -n "$staging_dir/$public_asset_verifier_relative"');
+    expect(controller).toContain('bash "$release_dir/$public_asset_verifier_relative"');
     expect(controller).toContain(".release-complete");
     expect(controller).toContain('mv -Tf -- "$next_link" "$current_link"');
     expect(controller).toContain("wait_for_health_version");
@@ -144,6 +154,7 @@ describe("atomic frontend deployment", () => {
     expect(productionWorkflow).toContain('"3000"');
     expect(productionWorkflow).toContain('"deploy/ecosystem.prod.config.cjs"');
     expect(productionWorkflow).toContain("Confirm public production from external runner");
+    expect(productionWorkflow).toContain("bash -n deploy/verify-public-assets.sh");
     expect(productionWorkflow).toContain(
       'export DEPLOY_PUBLIC_HEALTH_URL="https://unikorn.axfff.com/health"',
     );
@@ -153,10 +164,23 @@ describe("atomic frontend deployment", () => {
     expect(productionWorkflow).toContain(
       'export DEPLOY_PUBLIC_PLANNER_URL="https://unikorn.axfff.com/courses/planner"',
     );
+    expect(productionWorkflow).toContain(
+      'export DEPLOY_PUBLIC_PLANNER_EN_URL="https://unikorn.axfff.com/en/courses/planner"',
+    );
     expect(productionWorkflow).toContain('health_url="https://unikorn.axfff.com/health"');
     expect(productionWorkflow).toContain('root_url="https://unikorn.axfff.com/"');
     expect(productionWorkflow).toContain(
       'planner_url="https://unikorn.axfff.com/courses/planner"',
+    );
+    expect(productionWorkflow).toContain(
+      'planner_en_url="https://unikorn.axfff.com/en/courses/planner"',
+    );
+    expect(productionWorkflow).toContain("bash deploy/verify-public-assets.sh");
+    expect(productionWorkflow).toContain(
+      'current_static_root="root /data/prod_unikorn/front-end/current/.output/public;"',
+    );
+    expect(productionWorkflow).toContain(
+      'legacy_static_root="root /data/prod_unikorn/front-end/.output/public;"',
     );
     expect(productionWorkflow).toContain('payload.version !== expected');
     expect(productionWorkflow).not.toContain("appleboy/");
@@ -175,6 +199,11 @@ describe("atomic frontend deployment", () => {
     expect(legacyProductionPm2Config).toContain("'/var/unikorn/prod_pm2_log/pm2-error.log'");
     expect(legacyProductionPm2Config).toContain("'/var/unikorn/prod_pm2_log/pm2-out.log'");
     expect(deployReadme).toContain("`/var/unikorn/prod_pm2_log`");
+    expect(deployReadme).toContain("`verify-public-assets.sh`");
+    expect(publicAssetVerifier).toContain("public asset does not match the active build");
+    expect(publicAssetVerifier).toContain("Accept-Encoding: identity");
+    expect(nginxStaticContract.match(/root \/data\/prod_unikorn\/front-end\/current\/\.output\/public;/g)).toHaveLength(2);
+    expect(nginxStaticContract).not.toContain("root /data/prod_unikorn/front-end/.output/public;");
     expect(productionPm2Config).not.toContain("/var/unikorn/prod_log/");
     expect(legacyProductionPm2Config).not.toContain("/var/unikorn/prod_log/");
   });
