@@ -75,9 +75,11 @@ const dayColWidth = computed(() => {
 })
 
 const rowHeight = computed(() => {
-  // Leave room for the trailing 21:00 label centered on the last grid line.
+  // Mirror the original planner: 8 rows fill (container - header - a small
+  // 20px bottom strip), so the trailing 21:00 label sits on the bottom grid
+  // line instead of leaving a large empty gap below it.
   const available = containerHeight.value - headerHeight
-  return Math.max(40, available / 8.5)
+  return Math.max(40, (available - 20) / 8)
 })
 
 // Grid lines live on a dedicated layer that starts exactly at the time-column
