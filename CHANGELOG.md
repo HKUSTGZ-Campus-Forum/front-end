@@ -45,6 +45,17 @@
   - 底部控制栏：按钮去掉边框/背景改为纯图标（内联 SVG：skip-start/caret/skip-end），计数器改大号索引 + `/ total`
   - 方案 slider 占满整行宽度；支持点击定位 + 自由拖拽（mousedown + window mousemove/mouseup），拖动时显示索引 tooltip + thumb 放大
   - 周六/周日课程随方案列数联动（`getMaxDayNum`，原有逻辑确认保留）
+- **排课工作台图标方案统一（lucide 本地图标集）**：
+  - 安装 `@iconify-json/lucide` 本地图标集（devDependency），@nuxt/icon 自动发现，build 产物内联图标（icons.mjs）
+  - 排课板块 11 处图标统一为 `<Icon name="lucide:xxx">`：课表（list/map-pin/user/clock）、侧边栏底部栏（sliders-horizontal/menu/shopping-cart）、底部控制栏（skip-back/chevron-left/chevron-right/skip-forward）
+  - 修复图标加载失败根因：裸名称会被解析成错误/空前缀集合（如 `map-pin` → `map:pin`），必须使用 `lucide:` 前缀
+  - `nuxt.config.ts` 配置 `icon.localApiEndpoint: '/_nuxt_icon'`，避开 devProxy 对 `/api/*` 的拦截导致图标接口 404
+  - lockfile 双同步（`package-lock.json` + `pnpm-lock.yaml`）
+- **底部控制栏图标可见性修复**：
+  - 根因：全局按钮样式 `padding: 0.75rem 1rem` 叠加 `box-sizing: border-box`，使 40px 按钮内容区仅剩 4px，flex 收缩把图标压成 4px 细线（肉眼几乎不可见）
+  - 修复：按钮 `padding: 0; min-height: 0`，图标 `flex-shrink: 0`
+  - 复刻原版：移除 `:disabled`（导航按钮永不禁用，越界点击由 `goToStart/goPrev/goNext/goToEnd` 自动 clamp），去掉 `opacity: 0.3` 变暗
+  - 四个导航图标统一 26px（此前外侧 26px / 内侧 22px）
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

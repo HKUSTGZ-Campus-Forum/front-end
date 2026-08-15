@@ -76,7 +76,6 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.firstPlan')"
-        :disabled="currentIndex <= 1"
         @click="goToStart"
       >
         <Icon name="lucide:skip-back" class="bottom-panel__icon" />
@@ -84,7 +83,6 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.previousPlan')"
-        :disabled="currentIndex <= 1"
         @click="goPrev"
       >
         <Icon name="lucide:chevron-left" class="bottom-panel__icon" />
@@ -98,7 +96,6 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.nextPlan')"
-        :disabled="currentIndex >= totalPlans"
         @click="goNext"
       >
         <Icon name="lucide:chevron-right" class="bottom-panel__icon" />
@@ -106,7 +103,6 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.lastPlan')"
-        :disabled="currentIndex >= totalPlans"
         @click="goToEnd"
       >
         <Icon name="lucide:skip-forward" class="bottom-panel__icon" />
@@ -148,6 +144,8 @@ onUnmounted(() => {
     button {
       width: 40px;
       height: 40px;
+      min-height: 0;
+      padding: 0;
       border: none;
       background: transparent;
       cursor: pointer;
@@ -157,22 +155,16 @@ onUnmounted(() => {
       color: var(--text-secondary);
       transition: color 0.15s;
 
-      &:hover:not(:disabled) {
+      &:hover {
         color: var(--interactive-active);
       }
-
-      &:disabled { opacity: 0.3; cursor: not-allowed; }
     }
   }
 
   &__icon {
-    font-size: 22px; // chevrons at 22px; skip icons slightly larger below
+    flex-shrink: 0;
+    font-size: 26px; // all four navigation icons the same size
     line-height: 1;
-  }
-
-  &__controls button:first-child &__icon,
-  &__controls button:last-child &__icon {
-    font-size: 26px;
   }
 
   &__counter {
