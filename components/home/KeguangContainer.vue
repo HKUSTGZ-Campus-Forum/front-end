@@ -30,14 +30,14 @@ const sidebarExpanded = ref(false)
 .kg-layout {
   position: relative;
   min-height: 100vh;
-  background: #EBF6FC;
+  background: var(--bg-primary);
 }
 
 .kg-layout__main {
   margin-left: 72px;
   margin-top: 84px;
   min-height: calc(100vh - 84px);
-  background: #EBF6FC;
+  background: var(--bg-primary);
   transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;

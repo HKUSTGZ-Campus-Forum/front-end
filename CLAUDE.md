@@ -6,8 +6,15 @@
 ## Project Overview
 **UniKorn Campus Forum** - A modern campus forum application built with Nuxt 3/Vue.js frontend and Flask backend.
 
-## 🎨 Theme System (Latest Update - April 2026)
-**CRITICAL**: This project uses a single-theme system (科广蓝/keguang-blue) with CSS custom properties. Future themes will be added by only changing colors, keeping layout identical. **ALL new components must use CSS custom properties instead of hardcoded colors.**
+## 🎨 Theme System (Latest Update - August 2026)
+**CRITICAL**: The project uses a CSS-custom-property theme system with **two themes**: `keguang-blue` (light, default) and `deep-dark` (dark). Themes change only colors — layout must not depend on theme identity. **ALL new components must use CSS custom properties instead of hardcoded colors.**
+
+### Dark Mode Essentials
+- Dark theme id: `deep-dark`; registered in `utils/themes.ts` (`category: 'dark'`)
+- `themeStore.applyTheme()` sets CSS variables on `<html>`, `color-scheme`, and the `data-theme` attribute
+- FOUC prevention: inline script in `app.vue` reads `localStorage['theme']` and sets `data-theme` before first paint; the dark variables also exist in `assets/css/variables.scss` under `:root[data-theme='deep-dark']`
+- **Keep `utils/themes.ts` and the SCSS dark block in sync** when changing dark colors
+- Auto dark mode (follows system) is available in ThemeSettings (`/setting/theme`)
 
 ### Quick Theme Development Rules
 ```scss
@@ -27,7 +34,7 @@
 }
 ```
 
-**🧪 Testing**: Test new components with the 科广蓝 theme. Future themes (light variants, dark mode) will only change colors — layout must not depend on theme identity.
+**🧪 Testing**: Test new components with both `keguang-blue` and `deep-dark` themes. Theme switching only changes colors — layout must not depend on theme identity.
 
 ### Tech Stack
 - **Frontend**: Nuxt 3, Vue.js 3, TypeScript, SCSS

@@ -8,6 +8,15 @@
 
 ## [Unreleased]
 
+### 主题系统
+
+- **新增深色主题 `deep-dark`（深邃黑）**：深蓝黑背景 + 科广蓝强调色，与 `keguang-blue` 同源配色
+  - 主题注册：`utils/themes.ts` 新增 `deep-dark` 配置（`category: 'dark'`），设置页 `/setting/theme` 深色分类可用
+  - FOUC 防护：`app.vue` 内联脚本首屏前读取持久化主题设置 `data-theme`；`assets/css/variables.scss` 补充 `:root[data-theme='deep-dark']` 变量覆盖块
+  - `themeStore.applyTheme()` 同步 `color-scheme`（原生滚动条/表单控件跟随）与 `data-theme` 属性
+  - 修复 `ThemeSettings` 自动深色模式：`selectTheme('dark')` 引用不存在的主题 id、`removeEventListener` 传空函数失效、`onMounted` 判断恒为 false 三个 bug
+  - 主题文档：`docs/THEME_SYSTEM.md` 更新当前启用的 2 个主题，早期设计的 6 个主题保留在"Planned / Not Yet Enabled Themes"（暂未使用）
+
 ### 课程板块（排课助手迁移与完善）
 
 - **排课助手迁移**：将原 `CoursePlan.search` 的核心功能（课表求解、课程收藏、冲突检测）迁移进主站

@@ -198,31 +198,38 @@ function toggleAutoDarkMode() {
 }
 
 let mediaQuery = null;
+let mediaQueryHandler = null;
+
+function getPreferredThemeId(isDark) {
+  const category = isDark ? 'dark' : 'light';
+  const theme = getThemesByCategory(category)[0];
+  return theme ? theme.id : 'keguang-blue';
+}
 
 function enableAutoTheme() {
   if (window.matchMedia) {
     mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleChange = (e) => {
       if (autoDarkMode.value) {
-        const preferredTheme = e.matches ? 'dark' : 'light';
-        selectTheme(preferredTheme);
+        selectTheme(getPreferredThemeId(e.matches));
       }
     };
-    
+
+    mediaQueryHandler = handleChange;
     mediaQuery.addEventListener('change', handleChange);
-    
-    // Apply initial theme
-    const preferredTheme = mediaQuery.matches ? 'dark' : 'light';
-    selectTheme(preferredTheme);
+
+    // Apply initial theme based on system preference
+    selectTheme(getPreferredThemeId(mediaQuery.matches));
   }
 }
 
 function disableAutoTheme() {
-  if (mediaQuery) {
-    mediaQuery.removeEventListener('change', () => {});
-    mediaQuery = null;
+  if (mediaQuery && mediaQueryHandler) {
+    mediaQuery.removeEventListener('change', mediaQueryHandler);
+    mediaQueryHandler = null;
   }
+  mediaQuery = null;
 }
 
 // Quick actions
@@ -243,9 +250,9 @@ function navigateToHome() {
 
 // Lifecycle
 onMounted(() => {
-  // Initialize auto dark mode if user prefers dark theme
+  // Initialize auto dark mode if user prefers dark theme and is on a dark theme
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    if (themeStore.currentTheme === 'dark') {
+    if (themeStore.activeTheme?.category === 'dark') {
       autoDarkMode.value = true;
       enableAutoTheme();
     }

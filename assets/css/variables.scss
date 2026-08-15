@@ -4,6 +4,7 @@
   --bg-secondary: #f5fbfe;
   --bg-gradient: linear-gradient(160deg, #d7edf9 0%, #eaf4fd 100%);
   --bg-image: none;
+  color-scheme: light;
 
   // Text colors
   --text-primary: #1a2a4a;
@@ -95,6 +96,67 @@
   --transition-fast: 0.2s;
   --transition-normal: 0.3s;
   --transition-slow: 0.4s;
+}
+
+// 深色主题变量覆盖（首屏防 FOUC：由 app.vue 内联脚本设置 data-theme）
+// 注意：配色须与 utils/themes.ts 的 deep-dark 配置保持同步
+:root[data-theme='deep-dark'] {
+  --bg-primary: #0e1726;
+  --bg-secondary: #16233a;
+  --bg-gradient: linear-gradient(160deg, #0e1726 0%, #16233a 100%);
+  --bg-image: none;
+  color-scheme: dark;
+
+  --text-primary: #e6edf7;
+  --text-secondary: #9fb0c9;
+  --text-muted: #64748b;
+  --text-inverse: #0e1726;
+
+  --surface-primary: #16233a;
+  --surface-secondary: #1d2d49;
+  --surface-elevated: #223453;
+  --surface-overlay: rgba(14, 23, 38, 0.96);
+
+  --interactive-primary: #26a4ff;
+  --interactive-secondary: #2d4a73;
+  --interactive-hover: #4db6ff;
+  --interactive-active: #1a8fe0;
+  --interactive-disabled: #33507a;
+
+  --semantic-success: #34d399;
+  --semantic-warning: #fbbf24;
+  --semantic-error: #f87171;
+  --semantic-info: #26a4ff;
+
+  --border-primary: #2d4a73;
+  --border-secondary: #24375a;
+  --border-focus: #26a4ff;
+
+  --sidebar-bg: #0b1220;
+  --sidebar-backdrop: none;
+  --sidebar-shadow: 2px 0 12px rgba(0, 0, 0, 0.35);
+
+  --topbar-bg: rgba(22, 35, 58, 0.85);
+  --topbar-backdrop: blur(8px);
+  --topbar-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+
+  --card-bg: #16233a;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --card-border: 1px solid #24375a;
+
+  --modal-bg: #1d2d49;
+  --modal-backdrop: rgba(0, 0, 0, 0.6);
+  --modal-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+
+  --effect-blur: blur(8px);
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-large: 0 10px 24px rgba(0, 0, 0, 0.4);
+  --opacity-low: 0.6;
+  --opacity-medium: 0.85;
+  --opacity-high: 0.96;
+
+  --logo-filter: brightness(10) saturate(0);
 }
 
 body {
