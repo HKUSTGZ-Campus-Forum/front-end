@@ -48,7 +48,7 @@ describe('scheduler hardening UI contract', () => {
     const planner = source('../../pages/courses/planner/[semester].vue')
     const semesterIndex = source('../../pages/courses/planner/index.vue')
     const dashboard = source('../../components/scheduler/SchedulerDashboard.vue')
-    const detail = source('../../components/scheduler/SchedulerCourseDetail.vue')
+    const infoPopover = source('../../components/scheduler/SchedulerCourseInfoPopover.vue')
 
     expect(planner).toContain(':cart-load-error="loadError"')
     expect(planner).toContain('@retry-cart-load="reload"')
@@ -61,11 +61,14 @@ describe('scheduler hardening UI contract', () => {
     expect(semesterIndex.indexOf('v-else-if="loadError"')).toBeLessThan(
       semesterIndex.indexOf("t('scheduler.noSemesters')"),
     )
-    expect(detail).toContain("status: 'loading' | 'ready' | 'error'")
-    expect(detail).toContain("t('scheduler.courseDetailLoadFailed')")
-    expect(detail).toContain("$emit('retry')")
-    expect(dashboard).toContain('detailRequests = createLatestRequestTracker()')
-    expect(dashboard).toContain('detailRequests.invalidate()')
+    expect(infoPopover).toContain("'loading' | 'ready' | 'error'")
+    expect(infoPopover).toContain("t('scheduler.courseDetailLoadFailed')")
+    expect(infoPopover).toContain('function retry()')
+    expect(infoPopover).toContain('detailRequests = createLatestRequestTracker()')
+    expect(infoPopover).toContain('detailRequests.invalidate()')
+    expect(infoPopover).toContain('watch(() => [props.courseCode, props.semesterId]')
+    expect(dashboard).not.toContain('detailRequests')
+    expect(dashboard).not.toContain('closeCourseDetail')
     expect(dashboard).toContain('finally {')
     expect(dashboard).toContain('await popularity.refresh()')
     expect(dashboard).toContain('toggleIntents.next(key, currentEnabled)')
@@ -81,9 +84,7 @@ describe('scheduler hardening UI contract', () => {
     expect(dashboard).toContain(": 'failed'")
     expect(dashboard).toContain('@toggle-course="handleToggleCourse"')
     expect(dashboard).toContain('@toggle-bundle="handleToggleBundle"')
-    expect(dashboard).toContain(`watch(() => props.semesterId, () => {
-  closeCourseDetail()
-})`)
+    expect(dashboard).toContain(':semester-id="semesterId"')
   })
 
   it('keeps the new error and truncation messages translated', () => {

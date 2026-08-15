@@ -1,6 +1,6 @@
 # 排课功能 UI/UX 优化 —— 开发决策记录与计划草稿
 
-> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-3 ✅，Step 4 课程信息 hover 小浮窗待做）
+> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-3 ✅ / Step 4 ✅ 代码完成）
 > 日期：2026-08-14（2026-08-15 补充细化）
 > 范围：仅排课功能（`/schedule` → `/courses/planner` 及 dashboard/map）的 UI/UX 优化
 
@@ -64,6 +64,21 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 
 - 以原版为基准，但**不机械照搬**；发现更好的设计方案 / 可改进点，先与用户讨论
 - 重点沟通场景：用户体验与交互逻辑（何时 hover、浮层位置、按钮布局等）
+
+### 决策九（2026-08-15 补充）：Step 4 = 整个右侧侧边栏 UI/UX 改进
+
+- Step 4 不只做 hover 小浮窗，而是**整个右侧侧边栏的设计改进**
+- 设计宗旨：**侧边栏位置紧张，在展示必要信息（不牺牲可读性）的同时尽可能压缩卡片高度**
+- 复刻原排课助手 side-panel 布局；有更好方案可提出讨论
+
+### 决策十（2026-08-15 补充）：热度显示粒度收敛
+
+- **出于 UI 设计与隐私考虑**：
+  - **不在课表（timetable）卡片显示热度**（移除 compact badge）
+  - **不显示 bundle / section 级热度**（移除 bundle 胶囊内每个 section 两行 badge）
+  - **只在课程卡头部显示课程级总热度**，极简样式：`[flame icon] 30/8`（looking/scheduling）
+- 数据粒度说明：后端只有课程级 + section 级，无 layer/bundle 级；bundle 级需前端聚合
+- 热度语义：关注中（looking）= 购物车中停用该课；正在排课（scheduling）= 购物车中启用该课；均为匿名排课意向信号，不是选课注册人数
 
 ---
 
@@ -176,11 +191,46 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 - [x] 验证：dev/prod 的 `/_nuxt_icon/lucide.json?icons=...` 均 200；SSR 正确内联 CSS 图标；`i18n:check` / `npm test` 185/185 / `npm run build` 全绿
 - [ ] 遗留：全站还有 ~48 处其他组件裸 `<Icon name>`（matching 等）同样存在解析问题，依赖远端 API，离线空白；不在本阶段范围，建议后续跟进
 
-**Step 4：课程信息 hover 小浮窗**
-- [ ] 课程卡 ℹ️ 图标 hover → 异步 `getCourseDetail` → 小浮窗（title/code/学分/简介/pre·co-requirement/exclusion）
-- [ ] 复用现有 `detailRequests` request tracker + loading/error 状态
-- [ ] 替代 `SchedulerCourseDetail` 居中弹窗（组件可删除或保留待用）
-- [ ] 浮窗位置自适应（靠近图标、防溢出视口），鼠标离开图标/浮窗关闭
+**Step 4：右侧侧边栏整体 UI/UX 改进（含 hover 信息浮窗）**（2026-08-15 范围扩大，决策九）✅ 代码完成（待视觉验收）
+- [x] **课程卡头部压缩**（对齐原版 side-panel）：
+  - 第一行小字 `CODE · N Credits`，第二行 title 大字（替代当前 code 大字 + title + credits 徽章三件套）
+  - `Details` 文字按钮 → ℹ️ 图标（hover 信息浮窗入口）；状态圆点保留
+  - 热度改为极简 `[flame] 30/8`（课程级总热度，决策十）；移除 History 按钮（入口后续单独设计）
+- [x] **Bundle 区域压缩**（对齐原版）：
+  - 移除每层 `Layer N` 标题行 + All/None 文字按钮 → 单行胶囊 + 右侧 `layers-plus`/`trash` 小图标按钮（title/aria-label 用 `scheduler.all`/`scheduler.none`）
+  - 移除 bundle 内 section 级热度（决策十）
+- [x] **2026-08-15 视觉验收反馈（4 条）**：
+  - **credit/credits 统一英文**：`scheduler.credits` / `scheduler.creditsShort` 的中文文案改为英文（`{count} credit | {count} credits` / `{count} cr`），不再翻译为"学分"
+  - **credit 按学分数分色**：新增主题变量 `--credit-level-1..6`（light/dark 两套），课程卡与信息浮窗的 credit 文本按 `creditColorVar()` 上色（1→emerald、2→cyan、3→sky、4→indigo、5→fuchsia、≥6→rose）
+  - **热度与 meta 行对齐**：`SchedulerPopularitySummary` 保留在 meta 行（`CODE · credits · [flame]`），`align-self: center` 垂直居中于 meta 行、`margin-left: 8px` 离左侧内容远一点（原 `margin-left: 2px` 且作为 inline-flex baseline 对齐，视觉上偏上未对齐）
+  - **code/credits/popularity 垂直居中**：`course-card__meta` 从 `align-items: baseline` 改为 `center`（复刻原版 `flex items-center`）——baseline 对齐下 credits（12.96px）比 code（14.4px bold）低约 2px，视觉未对齐；改为 center 后三者垂直中线完全一致
+  - **全选/全不选图标不显示修复**：根因是全局 `button { min-height:44px; padding:0.75rem 1rem }` 覆盖了紧凑按钮尺寸，且 `:deep(svg)` 无法匹配 `@nuxt/icon` css-mode 渲染的 `span.iconify`（mask 图标），图标被挤压成 0 宽。修复：按钮加 `min-height:0; padding:0; flex-shrink:0`，`font-size:15px` 驱动图标 1em 尺寸；图标改为 `lucide:layers-plus` / `lucide:trash`
+- [x] **2026-08-15 视觉验收反馈第 2 轮（5 条）**：
+  - **bundle 按钮圆角**：`border-radius` 从 `999px`（胶囊）降为 `8px`（原版 `rounded` 为 4px，取折中）
+  - **selected 态去橙色边框**：移除 `--semantic-warning` 边框 + 外圈 ring；selected 与 active 的区分改为**底色/边框加深变色**（bg 12%→26%、border 40%→72% 的交互主色） + 保留右上角琥珀色圆点（原版即 amber dot）
+  - **hover 交互提示增强**：课程卡片 hover 由"仅边框变色"改为"边框变交互色 + 背景 4% 蓝 tint"；bundle 胶囊 hover 由"10% 透明 tint"改为"背景加深 + 边框变交互色 + 文字变亮"（active 20% / selected 32%）；disabled 卡 hover 不变灰蓝（无交互误导）
+  - **dark mode 文字对比度**：bundle active/selected 文字与侧边栏 tabs（主课表/KLMS）active 文字原先用 `--interactive-active`（dark=`#1a8fe0`，深蓝、对比不足）→ 新增主题变量 `--interactive-active-text`（light=`#1278c4` 不变 / dark=`#4db6ff` 亮蓝），tabs / bundle / menu-item / tip-state 的 tinted 背景上文字改用该变量
+  - **disable/enable 差异**：disabled 课程卡由"仅去阴影 + 42% tint"改为"完整灰化"——`opacity: 0.62` + 纯 `--surface-secondary` 背景 + 灰边框 + code/title 降为 `--text-secondary`（参考原版 `opacity-60` + gray 边框/背景）
+- [x] **2026-08-15 视觉验收反馈第 3 轮（dark 更亮 + disabled 弱化）**：
+  - **范围确认**：用户选择"仅排课侧边栏交互元素（bundle 胶囊 / tabs 等）在 dark 下更亮，全局主题不动"
+  - **bundle 胶囊状态重构为主题变量**：新增 `--scheduler-chip-*` 变量组（bg/border/text + active/selected/disabled × hover），light 保持原 tint 外观；dark 改为原版"贴纸"式：enabled = 亮蓝（pastel `#a8d8ff` 底 + 深蓝 `#0a3a66` 字，hover 更深）、selected = 更强蓝（`#7cc2ff`）、disabled = 灰块（`#5b6b85` 底 + `#22314a` 字，明显弱化）
+  - **disabled bundle 弱化（两模式）**：默认态从 `--text-primary` 亮字改为 muted 灰字（light `--text-secondary` / dark `#22314a`）；**hover 不再发蓝**（原实现 disabled hover 变成 18% 蓝 tint，与 enabled 混淆）——改为灰色微变（light `#e8f1fb` / dark `#64748e`），disabled 与 enabled 靠色相（蓝 vs 灰）区分
+  - **tabs（主课表/KLMS）dark 更亮**：active 改用 `--scheduler-tab-active-bg/text`——dark 下为实心交互蓝 `var(--interactive-primary)` + `var(--text-inverse)`（深字，参考原版 `dark:bg-indigo-400 dark:text-white`），light 保持原 tint 外观；inactive 增加 hover 底色反馈
+  - **文字变量更亮**：dark `--interactive-active-text` 从 `#4db6ff` 提到 `#6cc5ff`（menu-item / tip-state / layer-actions hover 等 tinted 背景文字同步更亮）
+  - 备注：期间发现早前 light `--interactive-active-text` 定义与 SidePanel tabs 修改意外丢失（工作区被外部回退），本轮已重新写入并统一改为 chip/tab 变量组，组件与变量一致性已用 grep 复核
+- [x] **2026-08-15 视觉验收反馈第 4 轮（点击响应慢根因 = 写后确认，方案 A 乐观更新）**：
+  - **根因**：登录用户 toggle 走 `mutateAuthenticated` = `await write()`（PUT 后端）→ `await reconcile()`（全量 GET 购物车），两次网络往返完成才更新 `courses.value` → UI 才亮/灭。游客模式反而乐观即时
+  - **方案 A（用户选定）**：乐观更新 + 保留现有确认/安全网。三个 toggle（course/bundle/layer）在登录分支先同步应用 `setGuest*` 纯函数到 `courses.value`（点击即亮/灭），再入队原有 write + reconcile；`requiresReload/reloading` 时先抛 `blocked`（不乐观应用，避免 UI 与服务器不一致）
+  - **行为**：正常路径 reconcile 用服务器值覆盖，与乐观值一致无感；写失败/歧义 → reconcile 拉回权威值（自动回滚）+ 现有错误横幅；reconcile 不可用 → 保持乐观值 + `requiresReload` 冻结变更 + 可 reload 拉回权威值
+  - **测试**：`cart-refresh.test.ts` 更新——原"reconcile 不可用时保持先前稳定态"改"保持乐观值 + requiresReload"；新增"写 resolve 前本地已翻转"乐观契约测试；其余竞态契约（快速 All/None intent、跨 key 序列化、write 响应丢失 reconcile、GET 瞬时失败重试）全部保持通过
+- [x] **课程信息 hover 小浮窗**（新增 `SchedulerCourseInfoPopover.vue`）：
+  - ℹ️ 图标 hover → 异步 `getCourseDetail` → 小浮窗（title/code/学分/简介/pre·co-requirement/exclusion）
+  - 复用 `createLatestRequestTracker` + loading/error/ready 三态（含 retry）
+  - 替代 `SchedulerCourseDetail` 居中弹窗（Dashboard 的 `handleShowInfo`/`closeCourseDetail`/`selectedCourse`/`courseDetailStatus`/`showCourseDetail` 链路已删除；旧组件文件暂留，待用户决定是否删除）
+  - 浮窗位置自适应（默认在图标下方、空间不足翻转上方/视口边缘 clamp）、Teleport 到 body 防侧边栏 `overflow:hidden` 裁剪、150ms 延迟关闭、watch courseCode/semesterId 变化时重置
+- [x] **课表块**：移除 timetable 内 popularity compact badge（决策十；`SchedulerTimetable` 移除 `popularityByCourse`/`showPopularity` props，`SchedulerPopularityBadge` 组件不再被引用）
+- [x] 新增 `SchedulerPopularitySummary.vue`：极简热度 `[flame icon] looking/scheduling`，title=`popularityExplanation`、aria=`popularityAriaLabel`
+- [x] 测试更新：`popularity-ui.test.ts` 断言迁移到新契约（课表无 badge / 课程卡仅课程级热度 / History 入口移除但 Dashboard 链路保留）、`hardening-ui.test.ts` 详情加载失败断言改指向 `SchedulerCourseInfoPopover`
 
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`

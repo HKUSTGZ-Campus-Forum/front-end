@@ -23,13 +23,44 @@
   --interactive-secondary: #bfd7fb;
   --interactive-hover: #1a8fe0;
   --interactive-active: #1278c4;
+  // Text/icon color on tinted interactive backgrounds (e.g. active scheduler
+  // bundle capsules, side-panel tabs). Dark mode needs a brighter tone than
+  // --interactive-active for sufficient contrast on dark tinted surfaces.
+  --interactive-active-text: #1278c4;
   --interactive-disabled: #b3d4f0;
+
+  // Scheduler side-panel bundle capsules & tabs (mirrors the original planner
+  // chip states). Light mode keeps the tinted-chip look; dark mode switches to
+  // the original's brighter "sticker" chips (pastel blue enabled vs muted gray
+  // disabled) and a solid active tab, so enabled/disabled stay clearly apart.
+  --scheduler-chip-bg: var(--surface-secondary);
+  --scheduler-chip-border: var(--border-secondary);
+  --scheduler-chip-text: var(--text-secondary);
+  --scheduler-chip-bg-hover: #e8f1fb;
+  --scheduler-chip-border-hover: #c7dcf4;
+  --scheduler-chip-bg-active: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+  --scheduler-chip-border-active: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
+  --scheduler-chip-text-active: var(--interactive-active-text);
+  --scheduler-chip-bg-active-hover: color-mix(in srgb, var(--interactive-primary) 18%, var(--surface-primary));
+  --scheduler-chip-bg-selected: color-mix(in srgb, var(--interactive-primary) 26%, var(--surface-primary));
+  --scheduler-chip-border-selected: color-mix(in srgb, var(--interactive-primary) 72%, transparent);
+  --scheduler-chip-bg-selected-hover: color-mix(in srgb, var(--interactive-primary) 32%, var(--surface-primary));
+  --scheduler-tab-active-bg: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+  --scheduler-tab-active-text: var(--interactive-active-text);
 
   // Semantic colors
   --semantic-success: #10b981;
   --semantic-warning: #f59e0b;
   --semantic-error: #ef4444;
   --semantic-info: #26a4ff;
+
+  // Scheduler credit levels (per-credit color coding, mirrors the original planner)
+  --credit-level-1: #10b981;
+  --credit-level-2: #06b6d4;
+  --credit-level-3: #0ea5e9;
+  --credit-level-4: #6366f1;
+  --credit-level-5: #d946ef;
+  --credit-level-6: #f43f5e;
 
   // Border colors
   --border-primary: #bfd7fb;
@@ -139,12 +170,39 @@
   --interactive-secondary: #2d4a73;
   --interactive-hover: #4db6ff;
   --interactive-active: #1a8fe0;
+  --interactive-active-text: #6cc5ff;
   --interactive-disabled: #33507a;
 
   --semantic-success: #34d399;
   --semantic-warning: #fbbf24;
   --semantic-error: #f87171;
   --semantic-info: #26a4ff;
+
+  // Scheduler side-panel bundle capsules & tabs (dark mode: the original
+  // planner's brighter "sticker" chips — pastel blue when enabled, muted gray
+  // when disabled, solid blue active tab).
+  --scheduler-chip-bg: #5b6b85;
+  --scheduler-chip-border: #6b7b96;
+  --scheduler-chip-text: #22314a;
+  --scheduler-chip-bg-hover: #64748e;
+  --scheduler-chip-border-hover: #75869f;
+  --scheduler-chip-bg-active: #a8d8ff;
+  --scheduler-chip-border-active: #7cc2ff;
+  --scheduler-chip-text-active: #0a3a66;
+  --scheduler-chip-bg-active-hover: #8fceff;
+  --scheduler-chip-bg-selected: #7cc2ff;
+  --scheduler-chip-border-selected: #4db0ff;
+  --scheduler-chip-bg-selected-hover: #66b8ff;
+  --scheduler-tab-active-bg: var(--interactive-primary);
+  --scheduler-tab-active-text: var(--text-inverse);
+
+  // Scheduler credit levels (dark mode: brighter tones for contrast on dark surfaces)
+  --credit-level-1: #34d399;
+  --credit-level-2: #22d3ee;
+  --credit-level-3: #38bdf8;
+  --credit-level-4: #818cf8;
+  --credit-level-5: #e879f9;
+  --credit-level-6: #fb7185;
 
   --border-primary: #2d4a73;
   --border-secondary: #24375a;

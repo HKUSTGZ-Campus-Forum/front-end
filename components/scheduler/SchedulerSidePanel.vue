@@ -13,7 +13,7 @@ const props = defineProps<{
   displayOptions: Record<DisplayOption, boolean>
   popularityByCourse: SchedulerPopularityByCourse
   showPopularity: boolean
-  showPopularityHistory: boolean
+  semesterId: string
   filterMode: boolean
   mutationsDisabled: boolean
 }>()
@@ -22,8 +22,6 @@ const emit = defineEmits<{
   (e: 'toggle-course', code: string, currentEnabled: boolean): void
   (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
-  (e: 'show-info', code: string): void
-  (e: 'show-popularity-history', code: string): void
   (e: 'open-cart'): void
   (e: 'toggle-filter'): void
   (e: 'update:display-option', key: DisplayOption, value: boolean): void
@@ -97,20 +95,17 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 
     <div class="side-panel__list">
       <SchedulerCourseCard
-        v-for="(course, i) in filteredCourses"
+        v-for="course in filteredCourses"
         :key="course.course_code"
         :course="course"
-        :course-index="courseList.indexOf(course)"
+        :semester-id="semesterId"
         :current-selection="currentSelectionMap[course.course_code]"
         :popularity="getSchedulerCoursePopularity(popularityByCourse, course.course_code)"
         :show-popularity="showPopularity"
-        :show-popularity-history="showPopularityHistory"
         :mutations-disabled="mutationsDisabled"
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
-        @show-info="(...args) => emit('show-info', ...args)"
-        @show-popularity-history="(...args) => emit('show-popularity-history', ...args)"
       />
       <div v-if="filteredCourses.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>
@@ -234,8 +229,12 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
       transition: background 0.16s ease, color 0.16s ease;
 
       &.active {
-        background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
-        color: var(--interactive-active);
+        background: var(--scheduler-tab-active-bg);
+        color: var(--scheduler-tab-active-text);
+      }
+
+      &:not(.active):hover {
+        background: color-mix(in srgb, var(--surface-secondary) 70%, transparent);
       }
     }
   }
@@ -311,7 +310,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     }
 
     &.active {
-      color: var(--interactive-active);
+      color: var(--interactive-active-text);
     }
 
     input {
@@ -344,7 +343,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   }
 
   &__tip-state {
-    color: var(--interactive-active);
+    color: var(--interactive-active-text);
     font-weight: 700;
   }
 

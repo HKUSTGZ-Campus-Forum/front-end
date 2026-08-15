@@ -2,16 +2,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type {
-  CartCourse,
-  SchedulerPopularityByCourse,
-  SchedulerPopularityCounts,
-} from '~/utils/scheduler'
+import type { CartCourse } from '~/utils/scheduler'
 import {
   TIME_SLOTS,
   getCourseTimetableColors,
   getHeight,
-  getSchedulerCoursePopularity,
   getTopOffset,
 } from '~/utils/scheduler'
 
@@ -22,8 +17,6 @@ const props = defineProps<{
   filterMode: boolean
   displayOptions: { name: boolean; section: boolean; location: boolean; instructor: boolean; duration: boolean }
   maxDayNum: number
-  popularityByCourse: SchedulerPopularityByCourse
-  showPopularity: boolean
 }>()
 
 const emit = defineEmits<{
@@ -118,7 +111,6 @@ interface LectureBlock {
   accentColor: string
   isMain: boolean
   credit: number
-  popularity?: SchedulerPopularityCounts
   key: string
 }
 
@@ -132,10 +124,6 @@ const lectureBlocks = computed(() => {
     const bundle = bundles.find(b => b.id === selection.bundleId)
     if (!bundle) continue
     const colors = getCourseTimetableColors(selection.courseIndex, isDarkTheme.value)
-    const coursePopularity = getSchedulerCoursePopularity(
-      props.popularityByCourse,
-      course.course_code,
-    )
     for (const section of bundle.sections) {
       for (const lecture of section.lectures) {
         blocks.push({
@@ -149,7 +137,6 @@ const lectureBlocks = computed(() => {
           accentColor: colors.accent,
           isMain: section.is_main,
           credit: course.credit,
-          popularity: coursePopularity?.sections[section.section_id],
           key: `${course.course_code}-${section.section_id}-${lecture.day}-${lecture.start_time}-${section.is_main ? 'main' : 'sub'}`,
         })
       }
@@ -394,12 +381,6 @@ function isBanned(day: number, period: number): boolean {
           <Icon name="lucide:clock" class="timetable__block-icon" />
           <span>{{ formatTime(block.start_time) }} - {{ formatTime(block.end_time) }}</span>
         </div>
-        <SchedulerPopularityBadge
-          v-if="showPopularity && block.popularity"
-          class="timetable__block-popularity"
-          :counts="block.popularity"
-          compact
-        />
       </div>
       <!-- Bottom fade cue: hints there is more content once hovered -->
       <div
@@ -557,10 +538,6 @@ function isBanned(day: number, period: number): boolean {
       font-size: 16px; // original: size-4 (Icon renders at 1em)
       line-height: 1;
       margin-top: 1px; // visual alignment with text-xs rows
-    }
-
-    &-popularity {
-      margin-top: 4px;
     }
   }
 }

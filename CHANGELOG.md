@@ -6,6 +6,8 @@
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 本文件为本仓库唯一正式的变更日志（早期 0.1.x 记录已并入本文件）。
 
+---
+
 ## [Unreleased]
 
 ### 主题系统
@@ -60,6 +62,17 @@
   - 课程块横向居中：卡片在 2px 网格竖线之间对称居中（左偏移 `+3`，此前 `+2` 使卡片紧贴左线、距右线 2px，整体偏左 1px）
   - 课程块下移 1px：卡片上缘不再盖住水平刻度线（复刻原版 `top + 1`）
   - 修复 hover 展开高度不随显示项变化：高度测量 `watch` 逐个跟踪 5 个 display options key（此前只跟踪对象引用，侧边栏 Menu 原地修改属性不触发 watch，导致展开高度停留在旧值，内容多时被裁、少时留白）
+- **排课工作台 UI/UX 优化（第四阶段）**：右侧侧边栏整体压缩 + hover 信息浮窗
+  - 课程卡头部压缩：第一行小字 `CODE · N Credits` + 课程级总热度 `[flame icon] 30/8`（looking/scheduling，决策十），第二行 title 大字；`Details` 文字按钮 → ℹ️ 图标；状态圆点保留；移除 History 按钮（入口后续单独设计）
+  - 新增 `SchedulerPopularitySummary.vue`：极简热度样式（title=`popularityExplanation`、aria=`popularityAriaLabel`）
+  - Bundle 区域压缩：移除每层 `Layer N` 标题行 + All/None 文字按钮 → 单行胶囊 + 右侧 `layers-plus`/`trash` 小图标按钮（title/aria-label 用 `scheduler.all`/`scheduler.none`）；修复图标不显示（全局 `button` 的 min-height/padding 覆盖紧凑按钮 + `:deep(svg)` 无法匹配 css-mode 的 `span.iconify` 导致图标 0 宽）——按钮加 `min-height:0; padding:0; flex-shrink:0`，`font-size:15px` 驱动图标 1em 尺寸
+  - 视觉验收反馈：credit/credits 统一英文（zh `scheduler.credits` 改 `{count} credit | {count} credits`、`creditsShort` 改 `{count} cr`）；credit 按学分数分色（新增 `--credit-level-1..6` 主题变量 light/dark 两套，课程卡与信息浮窗 `creditColorVar()` 上色：1 emerald/2 cyan/3 sky/4 indigo/5 fuchsia/≥6 rose）；热度保留在 meta 行并修正对齐（`align-self: center` 垂直居中、`margin-left: 8px` 离左侧更远）；`course-card__meta` 改 `align-items: center` 让 code/credits/popularity 垂直中线一致（原 baseline 对齐下小号 credits 低约 2px）
+  - 视觉验收反馈第 2 轮：bundle 胶囊圆角 `999px`→`8px`；selected 态移除橙色边框/ring（区分改为基础/边框加深变色 12%→26% / 40%→72% + 保留琥珀色圆点）；hover 反馈增强（课程卡边框变交互色 + 背景 4% 蓝 tint；bundle 胶囊背景加深 + 边框变色 + 文字变亮，disabled 卡 hover 保持灰化不误导）；dark mode 文字对比度（新增 `--interactive-active-text` 主题变量：light `#1278c4` / dark `#4db6ff`，bundle active/selected 文字与侧边栏 tabs/menu-item/tip-state 的 tinted 背景文字改用该变量，替代 dark 下过深的 `--interactive-active` `#1a8fe0`）；disable/enable 差异强化（disabled 卡 `opacity: 0.62` + 纯灰背景 + 灰边框 + code/title 降为 `--text-secondary`）
+  - 视觉验收反馈第 3 轮（dark 更亮 + disabled 弱化，用户确认范围=仅排课侧边栏交互元素）：bundle 胶囊状态重构为 `--scheduler-chip-*` 主题变量组（light 保持原 tint；dark 改原版"贴纸"式——enabled 亮蓝 pastel `#a8d8ff` 底 + 深蓝字、selected 更强蓝、disabled 灰块 `#5b6b85` 底 + 暗灰字）；disabled bundle 默认文字由亮字改 muted 灰、**hover 不再发蓝**（改为灰色微变，与 enabled 靠色相区分）；tabs 改用 `--scheduler-tab-active-*`（dark 下实心交互蓝 + 深字，light 不变），inactive 补 hover 底色；dark `--interactive-active-text` 提到 `#6cc5ff`；layer-actions 图标 hover 色改用 `--interactive-active-text`
+  - 点击响应优化（方案 A 乐观更新）：登录用户 toggle（课程/bundle/layer）原先需等待"PUT 写后端 + 全量 GET 购物车"两次往返完成才更新 UI（点击后明显延迟）；现改为**先乐观应用 `setGuest*` 纯函数到本地 `courses.value`（点击即亮/灭），再入队原有 write + reconcile 确认**——正常路径服务器值覆盖无感、写失败 reconcile 拉回权威值（自动回滚）+ 错误横幅、reconcile 不可用时保持乐观值 + `requiresReload` 冻结变更可 reload 拉回；`requiresReload/reloading` 时先抛 `blocked` 不乐观应用。`cart-refresh.test.ts` 新增乐观契约测试并更新 reconcile 失败语义，其余竞态契约（快速 All/None intent、跨 key 序列化、write 响应丢失、GET 瞬时失败重试）全部保持通过
+  - 新增 `SchedulerCourseInfoPopover.vue`：ℹ️ 图标 hover 异步 `getCourseDetail` 显示小浮窗（title/code/学分/简介/pre·co-requirement/exclusion），loading/error/ready 三态（含 retry）、位置自适应防溢出、Teleport 到 body 防侧边栏裁剪、150ms 延迟关闭；替代 `SchedulerCourseDetail` 居中弹窗（Dashboard 的 `handleShowInfo`/`closeCourseDetail`/`selectedCourse`/`courseDetailStatus`/`showCourseDetail` 链路删除）
+  - 移除课表块内 popularity compact badge（决策十：不在课表/bundle/section 级显示热度）；`SchedulerTimetable` 移除 `popularityByCourse`/`showPopularity` props，`SchedulerPopularityBadge` 不再被引用
+  - 测试更新：`popularity-ui.test.ts` 迁移到新契约（课表无 badge / 课程卡仅课程级热度 / History 入口移除但 Dashboard 链路保留）、`hardening-ui.test.ts` 详情加载失败断言改指向 `SchedulerCourseInfoPopover`
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

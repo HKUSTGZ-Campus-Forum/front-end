@@ -1,16 +1,19 @@
 <!-- front-end/components/scheduler/SchedulerDashboard.vue -->
 <script setup lang="ts">
-import { ref, computed, onUnmounted, toRef, watch } from 'vue'
+import { ref, computed, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartCourse, CourseDetail } from '~/utils/scheduler'
+import type {
+  CartCourse,
+  SchedulerPopularityByCourse,
+} from '~/utils/scheduler'
 import {
   getMaxDayNum,
   POPULARITY_HISTORY_SEMESTER_ID,
+  schedulerCourseKey,
   solvePlans,
 } from '~/utils/scheduler'
 import {
   createBooleanIntentTracker,
-  createLatestRequestTracker,
   createLatestSettlementTracker,
   getSchedulerCartMutationFailureKind,
 } from '~/utils/schedulerAsync'
@@ -29,7 +32,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
-const { getCourseDetail, getPopularity, getPopularityHistory } = useScheduler()
+const { getPopularity, getPopularityHistory } = useScheduler()
 const loggedIn = toRef(props, 'isLoggedIn')
 const cart = useSchedulerCart(
   props.semesterId,
@@ -48,6 +51,7 @@ const canShowPopularityHistory = computed(() => (
   props.semesterId === POPULARITY_HISTORY_SEMESTER_ID
   && popularity.canShowPopularity.value
 ))
+
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
@@ -55,13 +59,8 @@ const bannedPeriods = ref<boolean[][]>(
 const filterMode = ref(false)
 const showCartPanel = ref(false)
 const showGuestHint = ref(true)
-const selectedCourse = ref<CourseDetail | null>(null)
-const showCourseDetail = ref(false)
 const historyCourse = ref<CartCourse | null>(null)
 const showPopularityHistory = ref(false)
-const courseDetailStatus = ref<'loading' | 'ready' | 'error'>('loading')
-const requestedCourseCode = ref('')
-const detailRequests = createLatestRequestTracker()
 const toggleIntents = createBooleanIntentTracker()
 const cartActionSettlements = createLatestSettlementTracker()
 const cartError = ref<'ambiguous' | 'failed' | 'unverified' | ''>('')
@@ -180,36 +179,6 @@ watch(planList, (plans) => {
     viewIndex.value = Math.max(1, plans.length)
   }
 })
-
-watch(() => props.semesterId, () => {
-  closeCourseDetail()
-})
-
-async function handleShowInfo(code: string) {
-  const request = detailRequests.begin()
-  requestedCourseCode.value = code
-  selectedCourse.value = null
-  courseDetailStatus.value = 'loading'
-  showCourseDetail.value = true
-  try {
-    const course = await getCourseDetail(code, props.semesterId, request.signal)
-    if (!request.isCurrent() || requestedCourseCode.value !== code) return
-    selectedCourse.value = course
-    courseDetailStatus.value = 'ready'
-  } catch {
-    if (request.isCurrent()) courseDetailStatus.value = 'error'
-  }
-}
-
-function closeCourseDetail() {
-  detailRequests.invalidate()
-  showCourseDetail.value = false
-  selectedCourse.value = null
-}
-
-function retryCourseDetail() {
-  if (requestedCourseCode.value) void handleShowInfo(requestedCourseCode.value)
-}
 
 async function handleCartAction(action: () => Promise<void>) {
   const settlement = cartActionSettlements.begin()
@@ -330,8 +299,6 @@ function handleToggleLayer(code: string, layer: number, enabled: boolean) {
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
-
-onUnmounted(() => detailRequests.invalidate())
 </script>
 
 <template>
@@ -397,8 +364,6 @@ onUnmounted(() => detailRequests.invalidate())
             :filter-mode="filterMode"
             :display-options="displayOptions"
             :max-day-num="maxDayNum"
-            :popularity-by-course="popularity.popularityByCourse.value"
-            :show-popularity="popularity.canShowPopularity.value"
             @toggle-ban="toggleBan"
           />
           <SchedulerBottomPanel
@@ -426,14 +391,12 @@ onUnmounted(() => detailRequests.invalidate())
           :display-options="displayOptions"
           :popularity-by-course="popularity.popularityByCourse.value"
           :show-popularity="popularity.canShowPopularity.value"
-          :show-popularity-history="canShowPopularityHistory"
+          :semester-id="semesterId"
           :filter-mode="filterMode"
           :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
           @toggle-course="handleToggleCourse"
           @toggle-bundle="handleToggleBundle"
           @toggle-layer="handleToggleLayer"
-          @show-info="handleShowInfo"
-          @show-popularity-history="handleShowPopularityHistory"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
           @update:display-option="(key, value) => displayOptions[key] = value"
@@ -450,14 +413,6 @@ onUnmounted(() => detailRequests.invalidate())
       :add-course="handleAddCourse"
       :remove-course="handleRemoveCourse"
       @close="showCartPanel = false"
-    />
-
-    <SchedulerCourseDetail
-      :visible="showCourseDetail"
-      :course="selectedCourse"
-      :status="courseDetailStatus"
-      @close="closeCourseDetail"
-      @retry="retryCourseDetail"
     />
 
     <SchedulerPopularityHistory
