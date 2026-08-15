@@ -79,9 +79,7 @@ onUnmounted(() => {
         :disabled="currentIndex <= 1"
         @click="goToStart"
       >
-        <svg viewBox="0 0 16 16" width="26" height="26" fill="currentColor" aria-hidden="true">
-          <path d="M3.5 12.5a.5.5 0 0 1-1 0V3.5a.5.5 0 0 1 1 0v9zm10.354-9.354a.5.5 0 0 0-.79-.078L6.5 8.293V3.5a.5.5 0 0 0-1 0v9a.5.5 0 0 0 1 0V8.293l6.564 7.226a.5.5 0 0 0 .79-.078V3.078z" />
-        </svg>
+        <Icon name="lucide:skip-back" class="bottom-panel__icon" />
       </button>
       <button
         type="button"
@@ -89,9 +87,7 @@ onUnmounted(() => {
         :disabled="currentIndex <= 1"
         @click="goPrev"
       >
-        <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor" aria-hidden="true">
-          <path d="M10 12.796V3.204L4.519 8 10 12.796zm-.659.753-5.48-4.796a1 1 0 0 1 0-1.506l5.48-4.796A1 1 0 0 1 11 3.204v9.592a1 1 0 0 1-1.659.753z" />
-        </svg>
+        <Icon name="lucide:chevron-left" class="bottom-panel__icon" />
       </button>
 
       <span class="bottom-panel__counter">
@@ -105,9 +101,7 @@ onUnmounted(() => {
         :disabled="currentIndex >= totalPlans"
         @click="goNext"
       >
-        <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor" aria-hidden="true">
-          <path d="M6 12.796V3.204L11.481 8 6 12.796zm.659.753 5.48-4.796a1 1 0 0 0 0-1.506L6.659 2.451A1 1 0 0 0 5 3.204v9.592a1 1 0 0 0 1.659.753z" />
-        </svg>
+        <Icon name="lucide:chevron-right" class="bottom-panel__icon" />
       </button>
       <button
         type="button"
@@ -115,9 +109,7 @@ onUnmounted(() => {
         :disabled="currentIndex >= totalPlans"
         @click="goToEnd"
       >
-        <svg viewBox="0 0 16 16" width="26" height="26" fill="currentColor" aria-hidden="true">
-          <path d="M12.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5zM3.146 3.646a.5.5 0 0 1 .708 0l5.5 5.5a.5.5 0 0 1 0 .708l-5.5 5.5a.5.5 0 0 1-.708-.708L8.5 8 3.146 3.354a.5.5 0 0 1 0-.708z" />
-        </svg>
+        <Icon name="lucide:skip-forward" class="bottom-panel__icon" />
       </button>
     </div>
 
@@ -171,6 +163,16 @@ onUnmounted(() => {
 
       &:disabled { opacity: 0.3; cursor: not-allowed; }
     }
+  }
+
+  &__icon {
+    font-size: 22px; // chevrons at 22px; skip icons slightly larger below
+    line-height: 1;
+  }
+
+  &__controls button:first-child &__icon,
+  &__controls button:last-child &__icon {
+    font-size: 26px;
   }
 
   &__counter {

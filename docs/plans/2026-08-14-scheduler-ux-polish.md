@@ -1,6 +1,6 @@
 # 排课功能 UI/UX 优化 —— 开发决策记录与计划草稿
 
-> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-2 ✅，Step 3 左侧课程表+底部控制栏复刻 ✅，Step 4 课程信息 hover 小浮窗待做）
+> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-3 ✅，Step 4 课程信息 hover 小浮窗待做）
 > 日期：2026-08-14（2026-08-15 补充细化）
 > 范围：仅排课功能（`/schedule` → `/courses/planner` 及 dashboard/map）的 UI/UX 优化
 
@@ -147,12 +147,12 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 - [x] 遮罩只覆盖课表卡片区域（复刻原版），侧边栏保持可见；修复 `.side-panel` / `.timetable-card` 定位（`position: relative`）确保浮层/遮罩定位正确
 - [x] 三个底部按钮等宽（`flex: 1`）；移除课表空状态文字（"课表还没有课程…"），由遮罩承担全部提示职责
 
-**Step 2.5：暂移除项（2026-08-15，待后续处理）**
-- [ ] **顶部"验证账号邮箱后即可查看匿名课程热度信号"通知条已移除**（`popularity.forbidden` 触发的 `popularityVerifiedOnly` 通知）
+**Step 2.5：暂移除项（2026-08-15）** ✅ 已完成
+- [x] **顶部"验证账号邮箱后即可查看匿名课程热度信号"通知条已移除**（`popularity.forbidden` 触发的 `popularityVerifiedOnly` 通知）
   - 原因：顶部通知过多，与 guestHint 等并存时干扰；热度提示方案待整体重新设计
   - 现状：`popularityVerifiedOnly` i18n key 保留（zh/en 一致，未删除），`popularity.forbidden` 逻辑仍由 composable 计算，仅 UI 不再展示
   - 待办：后续统一设计热度信号的可达性提示（登录横幅内嵌 / 课程卡内提示等），届时再决定该 key 去留
-- [ ] 课表空状态文案（`emptyTimetableTitle/Description`）已移除，i18n key 已删除；若后续需要课表空状态提示，重新设计（如结合遮罩）
+- [x] 课表空状态文案（`emptyTimetableTitle/Description`）已移除，i18n key 已删除；若后续需要课表空状态提示，重新设计（如结合遮罩）
 
 **Step 3：左侧课程表 + 底部控制栏 UI/交互复刻**（2026-08-15 用户调整优先级，先于原 Step 3；复刻原版 `timetable.tsx` + `bottom-panel.tsx`）✅ 已完成
 - [x] 整体布局：去掉 `dashboard__timetable-card` 圆角矩形卡片效果（border/radius/shadow/背景），`.timetable` 去掉自身 border/radius，`.bottom-panel` 去掉 border/radius/背景；遮罩 overlay 圆角同步去掉
@@ -165,6 +165,16 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 - [x] 中间计数器：加数字图标 + 大号索引（复刻原版 `text-3xl` 数字）
 - [x] slider：占满宽度（去掉 `max-width: 440px`）
 - [x] slider 交互：mousedown 定位 + window mousemove/mouseup 拖拽 + 拖动时 tooltip 显示索引 + thumb 放大（spring 过渡用 CSS transition 近似）
+
+**Step 3.5：图标方案统一（lucide，2026-08-15）** ✅ 已完成
+- [x] 主站图标现状调查：无统一图标库，混用 `<Icon>`（@nuxt/icon 内置，无本地图标集时从远端 iconify API 拉取，离线空白）/ `<iconify-icon>` / Unicode 字符 / 内联 SVG
+- [x] `npm i -D @iconify-json/lucide` 安装本地图标集；@nuxt/icon 自动发现（build 输出 `discovered local-installed 1 collections: lucide`，icons.mjs 566 kB 打进 server bundle）
+- [x] 排课板块 11 处图标全部统一为 `<Icon name="lucide:xxx">`（timetable：list/map-pin/user/clock；side-panel 底部：sliders-horizontal/menu/shopping-cart；bottom-panel 控制条：skip-back/chevron-left/chevron-right/skip-forward）
+- [x] **裸名称修复**：`<Icon name="map-pin">` 会被 Iconify 解析成 `map:pin`（错误集合），`list` 等简单名解析成空前缀，全部加载失败；必须用 `lucide:` 前缀
+- [x] **devProxy 劫持修复**：`nuxt.config.ts` 加 `icon.localApiEndpoint: "/_nuxt_icon"`（nitro devProxy 在 listener 层拦截所有 `/api/*`，默认 `/api/_nuxt_icon` 被转发到后端而 404）
+- [x] lockfile 双同步：`package-lock.json`（npm install --package-lock-only）+ `pnpm-lock.yaml`（python 精确插入 3 处 lucide 条目，避免 pnpm 全量重解析产生 1500+ 行无关 diff）
+- [x] 验证：dev/prod 的 `/_nuxt_icon/lucide.json?icons=...` 均 200；SSR 正确内联 CSS 图标；`i18n:check` / `npm test` 185/185 / `npm run build` 全绿
+- [ ] 遗留：全站还有 ~48 处其他组件裸 `<Icon name>`（matching 等）同样存在解析问题，依赖远端 API，离线空白；不在本阶段范围，建议后续跟进
 
 **Step 4：课程信息 hover 小浮窗**
 - [ ] 课程卡 ℹ️ 图标 hover → 异步 `getCourseDetail` → 小浮窗（title/code/学分/简介/pre·co-requirement/exclusion）

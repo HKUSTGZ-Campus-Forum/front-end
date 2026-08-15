@@ -329,7 +329,7 @@ function isBanned(day: number, period: number): boolean {
             class="timetable__block-code-section"
             :style="{ color: block.accentColor }"
           >
-            · {{ block.sectionName }} ({{ block.sectionId }})
+            &nbsp;· {{ block.sectionName }} ({{ block.sectionId }})
           </span>
         </div>
 
@@ -347,7 +347,7 @@ function isBanned(day: number, period: number): boolean {
           class="timetable__block-detail"
           :style="{ color: block.textColor }"
         >
-          <Icon name="list" class="timetable__block-icon" />
+          <Icon name="lucide:list" class="timetable__block-icon" />
           <span>{{ block.sectionName }} ({{ block.sectionId }})</span>
         </div>
         <div
@@ -355,7 +355,7 @@ function isBanned(day: number, period: number): boolean {
           class="timetable__block-detail"
           :style="{ color: block.textColor }"
         >
-          <Icon name="map-pin" class="timetable__block-icon" />
+          <Icon name="lucide:map-pin" class="timetable__block-icon" />
           <span>{{ block.room }}</span>
         </div>
         <div
@@ -363,7 +363,7 @@ function isBanned(day: number, period: number): boolean {
           class="timetable__block-detail"
           :style="{ color: block.textColor }"
         >
-          <Icon name="user" class="timetable__block-icon" />
+          <Icon name="lucide:user" class="timetable__block-icon" />
           <span>{{ block.instructor }}</span>
         </div>
         <div
@@ -371,7 +371,7 @@ function isBanned(day: number, period: number): boolean {
           class="timetable__block-detail"
           :style="{ color: block.textColor }"
         >
-          <Icon name="clock" class="timetable__block-icon" />
+          <Icon name="lucide:clock" class="timetable__block-icon" />
           <span>{{ formatTime(block.start_time) }} - {{ formatTime(block.end_time) }}</span>
         </div>
         <SchedulerPopularityBadge
@@ -454,7 +454,7 @@ function isBanned(day: number, period: number): boolean {
   &__block {
     position: absolute;
     border-radius: 6px;
-    padding: 4px 8px;
+    padding: 6px 10px;
     overflow: hidden;
     cursor: default;
     transition: height 0.25s ease, opacity 0.2s, box-shadow 0.2s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -534,8 +534,9 @@ function isBanned(day: number, period: number): boolean {
 
     &-icon {
       flex-shrink: 0;
-      width: 16px; // original: size-4
-      height: 16px;
+      font-size: 16px; // original: size-4 (Icon renders at 1em)
+      line-height: 1;
+      margin-top: 1px; // visual alignment with text-xs rows
     }
 
     &-popularity {

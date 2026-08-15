@@ -135,7 +135,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
           :aria-pressed="filterMode"
           @click="emit('toggle-filter')"
         >
-          <span class="side-panel__action-icon" aria-hidden="true">&#9881;</span>
+          <span class="side-panel__action-icon" aria-hidden="true"><Icon name="lucide:sliders-horizontal" /></span>
           <span class="side-panel__action-label">{{ t('scheduler.filter') }}</span>
         </button>
         <Transition name="tip">
@@ -156,7 +156,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :aria-expanded="showMenu"
         @click="toggleMenu"
       >
-        <span class="side-panel__action-icon" aria-hidden="true">&#9776;</span>
+        <span class="side-panel__action-icon" aria-hidden="true"><Icon name="lucide:menu" /></span>
         <span class="side-panel__action-label">{{ t('scheduler.menu') }}</span>
       </button>
 
@@ -166,7 +166,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :disabled="mutationsDisabled"
         @click="emit('open-cart')"
       >
-        <span class="side-panel__action-icon" aria-hidden="true">&#128722;</span>
+        <span class="side-panel__action-icon" aria-hidden="true"><Icon name="lucide:shopping-cart" /></span>
         <span class="side-panel__action-label">{{ t('scheduler.cart') }}</span>
       </button>
     </div>
@@ -446,6 +446,9 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   &__action-icon {
     font-size: 0.95rem;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   &__action-label {

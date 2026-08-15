@@ -52,6 +52,7 @@
     }
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.123",
     "@nuxtjs/i18n": "^9.5.2",
     "@nuxtjs/style-resources": "^1.2.2",
     "@types/crypto-js": "^4.2.2",
