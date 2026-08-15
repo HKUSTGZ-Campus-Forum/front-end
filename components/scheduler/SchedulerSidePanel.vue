@@ -1,6 +1,6 @@
 <!-- front-end/components/scheduler/SchedulerSidePanel.vue -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartCourse, SchedulerPopularityByCourse } from '~/utils/scheduler'
 import { getSchedulerCoursePopularity } from '~/utils/scheduler'
@@ -12,9 +12,9 @@ const props = defineProps<{
   currentPlan: { courseIndex: number; bundleId: number; layer: number }[]
   displayOptions: Record<DisplayOption, boolean>
   popularityByCourse: SchedulerPopularityByCourse
-  popularityGeneratedAt: string | null
   showPopularity: boolean
   showPopularityHistory: boolean
+  filterMode: boolean
   mutationsDisabled: boolean
 }>()
 
@@ -30,8 +30,34 @@ const emit = defineEmits<{
 }>()
 
 const activeTab = ref<'main' | 'klms'>('main')
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const displayOptionKeys: DisplayOption[] = ['name', 'section', 'location', 'instructor', 'duration']
+
+// Bottom action bar state (replicates the original planner's compact bottom bar)
+const showMenu = ref(false)
+const showFilterTip = ref(false)
+const menuRef = ref<HTMLElement | null>(null)
+let menuLastClose = 0
+
+function closeMenu() {
+  showMenu.value = false
+  menuLastClose = Date.now()
+}
+
+function toggleMenu() {
+  // The menu just closed; ignore clicks within 200ms to avoid accidental toggling
+  if (Date.now() - menuLastClose < 200 && !showMenu.value) return
+  showMenu.value = !showMenu.value
+}
+
+function onDocumentMouseDown(event: MouseEvent) {
+  if (showMenu.value && menuRef.value && !menuRef.value.contains(event.target as Node)) {
+    closeMenu()
+  }
+}
+
+onMounted(() => document.addEventListener('mousedown', onDocumentMouseDown))
+onUnmounted(() => document.removeEventListener('mousedown', onDocumentMouseDown))
 
 const filteredCourses = computed(() => {
   if (activeTab.value === 'klms') return props.courseList.filter(c => c.klms_course)
@@ -54,19 +80,6 @@ const totalCredits = computed(() =>
   props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + c.credit, 0)
 )
 
-const popularityUpdatedAt = computed(() => {
-  if (!props.popularityGeneratedAt) return ''
-  const generatedAt = new Date(props.popularityGeneratedAt)
-  if (Number.isNaN(generatedAt.getTime())) return ''
-  return t('scheduler.popularityUpdatedAt', {
-    time: new Intl.DateTimeFormat(locale.value, {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }).format(generatedAt),
-  })
-})
-
 function updateDisplayOption(key: DisplayOption, event: Event) {
   emit('update:display-option', key, (event.target as HTMLInputElement).checked)
 }
@@ -80,29 +93,6 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         <button type="button" :class="{ active: activeTab === 'klms' }" @click="activeTab = 'klms'">{{ t('scheduler.klms') }}</button>
       </div>
       <div class="side-panel__credits">{{ t('scheduler.credits', { count: totalCredits }) }}</div>
-    </div>
-
-    <details class="side-panel__display" open>
-      <summary>
-        <span>{{ t('scheduler.display') }}</span>
-        <span class="side-panel__display-count">
-          {{ displayOptionKeys.filter((key) => displayOptions[key]).length }}/{{ displayOptionKeys.length }}
-        </span>
-      </summary>
-      <label v-for="key in displayOptionKeys" :key="key" :class="{ active: displayOptions[key] }">
-        <input
-          type="checkbox"
-          :checked="displayOptions[key]"
-          @change="updateDisplayOption(key, $event)"
-        >
-        {{ t(`scheduler.display${key.charAt(0).toUpperCase()}${key.slice(1)}`) }}
-      </label>
-    </details>
-
-    <div v-if="showPopularity" class="side-panel__popularity-note">
-      <strong>{{ t('scheduler.popularity') }}</strong>
-      <span>{{ t('scheduler.popularityExplanation') }}</span>
-      <span v-if="popularityUpdatedAt">{{ popularityUpdatedAt }}</span>
     </div>
 
     <div class="side-panel__list">
@@ -131,15 +121,79 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
       </div>
     </div>
 
+    <!-- Compact bottom action bar (Filter / Menu / Cart), leaves the list as the dominant area -->
     <div class="side-panel__actions">
-      <button type="button" class="side-panel__btn" @click="emit('toggle-filter')">{{ t('scheduler.filter') }}</button>
-      <button type="button" class="side-panel__btn side-panel__btn--primary" :disabled="mutationsDisabled" @click="emit('open-cart')">{{ t('scheduler.cart') }}</button>
+      <div
+        class="side-panel__action-wrap"
+        @mouseenter="showFilterTip = true"
+        @mouseleave="showFilterTip = false"
+      >
+        <button
+          type="button"
+          class="side-panel__action"
+          :class="{ 'side-panel__action--active': filterMode }"
+          :aria-pressed="filterMode"
+          @click="emit('toggle-filter')"
+        >
+          <span class="side-panel__action-icon" aria-hidden="true">&#9881;</span>
+          <span class="side-panel__action-label">{{ t('scheduler.filter') }}</span>
+        </button>
+        <Transition name="tip">
+          <div v-if="showFilterTip" class="side-panel__tip" role="tooltip">
+            <div class="side-panel__tip-title">
+              {{ t('scheduler.filterTipTitle') }}
+              <span class="side-panel__tip-state">{{ filterMode ? t('scheduler.filterTipActive') : t('scheduler.filterTipInactive') }}</span>
+            </div>
+            <p>{{ t('scheduler.filterTipDescription') }}</p>
+          </div>
+        </Transition>
+      </div>
+
+      <button
+        type="button"
+        class="side-panel__action"
+        :class="{ 'side-panel__action--active': showMenu }"
+        :aria-expanded="showMenu"
+        @click="toggleMenu"
+      >
+        <span class="side-panel__action-icon" aria-hidden="true">&#9776;</span>
+        <span class="side-panel__action-label">{{ t('scheduler.menu') }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="side-panel__action side-panel__action--primary"
+        :disabled="mutationsDisabled"
+        @click="emit('open-cart')"
+      >
+        <span class="side-panel__action-icon" aria-hidden="true">&#128722;</span>
+        <span class="side-panel__action-label">{{ t('scheduler.cart') }}</span>
+      </button>
+    </div>
+
+    <!-- Display options menu -->
+    <div ref="menuRef" class="side-panel__menu" :class="{ 'side-panel__menu--open': showMenu }">
+      <div class="side-panel__menu-head">
+        <span>{{ t('scheduler.display') }}</span>
+        <span class="side-panel__menu-count">
+          {{ displayOptionKeys.filter((key) => displayOptions[key]).length }}/{{ displayOptionKeys.length }}
+        </span>
+      </div>
+      <label v-for="key in displayOptionKeys" :key="key" class="side-panel__menu-item" :class="{ active: displayOptions[key] }">
+        <input
+          type="checkbox"
+          :checked="displayOptions[key]"
+          @change="updateDisplayOption(key, $event)"
+        >
+        <span>{{ t(`scheduler.display${key.charAt(0).toUpperCase()}${key.slice(1)}`) }}</span>
+      </label>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .side-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -200,72 +254,98 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     background: var(--surface-secondary);
   }
 
-  &__display {
-    padding: 12px;
-    border-bottom: 1px solid var(--border-secondary);
-    color: var(--text-secondary);
-    font-size: 0.8rem;
+  &__menu {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 64px;
+    z-index: 30;
+    padding: 8px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 14px;
     background: var(--surface-primary);
+    box-shadow: var(--shadow-medium);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
 
-    summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      color: var(--text-primary);
-      font-weight: 700;
-      list-style: none;
-
-      &::-webkit-details-marker {
-        display: none;
-      }
-    }
-
-    label {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 32px;
-      margin: 10px 6px 0 0;
-      padding: 0 10px;
-      border: 1px solid var(--border-secondary);
-      border-radius: 999px;
-      background: var(--surface-secondary);
-      color: var(--text-secondary);
-      cursor: pointer;
-
-      &.active {
-        border-color: color-mix(in srgb, var(--interactive-primary) 35%, var(--border-secondary));
-        background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
-        color: var(--interactive-active);
-      }
-
-      input {
-        accent-color: var(--interactive-primary);
-      }
+    &--open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
     }
   }
 
-  &__display-count {
-    color: var(--text-secondary);
-    font-size: 0.76rem;
+  &__menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px 8px;
+    color: var(--text-primary);
+    font-size: 0.82rem;
     font-weight: 700;
   }
 
-  &__popularity-note {
-    display: grid;
-    gap: 3px;
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--border-secondary);
-    background: color-mix(in srgb, var(--interactive-primary) 5%, var(--surface-primary));
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-    line-height: 1.4;
+  &__menu-count {
+    color: var(--text-tertiary);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
 
-    strong {
+  &__menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 8px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: var(--surface-secondary);
       color: var(--text-primary);
-      font-size: 0.76rem;
     }
+
+    &.active {
+      color: var(--interactive-active);
+    }
+
+    input {
+      accent-color: var(--interactive-primary);
+    }
+  }
+
+  &__tip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 30;
+    width: 244px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 12px;
+    background: var(--surface-primary);
+    box-shadow: var(--shadow-medium);
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    line-height: 1.5;
+    pointer-events: none;
+  }
+
+  &__tip-title {
+    margin-bottom: 4px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  &__tip-state {
+    color: var(--interactive-active);
+    font-weight: 700;
   }
 
   &__empty {
@@ -310,32 +390,79 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   &__actions {
     display: flex;
     gap: 0.5rem;
-    padding: 12px;
+    padding: 10px 12px 12px;
     border-top: 1px solid var(--border-secondary);
     background: var(--surface-primary);
   }
 
-  &__btn {
+  &__action-wrap {
+    position: relative;
     flex: 1;
-    min-height: 42px;
-    padding: 0 12px;
+    min-width: 0;
+  }
+
+  &__action {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 10px;
     border: 1px solid var(--border-secondary);
     border-radius: 999px;
     background: var(--surface-primary);
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 700;
     color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
-    &:hover { background: var(--surface-secondary); }
+
+    &:hover {
+      background: var(--surface-secondary);
+    }
+
+    &--active {
+      border-color: color-mix(in srgb, var(--interactive-primary) 40%, var(--border-secondary));
+      background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
+      color: var(--interactive-active);
+    }
 
     &--primary {
       border-color: var(--interactive-primary);
       background: var(--interactive-primary);
       color: var(--text-inverse);
-      &:hover { background: var(--interactive-hover); }
+
+      &:hover {
+        background: var(--interactive-hover);
+        border-color: var(--interactive-hover);
+      }
     }
   }
+
+  &__action-icon {
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+
+  &__action-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.tip-enter-active,
+.tip-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.tip-enter-from,
+.tip-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 @media (max-width: 1024px) {

@@ -365,10 +365,6 @@ onUnmounted(() => detailRequests.invalidate())
       <button type="button" :aria-label="t('scheduler.close')" @click="showGuestHint = false">&times;</button>
     </div>
 
-    <div v-if="popularity.forbidden.value && !planMessage" class="dashboard__notice dashboard__notice--warning">
-      {{ t('scheduler.popularityVerifiedOnly') }}
-    </div>
-
     <div v-if="cartLoadError" class="dashboard__notice dashboard__notice--error" role="alert">
       <span>{{ t('scheduler.cartLoadFailed') }}</span>
       <button type="button" @click="emit('retry-cart-load')">{{ t('common.retry') }}</button>
@@ -410,6 +406,16 @@ onUnmounted(() => detailRequests.invalidate())
             :total-plans="planList.length"
             @update:index="viewIndex = $event"
           />
+
+          <!-- Dim overlay with solver hint. Scoped to the timetable card only
+               (like the original planner), so the side panel stays visible. -->
+          <Transition name="overlay">
+            <div v-if="planMessage" class="dashboard__overlay" role="status">
+              <span class="dashboard__overlay-emoji" aria-hidden="true">{{ planEmoji }}</span>
+              <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
+              <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+            </div>
+          </Transition>
         </div>
       </div>
 
@@ -419,9 +425,9 @@ onUnmounted(() => detailRequests.invalidate())
           :current-plan="currentPlan"
           :display-options="displayOptions"
           :popularity-by-course="popularity.popularityByCourse.value"
-          :popularity-generated-at="popularity.generatedAt.value"
           :show-popularity="popularity.canShowPopularity.value"
           :show-popularity-history="canShowPopularityHistory"
+          :filter-mode="filterMode"
           :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
           @toggle-course="handleToggleCourse"
           @toggle-bundle="handleToggleBundle"
@@ -462,15 +468,6 @@ onUnmounted(() => detailRequests.invalidate())
       @close="closePopularityHistory"
       @access-lost="handlePopularityHistoryAccessLost"
     />
-
-    <!-- Fullscreen dim overlay with solver hint (replicates the original planner) -->
-    <Transition name="overlay">
-      <div v-if="planMessage" class="dashboard__overlay" role="status">
-        <span class="dashboard__overlay-emoji" aria-hidden="true">{{ planEmoji }}</span>
-        <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
-        <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -620,6 +617,7 @@ onUnmounted(() => detailRequests.invalidate())
   }
 
   &__timetable-card {
+    position: relative;
     flex: 1;
     overflow: hidden;
     display: flex;
@@ -645,9 +643,10 @@ onUnmounted(() => detailRequests.invalidate())
     color: var(--text-tertiary);
   }
 
-  // Fullscreen dim overlay (solver hint). Covers the whole dashboard but stays
-  // below modal layers (cart panel z-index 1120). Non-interactive on purpose:
-  // the hint clears as soon as the cart/banned periods change.
+  // Dim overlay (solver hint). Scoped to the timetable card (the nearest
+  // positioned ancestor), stays below modal layers (cart panel z-index 1120).
+  // Non-interactive on purpose: the hint clears as soon as the cart/banned
+  // periods change.
   &__overlay {
     position: absolute;
     inset: 0;

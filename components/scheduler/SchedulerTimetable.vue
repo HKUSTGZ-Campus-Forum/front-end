@@ -131,8 +131,6 @@ const lectureBlocks = computed(() => {
   return blocks
 })
 
-const showEmptyState = computed(() => lectureBlocks.value.length === 0 && !props.filterMode)
-
 function getBlockStyle(block: LectureBlock) {
   const top = headerHeight + decorationWidth + getTopOffset(block.start_time) * rowHeight.value
   const left = timeColWidth + decorationWidth + (block.day - 1) * dayColWidth.value
@@ -207,11 +205,6 @@ function isBanned(day: number, period: number): boolean {
         />
       </div>
     </template>
-
-    <div v-if="showEmptyState" class="timetable__empty">
-      <div class="timetable__empty-title">{{ t('scheduler.emptyTimetableTitle') }}</div>
-      <p>{{ t('scheduler.emptyTimetableDescription') }}</p>
-    </div>
 
     <!-- Lecture blocks -->
     <div
@@ -292,31 +285,6 @@ function isBanned(day: number, period: number): boolean {
     }
   }
 
-  &__empty {
-    position: absolute;
-    inset: 76px 28px 28px 84px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--text-secondary);
-    pointer-events: none;
-  }
-
-  &__empty-title {
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  &__empty p {
-    max-width: 360px;
-    margin: 8px 0 0;
-    font-size: 0.86rem;
-    line-height: 1.6;
-  }
-
   &__block {
     position: absolute;
     border-radius: 8px;
@@ -370,10 +338,6 @@ function isBanned(day: number, period: number): boolean {
 
     &__time-label {
       font-size: 0.7rem;
-    }
-
-    &__empty {
-      inset: 72px 16px 22px 64px;
     }
 
     &__block {

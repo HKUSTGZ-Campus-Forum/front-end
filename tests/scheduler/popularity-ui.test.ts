@@ -26,9 +26,8 @@ describe('scheduler popularity UI contract', () => {
     const handler = dashboard.slice(handlerStart, handlerEnd)
 
     expect(handler.indexOf('await action()')).toBeLessThan(handler.indexOf('await popularity.refresh()'))
-    expect(dashboard).toContain('popularityVerifiedOnly')
     expect(dashboard).toContain(':show-popularity="popularity.canShowPopularity.value"')
-    expect(dashboard).toContain(':popularity-generated-at="popularity.generatedAt.value"')
+    expect(dashboard).toContain(':popularity-by-course="popularity.popularityByCourse.value"')
   })
 
   it('keeps section identifiers on lecture blocks and shows section counts on disabled cards', () => {

@@ -1,6 +1,6 @@
 # 排课功能 UI/UX 优化 —— 开发决策记录与计划草稿
 
-> 状态：进行中（阶段 1 已完成，阶段 2 排课工作台 dashboard 复刻执行中）
+> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-2 ✅，Step 3 课程信息 hover 小浮窗执行中）
 > 日期：2026-08-14（2026-08-15 补充细化）
 > 范围：仅排课功能（`/schedule` → `/courses/planner` 及 dashboard/map）的 UI/UX 优化
 
@@ -138,12 +138,21 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 - [x] i18n：为每个状态新增 Title key（描述沿用现有 key），保留 `planCountTruncated/planCountIncomplete/plansTruncated/searchLimited`（测试契约）
 - [x] 暗屏显示时隐藏 guestHint / popularity 通知条，避免重叠
 
-**Step 2：侧边栏布局重构 —— 功能按钮收敛到底部小栏**
-- [ ] 顶部：只留紧凑 tabs（Main/KLMS）+ 学分一行
-- [ ] 中部：课程卡片列表（空间最大化），移除顶部 details 折叠面板和 popularity note
-- [ ] 底部：一行小按钮栏 = Filter / Menu / Cart（原版 ExpandableButton：hover 展开文字标签，不占高度）
-- [ ] display options 移入 Menu 浮层（原版 SettingsMenu，点击外部关闭 + 200ms 防误触）
-- [ ] Filter 加 hover tooltip 说明浮层（原版 FilterTip："编辑模式可点击课表屏蔽时段"）
+**Step 2：侧边栏布局重构 —— 功能按钮收敛到底部小栏** ✅ 已完成
+- [x] 顶部：只留紧凑 tabs（Main/KLMS）+ 学分一行
+- [x] 中部：课程卡片列表（空间最大化），移除顶部 details 折叠面板和 popularity note
+- [x] 底部：一行小按钮栏 = Filter / Menu / Cart（原版 ExpandableButton：hover 展开文字标签，不占高度）
+- [x] display options 移入 Menu 浮层（原版 SettingsMenu，点击外部关闭 + 200ms 防误触）
+- [x] Filter 加 hover tooltip 说明浮层（原版 FilterTip："编辑模式可点击课表屏蔽时段"）
+- [x] 遮罩只覆盖课表卡片区域（复刻原版），侧边栏保持可见；修复 `.side-panel` / `.timetable-card` 定位（`position: relative`）确保浮层/遮罩定位正确
+- [x] 三个底部按钮等宽（`flex: 1`）；移除课表空状态文字（"课表还没有课程…"），由遮罩承担全部提示职责
+
+**Step 2.5：暂移除项（2026-08-15，待后续处理）**
+- [ ] **顶部"验证账号邮箱后即可查看匿名课程热度信号"通知条已移除**（`popularity.forbidden` 触发的 `popularityVerifiedOnly` 通知）
+  - 原因：顶部通知过多，与 guestHint 等并存时干扰；热度提示方案待整体重新设计
+  - 现状：`popularityVerifiedOnly` i18n key 保留（zh/en 一致，未删除），`popularity.forbidden` 逻辑仍由 composable 计算，仅 UI 不再展示
+  - 待办：后续统一设计热度信号的可达性提示（登录横幅内嵌 / 课程卡内提示等），届时再决定该 key 去留
+- [ ] 课表空状态文案（`emptyTimetableTitle/Description`）已移除，i18n key 已删除；若后续需要课表空状态提示，重新设计（如结合遮罩）
 
 **Step 3：课程信息 hover 小浮窗**
 - [ ] 课程卡 ℹ️ 图标 hover → 异步 `getCourseDetail` → 小浮窗（title/code/学分/简介/pre·co-requirement/exclusion）

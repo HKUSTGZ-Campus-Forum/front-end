@@ -29,6 +29,12 @@
   - 新增全屏暗遮罩 + emoji 求解提示（😉 信息 / 😲 警告 / 😢 错误），`SchedulerDashboard` 的 `planMessage` 升级为分级结构（标题 + 描述），替代原有顶部通知条
   - 新增主题变量 `--overlay-backdrop` / `--overlay-text` / `--overlay-text-secondary`（light/dark 同值，深底浅字）
   - i18n 新增 6 个求解状态标题 key（`emptyCartTitle` / `allDisabledTitle` / `unavailableLayerTitle` / `noSolutionTitle` / `searchLimitedTitle` / `plansTruncatedTitle`）
+- **排课工作台 UI/UX 优化（第二阶段）**：侧边栏功能按钮收敛到底部小栏（复刻原版布局）
+  - 顶部仅保留紧凑 tabs（主课表/KLMS）+ 学分；移除顶部 display options 折叠面板与 popularity note 说明条，中部空间全部让给课程卡片
+  - 底部新增一行小按钮栏：筛选（⚙，带编辑模式 tooltip 说明）/ 菜单（☰，展开 display options 浮层）/ 课程购物车（🛒，主按钮）
+  - display options 移入 Menu 浮层（点击外部关闭 + 200ms 防误触），选中项高亮并显示计数
+  - 筛选按钮支持编辑模式高亮态（`filterMode` 经 prop 传入），hover 显示"编辑模式"说明浮层
+  - i18n 新增 `menu` / `filterTip*`（编辑模式说明）key；移除侧边栏未再引用的 `popularityUpdatedAt` 逻辑与 `popularityGeneratedAt` 传递
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选
