@@ -139,7 +139,7 @@ onUnmounted(() => {
     justify-content: center;
     gap: 14px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-secondary);
+    border-bottom: 1px solid var(--timetable-grid);
 
     button {
       width: 40px;
@@ -202,7 +202,7 @@ onUnmounted(() => {
   &__track {
     width: 100%;
     height: 6px;
-    background: var(--border-secondary);
+    background: var(--timetable-grid);
     border-radius: 999px;
     position: relative;
   }

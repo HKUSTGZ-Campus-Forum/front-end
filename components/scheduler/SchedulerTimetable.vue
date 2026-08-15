@@ -171,7 +171,7 @@ function setBlockRef(key: string, el: unknown) {
 const blockOutlineColor = computed(() =>
   isDarkTheme.value
     ? 'color-mix(in srgb, var(--text-primary) 90%, transparent)'
-    : 'color-mix(in srgb, var(--text-primary) 16%, transparent)',
+    : 'color-mix(in srgb, var(--text-primary) 10%, transparent)',
 )
 
 // Measure every block's natural content height up front so the bottom fade
@@ -410,8 +410,8 @@ function isBanned(day: number, period: number): boolean {
     z-index: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(to right, var(--border-secondary) 0 2px, transparent 2px),
-      linear-gradient(to bottom, var(--border-secondary) 0 2px, transparent 2px);
+      linear-gradient(to right, var(--timetable-grid) 0 2px, transparent 2px),
+      linear-gradient(to bottom, var(--timetable-grid) 0 2px, transparent 2px);
   }
 
   &__header {
@@ -421,9 +421,9 @@ function isBanned(day: number, period: number): boolean {
     justify-content: center;
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--text-secondary);
-    background: color-mix(in srgb, var(--surface-secondary) 72%, var(--surface-primary));
-    border-left: 2px solid var(--border-secondary);
+    color: var(--timetable-header-text);
+    background: var(--surface-primary);
+    border-left: 2px solid var(--timetable-grid);
   }
 
   &__time-label {
@@ -432,7 +432,7 @@ function isBanned(day: number, period: number): boolean {
     align-items: center;
     justify-content: center;
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--timetable-header-text);
   }
 
   &__cell {

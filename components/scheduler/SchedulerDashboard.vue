@@ -623,6 +623,12 @@ onUnmounted(() => detailRequests.invalidate())
     display: flex;
     flex-direction: column;
     min-height: 100%;
+    // Light mode: white rounded card on the blue page background. Dark mode:
+    // transparent (theme variables) so the table blends with the page.
+    background: var(--timetable-card-bg);
+    border: var(--timetable-card-border);
+    border-radius: var(--timetable-card-radius);
+    box-shadow: var(--timetable-card-shadow);
   }
 
   &__right {

@@ -36,6 +36,18 @@
   --border-secondary: #daeef9;
   --border-focus: #26a4ff;
 
+  // Scheduler timetable (light mode: neutral gray lines on a white surface,
+  // mirroring the original planner instead of the light-blue theme borders)
+  --timetable-grid: #e5e7eb;
+  --timetable-header-text: #475569;
+
+  // Scheduler timetable card (light mode: white rounded card on the blue page
+  // background; dark mode: transparent so the table blends with the page)
+  --timetable-card-bg: #ffffff;
+  --timetable-card-radius: 16px;
+  --timetable-card-border: 1px solid #e5e7eb;
+  --timetable-card-shadow: 0 1px 3px rgba(38, 164, 255, 0.08);
+
   // Component backgrounds
   --sidebar-bg: #283965;
   --sidebar-backdrop: none;
@@ -137,6 +149,16 @@
   --border-primary: #2d4a73;
   --border-secondary: #24375a;
   --border-focus: #26a4ff;
+
+  // Scheduler timetable (dark mode keeps the existing deep blue-gray lines)
+  --timetable-grid: #24375a;
+  --timetable-header-text: #9fb0c9;
+
+  // Scheduler timetable card (dark mode: blends with the page background)
+  --timetable-card-bg: transparent;
+  --timetable-card-radius: 0;
+  --timetable-card-border: none;
+  --timetable-card-shadow: none;
 
   --sidebar-bg: #0b1220;
   --sidebar-backdrop: none;
