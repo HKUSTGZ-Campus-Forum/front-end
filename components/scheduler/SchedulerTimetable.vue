@@ -1,6 +1,6 @@
 <!-- front-end/components/scheduler/SchedulerTimetable.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {
   CartCourse,
@@ -9,7 +9,7 @@ import type {
 } from '~/utils/scheduler'
 import {
   TIME_SLOTS,
-  getCourseColor,
+  getCourseTimetableColors,
   getHeight,
   getSchedulerCoursePopularity,
   getTopOffset,
@@ -30,6 +30,7 @@ const emit = defineEmits<{
   (e: 'toggle-ban', day: number, period: number): void
 }>()
 const { t } = useI18n()
+const { isDarkTheme } = useTheme()
 const dayNames = computed(() => [
   t('scheduler.days.mon'),
   t('scheduler.days.tue'),
@@ -64,23 +65,41 @@ onUnmounted(() => {
 
 const timeColWidth = 52
 const headerHeight = 36
-const decorationWidth = 4
+// Grid lines start exactly at the time-column and header boundaries so there
+// is no offset seam that would render a doubled line at the first row/column.
 
 const dayColWidth = computed(() => {
-  const available = containerWidth.value - timeColWidth - decorationWidth * 2
+  const available = containerWidth.value - timeColWidth
   const minWidth = containerWidth.value < 560 ? 52 : 86
   return Math.max(minWidth, available / props.maxDayNum)
 })
 
 const rowHeight = computed(() => {
-  const available = containerHeight.value - headerHeight - decorationWidth * 2
-  return Math.max(46, available / 8)
+  // Leave room for the trailing 21:00 label centered on the last grid line.
+  const available = containerHeight.value - headerHeight
+  return Math.max(40, available / 8.5)
 })
 
+// Grid lines live on a dedicated layer that starts exactly at the time-column
+// and header boundaries. Because CSS background-repeat tiles both directions,
+// keeping the layer inset this way guarantees no line bleeds into the
+// time-label column.
 const timetableGridStyle = computed(() => ({
+  top: `${headerHeight}px`,
+  left: `${timeColWidth}px`,
   backgroundSize: `${dayColWidth.value}px ${rowHeight.value}px`,
-  backgroundPosition: `${timeColWidth + decorationWidth}px ${headerHeight + decorationWidth}px`,
+  backgroundPosition: '0 0',
 }))
+
+// Wide columns inline the section label next to the course code (original:
+// colWidth > 150). Narrow columns show it as its own icon row instead.
+const wideSection = computed(() => dayColWidth.value > 150)
+
+// Nine labels aligned to the nine horizontal grid lines (8 rows + bottom edge).
+const timeLabels = computed(() => [
+  ...TIME_SLOTS.map(slot => slot.label),
+  formatTime(TIME_SLOTS[TIME_SLOTS.length - 1].end),
+])
 
 interface LectureBlock {
   day: number
@@ -92,10 +111,13 @@ interface LectureBlock {
   courseTitle: string
   sectionId: string
   sectionName: string
-  color: string
+  backgroundColor: string
+  textColor: string
+  accentColor: string
   isMain: boolean
   credit: number
   popularity?: SchedulerPopularityCounts
+  key: string
 }
 
 const lectureBlocks = computed(() => {
@@ -107,7 +129,7 @@ const lectureBlocks = computed(() => {
     if (!bundles) continue
     const bundle = bundles.find(b => b.id === selection.bundleId)
     if (!bundle) continue
-    const color = getCourseColor(selection.courseIndex)
+    const colors = getCourseTimetableColors(selection.courseIndex, isDarkTheme.value)
     const coursePopularity = getSchedulerCoursePopularity(
       props.popularityByCourse,
       course.course_code,
@@ -120,10 +142,13 @@ const lectureBlocks = computed(() => {
           courseTitle: course.course_title,
           sectionId: section.section_id,
           sectionName: section.name,
-          color,
+          backgroundColor: colors.background,
+          textColor: colors.text,
+          accentColor: colors.accent,
           isMain: section.is_main,
           credit: course.credit,
           popularity: coursePopularity?.sections[section.section_id],
+          key: `${course.course_code}-${section.section_id}-${lecture.day}-${lecture.start_time}-${section.is_main ? 'main' : 'sub'}`,
         })
       }
     }
@@ -131,25 +156,100 @@ const lectureBlocks = computed(() => {
   return blocks
 })
 
+// Hover expansion: measure the natural content height and grow the block.
+const hoveredKey = ref<string | null>(null)
+const expandedHeights = ref<Record<string, number>>({})
+const blockContentRefs = new Map<string, HTMLElement>()
+
+function setBlockRef(key: string, el: unknown) {
+  if (el instanceof HTMLElement) blockContentRefs.set(key, el)
+  else blockContentRefs.delete(key)
+}
+
+// Hover ring: a bright outline in dark mode, a subtle gray ring in light mode
+// (mirrors the original planner's outline + elevated shadow).
+const blockOutlineColor = computed(() =>
+  isDarkTheme.value
+    ? 'color-mix(in srgb, var(--text-primary) 90%, transparent)'
+    : 'color-mix(in srgb, var(--text-primary) 16%, transparent)',
+)
+
+// Measure every block's natural content height up front so the bottom fade
+// cue and the hover expansion work even before the user's first hover.
+watch(
+  () => [lectureBlocks.value, rowHeight.value, dayColWidth.value, props.displayOptions],
+  () => {
+    void nextTick(() => {
+      const heights: Record<string, number> = {}
+      blockContentRefs.forEach((el, key) => {
+        heights[key] = el.scrollHeight
+      })
+      expandedHeights.value = heights
+    })
+  },
+  { immediate: true, flush: 'post' },
+)
+
+function onBlockEnter(key: string) {
+  hoveredKey.value = key
+}
+
+function onBlockLeave() {
+  hoveredKey.value = null
+}
+
+function blockBaseHeight(block: LectureBlock): number {
+  return getHeight(block.start_time, block.end_time) * rowHeight.value - 2
+}
+
+// Content taller than the block's slot needs the bottom fade cue.
+function blockOverflows(block: LectureBlock): boolean {
+  const contentHeight = expandedHeights.value[block.key]
+  if (!contentHeight) return false
+  return contentHeight + 6 > blockBaseHeight(block)
+}
+
 function getBlockStyle(block: LectureBlock) {
-  const top = headerHeight + decorationWidth + getTopOffset(block.start_time) * rowHeight.value
-  const left = timeColWidth + decorationWidth + (block.day - 1) * dayColWidth.value
-  const height = getHeight(block.start_time, block.end_time) * rowHeight.value - 2
-  const width = dayColWidth.value - 2
+  const top = headerHeight + getTopOffset(block.start_time) * rowHeight.value
+  const left = timeColWidth + (block.day - 1) * dayColWidth.value + 2
+  const baseHeight = blockBaseHeight(block)
+  const isHovered = hoveredKey.value === block.key
+  const contentHeight = expandedHeights.value[block.key]
+  // Keep the block at least as tall as its slot so short cards never shrink
+  // on hover; only grow when the content actually needs more room.
+  const height = isHovered && contentHeight
+    ? Math.max(baseHeight, contentHeight + 12)
+    : baseHeight
   return {
     top: `${top}px`,
     left: `${left}px`,
     height: `${height}px`,
-    width: `${width}px`,
-    backgroundColor: block.color,
-    opacity: block.isMain ? 1 : 0.7,
+    width: `${dayColWidth.value - 4}px`,
+    backgroundColor: block.backgroundColor,
+    opacity: isHovered ? 1 : (block.isMain ? 1 : 0.7),
+    // Small downward nudge on hover for interactive feedback (original: y: 4).
+    transform: isHovered ? 'translateY(4px)' : 'translateY(0)',
+    // Hover: highlight ring + elevation shadow. Resting: subtle base shadow.
+    boxShadow: isHovered
+      ? `0 0 0 2px ${blockOutlineColor.value}, var(--shadow-large)`
+      : 'var(--shadow-small)',
   }
 }
 
+// Soft bottom fade: starts from a semi-transparent tint of the card color so
+// the text underneath stays readable while still hinting there is more.
+function getFadeStyle(block: LectureBlock) {
+  const tint = `color-mix(in srgb, ${block.backgroundColor} 55%, transparent)`
+  return {
+    background: `linear-gradient(to top, ${tint}, transparent)`,
+  }
+}
+
+// Original planner format: hours are not zero-padded (9:00), minutes are.
 function formatTime(time: number): string {
   const h = Math.floor(time / 100)
   const m = time % 100
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  return `${h}:${String(m).padStart(2, '0')}`
 }
 
 function isBanned(day: number, period: number): boolean {
@@ -158,14 +258,18 @@ function isBanned(day: number, period: number): boolean {
 </script>
 
 <template>
-  <div ref="containerRef" class="timetable" :style="timetableGridStyle">
+  <div ref="containerRef" class="timetable">
+    <!-- Grid lines layer: inset to the day-column area only -->
+    <div class="timetable__grid" :style="timetableGridStyle" />
+
     <!-- Day headers -->
     <div
       v-for="d in maxDayNum"
       :key="d"
       class="timetable__header"
       :style="{
-        left: `${timeColWidth + decorationWidth + (d - 1) * dayColWidth}px`,
+        top: '0',
+        left: `${timeColWidth + (d - 1) * dayColWidth}px`,
         width: `${dayColWidth}px`,
         height: `${headerHeight}px`,
       }"
@@ -173,18 +277,18 @@ function isBanned(day: number, period: number): boolean {
       {{ dayNames[d - 1] }}
     </div>
 
-    <!-- Time labels -->
+    <!-- Time labels: center-aligned to the horizontal grid lines -->
     <div
-      v-for="(slot, i) in TIME_SLOTS"
-      :key="i"
+      v-for="(label, i) in timeLabels"
+      :key="`${label}-${i}`"
       class="timetable__time-label"
       :style="{
-        top: `${headerHeight + decorationWidth + i * rowHeight}px`,
+        top: `${headerHeight + i * rowHeight - rowHeight / 2}px`,
         width: `${timeColWidth}px`,
         height: `${rowHeight}px`,
       }"
     >
-      {{ slot.label }}
+      {{ label }}
     </div>
 
     <!-- Banned period overlays -->
@@ -196,8 +300,8 @@ function isBanned(day: number, period: number): boolean {
           class="timetable__cell"
           :class="{ 'timetable__cell--banned': isBanned(d - 1, p - 1) }"
           :style="{
-            left: `${timeColWidth + decorationWidth + (d - 1) * dayColWidth}px`,
-            top: `${headerHeight + decorationWidth + (p - 1) * rowHeight}px`,
+            left: `${timeColWidth + (d - 1) * dayColWidth}px`,
+            top: `${headerHeight + (p - 1) * rowHeight}px`,
             width: `${dayColWidth}px`,
             height: `${rowHeight}px`,
           }"
@@ -209,25 +313,79 @@ function isBanned(day: number, period: number): boolean {
     <!-- Lecture blocks -->
     <div
       v-for="(block, i) in lectureBlocks"
-      :key="`${block.courseCode}-${block.sectionId}-${block.day}-${block.start_time}-${i}`"
+      :key="`${block.key}-${i}`"
       class="timetable__block"
+      :class="{ 'timetable__block--expanded': hoveredKey === block.key }"
       :style="getBlockStyle(block)"
+      @mouseenter="onBlockEnter(block.key)"
+      @mouseleave="onBlockLeave"
     >
-      <div class="timetable__block-code">{{ block.courseCode }}</div>
-      <template v-if="rowHeight > 50">
-        <div v-if="displayOptions.name" class="timetable__block-title">{{ block.courseTitle }}</div>
-        <div v-if="displayOptions.section" class="timetable__block-section">{{ block.sectionName }}</div>
-        <div v-if="displayOptions.location" class="timetable__block-room">{{ block.room }}</div>
-        <div v-if="displayOptions.instructor" class="timetable__block-instructor">{{ block.instructor }}</div>
-        <div v-if="displayOptions.duration" class="timetable__block-time">
-          {{ formatTime(block.start_time) }}-{{ formatTime(block.end_time) }}
+      <div :ref="(el) => setBlockRef(block.key, el)" class="timetable__block-content">
+        <!-- Top row: course code, section inline on wide columns (original) -->
+        <div class="timetable__block-top">
+          <span class="timetable__block-code" :style="{ color: block.textColor }">{{ block.courseCode }}</span>
+          <span
+            v-if="displayOptions.section && wideSection"
+            class="timetable__block-code-section"
+            :style="{ color: block.accentColor }"
+          >
+            · {{ block.sectionName }} ({{ block.sectionId }})
+          </span>
         </div>
-      </template>
-      <SchedulerPopularityBadge
-        v-if="showPopularity && block.popularity"
-        class="timetable__block-popularity"
-        :counts="block.popularity"
-        compact
+
+        <div
+          v-if="displayOptions.name"
+          class="timetable__block-title"
+          :style="{ color: block.textColor }"
+        >
+          {{ block.courseTitle }}
+        </div>
+
+        <!-- Section as its own row on narrow columns (original) -->
+        <div
+          v-if="displayOptions.section && !wideSection"
+          class="timetable__block-detail"
+          :style="{ color: block.textColor }"
+        >
+          <Icon name="list" class="timetable__block-icon" />
+          <span>{{ block.sectionName }} ({{ block.sectionId }})</span>
+        </div>
+        <div
+          v-if="displayOptions.location"
+          class="timetable__block-detail"
+          :style="{ color: block.textColor }"
+        >
+          <Icon name="map-pin" class="timetable__block-icon" />
+          <span>{{ block.room }}</span>
+        </div>
+        <div
+          v-if="displayOptions.instructor"
+          class="timetable__block-detail"
+          :style="{ color: block.textColor }"
+        >
+          <Icon name="user" class="timetable__block-icon" />
+          <span>{{ block.instructor }}</span>
+        </div>
+        <div
+          v-if="displayOptions.duration"
+          class="timetable__block-detail"
+          :style="{ color: block.textColor }"
+        >
+          <Icon name="clock" class="timetable__block-icon" />
+          <span>{{ formatTime(block.start_time) }} - {{ formatTime(block.end_time) }}</span>
+        </div>
+        <SchedulerPopularityBadge
+          v-if="showPopularity && block.popularity"
+          class="timetable__block-popularity"
+          :counts="block.popularity"
+          compact
+        />
+      </div>
+      <!-- Bottom fade cue: hints there is more content once hovered -->
+      <div
+        v-if="hoveredKey !== block.key && blockOverflows(block)"
+        class="timetable__block-fade"
+        :style="getFadeStyle(block)"
       />
     </div>
   </div>
@@ -239,13 +397,22 @@ function isBanned(day: number, period: number): boolean {
   width: 100%;
   height: 100%;
   min-height: 400px;
-  background: var(--surface-primary);
-  background-image:
-    linear-gradient(to right, transparent calc(100% - 1px), var(--border-secondary) calc(100% - 1px)),
-    linear-gradient(to bottom, transparent calc(100% - 1px), var(--border-secondary) calc(100% - 1px));
-  border: 1px solid var(--border-secondary);
-  border-radius: 12px 12px 0 0;
+  background: transparent;
   overflow: hidden;
+
+  // Inset grid layer: vertical/horizontal lines are drawn at the top and left
+  // edge of every tiled cell, starting at (timeColWidth, headerHeight). The
+  // layer never covers the time-label column, so no line can cross it.
+  &__grid {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--border-secondary) 0 2px, transparent 2px),
+      linear-gradient(to bottom, var(--border-secondary) 0 2px, transparent 2px);
+  }
 
   &__header {
     position: absolute;
@@ -256,7 +423,7 @@ function isBanned(day: number, period: number): boolean {
     font-weight: 600;
     color: var(--text-secondary);
     background: color-mix(in srgb, var(--surface-secondary) 72%, var(--surface-primary));
-    border-bottom: 1px solid var(--border-secondary);
+    border-left: 2px solid var(--border-secondary);
   }
 
   &__time-label {
@@ -266,7 +433,6 @@ function isBanned(day: number, period: number): boolean {
     justify-content: center;
     font-size: 0.75rem;
     color: var(--text-secondary);
-    border-right: 1px solid var(--border-secondary);
   }
 
   &__cell {
@@ -287,39 +453,89 @@ function isBanned(day: number, period: number): boolean {
 
   &__block {
     position: absolute;
-    border-radius: 8px;
-    padding: 6px 8px;
+    border-radius: 6px;
+    padding: 4px 8px;
     overflow: hidden;
-    color: white;
-    font-size: 0.75rem;
     cursor: default;
-    border: 1px solid rgba(255, 255, 255, 0.32);
-    box-shadow: 0 2px 6px rgba(26, 42, 74, 0.14);
-    transition: opacity 0.2s, box-shadow 0.2s, transform 0.2s;
+    transition: height 0.25s ease, opacity 0.2s, box-shadow 0.2s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 10;
 
-    &:hover {
-      z-index: 20;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(26, 42, 74, 0.22);
+    &--expanded {
+      z-index: 25;
+      overflow: visible;
+    }
+
+    &-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 4px; // original: gap-1
+    }
+
+    // Gradient fade at the bottom of overflowing cards, removed on hover when
+    // the full content is revealed. Short and semi-transparent so it hints at
+    // more content without hiding the text underneath.
+    &-fade {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 10px;
+      pointer-events: none;
+    }
+
+    &-top {
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+      flex-shrink: 0; // original: top row always visible, never compressed
     }
 
     &-code {
-      font-weight: 700;
-      font-size: 0.8rem;
-    }
-
-    &-title {
-      font-size: 0.7rem;
-      opacity: 0.9;
+      font-weight: 500; // original: font-medium
+      font-size: 0.875rem; // original: text-sm
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    &-section, &-room, &-instructor, &-time {
-      font-size: 0.65rem;
-      opacity: 0.8;
+    &-code-section {
+      font-weight: 500;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &-title {
+      font-size: 0.75rem; // original: text-xs
+      margin-bottom: 4px; // original: mb-1
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &-detail {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px; // original: gap-2
+      opacity: 0.7; // original: opacity-70
+      font-size: 0.75rem; // original: text-xs
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      > span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    &-icon {
+      flex-shrink: 0;
+      width: 16px; // original: size-4
+      height: 16px;
     }
 
     &-popularity {
@@ -341,11 +557,10 @@ function isBanned(day: number, period: number): boolean {
     }
 
     &__block {
-      padding: 5px 6px;
-      font-size: 0.7rem;
+      padding: 3px 6px;
 
       &-code {
-        font-size: 0.72rem;
+        font-size: 0.78rem;
       }
     }
   }

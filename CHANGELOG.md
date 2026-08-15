@@ -35,6 +35,16 @@
   - display options 移入 Menu 浮层（点击外部关闭 + 200ms 防误触），选中项高亮并显示计数
   - 筛选按钮支持编辑模式高亮态（`filterMode` 经 prop 传入），hover 显示"编辑模式"说明浮层
   - i18n 新增 `menu` / `filterTip*`（编辑模式说明）key；移除侧边栏未再引用的 `popularityUpdatedAt` 逻辑与 `popularityGeneratedAt` 传递
+- **排课工作台 UI/UX 优化（第三阶段）**：左侧课程表 + 底部控制栏复刻原版
+  - 去掉课程表外层圆角矩形卡片（border/圆角/阴影/背景），课程表与侧边栏融入页面背景；求解提示遮罩同步去圆角
+  - 时间刻度线对齐：标签中线对齐水平刻度线，补齐末尾 21:00 标签（原版 9 条刻度线 vs 此前 8 个）；网格线移入独立层（`__grid`，只覆盖主体区域，不延伸到时间标签列），表头竖线由表头自身边框提供，避免刻度文字被线穿过及首行首列双重刻度线
+  - 课程块配色改为原版浅色方案（浅底深字，light: `hsl(hue 40% 85%)`，dark: `hsl(hue 25% 70%)`），新增 `getCourseTimetableColors` 纯函数
+  - 课程块 hover 自动展开：按内容自然高度展开 + z-index 提升；内容不足一槽高的卡片保持槽位高度不回缩（`Math.max(槽位高, 内容高)`）
+  - 课程块 hover 反馈：hover 高亮环（dark 白边 / light 灰边）+ 大阴影 + 向下位移 4px；内容溢出的卡片底部常驻渐变遮罩提示"还有内容"（hover 展开后消失）
+  - 课程块字体放大（课程号 0.85rem / 标题 0.75rem / 明细 0.7rem）
+  - 底部控制栏：按钮去掉边框/背景改为纯图标（内联 SVG：skip-start/caret/skip-end），计数器改大号索引 + `/ total`
+  - 方案 slider 占满整行宽度；支持点击定位 + 自由拖拽（mousedown + window mousemove/mouseup），拖动时显示索引 tooltip + thumb 放大
+  - 周六/周日课程随方案列数联动（`getMaxDayNum`，原有逻辑确认保留）
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

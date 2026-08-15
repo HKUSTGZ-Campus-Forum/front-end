@@ -1,6 +1,6 @@
 # 排课功能 UI/UX 优化 —— 开发决策记录与计划草稿
 
-> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-2 ✅，Step 3 课程信息 hover 小浮窗执行中）
+> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-2 ✅，Step 3 左侧课程表+底部控制栏复刻 ✅，Step 4 课程信息 hover 小浮窗待做）
 > 日期：2026-08-14（2026-08-15 补充细化）
 > 范围：仅排课功能（`/schedule` → `/courses/planner` 及 dashboard/map）的 UI/UX 优化
 
@@ -154,19 +154,23 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
   - 待办：后续统一设计热度信号的可达性提示（登录横幅内嵌 / 课程卡内提示等），届时再决定该 key 去留
 - [ ] 课表空状态文案（`emptyTimetableTitle/Description`）已移除，i18n key 已删除；若后续需要课表空状态提示，重新设计（如结合遮罩）
 
-**Step 3：课程信息 hover 小浮窗**
+**Step 3：左侧课程表 + 底部控制栏 UI/交互复刻**（2026-08-15 用户调整优先级，先于原 Step 3；复刻原版 `timetable.tsx` + `bottom-panel.tsx`）✅ 已完成
+- [x] 整体布局：去掉 `dashboard__timetable-card` 圆角矩形卡片效果（border/radius/shadow/背景），`.timetable` 去掉自身 border/radius，`.bottom-panel` 去掉 border/radius/背景；遮罩 overlay 圆角同步去掉
+- [x] 时间刻度线对齐：标签中线对齐水平刻度线（`top = header - rowHeight/2 + i*rowHeight`）；补末尾 21:00 标签（原版 9 个 vs 当前 8 个）
+- [x] 网格线：header 底边加粗 3px、行/列线加粗 2px（复刻原版视觉层级）
+- [x] 周六/周日课程：确认 `getMaxDayNum` 已支持（`max(5, 最大day)` + `v-for="d in maxDayNum"`），切换方案时列数联动
+- [x] 卡片 hover 自动展开：JS 测量内容高度 → 高度动画展开 + z-index 提升 + 大阴影（`--shadow-large`）
+- [x] 卡片配色复刻原版浅色方案：`getCourseColor` 改为浅底（light: sat40/light85；dark: sat25/light70）+ 深色文字 `hsl(hue,sat,30%)`；新增 `getCourseTimetableColors` 返回 background/text/accent（纯函数 + 单测）
+- [x] 底部按钮：去掉边框/背景（纯 icon + hover 变色）、换内联 SVG 大图标（skip-start/caret-left/caret-right/skip-end）
+- [x] 中间计数器：加数字图标 + 大号索引（复刻原版 `text-3xl` 数字）
+- [x] slider：占满宽度（去掉 `max-width: 440px`）
+- [x] slider 交互：mousedown 定位 + window mousemove/mouseup 拖拽 + 拖动时 tooltip 显示索引 + thumb 放大（spring 过渡用 CSS transition 近似）
+
+**Step 4：课程信息 hover 小浮窗**
 - [ ] 课程卡 ℹ️ 图标 hover → 异步 `getCourseDetail` → 小浮窗（title/code/学分/简介/pre·co-requirement/exclusion）
 - [ ] 复用现有 `detailRequests` request tracker + loading/error 状态
 - [ ] 替代 `SchedulerCourseDetail` 居中弹窗（组件可删除或保留待用）
 - [ ] 浮窗位置自适应（靠近图标、防溢出视口），鼠标离开图标/浮窗关闭
-
-**Step 4：方案 slider 增强**
-- [ ] 拖动（mousedown/move/up）+ 拖动时 tooltip 显示索引 + 平滑过渡
-
-**Step 5：体验细节补全**
-- [ ] 登录横幅补登录链接（`getLocalePath('/login')`）
-- [ ] 搜索弹层每项 loading/success/fail 状态反馈
-- [ ] 课程卡视觉层级微调（对照原版蓝/灰状态色，用主题变量）
 
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`

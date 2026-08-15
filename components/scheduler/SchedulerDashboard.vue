@@ -623,11 +623,6 @@ onUnmounted(() => detailRequests.invalidate())
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-secondary);
-    border-radius: 16px;
-    background: var(--surface-primary);
-    box-shadow: var(--shadow-small);
   }
 
   &__right {
@@ -659,7 +654,6 @@ onUnmounted(() => detailRequests.invalidate())
     background: var(--overlay-backdrop);
     pointer-events: none;
     text-align: center;
-    border-radius: 16px;
   }
 
   &__overlay-emoji {
@@ -748,7 +742,6 @@ onUnmounted(() => detailRequests.invalidate())
 
     &__timetable-card {
       min-height: 560px;
-      padding: 8px;
     }
   }
 }

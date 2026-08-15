@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
+  getCourseTimetableColors,
   getHeight,
   getSchedulerMapLinePath,
   getTopOffset,
@@ -38,6 +39,20 @@ describe('scheduler timetable geometry', () => {
     )
 
     expect(cellRule).toContain('z-index: 30')
+  })
+
+  it('derives a soft pastel palette per course in light and dark themes', () => {
+    const light = getCourseTimetableColors(0, false)
+    expect(light.background).toBe('hsl(0, 40%, 85%)')
+    expect(light.text).toBe('hsl(0, 40%, 30%)')
+    expect(light.accent).toBe('hsl(0, 20%, 38%)')
+
+    const dark = getCourseTimetableColors(0, true)
+    expect(dark.background).toBe('hsl(0, 25%, 70%)')
+    expect(dark.text).toBe('hsl(0, 25%, 30%)')
+
+    // Different courses resolve to different hues.
+    expect(getCourseTimetableColors(1).background).not.toBe(getCourseTimetableColors(0).background)
   })
 })
 
