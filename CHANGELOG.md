@@ -25,6 +25,10 @@
   - 新增纯逻辑模块：`utils/scheduler.ts`（多层求解器）、`utils/schedulerCart.ts`（购物车规范化）
   - 游客使用浏览器本地购物车，登录用户通过 JWT 接口持久化
   - 新增 `tests/scheduler/` 系列测试（solver、cart、geometry、async-state、popularity 等）
+- **排课工作台 UI/UX 优化（第一阶段）**：复刻原排课助手的求解提示交互
+  - 新增全屏暗遮罩 + emoji 求解提示（😉 信息 / 😲 警告 / 😢 错误），`SchedulerDashboard` 的 `planMessage` 升级为分级结构（标题 + 描述），替代原有顶部通知条
+  - 新增主题变量 `--overlay-backdrop` / `--overlay-text` / `--overlay-text-secondary`（light/dark 同值，深底浅字）
+  - i18n 新增 6 个求解状态标题 key（`emptyCartTitle` / `allDisabledTitle` / `unavailableLayerTitle` / `noSolutionTitle` / `searchLimitedTitle` / `plansTruncatedTitle`）
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

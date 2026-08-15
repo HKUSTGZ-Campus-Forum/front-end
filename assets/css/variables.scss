@@ -53,6 +53,12 @@
   --modal-backdrop: rgba(26, 42, 74, 0.45);
   --modal-shadow: 0 20px 40px rgba(26, 42, 74, 0.15);
 
+  // Fullscreen dim overlay (solver hint / blocked states).
+  // Fixed dark backdrop + light text in both themes (see scheduler dashboard).
+  --overlay-backdrop: rgba(0, 0, 0, 0.55);
+  --overlay-text: #eef3fa;
+  --overlay-text-secondary: rgba(238, 243, 250, 0.8);
+
   // Effects
   --effect-blur: blur(8px);
   --shadow-small: 0 1px 3px rgba(38, 164, 255, 0.08);
@@ -147,6 +153,10 @@
   --modal-bg: #1d2d49;
   --modal-backdrop: rgba(0, 0, 0, 0.6);
   --modal-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+
+  --overlay-backdrop: rgba(0, 0, 0, 0.55);
+  --overlay-text: #eef3fa;
+  --overlay-text-secondary: rgba(238, 243, 250, 0.8);
 
   --effect-blur: blur(8px);
   --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.3);

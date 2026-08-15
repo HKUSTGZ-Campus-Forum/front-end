@@ -1,7 +1,7 @@
 # 排课功能 UI/UX 优化 —— 开发决策记录与计划草稿
 
-> 状态：草稿（决策记录）
-> 日期：2026-08-14
+> 状态：进行中（阶段 1 已完成，阶段 2 排课工作台 dashboard 复刻执行中）
+> 日期：2026-08-14（2026-08-15 补充细化）
 > 范围：仅排课功能（`/schedule` → `/courses/planner` 及 dashboard/map）的 UI/UX 优化
 
 ---
@@ -46,6 +46,48 @@
 
 UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购物车 核心工作区，工作量最大），而不是先做学期选择页或地图。
 
+### 决策六（2026-08-15 补充）：侧边栏空间紧张 → 功能按钮收敛到底部小栏
+
+- 右侧侧边栏空间紧张，希望大部分区域都是**课程卡片**内容，功能按钮不应占据过多空间
+- 原版设计正是如此：顶部只留紧凑 tabs，功能按钮（Filter / Menu / Cart）集中到底部一小栏
+- 当前迁移版在顶部放折叠面板 + 按钮，占空间较多 → **重构为底部小栏 + 浮层**
+- 具体：display options 从顶部 details 面板移入 Menu 浮层；Filter 加 hover tooltip 说明；popularity note 先移除（后续再说）
+
+### 决策七（2026-08-15 补充）：课程信息 = hover 小浮窗
+
+- 课程信息交互从"居中弹窗"改为 **hover ℹ️ 图标显示小浮窗**（复刻原版），替代 `SchedulerCourseDetail` 弹窗
+- 复用现有异步 `getCourseDetail` 加载 + request tracker 逻辑，只改展示方式
+- 课表（timetable）内的 hover 浮窗**暂不做**，后续再评估
+- 触发位置：侧边栏课程卡上的 ℹ️ 图标（避免滑过整卡频繁弹窗）
+
+### 决策八（2026-08-15 补充）：不机械复刻，允许优化
+
+- 以原版为基准，但**不机械照搬**；发现更好的设计方案 / 可改进点，先与用户讨论
+- 重点沟通场景：用户体验与交互逻辑（何时 hover、浮层位置、按钮布局等）
+
+---
+
+## 2.1 阶段 1 完成记录（2026-08-15）
+
+- commit `5cec45b`：新增 `deep-dark` 深邃黑主题、修复主题管线（themeStore / ThemeSettings / FOUC）、修复 `KeguangContainer` 硬编码背景（排课页面 dark 背景根因）
+- 排课板块使用全局主题变量，dark 下背景正确
+
+---
+
+## 2.2 排课工作台 dashboard 差异清单（当前迁移版 vs 原版）
+
+| # | 差异点 | 原版（决策要求保留） | 当前迁移版 | 处理 |
+|---|--------|---------------------|-----------|------|
+| 1 | 求解提示 | 全屏暗遮罩 + emoji（😉 info / 😲 warning / 😢 error）+ 大标题 + 副文案 | 仅顶部一条通知条 | **复刻暗屏弹层** |
+| 2 | 侧边栏底部按钮组 | Filter/Menu/Cart 可扩展按钮（hover 展开文字）+ Filter tooltip | 顶部两个普通胶囊按钮 + details 面板 | **重构为底部小栏 + 浮层** |
+| 3 | 课程信息 | hover ℹ️ 显示小浮窗 | 居中弹窗 | **改为 hover 小浮窗** |
+| 4 | 方案 slider | 可拖动 + tooltip + spring 动画 | 仅点击跳转 | 增强拖动 |
+| 5 | display options 入口 | Menu 浮层（SettingsMenu） | details 折叠面板 | 移入 Menu 浮层 |
+| 6 | 登录横幅 | 顶部渐变横幅 + Log in 链接 | warning 通知条，无登录链接 | 补登录链接 |
+| 7 | 搜索弹层 | 每项 loading/success/fail 状态图标 | 仅 pending 禁用 | 补状态反馈 |
+
+搜索弹层、课程卡、课表主体功能已齐备，差异集中在交互细节与视觉层级。
+
 ---
 
 ## 3. 现状摸底（调研记录）
@@ -79,20 +121,47 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 ## 4. 建议的工作路径（供后续细化成正式 plan）
 
 ### 阶段 0：基线确认
-- [ ] 跑通现有测试与构建，确保基线干净
-- [ ] 对照原版，产出排课 UI 差异清单（哪些细节被迁移改掉）
-- [ ] 确认 dark 主题配色细节（见"待确认"）
+- [x] 跑通现有测试与构建，确保基线干净
+- [x] 对照原版，产出排课 UI 差异清单（§2.2）
+- [x] 确认 dark 主题配色细节（深邃黑 `deep-dark`，用户选定）
 
-### 阶段 1：dark mode 修复（地基）
-- [ ] 在主题系统补一个 dark 主题配置（深色背景 + 科广蓝蓝色系强调色，与 light 同源）
-- [ ] 修复 `themeStore` / `applyTheme` / `ThemeSettings` 的残缺逻辑
-- [ ] 排课板块 + 全局正确响应主题切换
+### 阶段 1：dark mode 修复（地基）✅ 已完成（commit `5cec45b`）
+- [x] 新增 `deep-dark` 主题配置（深色背景 + 科广蓝蓝色系强调色，与 light 同源）
+- [x] 修复 `themeStore` / `applyTheme` / `ThemeSettings` 的残缺逻辑
+- [x] 排课板块 + 全局正确响应主题切换
 
-### 阶段 2：排课 UI 复刻 + 重构（核心，分步）
-- [ ] dashboard 工作台：搜索、课表、购物车、求解（第一步）
-- [ ] 学期选择页（planner 首页）
-- [ ] 地图 map
-- 全程用主题 CSS 变量（遵守 `docs/THEME_SYSTEM.md` / `CLAUDE.md`），每步独立可验收
+### 阶段 2：排课 UI 复刻 + 重构（核心，分步，正在执行）
+
+**Step 1：暗屏 + emoji 提示弹层** ✅ 已完成
+- [x] `planMessage` 升级为分级状态（info 😉 / warning 😲 / error 😢），映射现有 solver 状态（empty-cart→info、all-disabled→warning、unavailable-layer/no-solution/search-limit→error、truncated→info）
+- [x] 新增全屏暗遮罩弹层（主题变量 `--overlay-backdrop/--overlay-text`，pointer-events-none，覆盖 dashboard，不盖 cart-panel 弹层）
+- [x] i18n：为每个状态新增 Title key（描述沿用现有 key），保留 `planCountTruncated/planCountIncomplete/plansTruncated/searchLimited`（测试契约）
+- [x] 暗屏显示时隐藏 guestHint / popularity 通知条，避免重叠
+
+**Step 2：侧边栏布局重构 —— 功能按钮收敛到底部小栏**
+- [ ] 顶部：只留紧凑 tabs（Main/KLMS）+ 学分一行
+- [ ] 中部：课程卡片列表（空间最大化），移除顶部 details 折叠面板和 popularity note
+- [ ] 底部：一行小按钮栏 = Filter / Menu / Cart（原版 ExpandableButton：hover 展开文字标签，不占高度）
+- [ ] display options 移入 Menu 浮层（原版 SettingsMenu，点击外部关闭 + 200ms 防误触）
+- [ ] Filter 加 hover tooltip 说明浮层（原版 FilterTip："编辑模式可点击课表屏蔽时段"）
+
+**Step 3：课程信息 hover 小浮窗**
+- [ ] 课程卡 ℹ️ 图标 hover → 异步 `getCourseDetail` → 小浮窗（title/code/学分/简介/pre·co-requirement/exclusion）
+- [ ] 复用现有 `detailRequests` request tracker + loading/error 状态
+- [ ] 替代 `SchedulerCourseDetail` 居中弹窗（组件可删除或保留待用）
+- [ ] 浮窗位置自适应（靠近图标、防溢出视口），鼠标离开图标/浮窗关闭
+
+**Step 4：方案 slider 增强**
+- [ ] 拖动（mousedown/move/up）+ 拖动时 tooltip 显示索引 + 平滑过渡
+
+**Step 5：体验细节补全**
+- [ ] 登录横幅补登录链接（`getLocalePath('/login')`）
+- [ ] 搜索弹层每项 loading/success/fail 状态反馈
+- [ ] 课程卡视觉层级微调（对照原版蓝/灰状态色，用主题变量）
+
+**收尾（每步独立验收）**
+- [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`
+- [ ] 每步独立 commit（用户同意后）
 
 ### 阶段 3：体验增强（有余力）
 - [ ] 骨架屏 / 加载态、移动端适配、空状态文案等

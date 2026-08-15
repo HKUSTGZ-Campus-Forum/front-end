@@ -114,24 +114,64 @@ const currentPlan = computed(() => {
 
 const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
 
-const planMessage = computed(() => {
+const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: string; description: string } | null>(() => {
   if (props.loading || props.cartLoadError) return null
-  if (solverResult.value.status === 'empty-cart') return t('scheduler.emptyCartHint')
-  if (solverResult.value.status === 'all-disabled') return t('scheduler.allDisabled')
-  if (solverResult.value.status === 'unavailable-layer') {
-    return t('scheduler.unavailableLayer', {
-      course: solverResult.value.courseCode,
-      layer: solverResult.value.layer,
-    })
+  if (solverResult.value.status === 'empty-cart') {
+    return {
+      level: 'info',
+      title: t('scheduler.emptyCartTitle'),
+      description: t('scheduler.emptyCartHint'),
+    }
   }
-  if (solverResult.value.status === 'search-limit') return t('scheduler.searchLimited')
-  if (solverResult.value.status === 'no-solution') return t('scheduler.noSolution')
+  if (solverResult.value.status === 'all-disabled') {
+    return {
+      level: 'warning',
+      title: t('scheduler.allDisabledTitle'),
+      description: t('scheduler.allDisabled'),
+    }
+  }
+  if (solverResult.value.status === 'unavailable-layer') {
+    return {
+      level: 'error',
+      title: t('scheduler.unavailableLayerTitle'),
+      description: t('scheduler.unavailableLayer', {
+        course: solverResult.value.courseCode,
+        layer: solverResult.value.layer,
+      }),
+    }
+  }
+  if (solverResult.value.status === 'search-limit') {
+    return {
+      level: 'error',
+      title: t('scheduler.searchLimitedTitle'),
+      description: t('scheduler.searchLimited'),
+    }
+  }
+  if (solverResult.value.status === 'no-solution') {
+    return {
+      level: 'error',
+      title: t('scheduler.noSolutionTitle'),
+      description: t('scheduler.noSolution'),
+    }
+  }
   if (solverResult.value.status === 'ok' && solverResult.value.truncated) {
-    return solverResult.value.truncationReason === 'plan-limit'
-      ? t('scheduler.plansTruncated', { count: solverResult.value.plans.length })
-      : t('scheduler.searchLimited')
+    return {
+      level: 'info',
+      title: t('scheduler.plansTruncatedTitle'),
+      description: solverResult.value.truncationReason === 'plan-limit'
+        ? t('scheduler.plansTruncated', { count: solverResult.value.plans.length })
+        : t('scheduler.searchLimited'),
+    }
   }
   return null
+})
+
+const planEmoji = computed(() => {
+  const msg = planMessage.value
+  if (!msg) return ''
+  if (msg.level === 'info') return '😉'
+  if (msg.level === 'warning') return '😲'
+  return '😢'
 })
 
 // Reset viewIndex when plans change
@@ -320,12 +360,12 @@ onUnmounted(() => detailRequests.invalidate())
       </div>
     </header>
 
-    <div v-if="!isLoggedIn && showGuestHint" class="dashboard__notice dashboard__notice--warning">
+    <div v-if="!isLoggedIn && showGuestHint && !planMessage" class="dashboard__notice dashboard__notice--warning">
       <span>{{ t('scheduler.guestHint') }}</span>
       <button type="button" :aria-label="t('scheduler.close')" @click="showGuestHint = false">&times;</button>
     </div>
 
-    <div v-if="popularity.forbidden.value" class="dashboard__notice dashboard__notice--warning">
+    <div v-if="popularity.forbidden.value && !planMessage" class="dashboard__notice dashboard__notice--warning">
       {{ t('scheduler.popularityVerifiedOnly') }}
     </div>
 
@@ -335,12 +375,12 @@ onUnmounted(() => detailRequests.invalidate())
     </div>
 
     <div
-      v-if="cartErrorMessage || historyAccessError || planMessage"
+      v-if="cartErrorMessage || historyAccessError"
       class="dashboard__notice"
       :class="{ 'dashboard__notice--error': cartError === 'unverified' }"
       :role="cartError === 'unverified' ? 'alert' : undefined"
     >
-      <span>{{ cartErrorMessage || historyAccessError || planMessage }}</span>
+      <span>{{ cartErrorMessage || historyAccessError }}</span>
       <button
         v-if="cartError === 'unverified'"
         type="button"
@@ -422,11 +462,21 @@ onUnmounted(() => detailRequests.invalidate())
       @close="closePopularityHistory"
       @access-lost="handlePopularityHistoryAccessLost"
     />
+
+    <!-- Fullscreen dim overlay with solver hint (replicates the original planner) -->
+    <Transition name="overlay">
+      <div v-if="planMessage" class="dashboard__overlay" role="status">
+        <span class="dashboard__overlay-emoji" aria-hidden="true">{{ planEmoji }}</span>
+        <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
+        <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .dashboard {
+  position: relative;
   min-height: calc(100vh - 84px);
   display: flex;
   flex-direction: column;
@@ -594,6 +644,56 @@ onUnmounted(() => detailRequests.invalidate())
     height: 100%;
     color: var(--text-tertiary);
   }
+
+  // Fullscreen dim overlay (solver hint). Covers the whole dashboard but stays
+  // below modal layers (cart panel z-index 1120). Non-interactive on purpose:
+  // the hint clears as soon as the cart/banned periods change.
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: var(--overlay-backdrop);
+    pointer-events: none;
+    text-align: center;
+    border-radius: 16px;
+  }
+
+  &__overlay-emoji {
+    font-size: 3.4rem;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+
+  &__overlay-title {
+    margin: 0;
+    color: var(--overlay-text);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  &__overlay-description {
+    max-width: 440px;
+    margin: 10px 0 0;
+    color: var(--overlay-text-secondary);
+    font-size: 0.94rem;
+    line-height: 1.6;
+  }
+}
+
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 1024px) {
