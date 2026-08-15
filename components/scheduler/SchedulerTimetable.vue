@@ -178,8 +178,21 @@ const blockOutlineColor = computed(() =>
 
 // Measure every block's natural content height up front so the bottom fade
 // cue and the hover expansion work even before the user's first hover.
+// Track each display option key individually: the options object itself is
+// mutated in place by the dashboard, so watching the object reference would
+// never re-fire and the hover-expanded height would go stale after toggling
+// items in the side-panel menu.
 watch(
-  () => [lectureBlocks.value, rowHeight.value, dayColWidth.value, props.displayOptions],
+  () => [
+    lectureBlocks.value,
+    rowHeight.value,
+    dayColWidth.value,
+    props.displayOptions.name,
+    props.displayOptions.section,
+    props.displayOptions.location,
+    props.displayOptions.instructor,
+    props.displayOptions.duration,
+  ],
   () => {
     void nextTick(() => {
       const heights: Record<string, number> = {}
@@ -212,8 +225,13 @@ function blockOverflows(block: LectureBlock): boolean {
 }
 
 function getBlockStyle(block: LectureBlock) {
-  const top = headerHeight + getTopOffset(block.start_time) * rowHeight.value
-  const left = timeColWidth + (block.day - 1) * dayColWidth.value + 2
+  // +1px nudge mirrors the original planner's `top + 1`: the card sits just
+  // below the 2px horizontal grid line instead of covering it.
+  const top = headerHeight + getTopOffset(block.start_time) * rowHeight.value + 3
+  // Grid lines are 2px wide at each day-column boundary; inset the card 3px
+  // from the column start so it sits centered with a symmetric 1px gap on
+  // both sides (mirrors the original planner's `left + 3`, `colWidth - 4`).
+  const left = timeColWidth + (block.day - 1) * dayColWidth.value + 3
   const baseHeight = blockBaseHeight(block)
   const isHovered = hoveredKey.value === block.key
   const contentHeight = expandedHeights.value[block.key]
