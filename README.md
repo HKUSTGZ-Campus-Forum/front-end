@@ -135,8 +135,7 @@ front-end/
 | `docs/THEME_SYSTEM.md` | 主题系统设计 |
 | `docs/i18n-guidelines.md` | 国际化规范 |
 | `docs/i18n-execution-plan.md` | 国际化执行计划 |
-| `docs/superpowers/plans/` | 大型功能实施计划（排课迁移、课程宇宙渲染等） |
-| `docs/superpowers/specs/` | 大型功能设计文档 |
+| `docs/plans/` | 大型功能计划与设计（本仓库工作流；另有 `docs/superpowers/` 为外部工具遗留） |
 | `deploy/README.md` | 部署机制说明（原子发布、PM2） |
 | `PWA_IMPLEMENTATION.md` | PWA 实现说明 |
 | `PWA_NOTIFICATION_SETUP.md` | PWA 通知设置 |

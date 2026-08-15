@@ -65,17 +65,18 @@ Agent 提交前至少要本地通过 `npm run i18n:check`、`npm test` 与 `npm 
 | `docs/architecture.md` | 仓库根 | 重要技术决策及理由（ADR） | 每次架构级决策时追加 |
 | `docs/THEME_SYSTEM.md` | 仓库根 | 主题系统设计 | 主题相关改动时 |
 | `docs/i18n-guidelines.md` | 仓库根 | 国际化规范 | i18n 相关改动时 |
-| `docs/superpowers/plans`、`specs` | 仓库根 | 大型功能的计划与设计文档（计划驱动开发） | 大型功能开始前 |
+| `docs/plans/` | 仓库根 | 大型功能的计划与设计文档（计划驱动开发） | 大型功能开始前 |
 | `deploy/README.md` | 仓库根 | 部署机制（原子发布、PM2） | 部署相关改动时 |
 
 > 临时进度、待办、注意事项请记录在仓库外的草稿文件或与用户约定的位置，**不要提交进仓库**。历史变更只进 `CHANGELOG.md`。
+> `docs/superpowers/` 目录为外部工具（superpowers）遗留，本仓库的文档一律放在 `docs/plans/`。
 
 ### 3.1 大型功能开发模式（计划驱动）
 
 对跨多文件、多阶段的功能（如排课助手迁移、课程宇宙渲染、Admin 控制台）：
 
-1. 先写 `docs/superpowers/specs/<date>-<slug>-design.md`（设计，含目标/范围/架构/数据模型/验收标准）；
-2. 再写 `docs/superpowers/plans/<date>-<slug>.md`（任务清单，每步用 `- [ ]` 可勾选跟踪）；
+1. 先写 `docs/plans/<date>-<slug>-design.md`（设计，含目标/范围/架构/数据模型/验收标准）；
+2. 再写 `docs/plans/<date>-<slug>.md`（任务清单，每步用 `- [ ]` 可勾选跟踪）；
 3. 按计划逐任务实现，每完成一批任务同步跑测试并汇报；
 4. 计划文档保留勾选痕迹，作为执行记录。
 
@@ -86,7 +87,7 @@ Agent 提交前至少要本地通过 `npm run i18n:check`、`npm test` 与 `npm 
 ### 4.1 标准工作流
 
 0. **开始任务前**：先与用户讨论清楚需求细节与验收标准，再从最新 `main` 新建 branch（命名：`agent/<简短主题>`，如 `agent/course-section-polish`）；不要直接在 `main` 上开发。
-1. **理解**：阅读相关文档（README / docs / superpowers 计划 / CLAUDE.md）与相关代码；有不清晰或待决策之处，及时向用户提出。
+1. **理解**：阅读相关文档（README / docs / plans 计划 / CLAUDE.md）与相关代码；有不清晰或待决策之处，及时向用户提出。
 2. **计划**：拟订开发计划，明确任务顺序与依赖；较大功能按 §3.1 产出计划文档。
 3. **实现**：按计划逐步实现；遵守 §4.2 代码规范；每个阶段完成后测试并汇报。
 4. **测试**：同步编写/更新 Vitest 单元测试与集成测试（新增逻辑尽量写成纯函数以便测试）；本地跑 `npm test` 与 `npm run i18n:check`。
@@ -114,7 +115,7 @@ Agent 提交前至少要本地通过 `npm run i18n:check`、`npm test` 与 `npm 
 | 架构级决策 | `docs/architecture.md` | 记录背景、方案、理由、备选 |
 | 结构 / 用法变化 | `README.md` | 保持目录与命令准确 |
 | 代码约定 / 踩坑 | `CLAUDE.md` | 沉淀教训供后续 agent 复用 |
-| 大型功能 | `docs/superpowers/` | 先 spec 后 plan，按计划执行 |
+| 大型功能 | `docs/plans/` | 先 spec 后 plan，按计划执行 |
 
 ### 4.3 Git 提交规范
 
@@ -159,7 +160,7 @@ front-end/
 ├── store/                  # Pinia store（自动导入）
 ├── tests/                  # Vitest（scheduler/courses/course-universe/academic-map/deploy）
 ├── utils/                  # 纯逻辑：scheduler.ts、schedulerCart.ts、courseUniverse.ts 等
-├── docs/                   # 文档（CLAUDE、THEME_SYSTEM、i18n、superpowers 计划与设计）
+├── docs/                   # 文档（CLAUDE、THEME_SYSTEM、i18n、plans 计划与设计）
 ├── deploy/                 # 原子发布脚本与说明
 └── version.ts              # 版本号与版本历史
 ```
@@ -170,7 +171,7 @@ front-end/
 
 ## 6. 排课助手 / 课程板块背景（重要）
 
-- 原独立项目 `CoursePlan.search`（Next.js）已并入 uniKorn 的"课程"板块，原项目弃用。相关迁移设计/计划见 `docs/superpowers/`：
+- 原独立项目 `CoursePlan.search`（Next.js）已并入 uniKorn 的"课程"板块，原项目弃用。相关迁移设计/计划见 `docs/superpowers/`（外部工具留下的）与本仓库 `docs/plans/`：
   - `2026-06-01-schedule-parallel-migration(-design).md`
   - `2026-06-02-course-universe-complete-graph-rendering(-design).md`
 - 迁移后入口：`/schedule` → `/courses/planner`；`/courses` 提供课程宇宙、探索、规划器、学术地图等。
