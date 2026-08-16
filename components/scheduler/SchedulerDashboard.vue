@@ -280,12 +280,12 @@ const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: strin
   return null
 })
 
-const planEmoji = computed(() => {
+const planIcon = computed(() => {
   const msg = planMessage.value
   if (!msg) return ''
-  if (msg.level === 'info') return '😉'
-  if (msg.level === 'warning') return '😲'
-  return '😢'
+  if (msg.level === 'info') return 'lucide:face-slightly-smiling'
+  if (msg.level === 'warning') return 'lucide:face-neutral'
+  return 'lucide:face-slightly-frowning'
 })
 
 // Reset viewIndex when plans change; a restored (persisted) plan index is
@@ -510,7 +510,12 @@ function toggleBan(day: number, period: number) {
                (like the original planner), so the side panel stays visible. -->
           <Transition name="overlay">
             <div v-if="planMessage" class="dashboard__overlay" role="status">
-              <span class="dashboard__overlay-emoji" aria-hidden="true">{{ planEmoji }}</span>
+              <span
+                :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
+                aria-hidden="true"
+              >
+                <Icon v-if="planIcon" :name="planIcon" />
+              </span>
               <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
               <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
             </div>
@@ -836,10 +841,22 @@ function toggleBan(day: number, period: number) {
     text-align: center;
   }
 
-  &__overlay-emoji {
+  &__overlay-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 3.4rem;
     line-height: 1;
     margin-bottom: 14px;
+    color: var(--overlay-text);
+
+    &.is-warning {
+      color: var(--semantic-warning);
+    }
+
+    &.is-error {
+      color: var(--semantic-error);
+    }
   }
 
   &__overlay-title {
@@ -856,6 +873,7 @@ function toggleBan(day: number, period: number) {
     color: var(--overlay-text-secondary);
     font-size: 0.94rem;
     line-height: 1.6;
+    text-wrap: balance;
   }
 }
 
