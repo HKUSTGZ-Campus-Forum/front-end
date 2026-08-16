@@ -71,6 +71,10 @@
   // mirroring the original planner instead of the light-blue theme borders)
   --timetable-grid: #e5e7eb;
   --timetable-header-text: #475569;
+  --timetable-header-bg: #f1f5f9;
+  // Icon on a banned (red) filter cell: dark in light mode (red tint is a
+  // light surface), white in dark mode (red tint is a dark surface).
+  --timetable-ban-icon: #ac1c1c;
 
   // Scheduler timetable card (light mode: white rounded card on the blue page
   // background; dark mode: transparent so the table blends with the page)
@@ -211,6 +215,9 @@
   // Scheduler timetable (dark mode keeps the existing deep blue-gray lines)
   --timetable-grid: #24375a;
   --timetable-header-text: #9fb0c9;
+  --timetable-header-bg: var(--surface-primary);
+  // Same fixed white as light mode: banned cells are always red-tinted.
+  --timetable-ban-icon: #ffffff;
 
   // Scheduler timetable card (dark mode: blends with the page background)
   --timetable-card-bg: transparent;

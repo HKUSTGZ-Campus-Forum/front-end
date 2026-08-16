@@ -313,7 +313,23 @@ function isBanned(day: number, period: number): boolean {
             height: `${rowHeight}px`,
           }"
           @click="emit('toggle-ban', d - 1, p - 1)"
-        />
+        >
+          <!-- Hover hint icons (mirrors the original planner: X to block,
+               rotate-ccw to restore). aria-hidden: the cell itself is the
+               interactive element and has no text content. -->
+          <Icon
+            v-if="!isBanned(d - 1, p - 1)"
+            name="lucide:x"
+            class="timetable__cell-icon timetable__cell-icon--ban"
+            aria-hidden="true"
+          />
+          <Icon
+            v-else
+            name="lucide:rotate-ccw"
+            class="timetable__cell-icon timetable__cell-icon--unban"
+            aria-hidden="true"
+          />
+        </div>
       </div>
     </template>
 
@@ -401,9 +417,9 @@ function isBanned(day: number, period: number): boolean {
   background: transparent;
   overflow: hidden;
 
-  // Inset grid layer: vertical/horizontal lines are drawn at the top and left
-  // edge of every tiled cell, starting at (timeColWidth, headerHeight). The
-  // layer never covers the time-label column, so no line can cross it.
+  /* Inset grid layer: vertical/horizontal lines are drawn at the top and left
+     edge of every tiled cell, starting at (timeColWidth, headerHeight). The
+     layer never covers the time-label column, so no line can cross it. */
   &__grid {
     position: absolute;
     right: 0;
@@ -423,7 +439,7 @@ function isBanned(day: number, period: number): boolean {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--timetable-header-text);
-    background: var(--surface-primary);
+    background: var(--timetable-header-bg);
     border-left: 2px solid var(--timetable-grid);
   }
 
@@ -443,12 +459,62 @@ function isBanned(day: number, period: number): boolean {
     transition: background 0.15s;
 
     &:hover {
-      background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+      background: color-mix(in srgb, var(--semantic-error) 13%, transparent);
     }
 
     &--banned {
-      background: color-mix(in srgb, var(--semantic-error) 14%, var(--surface-primary));
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--semantic-error) 24%, transparent);
+      background:
+        repeating-linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.22) 0 6px,
+          transparent 6px 12px
+        ),
+        color-mix(in srgb, var(--semantic-error) 24%, var(--surface-primary));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--semantic-error) 38%, transparent);
+
+      &:hover {
+        background:
+          repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.28) 0 6px,
+            transparent 6px 12px
+          ),
+          color-mix(in srgb, var(--semantic-error) 30%, var(--surface-primary));
+      }
+    }
+
+    &-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 17px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+
+      &--ban {
+        color: var(--semantic-error);
+      }
+
+      &--unban {
+        color: var(--timetable-ban-icon);
+        font-size: 21px;
+        opacity: 0.75;
+      }
+    }
+
+    &:hover &-icon--ban {
+      opacity: 0.7;
+    }
+
+    &--banned &-icon--unban {
+      opacity: 0.75;
+    }
+
+    &--banned:hover &-icon--unban {
+      opacity: 0.95;
     }
   }
 
@@ -470,12 +536,12 @@ function isBanned(day: number, period: number): boolean {
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      gap: 4px; // original: gap-1
+      gap: 4px; /* original: gap-1 */
     }
 
-    // Gradient fade at the bottom of overflowing cards, removed on hover when
-    // the full content is revealed. Short and semi-transparent so it hints at
-    // more content without hiding the text underneath.
+    /* Gradient fade at the bottom of overflowing cards, removed on hover when
+       the full content is revealed. Short and semi-transparent so it hints at
+       more content without hiding the text underneath. */
     &-fade {
       position: absolute;
       left: 0;
@@ -489,12 +555,12 @@ function isBanned(day: number, period: number): boolean {
       display: flex;
       align-items: baseline;
       gap: 2px;
-      flex-shrink: 0; // original: top row always visible, never compressed
+      flex-shrink: 0; /* original: top row always visible, never compressed */
     }
 
     &-code {
-      font-weight: 500; // original: font-medium
-      font-size: 0.875rem; // original: text-sm
+      font-weight: 500; /* original: font-medium */
+      font-size: 0.875rem; /* original: text-sm */
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -509,8 +575,8 @@ function isBanned(day: number, period: number): boolean {
     }
 
     &-title {
-      font-size: 0.75rem; // original: text-xs
-      margin-bottom: 4px; // original: mb-1
+      font-size: 0.75rem; /* original: text-xs */
+      margin-bottom: 4px; /* original: mb-1 */
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -519,9 +585,9 @@ function isBanned(day: number, period: number): boolean {
     &-detail {
       display: flex;
       align-items: flex-start;
-      gap: 8px; // original: gap-2
-      opacity: 0.7; // original: opacity-70
-      font-size: 0.75rem; // original: text-xs
+      gap: 8px; /* original: gap-2 */
+      opacity: 0.7; /* original: opacity-70 */
+      font-size: 0.75rem; /* original: text-xs */
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -535,9 +601,9 @@ function isBanned(day: number, period: number): boolean {
 
     &-icon {
       flex-shrink: 0;
-      font-size: 16px; // original: size-4 (Icon renders at 1em)
+      font-size: 16px; /* original: size-4 (Icon renders at 1em) */
       line-height: 1;
-      margin-top: 1px; // visual alignment with text-xs rows
+      margin-top: 1px; /* visual alignment with text-xs rows */
     }
   }
 }

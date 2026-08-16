@@ -278,6 +278,17 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
   - **ID 与标题样式对调**（用户反馈"样式反了"）：cart 中课程 ID 由粗体黑改小号灰色（`--text-secondary`），标题由小号灰改加粗黑（`--text-primary`），对齐原版 `CoursePlan.search` cart-panel（`text-xs text-gray-500` + `font-semibold`）；搜索结果与抽屉两处同步
   - 测试更新：`cart-panel.test.ts` 新增 info 浮窗契约（两处均绑定 4 个 prop），13 个全绿，197 全绿
 
+**整体调整轮（Step 5 之后的整体布局细节，2026-08-16）** ✅ 代码完成 + 视觉验收通过
+- [x] **weekday 表头浅灰背景（点 1）**：新增 `--timetable-header-bg` 主题变量（light `#f1f5f9` / dark `--surface-primary`），`SchedulerTimetable.__header` 改用，light 与 dark 对称
+- [x] **侧边栏宽度与拖动（点 2，用户指定 `max(400px, 1/6)` + 拖动记忆）**：
+  - 默认 `max(400px, 视口/6)`（原固定 `minmax(320px, 360px)`），拖动 clamp 320–640px，localStorage `scheduler.side-panel-width` 记忆（SSR 安全：`onMounted` 读取）
+  - 手柄视觉（多轮反馈后定稿）：两栏 14px gutter 中央悬浮白色圆角竖条（8px × 64px，`--surface-primary` + `--shadow-small`）+ `grip-vertical` 圆点（`--text-secondary`）；hover 仅圆点变交互蓝，**无边框、无背景 tint**；拖动时 `body.scheduler-resizing` 抑制选中 + col-resize 光标
+  - 定位居中修复：手柄 `width: 14px`（= grid gap）且 `right: var(--side-panel-width)` 恰好落在 gutter 正中央
+- [x] **filter 格增强（点 3）**：hover 底色 8%→13%；banned 格底色 14%→24% + 白色斜线纹理（`repeating-linear-gradient 135deg`）+ inset ring；hover 中央图标——未屏蔽 = 红色 `lucide:x`（slash→x，用户反馈），已屏蔽 = 21px 加大版 `rotate-ccw`；`--timetable-ban-icon` 按主题区分（light 深色 `#1a2a4a` / dark 白色 `#ffffff`，用户反馈 dark 白 light 也白"反了"）
+- [x] **标题栏压缩（点 4）**："返回学期"文字按钮 → 与标题同行的圆形图标按钮（32px，`arrow-left`，`aria-label` 保留）；副标题与标题左对齐（`margin-left: calc(32px + 12px)`）；summary 卡片压缩（62px→46px）
+- [x] 修复 `--text-tertiary` 未定义导致手柄圆点颜色异常（改用 `--text-secondary`）；清理两个组件 style 内 `//` 行尾注释（SCSS "Unknown word" 陷阱）
+- [x] 验证：`npm run i18n:check` 通过、`npm test` 197/197、dev server 页面 200
+
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`
 - [ ] 每步独立 commit（用户同意后）

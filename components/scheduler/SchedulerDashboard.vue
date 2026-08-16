@@ -1,6 +1,6 @@
 <!-- front-end/components/scheduler/SchedulerDashboard.vue -->
 <script setup lang="ts">
-import { ref, computed, toRef, watch } from 'vue'
+import { ref, computed, toRef, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {
   CartCourse,
@@ -51,6 +51,59 @@ const canShowPopularityHistory = computed(() => (
   props.semesterId === POPULARITY_HISTORY_SEMESTER_ID
   && popularity.canShowPopularity.value
 ))
+
+// Resizable side panel: defaults to max(400px, 1/6 of the viewport) on wide
+// screens, clamped while dragging and remembered in localStorage.
+const SIDE_PANEL_MIN = 320
+const SIDE_PANEL_MAX = 640
+const SIDE_PANEL_STORAGE_KEY = 'scheduler.side-panel-width'
+const bodyRef = ref<HTMLElement | null>(null)
+const sidePanelWidth = ref(400)
+const sidePanelWidthPx = computed(() => `${sidePanelWidth.value}px`)
+
+function clampSidePanelWidth(width: number): number {
+  return Math.min(SIDE_PANEL_MAX, Math.max(SIDE_PANEL_MIN, Math.round(width)))
+}
+
+onMounted(() => {
+  let saved: string | null = null
+  try {
+    saved = localStorage.getItem(SIDE_PANEL_STORAGE_KEY)
+  } catch {
+    // Storage unavailable; fall through to the default width.
+  }
+  if (saved !== null) {
+    const parsed = Number(saved)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      sidePanelWidth.value = clampSidePanelWidth(parsed)
+      return
+    }
+  }
+  sidePanelWidth.value = clampSidePanelWidth(Math.max(400, window.innerWidth / 6))
+})
+
+function onResizeStart(event: MouseEvent) {
+  event.preventDefault()
+  document.body.classList.add('scheduler-resizing')
+  const onMove = (moveEvent: MouseEvent) => {
+    const rect = bodyRef.value?.getBoundingClientRect()
+    if (!rect) return
+    // The handle sits at the side panel's left edge: width = body right - x.
+    sidePanelWidth.value = clampSidePanelWidth(rect.right - moveEvent.clientX)
+  }
+  const onUp = () => {
+    document.body.classList.remove('scheduler-resizing')
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    try {
+      localStorage.setItem(SIDE_PANEL_STORAGE_KEY, String(sidePanelWidth.value))
+    } catch {
+      // Storage unavailable; keep the in-memory width for this session.
+    }
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
 
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
@@ -305,10 +358,16 @@ function toggleBan(day: number, period: number) {
   <div class="dashboard">
     <header class="dashboard__header">
       <div class="dashboard__heading">
-        <NuxtLink class="dashboard__back" :to="getLocalePath('/courses/planner')">
-          {{ t('scheduler.backToSemesters') }}
-        </NuxtLink>
-        <h1>{{ t('scheduler.title') }}</h1>
+        <div class="dashboard__heading-row">
+          <NuxtLink
+            class="dashboard__back"
+            :to="getLocalePath('/courses/planner')"
+            :aria-label="t('scheduler.backToSemesters')"
+          >
+            <Icon name="lucide:arrow-left" class="dashboard__back-icon" aria-hidden="true" />
+          </NuxtLink>
+          <h1>{{ t('scheduler.title') }}</h1>
+        </div>
         <p>{{ t('scheduler.workspaceSubtitle') }}</p>
       </div>
       <div class="dashboard__summary" aria-label="planner summary">
@@ -354,7 +413,12 @@ function toggleBan(day: number, period: number) {
       </button>
     </div>
 
-    <div v-if="!cartLoadError && !loading" class="dashboard__body">
+    <div
+      v-if="!cartLoadError && !loading"
+      ref="bodyRef"
+      class="dashboard__body"
+      :style="{ '--side-panel-width': sidePanelWidthPx }"
+    >
       <div class="dashboard__left">
         <div class="dashboard__timetable-card">
           <SchedulerTimetable
@@ -402,6 +466,16 @@ function toggleBan(day: number, period: number) {
           @update:display-option="(key, value) => displayOptions[key] = value"
         />
       </div>
+
+      <!-- Drag handle between timetable and side panel (wide screens only) -->
+      <div
+        class="dashboard__resize-handle"
+        role="separator"
+        aria-orientation="vertical"
+        @mousedown="onResizeStart"
+      >
+        <Icon name="lucide:grip-vertical" class="dashboard__resize-handle-icon" aria-hidden="true" />
+      </div>
     </div>
     <div v-else-if="loading" class="dashboard__loading">{{ t('scheduler.loading') }}</div>
 
@@ -446,16 +520,26 @@ function toggleBan(day: number, period: number) {
   &__heading {
     min-width: 0;
 
+    &-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
     h1 {
-      margin: 4px 0 0;
+      margin: 0;
       color: var(--text-primary);
       font-size: 1.5rem;
       line-height: 1.25;
       font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     p {
-      margin: 7px 0 0;
+      margin: 5px 0 0 calc(32px + 12px); /* aligns with the title, clearing the icon button + row gap */
       color: var(--text-secondary);
       font-size: 0.92rem;
       line-height: 1.55;
@@ -463,14 +547,32 @@ function toggleBan(day: number, period: number) {
   }
 
   &__back {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--surface-primary);
     color: var(--interactive-active);
-    font-size: 0.84rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 
     &:hover {
+      background: var(--surface-secondary);
+      border-color: color-mix(in srgb, var(--interactive-primary) 35%, var(--border-secondary));
       color: var(--interactive-hover);
     }
+  }
+
+  &__back-icon {
+    font-size: 0.92rem;
+    line-height: 1;
   }
 
   &__summary {
@@ -481,8 +583,8 @@ function toggleBan(day: number, period: number) {
   }
 
   &__summary-item {
-    min-height: 62px;
-    padding: 10px 14px;
+    min-height: 46px;
+    padding: 6px 12px;
     border: 1px solid var(--border-secondary);
     border-radius: 12px;
     background: var(--surface-primary);
@@ -490,15 +592,15 @@ function toggleBan(day: number, period: number) {
 
     span {
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       color: var(--text-secondary);
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       white-space: nowrap;
     }
 
     strong {
       color: var(--text-primary);
-      font-size: 1.14rem;
+      font-size: 1.02rem;
       line-height: 1.2;
     }
   }
@@ -559,10 +661,57 @@ function toggleBan(day: number, period: number) {
   &__body {
     flex: 1;
     min-height: 620px;
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    grid-template-columns: minmax(0, 1fr) var(--side-panel-width, 400px);
     gap: 14px;
     overflow: visible;
+  }
+
+  &__resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc(var(--side-panel-width, 400px));
+    width: 14px; /* matches the grid gap, so the pill is centered in the gutter */
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+
+    /* White vertical pill (rounded bar) floating in the gutter between the
+       two panels: tall enough to cover the grip dots, white fill, inset from
+       both edges so it reads as a separate handle, not part of either panel. */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 64px;
+      border-radius: 999px;
+      background: var(--surface-primary);
+      box-shadow: var(--shadow-small);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    &-icon {
+      position: relative;
+      z-index: 1;
+      font-size: 15px;
+      line-height: 1;
+      color: var(--text-secondary);
+      transition: color 0.15s;
+    }
+
+    &:hover,
+    &:active {
+      .dashboard__resize-handle-icon {
+        color: var(--interactive-primary);
+      }
+    }
   }
 
   &__left {
@@ -578,8 +727,8 @@ function toggleBan(day: number, period: number) {
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    // Light mode: white rounded card on the blue page background. Dark mode:
-    // transparent (theme variables) so the table blends with the page.
+    /* Light mode: white rounded card on the blue page background. Dark mode:
+       transparent (theme variables) so the table blends with the page. */
     background: var(--timetable-card-bg);
     border: var(--timetable-card-border);
     border-radius: var(--timetable-card-radius);
@@ -599,10 +748,10 @@ function toggleBan(day: number, period: number) {
     color: var(--text-tertiary);
   }
 
-  // Dim overlay (solver hint). Scoped to the timetable card (the nearest
-  // positioned ancestor), stays below modal layers (cart panel z-index 1120).
-  // Non-interactive on purpose: the hint clears as soon as the cart/banned
-  // periods change.
+  /* Dim overlay (solver hint). Scoped to the timetable card (the nearest
+     positioned ancestor), stays below modal layers (cart panel z-index 1120).
+     Non-interactive on purpose: the hint clears as soon as the cart/banned
+     periods change. */
   &__overlay {
     position: absolute;
     inset: 0;
@@ -650,11 +799,22 @@ function toggleBan(day: number, period: number) {
   opacity: 0;
 }
 
+/* While dragging the side-panel handle, suppress text selection and keep the
+   col-resize cursor over the whole page. */
+:global(body.scheduler-resizing) {
+  user-select: none;
+  cursor: col-resize;
+}
+
 @media (max-width: 1024px) {
   .dashboard {
     &__header {
       align-items: stretch;
       flex-direction: column;
+    }
+
+    &__resize-handle {
+      display: none;
     }
 
     &__summary {

@@ -89,6 +89,13 @@
   - 搜索结果项与购物车抽屉项接入课程信息浮窗（`SchedulerCourseInfoPopover`）：code·credits 行右侧 ℹ️ 图标，hover 查看课程详情，与侧边栏课程卡一致；浮窗 z-index `90`→`1300`（原低于购物车面板 `1120`，Teleport 到 body 后会被面板遮住）、宽度 `280`→`420px`（更适配面板内宽布局）
   - 修复 cart 中课程 ID 与标题样式颠倒：ID 改小号灰色（`--text-secondary`），标题改加粗黑色（`--text-primary`），与原版 `CoursePlan.search` cart-panel 一致
   - 测试更新：`cart-panel.test.ts` 新增 info 浮窗契约（搜索结果项与抽屉项均绑定 course-code/course-title/credit/semester-id），13 个全绿
+- **排课工作台整体调整（第六阶段）**：整体布局细节修复
+  - 课表 weekday 表头背景：新增 `--timetable-header-bg` 主题变量（light `#f1f5f9` 浅灰 / dark `--surface-primary`），light 下与 dark 对称、视觉层次更清晰
+  - 侧边栏宽度：默认 `max(400px, 视口/6)`（原固定 `minmax(320px, 360px)`），可拖动调整（320–640px clamp），宽度记忆 localStorage（key `scheduler.side-panel-width`），刷新后保留；两栏间隙中央悬浮白色圆角竖条 + `grip-vertical` 图标手柄（hover 圆点变交互蓝，无边框无背景），≤1024px 单列时隐藏
+  - 筛选（banned）格增强：hover 底色 8%→13%；banned 格底色 14%→24% + 白色斜线纹理 + inset ring；hover 中央提示图标（未屏蔽 = 红色 `lucide:x`，已屏蔽 = 加大版 `rotate-ccw`）；`--timetable-ban-icon` 按主题区分（light 深色 `#1a2a4a` / dark 白色 `#ffffff`）
+  - 标题栏压缩："返回学期"改为与标题同行的圆形图标按钮（`arrow-left` + `aria-label` 保留可访问性），副标题与标题左对齐（`margin-left: calc(32px + 12px)`）；右侧三个 summary 卡片压缩（min-height 62px→46px，字号微调）
+  - 修复 `--text-tertiary` 变量未定义导致手柄圆点颜色异常（该变量全库未定义，改用已定义的 `--text-secondary`）
+  - 清理 `SchedulerDashboard`/`SchedulerTimetable` style 块内 `//` 行尾注释（SCSS 管线整块重编译时报 "Unknown word"，此前被 vite 缓存掩盖）
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选
