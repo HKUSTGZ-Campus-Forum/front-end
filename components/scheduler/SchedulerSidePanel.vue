@@ -387,7 +387,8 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   }
 
   &__actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     padding: 10px 12px 12px;
     border-top: 1px solid var(--border-secondary);
@@ -396,8 +397,8 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 
   &__action-wrap {
     position: relative;
-    flex: 1;
     min-width: 0;
+    display: flex;
   }
 
   &__action {
