@@ -49,7 +49,8 @@ const handleMenuLogout = async () => {
   <nav class="kg-topnav" :style="navStyle">
     <NuxtLink class="kg-topnav__brand" :to="getLocalePath('/')">
       <div class="kg-topnav__brand-logo">
-        <img src="/icons/topbar_logo.svg" alt="uniKorn" />
+        <img src="/icons/topbar_logo.svg" alt="uniKorn" class="kg-topnav__logo kg-topnav__logo--light" />
+        <img src="/icons/topbar_logo_w.svg" alt="uniKorn" class="kg-topnav__logo kg-topnav__logo--dark" />
       </div>
     </NuxtLink>
 
@@ -156,6 +157,23 @@ const handleMenuLogout = async () => {
       width: auto;
       object-fit: contain;
     }
+  }
+
+  // The colored logo is unreadable on the dark topbar. Both variants are
+  // rendered and toggled via the document-level data-theme attribute (set
+  // before first paint by the FOUC script), so no JS/SSR flash occurs.
+  .kg-topnav__logo--dark {
+    display: none;
+  }
+}
+
+:root[data-theme='deep-dark'] {
+  .kg-topnav__logo--light {
+    display: none;
+  }
+
+  .kg-topnav__logo--dark {
+    display: block;
   }
 }
 
