@@ -738,14 +738,14 @@ onMounted(() => {
   border-radius: 12px;
   padding: 0.85rem 1.15rem;
   min-width: 6.5rem;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     transform: translateY(-1px);
   }
 
@@ -968,7 +968,7 @@ onMounted(() => {
   }
 
   &.btn-primary {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     box-shadow: 0 12px 28px color-mix(in srgb, var(--interactive-primary) 24%, transparent);
 

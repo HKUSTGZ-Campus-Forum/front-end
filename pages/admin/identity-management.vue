@@ -595,7 +595,7 @@ onMounted(refreshData);
 .admin-identity__primary-btn,
 .admin-identity__inline-btn {
   border: 0;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 }
 
@@ -736,7 +736,7 @@ onMounted(refreshData);
   flex: 0 0 auto;
   overflow: hidden;
   border-radius: 50%;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   display: grid;
   place-items: center;

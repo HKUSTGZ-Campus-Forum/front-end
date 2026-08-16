@@ -383,7 +383,7 @@ onMounted(() => { fetchFiltersData(); });
   }
 
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
   }
@@ -431,7 +431,7 @@ onMounted(() => { fetchFiltersData(); });
   }
 
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
   }

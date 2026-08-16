@@ -601,7 +601,7 @@ onMounted(() => {
   .retry-btn {
     margin-top: 1rem;
     padding: 0.75rem 1.5rem;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     border: none;
     border-radius: 6px;
@@ -1118,7 +1118,7 @@ onMounted(() => {
   }
   
   &.btn-primary {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     
     &:hover:not(:disabled) {
@@ -1151,7 +1151,7 @@ onMounted(() => {
     border: 1px solid var(--interactive-primary);
     
     &:hover:not(:disabled) {
-      background: var(--interactive-primary);
+      background: var(--btn-primary-bg);
       color: var(--text-inverse);
     }
   }

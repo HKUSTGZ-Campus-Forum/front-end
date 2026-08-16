@@ -175,7 +175,7 @@ const hasStrongStatus = computed(() => (
 }
 
 .cu-detail__primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 }
 

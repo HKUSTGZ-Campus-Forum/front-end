@@ -430,7 +430,7 @@ useHead({
 
 .kg-save-btn {
   padding: 6px 14px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 10px;

@@ -572,7 +572,7 @@ onMounted(async () => {
   }
 
   input:checked + .kg-toggle-track {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     &::after { transform: translateX(18px); }
   }
 
@@ -700,7 +700,7 @@ onMounted(async () => {
 // ── 按钮 ──
 .kg-btn-primary {
   padding: 9px 24px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 14px;
@@ -708,7 +708,7 @@ onMounted(async () => {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
-  &:hover:not(:disabled) { background: var(--interactive-hover); }
+  &:hover:not(:disabled) { background: var(--btn-primary-bg-hover); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

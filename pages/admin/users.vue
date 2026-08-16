@@ -246,7 +246,7 @@ onMounted(loadUsers);
 
 .admin-users__primary {
   border-color: transparent;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 }
 

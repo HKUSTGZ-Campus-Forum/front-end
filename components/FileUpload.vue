@@ -264,7 +264,7 @@ const formatFileSize = (bytes: number): string => {
 
 .progress-fill {
   height: 100%;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   transition: width 0.3s ease;
 }
 

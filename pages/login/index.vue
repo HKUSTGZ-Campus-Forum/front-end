@@ -211,7 +211,7 @@ async function handleLogin() {
 .kg-submit-btn {
   width: 100%;
   padding: 12px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 14px;
@@ -219,7 +219,7 @@ async function handleLogin() {
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
-  &:hover:not(:disabled) { background: var(--interactive-hover); }
+  &:hover:not(:disabled) { background: var(--btn-primary-bg-hover); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

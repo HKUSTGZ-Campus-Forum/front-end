@@ -371,7 +371,7 @@ const addCustomThrust = () => {
 }
 
 .selected-tag:hover {
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
 }
 
 .remove-icon {
@@ -484,7 +484,7 @@ const addCustomThrust = () => {
 }
 
 .add-btn:hover:not(:disabled) {
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
 }
 
 .add-btn:disabled {

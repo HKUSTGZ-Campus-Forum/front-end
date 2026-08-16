@@ -395,10 +395,10 @@ const handleMenuLogout = async () => {
   transition: background-color 0.4s ease;
 
   &--on {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
 
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
   }
 }
@@ -689,7 +689,7 @@ const handleMenuLogout = async () => {
   transition: background 0.2s ease;
 
   &:hover {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
   }
 }

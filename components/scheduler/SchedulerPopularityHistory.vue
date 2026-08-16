@@ -548,7 +548,7 @@ onBeforeUnmount(() => {
   &__body { min-height: 390px; padding: 18px 22px 24px; }
   &__state { min-height: 350px; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--text-secondary); text-align: center; }
   &__state--error { color: var(--semantic-error); }
-  &__state button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--interactive-primary); color: var(--text-inverse); cursor: pointer; font-weight: 700; }
+  &__state button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--btn-primary-bg); color: var(--text-inverse); cursor: pointer; font-weight: 700; }
   &__summary { margin: 0 0 10px; color: var(--text-secondary); font-size: 0.84rem; line-height: 1.5; }
   &__scope-explanation { margin: -4px 0 12px; color: var(--text-secondary); font-size: 0.76rem; line-height: 1.5; }
   &__truth { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; margin-bottom: 10px; color: var(--text-secondary); font-size: 0.75rem; line-height: 1.4; }

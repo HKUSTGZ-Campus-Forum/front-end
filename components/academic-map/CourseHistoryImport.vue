@@ -139,7 +139,7 @@ defineExpose({ setRows })
 .am-primary-btn {
   border: 0;
   border-radius: 999px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   cursor: pointer;
   font-weight: 700;

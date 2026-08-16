@@ -322,7 +322,7 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
   color: white;
   border-color: var(--interactive-primary, #3498db);
 }

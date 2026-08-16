@@ -354,7 +354,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
   
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     box-shadow: var(--shadow-small);
   }
@@ -464,7 +464,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   right: 0.75rem;
   width: 24px;
   height: 24px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -610,11 +610,11 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
   
   &.home-btn {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
   }
 }

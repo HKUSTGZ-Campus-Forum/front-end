@@ -532,7 +532,7 @@ useHead({
 }
 
 .am-primary-btn {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 0;
   color: var(--text-inverse);
 }
@@ -810,7 +810,7 @@ useHead({
   }
 
   &.is-added {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
   }

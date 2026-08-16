@@ -743,7 +743,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 }
 
 .am-picker__course.selected .am-picker__checkbox {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-color: var(--interactive-primary);
 
   &::after {
@@ -1017,7 +1017,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 }
 
 .am-picker__primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 0;
   color: var(--text-inverse);
 

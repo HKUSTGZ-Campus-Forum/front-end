@@ -144,7 +144,7 @@ function getSemesterName(sem: SemesterInfo) {
     min-height: 42px;
     padding: 0 20px;
     border-radius: 999px;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     font-size: 0.9rem;
     font-weight: 700;
@@ -153,7 +153,7 @@ function getSemesterName(sem: SemesterInfo) {
     transition: background 0.18s ease, transform 0.18s ease;
 
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
       transform: translateY(-1px);
     }
   }

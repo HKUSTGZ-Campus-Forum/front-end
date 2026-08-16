@@ -244,11 +244,11 @@ const submitComment = async () => {
     }
 
     &.submit-btn {
-      background: var(--interactive-primary);
+      background: var(--btn-primary-bg);
       color: var(--text-inverse);
 
       &:hover:not(:disabled) {
-        background: var(--interactive-hover);
+        background: var(--btn-primary-bg-hover);
       }
 
       &:disabled {

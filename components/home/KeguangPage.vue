@@ -525,7 +525,7 @@ onMounted(() => {
   height: 36px;
   padding: 0 22px;
   border-radius: 18px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   font-size: 0.85rem;
@@ -535,7 +535,7 @@ onMounted(() => {
   transition: background 0.15s, opacity 0.15s;
   letter-spacing: 0.02em;
 
-  &:hover  { background: var(--interactive-hover); }
+  &:hover  { background: var(--btn-primary-bg-hover); }
   &:active { background: var(--interactive-active); }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }

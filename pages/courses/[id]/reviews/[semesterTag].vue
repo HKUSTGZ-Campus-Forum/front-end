@@ -640,10 +640,10 @@ useHead({
 
 .kg-btn-primary {
   padding: 8px 20px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
-  &:hover:not(:disabled) { background: var(--interactive-hover); }
+  &:hover:not(:disabled) { background: var(--btn-primary-bg-hover); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

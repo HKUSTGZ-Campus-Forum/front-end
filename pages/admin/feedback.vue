@@ -431,7 +431,7 @@ onMounted(loadBoard);
   padding: 0.65rem 1rem;
   border-radius: 999px;
   border: 0;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   font-weight: 700;
   text-decoration: none;

@@ -179,7 +179,7 @@ onMounted(fetchPageData);
   }
 
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
     font-weight: 600;
@@ -260,7 +260,7 @@ onMounted(fetchPageData);
   min-height: 40px;
   padding: 0.7rem 1.1rem;
   border-radius: 999px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   font-size: 0.9rem;
   font-weight: 600;

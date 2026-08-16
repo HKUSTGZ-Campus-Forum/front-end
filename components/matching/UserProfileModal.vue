@@ -627,7 +627,7 @@ watch(() => props.isOpen, (newVal) => {
 }
 
 .btn-primary:hover {
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
 }
 
 .btn-outline {

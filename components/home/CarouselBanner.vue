@@ -273,7 +273,7 @@ onUnmounted(() => clearInterval(timer));
   box-sizing: content-box;
 
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     transform: scale(1.25);
   }
 }

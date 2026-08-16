@@ -700,7 +700,7 @@ onBeforeUnmount(() => {
 
 .cu-prefix-bar__chip:hover,
 .cu-prefix-bar__chip.active {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-color: var(--interactive-primary);
   color: var(--text-inverse);
   transform: translateY(-1px);
@@ -725,7 +725,7 @@ onBeforeUnmount(() => {
 
 .cu-canvas__back {
   appearance: none;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 1px solid var(--interactive-primary);
   border-radius: 999px;
   color: var(--text-inverse);
@@ -737,7 +737,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-canvas__back:hover {
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
   border-color: var(--interactive-hover);
   transform: translateY(-1px);
 }
@@ -788,7 +788,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-canvas__control:hover {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-color: var(--interactive-primary);
   color: var(--text-inverse);
   transform: translateY(-1px);

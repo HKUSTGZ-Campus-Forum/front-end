@@ -410,12 +410,12 @@ onUnmounted(() => {
 }
 
 .view-all-btn {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 1px solid var(--interactive-primary);
   color: var(--text-inverse);
   
   &:hover {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     border-color: var(--interactive-hover);
   }
 }
@@ -456,7 +456,7 @@ onUnmounted(() => {
 .retry-btn {
   margin-top: 8px;
   padding: 6px 12px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 6px;
@@ -464,7 +464,7 @@ onUnmounted(() => {
   font-size: 12px;
   
   &:hover {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
   }
 }
 
@@ -527,7 +527,7 @@ onUnmounted(() => {
 .unread-indicator {
   width: 8px;
   height: 8px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 6px;

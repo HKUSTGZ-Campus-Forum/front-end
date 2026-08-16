@@ -664,13 +664,13 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border-color: var(--interactive-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
 }
 
 .btn-secondary {

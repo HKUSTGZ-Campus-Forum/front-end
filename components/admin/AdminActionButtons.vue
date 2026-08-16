@@ -68,7 +68,7 @@ defineEmits<{
 }
 
 .admin-action-buttons__btn--primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 }
 

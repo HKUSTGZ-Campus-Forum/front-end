@@ -70,7 +70,7 @@ useHead(() => ({
 .kg-forum-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -80,13 +80,13 @@ useHead(() => ({
   gap: 6px;
   padding: 8px 20px;
   margin-top: 16px;
-  background: #26A4FF;
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.2s;
-  &:hover { background: #1693ee; }
+  &:hover { background: var(--btn-primary-bg-hover); }
 }
 </style>

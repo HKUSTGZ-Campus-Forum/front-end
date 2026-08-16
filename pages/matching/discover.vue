@@ -470,7 +470,7 @@ onMounted(async () => {
 }
 
 .mode-btn.active {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
   color: white;
   box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }

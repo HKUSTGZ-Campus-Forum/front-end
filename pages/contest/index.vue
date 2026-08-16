@@ -771,7 +771,7 @@ onUnmounted(() => clearInterval(timer))
     right: 8px;
     bottom: -1px;
     height: 2.5px;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-radius: 2px 2px 0 0;
   }
 }
@@ -1027,7 +1027,7 @@ onUnmounted(() => clearInterval(timer))
 // ── Buttons ──
 .kg-btn-primary {
   padding: 9px 22px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 10px;
@@ -1037,7 +1037,7 @@ onUnmounted(() => clearInterval(timer))
   transition: background var(--transition-fast), box-shadow var(--transition-fast);
 
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     box-shadow: var(--shadow-small);
   }
 

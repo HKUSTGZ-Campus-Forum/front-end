@@ -232,7 +232,7 @@ watch(currentPage, () => { loadNotifications() })
   cursor: pointer;
   transition: all 0.2s;
   &:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
-  &.active { background: var(--interactive-primary); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
+  &.active { background: var(--btn-primary-bg); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
 }
 
 .kg-tab-count {
@@ -306,7 +306,7 @@ watch(currentPage, () => { loadNotifications() })
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   margin-top: 6px;
 }
 

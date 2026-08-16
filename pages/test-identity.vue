@@ -311,7 +311,7 @@ onMounted(() => {
 
 .test-btn {
   padding: 0.75rem 1.5rem;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 6px;

@@ -437,7 +437,7 @@ const emit = defineEmits(['register-success']);
   .register-btn {
     width: 100%;
     padding: 0.875rem;
-    background-color: var(--interactive-primary);
+    background-color: var(--btn-primary-bg);
     color: var(--text-inverse);
     border: none;
     border-radius: 6px;
@@ -456,7 +456,7 @@ const emit = defineEmits(['register-success']);
     }
     
     &:hover:not(:disabled) {
-      background-color: var(--interactive-hover);
+      background-color: var(--btn-primary-bg-hover);
       transform: translateY(-1px);
     }
 

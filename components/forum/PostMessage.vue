@@ -734,7 +734,7 @@ const emit = defineEmits(["post-success"]);
     flex-shrink: 0;
     min-width: 88px;
     padding: 0.75rem 1rem;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     border: none;
     border-radius: 6px;
@@ -742,7 +742,7 @@ const emit = defineEmits(["post-success"]);
     transition: background-color 0.2s ease, opacity 0.2s ease;
 
     &:hover:not(:disabled) {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
 
     &:disabled {
@@ -772,7 +772,7 @@ const emit = defineEmits(["post-success"]);
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      background-color: var(--interactive-primary);
+      background-color: var(--btn-primary-bg);
       color: var(--text-inverse);
       padding: 0.35rem 0.75rem;
       border-radius: 50px;
@@ -838,14 +838,14 @@ const emit = defineEmits(["post-success"]);
 
   .upload-btn {
     padding: 0.5rem 1rem;
-    background-color: var(--interactive-primary);
+    background-color: var(--btn-primary-bg);
     color: var(--text-inverse);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 
     &:hover {
-      background-color: var(--interactive-hover);
+      background-color: var(--btn-primary-bg-hover);
     }
   }
 
@@ -943,11 +943,11 @@ const emit = defineEmits(["post-success"]);
 }
 
 .submit-btn {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
   }
 
   &:disabled {
@@ -1040,7 +1040,7 @@ const emit = defineEmits(["post-success"]);
 
     .progress-fill {
       height: 100%;
-      background-color: var(--interactive-primary);
+      background-color: var(--btn-primary-bg);
       transition: width 0.2s;
     }
   }

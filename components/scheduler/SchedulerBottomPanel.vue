@@ -212,7 +212,7 @@ onUnmounted(() => {
     left: 0;
     top: 0;
     height: 100%;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-radius: 999px;
   }
 
@@ -223,7 +223,7 @@ onUnmounted(() => {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     box-shadow: 0 2px 6px rgba(38, 164, 255, 0.35);
     transition: left 0.18s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.15s ease, box-shadow 0.15s ease;
 
@@ -243,7 +243,7 @@ onUnmounted(() => {
     min-width: 26px;
     padding: 3px 7px;
     border-radius: 6px;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     font-size: 0.78rem;
     font-weight: 700;

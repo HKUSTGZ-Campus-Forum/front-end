@@ -341,7 +341,7 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
   &:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
-  &.active { background: var(--interactive-primary); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
+  &.active { background: var(--btn-primary-bg); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
 }
 
 .kg-tab-bar {
@@ -365,7 +365,7 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
   &:hover { color: var(--interactive-primary); }
-  &.active { background: var(--interactive-primary); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
+  &.active { background: var(--btn-primary-bg); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
 }
 
 .kg-tab-icon {

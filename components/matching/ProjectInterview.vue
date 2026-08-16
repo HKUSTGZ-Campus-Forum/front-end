@@ -551,7 +551,7 @@ onMounted(() => {
 
 .neural-line {
   position: absolute;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-radius: 2px;
   opacity: 0.6;
   animation: neural-pulse 2.5s ease-in-out infinite;
@@ -845,13 +845,13 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border-color: var(--interactive-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
   border-color: var(--interactive-hover);
 }
 

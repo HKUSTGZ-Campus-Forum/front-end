@@ -387,7 +387,7 @@ onMounted(async () => {
 }
 
 .progress-step.completed .step-indicator {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
   border-color: var(--interactive-primary, #3498db);
   color: white;
 }
@@ -407,7 +407,7 @@ onMounted(async () => {
 }
 
 .progress-line.filled {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
 }
 
 .profile-prompt-card {
@@ -612,7 +612,7 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
   color: white;
   border-color: #3498db;
 }

@@ -599,10 +599,10 @@ useHead({
 }
 
 .kg-btn-primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
-  &:hover { background: var(--interactive-hover); }
+  &:hover { background: var(--btn-primary-bg-hover); }
   &--block {
     width: 100%;
     min-height: 48px;

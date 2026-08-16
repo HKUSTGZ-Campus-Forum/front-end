@@ -304,7 +304,7 @@ const { getLocalePath } = useAppLocale();
         .badge {
           font-size: 0.7rem;
           padding: 0.15rem 0.4rem;
-          background: var(--interactive-primary);
+          background: var(--btn-primary-bg);
           color: var(--text-inverse);
           border-radius: 8px;
           opacity: 0.8;

@@ -1119,7 +1119,7 @@ onUnmounted(() => {
 // Button Styles
 .verify-btn, .add-email-btn, .change-password-btn {
   padding: 0.875rem 1.5rem;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 6px;
@@ -1136,7 +1136,7 @@ onUnmounted(() => {
   }
   
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     transform: translateY(-1px);
   }
   

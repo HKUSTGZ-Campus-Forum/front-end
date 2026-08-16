@@ -375,14 +375,14 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     padding: 0 16px;
     border: 0;
     border-radius: 999px;
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     cursor: pointer;
     font-size: 0.84rem;
     font-weight: 700;
 
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
   }
 
@@ -433,11 +433,11 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 
     &--primary {
       border-color: var(--interactive-primary);
-      background: var(--interactive-primary);
+      background: var(--btn-primary-bg);
       color: var(--text-inverse);
 
       &:hover {
-        background: var(--interactive-hover);
+        background: var(--btn-primary-bg-hover);
         border-color: var(--interactive-hover);
       }
     }
