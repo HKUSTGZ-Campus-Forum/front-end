@@ -112,4 +112,24 @@ describe('scheduler hardening UI contract', () => {
     expect(en.cartFailed).not.toMatch(/refresh/i)
     expect(en.cartStateUnverified).toMatch(/locked/i)
   })
+
+  it('persists the plan index per semester and display options globally', () => {
+    const dashboard = source('../../components/scheduler/SchedulerDashboard.vue')
+
+    // Plan index is stored per semester; display options are a global pref.
+    expect(dashboard).toContain("const PLAN_INDEX_STORAGE_PREFIX = 'scheduler.plan-index.'")
+    expect(dashboard).toContain("const DISPLAY_OPTIONS_STORAGE_KEY = 'scheduler.display-options'")
+    expect(dashboard).toContain('`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`')
+
+    // Restore is guarded (SSR-safe localStorage access wrapped in try/catch).
+    expect(dashboard).toContain('localStorage.getItem(`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`)')
+    expect(dashboard).toContain('localStorage.getItem(DISPLAY_OPTIONS_STORAGE_KEY)')
+    // A restored index waits for the plan list, then clamps to its length.
+    expect(dashboard).toContain('Math.min(pendingPlanIndex.value, plans.length)')
+    // Only known boolean display keys are applied from a stored payload.
+    expect(dashboard).toContain("typeof parsed[key] === 'boolean'")
+    // Writes happen through deep watchers so in-place option updates persist.
+    expect(dashboard).toContain('watch(displayOptions, (options) => {')
+    expect(dashboard).toContain('}, { deep: true })')
+  })
 })

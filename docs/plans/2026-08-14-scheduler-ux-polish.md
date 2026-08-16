@@ -289,6 +289,16 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 - [x] 修复 `--text-tertiary` 未定义导致手柄圆点颜色异常（改用 `--text-secondary`）；清理两个组件 style 内 `//` 行尾注释（SCSS "Unknown word" 陷阱）
 - [x] 验证：`npm run i18n:check` 通过、`npm test` 197/197、dev server 页面 200
 
+**持久化与按钮等宽补充轮（2026-08-16）** ✅ 代码完成
+- [x] **方案编号按学期持久化**：
+  - 需求：刷新页面后恢复当前查看的方案编号；方案列表按学期独立，key 带学期维度 `scheduler.plan-index.<semesterId>`
+  - 实现：`onMounted` 读取恢复值存入 `pendingPlanIndex`；`planList` watch 在方案求解完成后应用并 clamp 到 `plans.length`（处理"恢复值先到、方案异步后到"的时序）；`viewIndex` watch 写回 localStorage
+  - **决策（用户确认）：存 localStorage，不走后端**——后端 `/profiles` 接口无偏好字段，加字段需后端改动；排课偏好本质是本地工具状态，跨设备同步价值不高，与侧边栏宽度记忆（`scheduler.side-panel-width`）同一模式
+- [x] **显示偏好（display options）全局持久化**：key `scheduler.display-options`，deep watch 写入（侧边栏 Menu 原地修改属性也能触发）；恢复时只应用已知 boolean key，防过期/脏数据污染菜单
+- [x] **SSR 安全**：全部 localStorage 访问在 `onMounted` + try/catch，storage 不可用时静默降级为会话内内存值
+- [x] **侧边栏底部按钮等宽**（用户反馈 Filter/Menu/Cart 宽度不一致）：`SchedulerSidePanel.__actions` 由 flex 改 CSS Grid `repeat(3, 1fr)`，`__action-wrap` 加 `display: flex`、移除 `flex: 1`
+- [x] 验证：`npm test` 198/198（`hardening-ui.test.ts` 新增持久化契约：per-semester key、全局 key、SSR 安全、clamp、deep watch）
+
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`
 - [ ] 每步独立 commit（用户同意后）

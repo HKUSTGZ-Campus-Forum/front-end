@@ -96,6 +96,12 @@
   - 标题栏压缩："返回学期"改为与标题同行的圆形图标按钮（`arrow-left` + `aria-label` 保留可访问性），副标题与标题左对齐（`margin-left: calc(32px + 12px)`）；右侧三个 summary 卡片压缩（min-height 62px→46px，字号微调）
   - 修复 `--text-tertiary` 变量未定义导致手柄圆点颜色异常（该变量全库未定义，改用已定义的 `--text-secondary`）
   - 清理 `SchedulerDashboard`/`SchedulerTimetable` style 块内 `//` 行尾注释（SCSS 管线整块重编译时报 "Unknown word"，此前被 vite 缓存掩盖）
+- **排课工作台状态持久化与按钮等宽（第六阶段后补充）**：
+  - 方案编号按学期记忆：localStorage key `scheduler.plan-index.<semesterId>`（方案列表按学期独立），`pendingPlanIndex` 暂存恢复值，待 planList 异步求解完成后应用并 clamp 到方案总数；`viewIndex` watch 写回
+  - 显示偏好（display options）全局记忆：localStorage key `scheduler.display-options`，deep watch 写入；恢复时只应用已知 boolean key，防过期/脏数据污染菜单
+  - 持久化全部在 `onMounted` + try/catch（SSR 安全），与侧边栏宽度记忆（`scheduler.side-panel-width`）同一模式；**决策：不走后端**（后端 `/profiles` 无偏好字段，跨设备同步需更大改动，暂缓）
+  - 侧边栏底部 Filter/Menu/Cart 按钮等宽：`__actions` 由 flex 改 CSS Grid `repeat(3, 1fr)`（原 `flex: 1` 在内容宽度不同时各按钮不等宽）
+  - 测试：`hardening-ui.test.ts` 新增持久化契约（per-semester key、全局 key、SSR 安全、clamp、deep watch），198/198 全绿
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

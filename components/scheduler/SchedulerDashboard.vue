@@ -76,10 +76,48 @@ onMounted(() => {
     const parsed = Number(saved)
     if (Number.isFinite(parsed) && parsed > 0) {
       sidePanelWidth.value = clampSidePanelWidth(parsed)
-      return
+    } else {
+      sidePanelWidth.value = clampSidePanelWidth(Math.max(400, window.innerWidth / 6))
     }
+  } else {
+    sidePanelWidth.value = clampSidePanelWidth(Math.max(400, window.innerWidth / 6))
   }
-  sidePanelWidth.value = clampSidePanelWidth(Math.max(400, window.innerWidth / 6))
+
+  // Restore the per-semester plan index. If plans are already solved apply it
+  // now; otherwise the planList watcher applies it once they arrive.
+  try {
+    const savedIndex = localStorage.getItem(`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`)
+    if (savedIndex !== null) {
+      const parsed = Number(savedIndex)
+      if (Number.isFinite(parsed) && parsed > 0) {
+        pendingPlanIndex.value = parsed
+      }
+    }
+  } catch {
+    // Storage unavailable; fall through to the default index.
+  }
+  if (pendingPlanIndex.value !== null && planList.value.length > 0) {
+    viewIndex.value = Math.min(pendingPlanIndex.value, planList.value.length)
+    pendingPlanIndex.value = null
+  }
+
+  // Restore the global display options. Only known boolean keys are applied so
+  // a stale or foreign payload cannot corrupt the menu.
+  try {
+    const savedOptions = localStorage.getItem(DISPLAY_OPTIONS_STORAGE_KEY)
+    if (savedOptions !== null) {
+      const parsed = JSON.parse(savedOptions)
+      if (parsed && typeof parsed === 'object') {
+        for (const key of Object.keys(displayOptions.value)) {
+          if (typeof parsed[key] === 'boolean') {
+            displayOptions.value[key as keyof typeof displayOptions.value] = parsed[key]
+          }
+        }
+      }
+    }
+  } catch {
+    // Malformed payload; keep the defaults.
+  }
 })
 
 function onResizeStart(event: MouseEvent) {
@@ -125,6 +163,30 @@ const displayOptions = ref({
   instructor: false,
   duration: false,
 })
+
+// Persisted state. The current plan index is remembered per semester (plan
+// lists are semester-specific); display options are a global preference.
+const PLAN_INDEX_STORAGE_PREFIX = 'scheduler.plan-index.'
+const DISPLAY_OPTIONS_STORAGE_KEY = 'scheduler.display-options'
+// Holds a restored plan index until the plan list is solved (plans load
+// asynchronously after mount); the planList watcher applies it when ready.
+const pendingPlanIndex = ref<number | null>(null)
+
+watch(viewIndex, (index) => {
+  try {
+    localStorage.setItem(`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`, String(index))
+  } catch {
+    // Storage unavailable; keep the in-memory index for this session.
+  }
+})
+
+watch(displayOptions, (options) => {
+  try {
+    localStorage.setItem(DISPLAY_OPTIONS_STORAGE_KEY, JSON.stringify(options))
+  } catch {
+    // Storage unavailable; keep the in-memory options for this session.
+  }
+}, { deep: true })
 
 watch(canShowPopularityHistory, (authorized) => {
   if (!authorized) closePopularityHistory()
@@ -226,8 +288,16 @@ const planEmoji = computed(() => {
   return '😢'
 })
 
-// Reset viewIndex when plans change
+// Reset viewIndex when plans change; a restored (persisted) plan index is
+// applied as soon as plans are available, clamped to the plan count.
 watch(planList, (plans) => {
+  if (pendingPlanIndex.value !== null) {
+    if (plans.length > 0) {
+      viewIndex.value = Math.min(pendingPlanIndex.value, plans.length)
+      pendingPlanIndex.value = null
+    }
+    return
+  }
   if (viewIndex.value > plans.length) {
     viewIndex.value = Math.max(1, plans.length)
   }
