@@ -124,10 +124,10 @@ function isCourseActive() {
   top: 0;
   height: 100vh;
   width: 72px;
-  background: #283965;
+  background: var(--sidebar-bg);
   overflow: hidden;
   z-index: 1010;
-  box-shadow: 2px 0 16px rgba(40, 57, 101, 0.22);
+  box-shadow: var(--sidebar-shadow);
   transition: width 0.3s ease;
 
   &--expanded {
@@ -141,7 +141,7 @@ function isCourseActive() {
       width: 60px;
       height: 60px;
       left: 50%;
-      border-color: rgba(255, 255, 255, 0.35);
+      border-color: color-mix(in srgb, var(--overlay-text) 35%, transparent);
     }
 
     .kg-label {
@@ -171,8 +171,8 @@ function isCourseActive() {
   height: 42px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: #ffffff;
+  border: 2px solid color-mix(in srgb, var(--overlay-text) 30%, transparent);
+  background: var(--overlay-text);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
   img {
@@ -183,8 +183,8 @@ function isCourseActive() {
   }
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.6);
-    box-shadow: 0 0 12px rgba(38, 164, 255, 0.5);
+    border-color: color-mix(in srgb, var(--overlay-text) 60%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--interactive-primary) 50%, transparent);
 
     img {
       transform: scale(1.12);
@@ -206,19 +206,19 @@ function isCourseActive() {
     align-items: center;
     padding: 0.65rem 0.75rem;
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.72);
+    color: var(--overlay-text-secondary);
     text-decoration: none;
     min-height: 44px;
     transition: background 0.2s ease, color 0.2s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
+      background: color-mix(in srgb, var(--overlay-text) 12%, transparent);
+      color: var(--overlay-text);
     }
 
     &.active {
-      background: rgba(38, 164, 255, 0.3);
-      color: white;
+      background: color-mix(in srgb, var(--interactive-primary) 30%, transparent);
+      color: var(--overlay-text);
     }
   }
 }
@@ -245,7 +245,7 @@ img.kg-icon {
   min-width: 0;
   white-space: nowrap;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-text-secondary);
   opacity: 0;
   max-width: 0;
   margin-left: 0;
@@ -261,7 +261,7 @@ img.kg-icon {
 .kg-divider__line {
   display: block;
   height: 1px;
-  background: rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--overlay-text) 15%, transparent);
 }
 
 @media (max-width: 768px) {

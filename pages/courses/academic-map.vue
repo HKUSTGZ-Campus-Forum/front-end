@@ -509,7 +509,7 @@ useHead({
   }
 
   small {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     display: inline-flex;
     font-size: 0.78rem;
     font-weight: 700;
@@ -548,8 +548,8 @@ useHead({
   }
 
   &--danger {
-    border-color: rgba(255, 90, 90, 0.35);
-    color: #b13434;
+    border-color: color-mix(in srgb, var(--semantic-error) 35%, transparent);
+    color: var(--semantic-error);
   }
 
   &:disabled {
@@ -559,17 +559,17 @@ useHead({
 }
 
 .am-message {
-  border: 1px solid rgba(38, 200, 120, 0.28);
+  border: 1px solid color-mix(in srgb, var(--semantic-success) 28%, transparent);
   border-radius: 14px;
-  background: rgba(38, 200, 120, 0.09);
-  color: #157a45;
+  background: color-mix(in srgb, var(--semantic-success) 9%, transparent);
+  color: var(--semantic-success);
   margin-bottom: 16px;
   padding: 10px 14px;
 
   &--error {
-    background: rgba(255, 90, 90, 0.08);
-    border-color: rgba(255, 90, 90, 0.25);
-    color: #b13434;
+    background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+    border-color: color-mix(in srgb, var(--semantic-error) 25%, transparent);
+    color: var(--semantic-error);
   }
 }
 
@@ -639,7 +639,7 @@ useHead({
 .am-record-row {
   border: 1px solid var(--border-primary);
   border-radius: 14px;
-  background: linear-gradient(180deg, var(--surface-primary) 0%, #fbfdff 100%);
+  background: linear-gradient(180deg, var(--surface-primary) 0%, var(--surface-secondary) 100%);
   display: grid;
   grid-template-columns: minmax(280px, 1fr) minmax(510px, auto);
   align-items: center;
@@ -653,7 +653,7 @@ useHead({
 
   &:hover {
     border-color: color-mix(in srgb, var(--interactive-primary) 38%, var(--border-primary));
-    box-shadow: 0 8px 14px rgba(38, 120, 190, 0.08);
+    box-shadow: var(--shadow-medium);
     transform: translateY(-1px);
   }
 }
@@ -715,7 +715,7 @@ useHead({
 }
 
 .am-record-label {
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   font-size: 0.74rem;
   font-weight: 800;
   white-space: nowrap;
@@ -735,13 +735,13 @@ useHead({
   width: 72px;
 
   &::placeholder {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-weight: 650;
   }
 
   &:focus {
     border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px rgba(38, 164, 255, 0.14);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 14%, transparent);
   }
 
   &:disabled {
@@ -825,8 +825,8 @@ useHead({
 
   &:hover:not(:disabled),
   &:focus-visible:not(:disabled) {
-    background: rgba(209, 77, 77, 0.08);
-    border-color: rgba(209, 77, 77, 0.18);
+    background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+    border-color: color-mix(in srgb, var(--semantic-error) 18%, transparent);
     color: var(--semantic-error);
   }
 }

@@ -165,23 +165,23 @@ onMounted(fetchPageData);
 
 .community-feedback-pane__filter-btn {
   padding: 6px 18px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  background: #ffffff;
-  color: #4a6080;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #26a4ff;
-    color: #26a4ff;
+    border-color: var(--border-focus);
+    color: var(--interactive-primary);
   }
 
   &.active {
-    background: #26a4ff;
-    border-color: #26a4ff;
-    color: #fff;
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
     font-weight: 600;
   }
 }
@@ -198,14 +198,14 @@ onMounted(fetchPageData);
   justify-content: center;
   gap: 12px;
   padding: 40px;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .community-feedback-pane__spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #c8dff8;
-  border-top-color: #26a4ff;
+  border: 2px solid var(--border-primary);
+  border-top-color: var(--interactive-primary);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
@@ -213,10 +213,10 @@ onMounted(fetchPageData);
 .community-feedback-pane__error,
 .community-feedback-pane__empty {
   padding: 20px 24px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
 
   p {
     margin: 0;
@@ -228,28 +228,28 @@ onMounted(fetchPageData);
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  color: #c34545;
+  color: var(--semantic-error);
 }
 
 .community-feedback-pane__ghost-btn {
   padding: 6px 16px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  background: #fff;
-  color: #4a6080;
+  background: var(--card-bg);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
 }
 
 .community-feedback-pane__empty-title {
   margin: 0;
-  color: #1a2a4a;
+  color: var(--text-primary);
   font-size: 1rem;
 }
 
 .community-feedback-pane__empty-hint {
   margin: 8px 0 14px;
-  color: #4a6080;
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
@@ -260,8 +260,8 @@ onMounted(fetchPageData);
   min-height: 40px;
   padding: 0.7rem 1.1rem;
   border-radius: 999px;
-  background: #26a4ff;
-  color: #fff;
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;

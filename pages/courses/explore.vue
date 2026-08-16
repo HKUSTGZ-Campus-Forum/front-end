@@ -312,10 +312,10 @@ onMounted(() => { fetchFiltersData(); });
 }
 
 .kg-card {
-  background: #FFFFFF;
-  border: 1.5px solid #c8dff8;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
+  box-shadow: var(--card-shadow);
 }
 
 .kg-filters {
@@ -326,17 +326,17 @@ onMounted(() => { fetchFiltersData(); });
 .kg-search-input {
   width: 100%;
   padding: 10px 16px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 12px;
-  background: #fff;
-  color: #1a2a4a;
+  background: var(--surface-primary);
+  color: var(--text-primary);
   font-size: 0.9rem;
   outline: none;
   margin-bottom: 12px;
   box-sizing: border-box;
   transition: border-color 0.2s;
-  &:focus { border-color: #26a4ff; }
-  &::placeholder { color: #9ab0c6; }
+  &:focus { border-color: var(--border-focus); }
+  &::placeholder { color: var(--text-muted); }
 }
 
 .kg-filter-row {
@@ -353,7 +353,7 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-filter-label {
   font-size: 0.84rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   font-weight: 500;
   white-space: nowrap;
   min-width: 32px;
@@ -367,10 +367,10 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-filter-btn {
   padding: 5px 14px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 10px;
-  background: #fff;
-  color: #4a6080;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
   font-size: 0.83rem;
   font-weight: 500;
   cursor: pointer;
@@ -378,14 +378,14 @@ onMounted(() => { fetchFiltersData(); });
   white-space: nowrap;
 
   &:hover {
-    border-color: #26a4ff;
-    color: #26a4ff;
+    border-color: var(--border-focus);
+    color: var(--interactive-primary);
   }
 
   &.active {
-    background: #26a4ff;
-    border-color: #26a4ff;
-    color: #fff;
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
   }
 }
 
@@ -393,7 +393,7 @@ onMounted(() => { fetchFiltersData(); });
 .kg-course-types {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid #e8f4fd;
+  border-top: 1px solid var(--border-secondary);
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -401,7 +401,7 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-course-types-label {
   font-size: 0.85rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   font-weight: 500;
   white-space: nowrap;
   padding-top: 5px;
@@ -415,10 +415,10 @@ onMounted(() => { fetchFiltersData(); });
 
 .kg-type-chip {
   padding: 5px 14px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 10px;
-  background: #fff;
-  color: #4a6080;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -426,14 +426,14 @@ onMounted(() => { fetchFiltersData(); });
   white-space: nowrap;
 
   &:hover {
-    border-color: #26a4ff;
-    color: #26a4ff;
+    border-color: var(--border-focus);
+    color: var(--interactive-primary);
   }
 
   &.active {
-    background: #26a4ff;
-    border-color: #26a4ff;
-    color: #fff;
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
   }
 }
 
@@ -443,14 +443,14 @@ onMounted(() => { fetchFiltersData(); });
   justify-content: center;
   gap: 12px;
   padding: 60px;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #c8dff8;
-  border-top-color: #26a4ff;
+  border: 3px solid var(--border-primary);
+  border-top-color: var(--interactive-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -460,7 +460,7 @@ onMounted(() => { fetchFiltersData(); });
 .kg-empty {
   text-align: center;
   padding: 60px 20px;
-  color: #4a6080;
+  color: var(--text-secondary);
   .kg-empty-icon { font-size: 3rem; margin-bottom: 12px; }
   p { font-size: 1rem; margin: 0; }
 }
@@ -474,16 +474,16 @@ onMounted(() => { fetchFiltersData(); });
 .kg-course-card {
   display: flex;
   flex-direction: column;
-  background: #FFFFFF;
-  border: 1.5px solid #c8dff8;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
   padding: 20px;
   text-decoration: none;
-  box-shadow: 0 2px 12px rgba(40, 57, 101, 0.06);
+  box-shadow: var(--card-shadow);
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
   &:hover {
-    box-shadow: 0 4px 20px rgba(40, 57, 101, 0.12);
-    border-color: #26a4ff;
+    box-shadow: var(--shadow-medium);
+    border-color: var(--border-focus);
     transform: translateY(-2px);
   }
 }
@@ -498,28 +498,28 @@ onMounted(() => { fetchFiltersData(); });
 .kg-course-code {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #26a4ff;
-  background: rgba(38, 164, 255, 0.1);
+  color: var(--interactive-primary);
+  background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   border-radius: 6px;
   padding: 2px 8px;
 }
 
 .kg-course-credits {
   font-size: 0.78rem;
-  color: #9ab0c6;
+  color: var(--text-muted);
 }
 
 .kg-course-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 8px;
   line-height: 1.4;
 }
 
 .kg-course-desc {
   font-size: 0.83rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin: 0 0 auto;
   padding-bottom: 12px;
@@ -530,14 +530,14 @@ onMounted(() => { fetchFiltersData(); });
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #e8f4fd;
+  border-top: 1px solid var(--border-secondary);
   padding-top: 10px;
   margin-top: 4px;
 }
 
 .kg-course-instructor {
   font-size: 0.8rem;
-  color: #6a85a0;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -548,8 +548,8 @@ onMounted(() => { fetchFiltersData(); });
   font-weight: 600;
   padding: 2px 10px;
   border-radius: 10px;
-  &.active { background: rgba(38, 220, 120, 0.12); color: #1a9a55; }
-  &.inactive { background: rgba(160, 160, 160, 0.12); color: #888; }
+  &.active { background: color-mix(in srgb, var(--semantic-success) 12%, transparent); color: var(--semantic-success); }
+  &.inactive { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-muted); }
 }
 
 </style>

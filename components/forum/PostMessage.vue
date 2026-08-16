@@ -683,7 +683,7 @@ const emit = defineEmits(["post-success"]);
     &:focus {
       outline: none;
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 2px rgba(159, 195, 231, 0.2);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--border-focus) 20%, transparent);
     }
     
     // Placeholder styling for mobile
@@ -711,22 +711,6 @@ const emit = defineEmits(["post-success"]);
   }
 }
 
-.category-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 12px;
-  cursor: pointer;
-  
-  // Mobile select optimizations
-  @media (max-width: 480px) {
-    background-position: right 1rem center;
-    background-size: 14px;
-    padding-right: 3rem; // Extra space for arrow
-  }
-}
-
 .tags-container {
   .tag-input-row {
     display: flex;
@@ -750,15 +734,15 @@ const emit = defineEmits(["post-success"]);
     flex-shrink: 0;
     min-width: 88px;
     padding: 0.75rem 1rem;
-    background: var(--color-blue-7, #9fc3e7);
-    color: #fff;
+    background: var(--interactive-primary);
+    color: var(--text-inverse);
     border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.2s ease, opacity 0.2s ease;
 
     &:hover:not(:disabled) {
-      background: #7ba8d6;
+      background: var(--interactive-hover);
     }
 
     &:disabled {
@@ -788,8 +772,8 @@ const emit = defineEmits(["post-success"]);
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      background-color: var(--color-blue-7, #9fc3e7);
-      color: white;
+      background-color: var(--interactive-primary);
+      color: var(--text-inverse);
       padding: 0.35rem 0.75rem;
       border-radius: 50px;
       font-size: 0.875rem;
@@ -803,7 +787,7 @@ const emit = defineEmits(["post-success"]);
       .tag-remove {
         background: none;
         border: none;
-        color: white;
+        color: var(--text-inverse);
         font-size: 1.2rem;
         margin-left: 0.35rem;
         cursor: pointer;
@@ -827,9 +811,9 @@ const emit = defineEmits(["post-success"]);
 }
 
 .tag--locked {
-  background-color: rgba(38, 164, 255, 0.14) !important;
-  color: #1178c8 !important;
-  border: 1px solid rgba(38, 164, 255, 0.28);
+  background-color: color-mix(in srgb, var(--interactive-primary) 14%, transparent) !important;
+  color: var(--interactive-active-text) !important;
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 28%, transparent);
 }
 
 .tag-lock {
@@ -840,7 +824,7 @@ const emit = defineEmits(["post-success"]);
 .error-text {
   display: block;
   margin-top: 0.5rem;
-  color: #dc2626;
+  color: var(--semantic-error);
   font-size: 0.875rem;
 }
 
@@ -854,21 +838,21 @@ const emit = defineEmits(["post-success"]);
 
   .upload-btn {
     padding: 0.5rem 1rem;
-    background-color: var(--color-blue-7, #9fc3e7);
-    color: white;
+    background-color: var(--interactive-primary);
+    color: var(--text-inverse);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 
     &:hover {
-      background-color: #7ba8d6;
+      background-color: var(--interactive-hover);
     }
   }
 
   .upload-info {
     margin-left: 1rem;
     font-size: 0.875rem;
-    color: #666;
+    color: var(--text-muted);
   }
 }
 
@@ -897,8 +881,8 @@ const emit = defineEmits(["post-success"]);
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      background-color: rgba(255, 0, 0, 0.8);
-      color: white;
+      background-color: color-mix(in srgb, var(--semantic-error) 80%, transparent);
+      color: var(--text-inverse);
       border: none;
       font-size: 1rem;
       display: flex;
@@ -907,7 +891,7 @@ const emit = defineEmits(["post-success"]);
       cursor: pointer;
 
       &:hover {
-        background-color: red;
+        background-color: var(--semantic-error);
       }
     }
   }
@@ -974,7 +958,7 @@ const emit = defineEmits(["post-success"]);
   // Touch feedback for mobile
   &:active:not(:disabled) {
     @media (max-width: 768px) {
-      background-color: #6b9ac9;
+      background-color: var(--interactive-active);
       transform: translateY(1px);
     }
   }
@@ -991,7 +975,7 @@ const emit = defineEmits(["post-success"]);
   // Touch feedback for mobile
   &:active {
     @media (max-width: 768px) {
-      background-color: #d7d7d7;
+      background-color: var(--interactive-secondary);
       transform: translateY(1px);
     }
   }
@@ -1016,7 +1000,7 @@ const emit = defineEmits(["post-success"]);
   color: var(--semantic-error);
   margin-bottom: 1rem;
   padding: 0.75rem;
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: color-mix(in srgb, var(--semantic-error) 10%, transparent);
   border-radius: 4px;
   font-size: 0.9rem;
   border-left: 3px solid var(--semantic-error);
@@ -1037,7 +1021,7 @@ const emit = defineEmits(["post-success"]);
 
 .success-message {
   padding: 1rem;
-  background-color: rgba(40, 167, 69, 0.1);
+  background-color: color-mix(in srgb, var(--semantic-success) 10%, transparent);
   border-radius: 4px;
   color: var(--semantic-success);
   margin-bottom: 1rem;
@@ -1050,20 +1034,20 @@ const emit = defineEmits(["post-success"]);
 
   .progress-bar {
     height: 0.5rem;
-    background-color: #f0f0f0;
+    background-color: var(--surface-secondary);
     border-radius: 4px;
     overflow: hidden;
 
     .progress-fill {
       height: 100%;
-      background-color: var(--color-blue-7, #9fc3e7);
+      background-color: var(--interactive-primary);
       transition: width 0.2s;
     }
   }
 
   .progress-text {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-muted);
     margin-top: 0.25rem;
     text-align: center;
   }
@@ -1173,8 +1157,8 @@ const emit = defineEmits(["post-success"]);
         }
         
         .remove-btn {
-          background: #ff4757;
-          color: white;
+          background: var(--semantic-error);
+          color: var(--text-inverse);
           border: none;
           border-radius: 50%;
           width: 20px;
@@ -1200,13 +1184,13 @@ const emit = defineEmits(["post-success"]);
           }
           
           &:hover {
-            background: #ff3742;
+            background: color-mix(in srgb, var(--semantic-error) 90%, transparent);
           }
           
           // Touch feedback
           &:active {
             @media (max-width: 768px) {
-              background: #ff2d3a;
+              background: color-mix(in srgb, var(--semantic-error) 85%, transparent);
               transform: scale(0.95);
             }
           }

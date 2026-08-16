@@ -273,23 +273,23 @@ onMounted(() => {
 
 .community-activity-pane__sort-btn {
   padding: 6px 18px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  background: #ffffff;
-  color: #4a6080;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #26a4ff;
-    color: #26a4ff;
+    border-color: var(--border-focus);
+    color: var(--interactive-primary);
   }
 
   &.active {
-    background: #26a4ff;
-    border-color: #26a4ff;
-    color: #fff;
+    background: var(--interactive-primary);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
     font-weight: 600;
   }
 }
@@ -302,19 +302,19 @@ onMounted(() => {
 
 .community-activity-pane__post-card {
   display: block;
-  background: #ffffff;
-  border: 2px solid #c8dff8;
+  background: var(--card-bg);
+  border: 2px solid var(--border-primary);
   border-radius: 24px;
   padding: 28px 36px 24px;
   text-decoration: none;
   color: inherit;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 8px 24px rgba(40, 57, 101, 0.08);
+  box-shadow: var(--shadow-large);
 
   &:hover {
     transform: translateY(-2px);
-    border-color: #26a4ff;
-    box-shadow: 0 14px 30px rgba(40, 57, 101, 0.12);
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-large);
   }
 }
 
@@ -330,9 +330,9 @@ onMounted(() => {
   width: fit-content;
   padding: 4px 12px;
   border-radius: 999px;
-  border: 1.5px solid #9eaaf4;
-  background: rgba(158, 170, 244, 0.14);
-  color: #5261b3;
+  border: 1.5px solid color-mix(in srgb, var(--interactive-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--interactive-primary) 14%, transparent);
+  color: var(--interactive-active-text);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -341,14 +341,14 @@ onMounted(() => {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
 }
 
 .community-activity-pane__post-excerpt {
   margin: 0;
   font-size: 1rem;
   line-height: 1.7;
-  color: #5f7698;
+  color: var(--text-secondary);
 }
 
 .community-activity-pane__post-footer {
@@ -358,7 +358,7 @@ onMounted(() => {
   gap: 16px;
   padding-top: 20px;
   margin-top: 20px;
-  border-top: 1px solid #e1eefc;
+  border-top: 1px solid var(--border-secondary);
 }
 
 .community-activity-pane__post-author {
@@ -370,7 +370,7 @@ onMounted(() => {
 
 .community-activity-pane__post-author-name {
   font-size: 0.95rem;
-  color: #3f5476;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -379,7 +379,7 @@ onMounted(() => {
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-  color: #7c96bb;
+  color: var(--text-muted);
 }
 
 .community-activity-pane__stat {
@@ -402,11 +402,11 @@ onMounted(() => {
 .community-activity-pane__error,
 .community-activity-pane__empty {
   margin-top: 24px;
-  background: #ffffff;
-  border: 2px solid #d9e9fb;
+  background: var(--card-bg);
+  border: 2px solid var(--border-secondary);
   border-radius: 24px;
   padding: 28px 32px;
-  color: #4d6385;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -425,8 +425,8 @@ onMounted(() => {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 3px solid rgba(38, 164, 255, 0.18);
-  border-top-color: #26a4ff;
+  border: 3px solid color-mix(in srgb, var(--interactive-primary) 18%, transparent);
+  border-top-color: var(--interactive-primary);
   animation: community-activity-pane-spin 0.8s linear infinite;
 }
 
@@ -438,18 +438,18 @@ onMounted(() => {
 
 .community-activity-pane__ghost-btn,
 .community-activity-pane__page-btn {
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 999px;
-  background: #ffffff;
-  color: #3f5476;
+  background: var(--card-bg);
+  color: var(--text-secondary);
   font-size: 0.92rem;
   padding: 10px 18px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    border-color: #26a4ff;
-    color: #26a4ff;
+    border-color: var(--border-focus);
+    color: var(--interactive-primary);
   }
 
   &:disabled {
@@ -465,7 +465,7 @@ onMounted(() => {
 .community-activity-pane__end-label {
   padding-top: 16px;
   text-align: center;
-  color: #7c96bb;
+  color: var(--text-muted);
   font-size: 0.92rem;
 }
 
@@ -475,7 +475,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: #4d6385;
+  color: var(--text-secondary);
 }
 
 @keyframes community-activity-pane-spin {

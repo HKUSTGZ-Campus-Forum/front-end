@@ -137,8 +137,8 @@ onUnmounted(() => clearInterval(timer));
   overflow: hidden;
   width: 100%;
   aspect-ratio: 1024 / 341;
-  background: #c8e0f4;
-  box-shadow: 0 2px 12px rgba(38, 164, 255, 0.1);
+  background: var(--surface-secondary);
+  box-shadow: var(--card-shadow);
   user-select: none;
 }
 
@@ -197,14 +197,14 @@ onUnmounted(() => clearInterval(timer));
   margin: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface-primary) 55%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
   z-index: 2;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-small);
   box-sizing: border-box;
   line-height: 1;
   -webkit-appearance: none;
@@ -212,7 +212,7 @@ onUnmounted(() => clearInterval(timer));
   aspect-ratio: 1 / 1;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.85);
+    background: color-mix(in srgb, var(--surface-primary) 85%, transparent);
     transform: translateY(-50%) scale(1.1);
   }
 
@@ -229,8 +229,8 @@ onUnmounted(() => clearInterval(timer));
   display: block;
   width: 7px;
   height: 7px;
-  border-top: 1.5px solid #555;
-  border-right: 1.5px solid #555;
+  border-top: 1.5px solid var(--text-secondary);
+  border-right: 1.5px solid var(--text-secondary);
 
   &.chevron-left {
     transform: rotate(-135deg) translate(-0.5px, 0.5px);
@@ -266,14 +266,14 @@ onUnmounted(() => clearInterval(timer));
   max-height: 8px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface-primary) 55%, transparent);
   cursor: pointer;
   padding: 0;
   transition: background 0.2s, transform 0.2s;
   box-sizing: content-box;
 
   &.active {
-    background: #26a4ff;
+    background: var(--interactive-primary);
     transform: scale(1.25);
   }
 }
