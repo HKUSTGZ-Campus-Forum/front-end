@@ -262,6 +262,14 @@ function formatTime(time: number): string {
 function isBanned(day: number, period: number): boolean {
   return props.bannedPeriods[day]?.[period] ?? false
 }
+
+// Ban cells are always rendered so blocked periods stay visible after leaving
+// edit mode; only edit mode makes them clickable (the readonly overlay passes
+// pointer events through so lecture hover still works).
+function onCellClick(day: number, period: number) {
+  if (!props.filterMode) return
+  emit('toggle-ban', day, period)
+}
 </script>
 
 <template>
@@ -298,40 +306,43 @@ function isBanned(day: number, period: number): boolean {
       {{ label }}
     </div>
 
-    <!-- Banned period overlays -->
-    <template v-if="filterMode">
-      <div v-for="d in maxDayNum" :key="`col-${d}`">
-        <div
-          v-for="p in 8"
-          :key="`${d}-${p}`"
-          class="timetable__cell"
-          :class="{ 'timetable__cell--banned': isBanned(d - 1, p - 1) }"
-          :style="{
-            left: `${timeColWidth + (d - 1) * dayColWidth}px`,
-            top: `${headerHeight + (p - 1) * rowHeight}px`,
-            width: `${dayColWidth}px`,
-            height: `${rowHeight}px`,
-          }"
-          @click="emit('toggle-ban', d - 1, p - 1)"
-        >
-          <!-- Hover hint icons (mirrors the original planner: X to block,
-               rotate-ccw to restore). aria-hidden: the cell itself is the
-               interactive element and has no text content. -->
-          <Icon
-            v-if="!isBanned(d - 1, p - 1)"
-            name="lucide:x"
-            class="timetable__cell-icon timetable__cell-icon--ban"
-            aria-hidden="true"
-          />
-          <Icon
-            v-else
-            name="lucide:rotate-ccw"
-            class="timetable__cell-icon timetable__cell-icon--unban"
-            aria-hidden="true"
-          />
-        </div>
+    <!-- Banned period overlays. Always rendered so blocked periods stay
+         visible after leaving edit mode; in edit mode they are clickable and
+         show hover hint icons, otherwise they are read-only markers. -->
+    <div v-for="d in maxDayNum" :key="`col-${d}`">
+      <div
+        v-for="p in 8"
+        :key="`${d}-${p}`"
+        class="timetable__cell"
+        :class="{
+          'timetable__cell--banned': isBanned(d - 1, p - 1),
+          'timetable__cell--readonly': !filterMode,
+        }"
+        :style="{
+          left: `${timeColWidth + (d - 1) * dayColWidth}px`,
+          top: `${headerHeight + (p - 1) * rowHeight}px`,
+          width: `${dayColWidth}px`,
+          height: `${rowHeight}px`,
+        }"
+        @click="onCellClick(d - 1, p - 1)"
+      >
+        <!-- Hover hint icons (mirrors the original planner: X to block,
+             rotate-ccw to restore), shown only in edit mode. aria-hidden:
+             the cell itself is the interactive element and has no text. -->
+        <Icon
+          v-if="filterMode && !isBanned(d - 1, p - 1)"
+          name="lucide:x"
+          class="timetable__cell-icon timetable__cell-icon--ban"
+          aria-hidden="true"
+        />
+        <Icon
+          v-else-if="filterMode"
+          name="lucide:rotate-ccw"
+          class="timetable__cell-icon timetable__cell-icon--unban"
+          aria-hidden="true"
+        />
       </div>
-    </template>
+    </div>
 
     <!-- Lecture blocks -->
     <div
@@ -458,8 +469,15 @@ function isBanned(day: number, period: number): boolean {
     cursor: pointer;
     transition: background 0.15s;
 
-    &:hover {
+    &:not(.timetable__cell--readonly):hover {
       background: color-mix(in srgb, var(--semantic-error) 13%, transparent);
+    }
+
+    /* Outside edit mode the ban markers are read-only: no pointer cursor and
+       clicks/hover pass through so lecture blocks below stay interactive. */
+    &--readonly {
+      cursor: default;
+      pointer-events: none;
     }
 
     &--banned {
@@ -472,7 +490,7 @@ function isBanned(day: number, period: number): boolean {
         color-mix(in srgb, var(--semantic-error) 24%, var(--surface-primary));
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--semantic-error) 38%, transparent);
 
-      &:hover {
+      &:not(.timetable__cell--readonly):hover {
         background:
           repeating-linear-gradient(
             135deg,
@@ -501,7 +519,7 @@ function isBanned(day: number, period: number): boolean {
       &--unban {
         color: var(--timetable-ban-icon);
         font-size: 21px;
-        opacity: 0.75;
+        opacity: 0;
       }
     }
 
@@ -509,12 +527,8 @@ function isBanned(day: number, period: number): boolean {
       opacity: 0.7;
     }
 
-    &--banned &-icon--unban {
-      opacity: 0.75;
-    }
-
     &--banned:hover &-icon--unban {
-      opacity: 0.95;
+      opacity: 0.9;
     }
   }
 
