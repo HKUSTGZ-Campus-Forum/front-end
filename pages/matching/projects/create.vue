@@ -176,7 +176,7 @@ const createProjectWithDescription = async (description) => {
 }
 
 .title-icon {
-  color: #3498db;
+  color: var(--interactive-primary, #3498db);
 }
 
 .create-header p {
@@ -192,8 +192,8 @@ const createProjectWithDescription = async (description) => {
   max-width: 600px;
   margin: 0 auto;
   padding: 16px;
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background: var(--warning-background, rgba(255, 193, 7, 0.1));
+  border: 1px solid color-mix(in srgb, var(--warning-color, #ffc107) 30%, transparent);
   border-radius: 8px;
   font-size: 0.9rem;
   color: var(--text-secondary, #7f8c8d);
@@ -202,20 +202,20 @@ const createProjectWithDescription = async (description) => {
 
 .tip-icon {
   flex-shrink: 0;
-  color: #ffc107;
+  color: var(--warning-color, #ffc107);
   margin-top: 2px;
 }
 
 .project-form {
   background: var(--surface-primary, white);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-medium, 0 2px 10px rgba(0,0,0,0.08));
   overflow: hidden;
 }
 
 .form-section {
   padding: 30px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border-primary, #e9ecef);
 }
 
 .form-section:last-child {
@@ -262,7 +262,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--interactive-primary, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary, #3498db) 10%, transparent);
 }
 
 textarea {
@@ -299,7 +299,7 @@ textarea {
   display: flex;
   justify-content: flex-end;
   gap: 16px;
-  background: #f8f9fa;
+  background: var(--surface-secondary, #f8f9fa);
 }
 
 .btn {
@@ -322,24 +322,24 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--btn-primary-bg);
-  color: white;
-  border-color: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg, #3498db);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--btn-primary-bg, #3498db);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2980b9;
-  border-color: #2980b9;
+  background: var(--btn-primary-bg-hover, #2980b9);
+  border-color: var(--btn-primary-bg-hover, #2980b9);
 }
 
 .btn-secondary {
   background: var(--surface-primary, white);
   color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  border-color: var(--border-secondary, #bdc3c7);
 }
 
 .btn-secondary:hover {
-  background: #ecf0f1;
+  background: var(--surface-secondary, #ecf0f1);
 }
 
 .spinning {

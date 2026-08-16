@@ -750,7 +750,7 @@ useHead({
   border: none;
   border-radius: 50%;
   background: var(--modal-backdrop);
-  color: #fff;
+  color: var(--text-inverse, #ffffff);
   cursor: pointer;
 }
 

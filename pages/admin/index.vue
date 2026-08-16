@@ -462,7 +462,7 @@ onMounted(loadOverview);
 .admin-overview__day-switcher button {
   border: 0;
   background: var(--btn-primary-bg);
-  color: #fff;
+  color: var(--text-inverse, #ffffff);
   cursor: pointer;
 
   &:disabled {
@@ -686,7 +686,7 @@ onMounted(loadOverview);
 .admin-overview__action {
   width: fit-content;
   background: var(--btn-primary-bg);
-  color: #fff;
+  color: var(--text-inverse, #ffffff);
 }
 
 @media (max-width: 768px) {

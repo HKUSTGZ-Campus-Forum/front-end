@@ -685,7 +685,7 @@ onUnmounted(() => clearInterval(timer))
   flex-shrink: 0;
 
   &.on {
-    background: rgba(16, 185, 129, 0.12);
+    background: var(--success-background, rgba(16, 185, 129, 0.12));
     color: var(--semantic-success);
   }
 
@@ -695,8 +695,8 @@ onUnmounted(() => clearInterval(timer))
   }
 
   &.paused {
-    background: rgba(245, 158, 11, 0.14);
-    color: #b45309;
+    background: var(--warning-background, rgba(245, 158, 11, 0.14));
+    color: var(--warning-color, #b45309);
   }
 }
 
@@ -756,7 +756,7 @@ onUnmounted(() => clearInterval(timer))
 
   &:hover {
     color: var(--interactive-primary);
-    background: rgba(38, 164, 255, 0.06);
+    background: var(--info-background, rgba(38, 164, 255, 0.06));
   }
 
   &.active {
@@ -787,8 +787,8 @@ onUnmounted(() => clearInterval(timer))
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.02em;
-  color: #fff;
-  background: #ef4444;
+  color: var(--text-inverse, #ffffff);
+  background: var(--error-color, #ef4444);
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -922,14 +922,14 @@ onUnmounted(() => clearInterval(timer))
   :deep(blockquote) {
     margin: 12px 0;
     padding: 10px 16px;
-    background: rgba(38, 164, 255, 0.06);
+    background: var(--info-background, rgba(38, 164, 255, 0.06));
     border-left: 3px solid var(--interactive-primary);
     border-radius: 0 8px 8px 0;
     color: var(--text-secondary);
     font-weight: 500;
   }
   :deep(code) {
-    background: rgba(38, 164, 255, 0.07);
+    background: var(--info-background, rgba(38, 164, 255, 0.07));
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.88em;
@@ -937,7 +937,7 @@ onUnmounted(() => clearInterval(timer))
   }
   :deep(pre) {
     background: var(--sidebar-bg);
-    color: #e2e8f0;
+    color: var(--overlay-text, #eef3fa);
     padding: 14px 18px;
     border-radius: 10px;
     overflow-x: auto;
@@ -1006,7 +1006,7 @@ onUnmounted(() => clearInterval(timer))
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   &:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(38, 164, 255, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary, #26a4ff) 10%, transparent);
   }
   &::placeholder { color: var(--text-muted); }
 }
@@ -1015,8 +1015,8 @@ onUnmounted(() => clearInterval(timer))
 
 .kg-form-error {
   padding: 10px 14px;
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: var(--error-background, rgba(239, 68, 68, 0.06));
+  border: 1px solid color-mix(in srgb, var(--error-color, #ef4444) 20%, transparent);
   border-radius: 10px;
   color: var(--semantic-error);
   font-size: 0.875rem;
