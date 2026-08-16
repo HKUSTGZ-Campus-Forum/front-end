@@ -267,7 +267,7 @@ onMounted(() => {
   }
 
   .verification-description {
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
     font-size: 0.9rem;
   }
 
@@ -361,7 +361,7 @@ onMounted(() => {
     .code-hint {
       margin-top: 0.25rem;
       font-size: 0.8rem;
-      color: var(--text-tertiary, #888);
+      color: var(--text-muted);
       text-align: center;
     }
   }
@@ -370,8 +370,8 @@ onMounted(() => {
 .verify-button {
   width: 100%;
   padding: 0.875rem;
-  background: var(--primary-color, #4361ee);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -455,7 +455,7 @@ onMounted(() => {
   }
 
   .back-button {
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
     border-color: var(--border-secondary, #ddd);
 
     &:hover:not(:disabled) {

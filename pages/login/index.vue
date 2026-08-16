@@ -110,24 +110,24 @@ async function handleLogin() {
 .kg-login-card {
   width: 100%;
   max-width: 420px;
-  background: #F5FBFE;
-  border: 1.5px solid #c8dff8;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-primary);
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(40, 57, 101, 0.12);
+  box-shadow: var(--shadow-large);
   padding: 40px 36px;
 }
 
 .kg-login-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 6px;
   text-align: center;
 }
 
 .kg-login-subtitle {
   font-size: 0.9rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   margin: 0 0 32px;
   text-align: center;
 }
@@ -138,23 +138,23 @@ async function handleLogin() {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  label { font-size: 0.875rem; font-weight: 600; color: #4a6080; }
+  label { font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); }
 }
 
 .kg-input {
   padding: 11px 14px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 12px;
-  background: #fff;
-  color: #1a2a4a;
+  background: var(--surface-primary);
+  color: var(--text-primary);
   font-size: 0.93rem;
   font-family: inherit;
   outline: none;
   width: 100%;
   box-sizing: border-box;
   transition: border-color 0.2s;
-  &:focus { border-color: #26a4ff; }
-  &::placeholder { color: #9ab0c6; }
+  &:focus { border-color: var(--interactive-primary); }
+  &::placeholder { color: var(--text-muted); }
 }
 
 .kg-password-field {
@@ -169,11 +169,11 @@ async function handleLogin() {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #6a85a0;
+  color: var(--text-muted);
   font-size: 0.82rem;
   cursor: pointer;
   padding: 4px;
-  &:hover { color: #26a4ff; }
+  &:hover { color: var(--interactive-primary); }
 }
 
 .kg-form-options {
@@ -187,39 +187,39 @@ async function handleLogin() {
   align-items: center;
   gap: 7px;
   font-size: 0.875rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   cursor: pointer;
-  input { accent-color: #26a4ff; }
+  input { accent-color: var(--interactive-primary); }
 }
 
 .kg-forgot-link {
   font-size: 0.875rem;
-  color: #26a4ff;
+  color: var(--interactive-primary);
   text-decoration: none;
   &:hover { text-decoration: underline; }
 }
 
 .kg-error-msg {
   padding: 10px 14px;
-  background: rgba(224, 90, 90, 0.1);
-  border: 1px solid rgba(224, 90, 90, 0.3);
+  background: var(--error-background);
+  border: 1px solid color-mix(in srgb, var(--error-color) 30%, transparent);
   border-radius: 10px;
-  color: #e05a5a;
+  color: var(--error-color);
   font-size: 0.875rem;
 }
 
 .kg-submit-btn {
   width: 100%;
   padding: 12px;
-  background: #283965;
-  color: #fff;
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: 14px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
-  &:hover:not(:disabled) { background: #1a5fa8; }
+  &:hover:not(:disabled) { background: var(--interactive-hover); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -227,11 +227,11 @@ async function handleLogin() {
   text-align: center;
   margin-top: 20px;
   font-size: 0.9rem;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-link {
-  color: #26a4ff;
+  color: var(--interactive-primary);
   text-decoration: none;
   font-weight: 600;
   &:hover { text-decoration: underline; }

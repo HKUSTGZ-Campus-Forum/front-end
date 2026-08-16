@@ -229,7 +229,7 @@ defineExpose({ setRows })
 
   &:focus {
     border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px rgba(38, 164, 255, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent);
   }
 }
 
@@ -322,7 +322,7 @@ defineExpose({ setRows })
   gap: 3px;
 
   span {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.78rem;
   }
 }
@@ -337,7 +337,7 @@ defineExpose({ setRows })
 .am-grade-pill {
   align-self: center;
   border-radius: 999px;
-  background: rgba(38, 164, 255, 0.1);
+  background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   color: var(--interactive-active);
   font-size: 0.76rem;
   font-weight: 800;

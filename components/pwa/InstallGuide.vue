@@ -225,7 +225,7 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   font-size: 14px;
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--text-inverse) 10%, transparent);
 }
 
 .install-float-btn:hover {

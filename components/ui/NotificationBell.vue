@@ -486,7 +486,7 @@ onUnmounted(() => {
   }
   
   &.unread {
-    background: rgba(59, 130, 246, 0.04);
+    background: color-mix(in srgb, var(--interactive-primary) 4%, transparent);
     border-left: 3px solid var(--interactive-primary);
   }
 }
@@ -521,7 +521,7 @@ onUnmounted(() => {
 
 .notification-time {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
 }
 
 .unread-indicator {

@@ -287,7 +287,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   }
 
   &__menu-count {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.74rem;
     font-weight: 700;
   }

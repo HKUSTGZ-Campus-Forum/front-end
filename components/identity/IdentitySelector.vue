@@ -323,7 +323,7 @@ onUnmounted(() => {
   &:focus {
     outline: none;
     border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px var(--interactive-primary)20;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 20%, transparent);
   }
   
   .identity-selector--open & {
@@ -420,7 +420,7 @@ onUnmounted(() => {
   }
   
   &--selected {
-    background: var(--interactive-primary)10;
+    background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
     color: var(--interactive-primary);
   }
   

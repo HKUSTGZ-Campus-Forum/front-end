@@ -41,12 +41,12 @@ const chartOptions = computed<ApexOptions>(() => ({
   legend: { show: false },
   xaxis: {
     categories: categories.value,
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
     axisBorder: { color: "var(--border-primary)" },
     axisTicks: { color: "var(--border-primary)" },
   },
   yaxis: {
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
   },
   tooltip: {
     theme: "light",

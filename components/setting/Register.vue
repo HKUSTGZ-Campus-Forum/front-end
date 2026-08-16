@@ -295,7 +295,7 @@ const emit = defineEmits(['register-success']);
   .register-setting {
     padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-small);
 
     @media (min-width: 480px) {
       padding: 1.25rem;
@@ -324,7 +324,7 @@ const emit = defineEmits(['register-success']);
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary);
       font-size: 0.95rem;
 
       @media (max-width: 479px) {
@@ -335,7 +335,7 @@ const emit = defineEmits(['register-success']);
     input {
       width: 100%;
       padding: 0.875rem;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border-primary);
       border-radius: 6px;
       font-size: 1rem;
       min-height: 44px; // Touch-friendly minimum height
@@ -349,8 +349,8 @@ const emit = defineEmits(['register-success']);
       
       &:focus {
         outline: none;
-        border-color: var(--color-blue-7, #9fc3e7);
-        box-shadow: 0 0 0 3px rgba(159, 195, 231, 0.2);
+        border-color: var(--interactive-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 20%, transparent);
       }
 
       // Prevent zoom on iOS
@@ -378,7 +378,7 @@ const emit = defineEmits(['register-success']);
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: #666;
+      color: var(--text-secondary);
       cursor: pointer;
       padding: 0.5rem;
       min-height: 44px; // Touch-friendly minimum size
@@ -394,11 +394,11 @@ const emit = defineEmits(['register-success']);
       }
       
       &:hover {
-        color: #333;
+        color: var(--text-primary);
       }
 
       &:active {
-        background-color: rgba(0, 0, 0, 0.05);
+        background-color: color-mix(in srgb, var(--text-secondary) 8%, transparent);
         border-radius: 4px;
       }
     }
@@ -406,7 +406,7 @@ const emit = defineEmits(['register-success']);
   
   .error-text {
     display: block;
-    color: #dc3545;
+    color: var(--error-color);
     font-size: 0.85rem;
     margin-top: 0.25rem;
 
@@ -416,13 +416,13 @@ const emit = defineEmits(['register-success']);
   }
   
   .global-error {
-    color: #dc3545;
+    color: var(--error-color);
     margin-bottom: 1rem;
     padding: 1rem;
-    background-color: rgba(220, 53, 69, 0.1);
+    background-color: var(--error-background);
     border-radius: 6px;
     font-size: 0.9rem;
-    border-left: 4px solid #dc3545;
+    border-left: 4px solid var(--error-color);
 
     @media (min-width: 480px) {
       padding: 0.75rem;
@@ -437,8 +437,8 @@ const emit = defineEmits(['register-success']);
   .register-btn {
     width: 100%;
     padding: 0.875rem;
-    background-color: var(--color-blue-7, #9fc3e7);
-    color: white;
+    background-color: var(--interactive-primary);
+    color: var(--text-inverse);
     border: none;
     border-radius: 6px;
     font-size: 1rem;
@@ -456,7 +456,7 @@ const emit = defineEmits(['register-success']);
     }
     
     &:hover:not(:disabled) {
-      background-color: #7ba8d6; // Manually tuned darker blue shade
+      background-color: var(--interactive-hover);
       transform: translateY(-1px);
     }
 
@@ -472,11 +472,11 @@ const emit = defineEmits(['register-success']);
   
   .success-message {
     padding: 1rem;
-    background-color: rgba(40, 167, 69, 0.1);
+    background-color: var(--success-background);
     border-radius: 6px;
-    color: #28a745;
+    color: var(--success-color);
     margin-bottom: 1rem;
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--success-color);
     font-size: 0.95rem;
 
     @media (min-width: 480px) {
@@ -496,7 +496,7 @@ const emit = defineEmits(['register-success']);
   .email-hint {
     margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
 
     p {
       margin: 0 0 0.25rem 0;

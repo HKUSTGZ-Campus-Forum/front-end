@@ -864,7 +864,7 @@ function toggleBan(day: number, period: number) {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-tertiary);
+    color: var(--text-muted);
   }
 
   /* Dim overlay (solver hint). Scoped to the timetable card (the nearest

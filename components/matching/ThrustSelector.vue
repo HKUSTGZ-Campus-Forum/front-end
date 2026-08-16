@@ -362,8 +362,8 @@ const addCustomThrust = () => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--accent-primary, #3498db);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
   border-radius: 20px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -371,7 +371,7 @@ const addCustomThrust = () => {
 }
 
 .selected-tag:hover {
-  background: var(--accent-secondary, #2980b9);
+  background: var(--interactive-hover);
 }
 
 .remove-icon {
@@ -431,9 +431,9 @@ const addCustomThrust = () => {
 }
 
 .thrust-option.selected {
-  background: var(--accent-primary, #3498db);
-  color: white;
-  border-color: var(--accent-primary, #3498db);
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
 }
 
 .thrust-option.disabled {
@@ -465,14 +465,14 @@ const addCustomThrust = () => {
 
 .custom-input:focus {
   outline: none;
-  border-color: var(--accent-primary, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .add-btn {
   padding: 12px 16px;
-  background: var(--accent-primary, #3498db);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: 8px;
   font-weight: 500;
@@ -484,7 +484,7 @@ const addCustomThrust = () => {
 }
 
 .add-btn:hover:not(:disabled) {
-  background: var(--accent-secondary, #2980b9);
+  background: var(--interactive-hover);
 }
 
 .add-btn:disabled {

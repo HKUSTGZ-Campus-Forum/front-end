@@ -922,18 +922,18 @@ onUnmounted(() => {
       
       .verification-badge {
         .verified {
-          color: var(--success-color, #28a745);
+          color: var(--semantic-success);
           font-weight: 600;
-          background: var(--success-background, rgba(40, 167, 69, 0.1));
+          background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
           padding: 0.25rem 0.75rem;
           border-radius: 20px;
           font-size: 0.9rem;
         }
         
         .unverified {
-          color: var(--warning-color, #ffc107);
+          color: var(--semantic-warning);
           font-weight: 600;
-          background: var(--warning-background, rgba(255, 193, 7, 0.1));
+          background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
           padding: 0.25rem 0.75rem;
           border-radius: 20px;
           font-size: 0.9rem;
@@ -1000,13 +1000,13 @@ onUnmounted(() => {
     }
     
     &:focus {
-      border-color: var(--primary-color, #4361ee);
-      box-shadow: 0 0 0 3px var(--primary-color-alpha, rgba(67, 97, 238, 0.25));
+      border-color: var(--interactive-primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 25%, transparent);
       outline: none;
     }
     
     &:disabled {
-      background: var(--surface-disabled, #f5f5f5);
+      background: var(--surface-secondary);
       cursor: not-allowed;
     }
     
@@ -1061,7 +1061,7 @@ onUnmounted(() => {
   .strength-bar {
     width: 100%;
     height: 4px;
-    background: var(--surface-disabled, #f0f0f0);
+    background: var(--surface-secondary);
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 0.25rem;
@@ -1071,33 +1071,33 @@ onUnmounted(() => {
       transition: all 0.3s ease;
       
       &.weak {
-        background: var(--error-color, #dc3545);
+        background: var(--semantic-error);
       }
       
       &.medium {
-        background: var(--warning-color, #ffc107);
+        background: var(--semantic-warning);
       }
       
       &.good {
-        background: var(--info-color, #17a2b8);
+        background: var(--semantic-info);
       }
       
       &.strong {
-        background: var(--success-color, #28a745);
+        background: var(--semantic-success);
       }
     }
   }
   
   .strength-text {
     font-size: 0.8rem;
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
   }
 }
 
 .email-hint {
   margin-top: 0.5rem;
   font-size: 0.8rem;
-  color: var(--text-tertiary, #888);
+  color: var(--text-muted);
   
   p {
     margin: 0 0 0.25rem 0;
@@ -1111,7 +1111,7 @@ onUnmounted(() => {
     li {
       margin-bottom: 0.125rem;
       font-family: monospace;
-      color: var(--primary-color, #4361ee);
+      color: var(--interactive-primary);
     }
   }
 }
@@ -1119,8 +1119,8 @@ onUnmounted(() => {
 // Button Styles
 .verify-btn, .add-email-btn, .change-password-btn {
   padding: 0.875rem 1.5rem;
-  background: var(--primary-color, #4361ee);
-  color: white;
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -1136,12 +1136,12 @@ onUnmounted(() => {
   }
   
   &:hover:not(:disabled) {
-    background: var(--primary-color-hover, #3a56d4);
+    background: var(--interactive-hover);
     transform: translateY(-1px);
   }
   
   &:disabled {
-    background: var(--surface-disabled, #a0a0a0);
+    background: var(--interactive-disabled);
     cursor: not-allowed;
     transform: none;
   }
@@ -1167,7 +1167,7 @@ onUnmounted(() => {
   
   &:hover:not(:disabled) {
     border-color: var(--text-secondary, #666);
-    background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+    background: var(--surface-secondary);
   }
   
   &:disabled {
@@ -1187,7 +1187,7 @@ onUnmounted(() => {
 // Message Styles
 .error-text {
   display: block;
-  color: var(--error-color, #dc3545);
+  color: var(--semantic-error);
   font-size: 0.85rem;
   margin-top: 0.25rem;
   
@@ -1198,12 +1198,12 @@ onUnmounted(() => {
 
 .error-message {
   padding: 1rem;
-  background: var(--error-background, #ffebee);
-  color: var(--error-color, #d32f2f);
+  background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+  color: var(--semantic-error);
   border-radius: 6px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
-  border-left: 4px solid var(--error-color, #d32f2f);
+  border-left: 4px solid var(--semantic-error);
   
   @media (min-width: 480px) {
     padding: 0.75rem;
@@ -1213,12 +1213,12 @@ onUnmounted(() => {
 
 .success-message {
   padding: 1rem;
-  background: var(--success-background, rgba(40, 167, 69, 0.1));
-  color: var(--success-color, #28a745);
+  background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  color: var(--semantic-success);
   border-radius: 6px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
-  border-left: 4px solid var(--success-color, #28a745);
+  border-left: 4px solid var(--semantic-success);
   
   @media (min-width: 480px) {
     padding: 0.75rem;
@@ -1233,7 +1233,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-backdrop);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
@@ -1360,8 +1360,8 @@ onUnmounted(() => {
     
     .app-status {
       .status-active {
-        background: var(--success-background, rgba(40, 167, 69, 0.1));
-        color: var(--success-color, #28a745);
+        background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+        color: var(--semantic-success);
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         font-size: 0.85rem;
@@ -1369,8 +1369,8 @@ onUnmounted(() => {
       }
       
       .status-expired {
-        background: var(--warning-background, rgba(255, 193, 7, 0.1));
-        color: var(--warning-color, #ffc107);
+        background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
+        color: var(--semantic-warning);
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         font-size: 0.85rem;
@@ -1420,8 +1420,8 @@ onUnmounted(() => {
       gap: 0.5rem;
       
       .scope-tag {
-        background: var(--primary-color-alpha, rgba(67, 97, 238, 0.1));
-        color: var(--primary-color, #4361ee);
+        background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
+        color: var(--interactive-primary);
         padding: 0.25rem 0.75rem;
         border-radius: 16px;
         font-size: 0.8rem;
@@ -1430,7 +1430,7 @@ onUnmounted(() => {
     }
     
     .app-link {
-      color: var(--primary-color, #4361ee);
+      color: var(--interactive-primary);
       text-decoration: none;
       word-break: break-all;
       
@@ -1461,8 +1461,8 @@ onUnmounted(() => {
 .revoke-btn {
   padding: 0.5rem 1rem;
   background: transparent;
-  color: var(--error-color, #dc3545);
-  border: 1px solid var(--error-color, #dc3545);
+  color: var(--semantic-error);
+  border: 1px solid var(--semantic-error);
   border-radius: 4px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -1470,8 +1470,8 @@ onUnmounted(() => {
   font-weight: 500;
   
   &:hover:not(:disabled) {
-    background: var(--error-color, #dc3545);
-    color: white;
+    background: var(--semantic-error);
+    color: var(--text-inverse);
   }
   
   &:disabled {
@@ -1495,7 +1495,7 @@ onUnmounted(() => {
   
   &:hover:not(:disabled) {
     border-color: var(--text-secondary, #666);
-    background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+    background: var(--surface-secondary);
   }
   
   &:disabled {

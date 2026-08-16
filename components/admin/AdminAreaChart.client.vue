@@ -47,14 +47,14 @@ const chartOptions = computed<ApexOptions>(() => ({
   },
   xaxis: {
     categories: props.categories,
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
     axisBorder: { color: "var(--border-primary)" },
     axisTicks: { color: "var(--border-primary)" },
   },
   yaxis: {
     min: 0,
     forceNiceScale: true,
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
   },
   tooltip: {
     theme: "light",

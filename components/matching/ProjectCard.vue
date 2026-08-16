@@ -165,11 +165,11 @@ const viewCreatorProfile = () => {
 
 <style scoped>
 .project-card {
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  border: 1px solid #e9ecef;
+  box-shadow: var(--shadow-small);
+  border: 1px solid var(--border-primary);
   transition: all 0.3s ease;
   position: relative;
   height: fit-content;
@@ -178,11 +178,11 @@ const viewCreatorProfile = () => {
 
 .project-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-large);
 }
 
 .project-card:focus {
-  outline: 2px solid #3498db;
+  outline: 2px solid var(--interactive-primary);
   outline-offset: 2px;
 }
 
@@ -190,8 +190,8 @@ const viewCreatorProfile = () => {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: linear-gradient(135deg, #f39c12, #e67e22);
-  color: white;
+  background: linear-gradient(135deg, var(--semantic-warning), var(--warning-color));
+  color: var(--text-inverse);
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -222,8 +222,8 @@ const viewCreatorProfile = () => {
 }
 
 .project-type {
-  background: #ecf0f1;
-  color: #7f8c8d;
+  background: var(--surface-tertiary);
+  color: var(--text-muted);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -238,12 +238,12 @@ const viewCreatorProfile = () => {
   text-transform: capitalize;
 }
 
-.difficulty-beginner { background: #d5f4e6; color: #27ae60; }
-.difficulty-intermediate { background: #fef9e7; color: #f39c12; }
-.difficulty-advanced { background: #fadbd8; color: #e74c3c; }
+.difficulty-beginner { background: var(--success-background); color: var(--success-color); }
+.difficulty-intermediate { background: var(--warning-background); color: var(--warning-color); }
+.difficulty-advanced { background: var(--error-background); color: var(--error-color); }
 
 .project-description {
-  color: #7f8c8d;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 16px;
 }
@@ -266,8 +266,8 @@ const viewCreatorProfile = () => {
 }
 
 .skill-tag {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
   padding: 4px 8px;
   border-radius: 10px;
   font-size: 0.8rem;
@@ -275,7 +275,7 @@ const viewCreatorProfile = () => {
 }
 
 .more-skills {
-  color: #7f8c8d;
+  color: var(--text-muted);
   font-size: 0.8rem;
   font-style: italic;
 }
@@ -283,9 +283,9 @@ const viewCreatorProfile = () => {
 .match-reasons {
   margin-bottom: 16px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   border-radius: 8px;
-  border-left: 3px solid #3498db;
+  border-left: 3px solid var(--interactive-primary);
 }
 
 .match-reasons h4 {
@@ -298,7 +298,7 @@ const viewCreatorProfile = () => {
 .reasons-list {
   margin: 0;
   padding-left: 16px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -318,7 +318,7 @@ const viewCreatorProfile = () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .creator-info {
@@ -326,7 +326,7 @@ const viewCreatorProfile = () => {
   align-items: center;
   gap: 10px;
   padding-top: 16px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--border-primary);
 }
 
 .creator-avatar {
@@ -337,11 +337,11 @@ const viewCreatorProfile = () => {
 
 .creator-avatar:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-small);
 }
 
 .creator-avatar:focus {
-  outline: 2px solid #3498db;
+  outline: 2px solid var(--interactive-primary);
   outline-offset: 2px;
 }
 

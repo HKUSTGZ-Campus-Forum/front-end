@@ -376,15 +376,15 @@ onMounted(() => {
           transition: width 0.3s ease;
 
           &.weak {
-            background: #ff4757;
+            background: var(--error-color);
           }
 
           &.medium {
-            background: #ffa502;
+            background: var(--warning-color);
           }
 
           &.strong {
-            background: #2ed573;
+            background: var(--success-color);
           }
         }
       }
@@ -393,15 +393,15 @@ onMounted(() => {
         font-size: 0.8rem;
 
         &.weak {
-          color: #ff4757;
+          color: var(--error-color);
         }
 
         &.medium {
-          color: #ffa502;
+          color: var(--warning-color);
         }
 
         &.strong {
-          color: #2ed573;
+          color: var(--success-color);
         }
       }
     }
@@ -417,8 +417,8 @@ onMounted(() => {
 .reset-button {
   width: 100%;
   padding: 0.875rem;
-  background: var(--primary-color, #4361ee);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -481,8 +481,8 @@ onMounted(() => {
 
   .login-button {
     padding: 0.875rem 2rem;
-    background: var(--primary-color, #4361ee);
-    color: white;
+    background: var(--primary-color);
+    color: var(--text-inverse);
     border: none;
     border-radius: 6px;
     font-size: 1rem;

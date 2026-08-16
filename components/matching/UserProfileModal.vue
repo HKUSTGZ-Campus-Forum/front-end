@@ -343,7 +343,7 @@ watch(() => props.isOpen, (newVal) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--modal-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,13 +352,13 @@ watch(() => props.isOpen, (newVal) => {
 }
 
 .modal-content {
-  background: var(--surface-primary, white);
+  background: var(--modal-bg);
   border-radius: 16px;
   max-width: 600px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--modal-shadow);
 }
 
 .modal-header {
@@ -399,7 +399,7 @@ watch(() => props.isOpen, (newVal) => {
 
 .error-icon {
   font-size: 3rem;
-  color: #e74c3c;
+  color: var(--error-color);
   margin-bottom: 16px;
 }
 
@@ -442,18 +442,18 @@ watch(() => props.isOpen, (newVal) => {
 }
 
 .experience-badge {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
 }
 
-.exp-beginner { background: #d5f4e6; color: #27ae60; }
-.exp-intermediate { background: #fef9e7; color: #f39c12; }
-.exp-advanced { background: #fadbd8; color: #e74c3c; }
-.exp-expert { background: #e8e8ff; color: #6633cc; }
+.exp-beginner { background: var(--success-background); color: var(--success-color); }
+.exp-intermediate { background: var(--warning-background); color: var(--warning-color); }
+.exp-advanced { background: var(--error-background); color: var(--error-color); }
+.exp-expert { background: var(--purple-background); color: var(--purple-color); }
 
 .availability-badge {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--purple-background);
+  color: var(--purple-color);
 }
 
 .profile-section {
@@ -487,23 +487,23 @@ watch(() => props.isOpen, (newVal) => {
 }
 
 .thrust-tag {
-  background: #fff3e0;
-  color: #f57c00;
+  background: var(--warning-background);
+  color: var(--warning-color);
 }
 
 .skill-tag {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
 }
 
 .interest-tag {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--purple-background);
+  color: var(--purple-color);
 }
 
 .role-tag {
-  background: #e8f5e8;
-  color: #2e7d32;
+  background: var(--success-background);
+  color: var(--success-color);
 }
 
 .contact-list {
@@ -561,7 +561,7 @@ watch(() => props.isOpen, (newVal) => {
 }
 
 .contact-hidden .contact-value {
-  color: var(--text-tertiary, #bbb);
+  color: var(--text-muted);
   font-weight: bold;
 }
 
@@ -621,23 +621,23 @@ watch(() => props.isOpen, (newVal) => {
 }
 
 .btn-primary {
-  background: var(--accent-primary, #3498db);
-  color: white;
-  border-color: var(--accent-primary, #3498db);
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
 }
 
 .btn-primary:hover {
-  background: var(--accent-secondary, #2980b9);
+  background: var(--interactive-hover);
 }
 
 .btn-outline {
   background: transparent;
-  color: var(--text-secondary, #7f8c8d);
-  border-color: var(--border-primary, #bdc3c7);
+  color: var(--text-secondary);
+  border-color: var(--border-primary);
 }
 
 .btn-outline:hover {
-  background: var(--surface-secondary, #ecf0f1);
+  background: var(--surface-secondary);
 }
 
 .spinning {

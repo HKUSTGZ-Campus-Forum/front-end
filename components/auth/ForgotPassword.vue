@@ -293,8 +293,8 @@ onUnmounted(() => {
 .reset-button {
   width: 100%;
   padding: 0.875rem;
-  background: var(--primary-color, #4361ee);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -361,7 +361,7 @@ onUnmounted(() => {
 
   .email-hint {
     font-size: 0.9rem;
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
     margin-bottom: 2rem;
   }
 
@@ -383,8 +383,8 @@ onUnmounted(() => {
     }
 
     &:hover:not(:disabled) {
-      background: var(--primary-color, #4361ee);
-      color: white;
+      background: var(--primary-color);
+      color: var(--text-inverse);
     }
 
     &:disabled {
