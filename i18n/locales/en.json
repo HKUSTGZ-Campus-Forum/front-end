@@ -2053,6 +2053,7 @@
     "lastPlan": "Last plan",
     "mapSearchPlaceholder": "Search the course map...",
     "searchFailed": "Course search failed. Please try again.",
+    "resultsCount": "of {total} results",
     "cartLoadFailed": "Your saved course cart could not be loaded. Please try again.",
     "cartFailed": "The course cart request failed.",
     "cartMutationAmbiguous": "The request response was uncertain. The cart now shows the latest saved server state; check it before retrying.",

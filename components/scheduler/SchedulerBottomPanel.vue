@@ -78,7 +78,7 @@ onUnmounted(() => {
         :aria-label="t('scheduler.firstPlan')"
         @click="goToStart"
       >
-        <Icon name="lucide:skip-back" class="bottom-panel__icon" />
+        <Icon name="lucide:chevrons-left" class="bottom-panel__icon" />
       </button>
       <button
         type="button"
@@ -105,7 +105,7 @@ onUnmounted(() => {
         :aria-label="t('scheduler.lastPlan')"
         @click="goToEnd"
       >
-        <Icon name="lucide:skip-forward" class="bottom-panel__icon" />
+        <Icon name="lucide:chevrons-right" class="bottom-panel__icon" />
       </button>
     </div>
 

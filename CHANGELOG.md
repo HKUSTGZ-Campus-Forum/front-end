@@ -73,6 +73,16 @@
   - 新增 `SchedulerCourseInfoPopover.vue`：ℹ️ 图标 hover 异步 `getCourseDetail` 显示小浮窗（title/code/学分/简介/pre·co-requirement/exclusion），loading/error/ready 三态（含 retry）、位置自适应防溢出、Teleport 到 body 防侧边栏裁剪、150ms 延迟关闭；替代 `SchedulerCourseDetail` 居中弹窗（Dashboard 的 `handleShowInfo`/`closeCourseDetail`/`selectedCourse`/`courseDetailStatus`/`showCourseDetail` 链路删除）
   - 移除课表块内 popularity compact badge（决策十：不在课表/bundle/section 级显示热度）；`SchedulerTimetable` 移除 `popularityByCourse`/`showPopularity` props，`SchedulerPopularityBadge` 不再被引用
   - 测试更新：`popularity-ui.test.ts` 迁移到新契约（课表无 badge / 课程卡仅课程级热度 / History 入口移除但 Dashboard 链路保留）、`hardening-ui.test.ts` 详情加载失败断言改指向 `SchedulerCourseInfoPopover`
+- **排课工作台 UI/UX 优化（第五阶段）**：课程购物车面板复刻原版
+  - 搜索框增强：左侧 `lucide:search` 图标 + 右侧行内旋转 spinner（搜索中显示）
+  - 搜索结果每项状态反馈（复刻原版 4 态）：per-course loading/success/fail 状态图标（蓝色 spinner / 绿色勾选 / 红色叉 + 文案），自动恢复（1.2s/1.8s）；+/- 按钮由 40px 实心圆形改为 30px 透明描边图标（`circle-plus` 交互蓝 / `circle-minus` 错误红），与状态图标同族同尺寸
+  - 购物车抽屉重构：面板内叠加轻遮罩 + 底部悬浮卡片（标题 + 关闭 / 课程列表 code·credit 分色 / Total Credits 总计 / `trash-2` 删除按钮）；点击抽屉遮罩关抽屉回面板，点击面板外关整个面板
+  - credit 分色统一：搜索结果与抽屉 credit 用 `creditColorVar()`（`--credit-level-1..6`）+ `· ` 前缀，与侧边栏课程卡 meta 行一致
+  - 分页与购物车按钮同排底部栏：分页居中 + Cart 胶囊按钮靠右（`shopping-cart` + "Cart (N)"）
+  - 科目标签改为硬编码常用两行（`UFUG UCUG DLED` / `AIAA AMAT DSAA FTEC MICS ROAS SMMG`），移除动态加载全部科目（过多反而失去一点即选的快捷作用）
+  - 底部翻页按钮去边框改 lucide 图标（`chevrons-left`/`chevron-left`/`chevron-right`/`chevrons-right`，与底部控制栏一致）；loading/success 状态图标包进 30px 居中占位槽，与 +/- 按钮几何一致消除水平偏移
+  - 底部控制栏两端图标同步：`skip-back`/`skip-forward` → `chevrons-left`/`chevrons-right`（保持两处翻页图标一致）
+  - 测试更新：`cart-panel.test.ts` 扩至 10 个契约（状态反馈 / 抽屉 / credit 分色 / 分页 / 硬编码科目两行 / borderless 翻页图标等）；`hardening-ui.test.ts` 同步（subject 请求移除断言）
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

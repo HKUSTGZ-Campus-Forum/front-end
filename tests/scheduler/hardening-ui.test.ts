@@ -26,7 +26,9 @@ describe('scheduler hardening UI contract', () => {
     expect(cartPanel).toContain('runPendingSchedulerAction(pendingCodes.value')
     expect(cartPanel).not.toContain("emit('add'")
     expect(cartPanel).not.toContain("emit('remove'")
-    expect(cartPanel).toContain('subjectRequests = createLatestRequestTracker()')
+    // Subject chips are curated/hardcoded now, so there is no subject request
+    // left unguarded (only search remains, tracked below)
+    expect(cartPanel).not.toContain('subjectRequests')
     expect(cartPanel).toContain('searchRequests = createLatestRequestTracker()')
     expect(cartPanel).toContain(`searchRequests.invalidate()
   searching.value = false

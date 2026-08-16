@@ -1,6 +1,6 @@
 # 排课功能 UI/UX 优化 —— 开发决策记录与计划草稿
 
-> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-3 ✅ / Step 4 ✅ 代码完成）
+> 状态：进行中（阶段 1 ✅ / 阶段 2 Step 1-3 ✅ / Step 4 ✅ 代码完成 / Step 5 ✅ 代码完成）
 > 日期：2026-08-14（2026-08-15 补充细化）
 > 范围：仅排课功能（`/schedule` → `/courses/planner` 及 dashboard/map）的 UI/UX 优化
 
@@ -231,6 +231,40 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
 - [x] **课表块**：移除 timetable 内 popularity compact badge（决策十；`SchedulerTimetable` 移除 `popularityByCourse`/`showPopularity` props，`SchedulerPopularityBadge` 组件不再被引用）
 - [x] 新增 `SchedulerPopularitySummary.vue`：极简热度 `[flame icon] looking/scheduling`，title=`popularityExplanation`、aria=`popularityAriaLabel`
 - [x] 测试更新：`popularity-ui.test.ts` 断言迁移到新契约（课表无 badge / 课程卡仅课程级热度 / History 入口移除但 Dashboard 链路保留）、`hardening-ui.test.ts` 详情加载失败断言改指向 `SchedulerCourseInfoPopover`
+
+**Step 5：课程购物车（CartPanel）UI/UX 复刻**（2026-08-16）✅ 代码完成（待视觉验收）
+- [x] **搜索框增强**：左侧 `lucide:search` 图标 + 右侧行内 `lucide:loader-circle` 旋转 spinner（搜索中显示），input flex 布局
+- [x] **搜索结果每项状态反馈**（复刻原版 4 态）：per-code `actionStates`（idle/loading/success/fail）+ 自动恢复（success 1.2s / fail 1.8s 回 idle）；loading = 蓝色旋转 spinner、success = 绿色 `circle-check`、fail = 红色 `circle-x` + `cartFailed` 文案、idle = +/- 圆形按钮（`lucide:circle-plus`/`lucide:circle-minus` 替换文字字符）
+- [x] **credit 分色**：搜索结果与购物车抽屉的 credit 均用 `creditColorVar()`（`--credit-level-1..6`，与 Step 4 课程卡/信息浮窗一致）；搜索结果 credit 从灰色徽章改为纯文字分色（对齐原版 `creditColor`）
+- [x] **购物车抽屉重构**（用户选定复刻原版形态 + 点击外部关闭）：
+  - 面板内叠加轻遮罩 `--drawer-backdrop`（light `rgba(26,42,74,.2)` / dark `rgba(0,0,0,.45)`）+ 底部悬浮卡片（`width: min(92%, 560px)`、圆角、向上投影）
+  - 卡片结构：标题（`scheduler.cart`）+ `lucide:x` 关闭按钮 / 课程列表（code · credit 分色 + title + hover 蓝 tint）/ 底部 **Total Credits** 总计（`scheduler.totalCredits`）
+  - 删除按钮改 `lucide:trash-2` 图标 + pending 时 spinner
+  - **交互层级**：点击抽屉遮罩（`@click.self`）→ 关闭抽屉回面板；点击面板外（`cart-panel` `@click.self`）→ 关闭整个面板
+- [x] **分页信息**：补 "共 N 条结果"（新增 i18n `scheduler.resultsCount`，zh `共 {total} 条结果` / en `of {total} results`）
+- [x] Cart 按钮：加 `lucide:shopping-cart` 图标 + hover 边框/文字变色
+- [x] 图标统一 lucide 本地集；新增 `@keyframes cart-spin` 旋转动画
+- [x] 测试：`cart-panel.test.ts` 新增 5 个契约测试（三态反馈 / 抽屉遮罩+总计 / credit 分色 / 分页结果数 / 搜索图标+spinner），共 7 个全绿
+- [x] i18n：`resultsCount` 新增（zh/en 同步），`i18n:check` 通过（1666 keys）
+- [x] **2026-08-16 视觉验收反馈（3 条）**：
+  - **credit 格式统一**：搜索结果与购物车抽屉的 credit 前加 `· ` 前缀（`CODE · N credits`），与侧边栏课程卡 meta 行格式一致
+  - **+ − 按钮弱化**：从 40px 实心圆形（绿/红底白图标）改为 30px 透明描边图标按钮——`lucide:circle-plus`（交互蓝）/ `lucide:circle-minus`（错误红），与状态图标（circle-check/circle-x/loader）同族同尺寸（22px），hover 时 10% currentColor tint；透明度/风格统一不刺眼
+  - **Cart 按钮位置**：从独占一行满宽按钮改为与分页**同一底部栏**——分页居中（flex:1 占位）、Cart 按钮靠右的紧凑胶囊（`lucide:shopping-cart` + "Cart (N)"，圆角 999px、交互蓝 tint 底）
+  - 测试相应更新：`cart-panel.test.ts` 的按钮契约改为新样式（30px/透明/圆角/circle 图标），新增"footer 同排布局"与"credit 点号统一"契约，共 9 个全绿
+- [x] **2026-08-16 视觉验收反馈第 4 轮（loading/success 状态图标相对 +/- 按钮右偏）**：
+  - **根因**：+/- 按钮是 30px 宽容器（22px 图标居中占 4~26px），而 loading/success 状态图标是 22px 直接贴左（占 0~22px），视觉中心右移约 4px
+  - **最终修复（status-slot 占位槽）**：loading/success 图标包进 `.cart-panel__status-slot`（`width/height: 30px; display:inline-flex; align-items/justify-content: center`），与 +/- 按钮几何完全一致，图标同样居中占 4~26px
+  - **清理无效尝试**：此前的 `transform-origin: center center`（drawer spinner）等对旋转轴无实际作用的改动已回退；`lucide:loader-circle` 与 `mode="svg"`（真实内联 SVG，避免 mask 亚像素错位）保留——有独立价值且为测试契约
+  - 测试更新：`cart-panel.test.ts` 新增 status-slot 契约断言（30px / 居中），9 个全绿
+- [x] **2026-08-16 视觉验收反馈第 5 轮（科目标签改为硬编码常用两行）**：
+  - **反馈**：搜索框下方的科目标签本意是"一点即选"快捷入口，但动态加载全部科目后标签过多，反而失去快捷作用
+  - **方案（用户指定）**：移除动态加载，硬编码常用科目两行——第一行 `UFUG UCUG DLED`，第二行 `AIAA AMAT DSAA FTEC MICS ROAS SMMG`（`COMMON_SUBJECT_ROWS` 常量）
+  - **改动**：移除 `getSubjects` / `subjectFilters` / `subjectRequests` tracker / `loadSubjectFilters` 及相关 watch；template 改为两行 `.cart-panel__subjects-row`（flex + wrap）；CSS `__subjects` 改纵向 column
+  - 测试更新：`cart-panel.test.ts` 契约从"动态加载"反转为"硬编码两行"（含两行清单断言）；`hardening-ui.test.ts` 改为断言 `not.toContain('subjectRequests')`（无未受保护请求），193 全绿
+- [x] **2026-08-16 视觉验收反馈第 6 轮（底部翻页按钮去边框 + lucide 图标）**：
+  - **反馈**：底部翻页四个按钮无需边框，图标参考课程表控制栏（`SchedulerBottomPanel`）
+  - **改动**：`&#171;`/`&#8249;`/`&#8250;`/`&#187;` 字符 → `lucide:skip-back`/`chevron-left`/`chevron-right`/`skip-forward`（复用现有 `scheduler.firstPlan/previousPlan/nextPlan/lastPlan` aria-label，无新 i18n key）；按钮样式对齐 bottom-panel——去边框/背景（`border: none; background: transparent`）、`min-height: 0` 防全局 button 样式覆盖、hover 变交互色（`--interactive-active`）、disabled `opacity: 0.3`
+  - 测试更新：`cart-panel.test.ts` 新增"borderless lucide 翻页按钮"契约（4 图标 + 无边框断言），194 全绿
 
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`
