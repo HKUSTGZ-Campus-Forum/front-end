@@ -41,7 +41,7 @@ const { t } = useI18n();
 
   &:hover {
     border-color: var(--border-focus);
-    box-shadow: 0 8px 20px rgba(40, 57, 101, 0.08);
+    box-shadow: var(--shadow-medium);
   }
 }
 

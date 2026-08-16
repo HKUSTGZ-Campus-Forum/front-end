@@ -118,11 +118,11 @@ onMounted(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.2rem 0.4rem;
-  background: #f8f9fa;
+  background: var(--surface-secondary, #f8f9fa);
   border-radius: 12px;
   font-size: 0.75rem;
-  color: #666;
-  border: 1px solid #e9ecef;
+  color: var(--text-muted, #666);
+  border: 1px solid var(--border-primary, #e9ecef);
 
   .emoji {
     font-size: 0.9rem;
@@ -140,7 +140,7 @@ onMounted(() => {
 
 .total-reactions {
   font-size: 0.75rem;
-  color: #999;
+  color: var(--text-muted, #999);
   font-weight: 500;
 }
 

@@ -67,7 +67,7 @@ const rootComments = computed(() =>
 
   h3 {
     margin: 0;
-    color: #203254;
+    color: var(--text-primary, #203254);
   }
 }
 
@@ -75,7 +75,7 @@ const rootComments = computed(() =>
 .feedback-comment-list__login,
 .feedback-comment-list__empty {
   margin: 0;
-  color: #6b7f9b;
+  color: var(--text-secondary, #6b7f9b);
 }
 
 .feedback-comment-list__items {

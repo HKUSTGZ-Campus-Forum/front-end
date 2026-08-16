@@ -38,7 +38,7 @@ const dateFormatter = computed(
   border-radius: 16px;
   background: var(--surface-primary);
   border: 1.5px solid var(--border-primary);
-  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  box-shadow: var(--shadow-small);
 
   h3 {
     margin: 0;
