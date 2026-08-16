@@ -254,6 +254,13 @@ onUnmounted(() => {
                   <div class="cart-panel__result-main">
                     <span class="cart-panel__result-code">{{ item.course_code }}</span>
                     <span class="cart-panel__result-credits" :style="{ color: creditColorVar(item.credit) }">· {{ t('scheduler.credits', { count: item.credit }) }}</span>
+                    <SchedulerCourseInfoPopover
+                      :course-code="item.course_code"
+                      :course-title="item.course_title"
+                      :credit="item.credit"
+                      :semester-id="semesterId"
+                      align="left"
+                    />
                   </div>
                   <span class="cart-panel__result-title">{{ item.course_title }}</span>
                 </div>
@@ -318,6 +325,13 @@ onUnmounted(() => {
                     <div class="cart-panel__drawer-meta">
                       <span class="cart-panel__drawer-code">{{ course.course_code }}</span>
                       <span class="cart-panel__drawer-credits" :style="{ color: creditColorVar(course.credit) }">· {{ t('scheduler.credits', { count: course.credit }) }}</span>
+                      <SchedulerCourseInfoPopover
+                        :course-code="course.course_code"
+                        :course-title="course.course_title"
+                        :credit="course.credit"
+                        :semester-id="semesterId"
+                        align="left"
+                      />
                     </div>
                     <span class="cart-panel__drawer-title">{{ course.course_title }}</span>
                   </div>
@@ -536,13 +550,13 @@ onUnmounted(() => {
     min-width: 0;
   }
 
-  &__result-code { font-weight: 700; font-size: 0.88rem; color: var(--text-primary); flex-shrink: 0; }
+  &__result-code { font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0; }
   &__result-credits {
     font-size: 0.75rem;
     font-weight: 700;
     flex-shrink: 0;
   }
-  &__result-title { font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__result-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   &__result-actions { flex-shrink: 0; margin-left: 0.5rem; display: inline-flex; align-items: center; }
 
   &__status-slot {
@@ -742,11 +756,12 @@ onUnmounted(() => {
   }
 
   &__drawer-meta { display: flex; align-items: center; gap: 8px; }
-  &__drawer-code { font-weight: 700; font-size: 0.82rem; color: var(--text-primary); flex-shrink: 0; }
+  &__drawer-code { font-size: 0.74rem; color: var(--text-secondary); flex-shrink: 0; }
   &__drawer-credits { font-size: 0.74rem; font-weight: 700; flex-shrink: 0; }
   &__drawer-title {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

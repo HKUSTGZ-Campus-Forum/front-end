@@ -86,6 +86,9 @@
   - 购物车面板高度固定：`__content` 改 `height: min(85vh,960px)`（移动端 `min(88vh, 640px)`），`__results` `flex: 1` 自动填充——"搜索中"、空状态、短结果（末页）时面板不再大幅缩高；loading/empty/error 状态 `min-height: 100%` + flex 垂直居中
   - 修复拖拽误关：在卡片内按住拖到遮罩上松开，click 事件会派发到 DOM 公共祖先，被 `@click.self` 误判为点击遮罩而关闭；改用 pointerdown 位置标记（卡片内按下置位、遮罩按下复位，click 时校验），仅当按下与松开都在遮罩上才关闭——面板与购物车抽屉均加此 guard
   - 测试更新：`cart-panel.test.ts` 扩至 12 个契约（新增固定高度 + pointerdown guard 契约）
+  - 搜索结果项与购物车抽屉项接入课程信息浮窗（`SchedulerCourseInfoPopover`）：code·credits 行右侧 ℹ️ 图标，hover 查看课程详情，与侧边栏课程卡一致；浮窗 z-index `90`→`1300`（原低于购物车面板 `1120`，Teleport 到 body 后会被面板遮住）、宽度 `280`→`420px`（更适配面板内宽布局）
+  - 修复 cart 中课程 ID 与标题样式颠倒：ID 改小号灰色（`--text-secondary`），标题改加粗黑色（`--text-primary`），与原版 `CoursePlan.search` cart-panel 一致
+  - 测试更新：`cart-panel.test.ts` 新增 info 浮窗契约（搜索结果项与抽屉项均绑定 course-code/course-title/credit/semester-id），13 个全绿
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

@@ -10,6 +10,11 @@ const props = defineProps<{
   courseTitle: string
   credit: number
   semesterId: string
+  // Which edge of the popover the trigger anchors to. 'right' keeps the
+  // popover's right edge under the icon (opens leftwards, side panel);
+  // 'left' aligns the popover's left edge with the icon's left edge
+  // (opens rightwards, cart panel rows so it does not cover the list).
+  align?: 'left' | 'right'
 }>()
 
 const { t } = useI18n()
@@ -43,7 +48,9 @@ function updatePosition() {
 
   // Default: below the icon, right edges aligned.
   let top = hostRect.bottom + 8
-  let left = hostRect.right - popRect.width
+  let left = props.align === 'left'
+    ? hostRect.left
+    : hostRect.right - popRect.width
 
   // Not enough room below -> flip above.
   if (hostRect.bottom + popRect.height > vh) {
@@ -203,8 +210,8 @@ onUnmounted(() => {
 
 .course-info-popover {
   position: fixed;
-  z-index: 90;
-  width: 280px;
+  z-index: 1300;
+  width: 420px;
   max-width: calc(100vw - 16px);
   max-height: 70vh;
   overflow: auto;

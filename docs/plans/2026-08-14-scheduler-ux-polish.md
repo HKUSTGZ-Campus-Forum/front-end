@@ -272,6 +272,11 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
   - **根因**：mousedown 在卡片内 + mouseup 在遮罩上时，click 事件派发到** DOM 公共祖先**（`.cart-panel`），`@click.self` 误判为"点击了遮罩"
   - **修复 2**：pointerdown 位置标记 guard——遮罩 `@pointerdown.self` 复位标记、卡片 `@pointerdown` 置位标记，click 时校验标记，仅当按下也始于卡片外才关闭；面板与购物车抽屉均加此 guard
   - 测试更新：`cart-panel.test.ts` 扩至 12 个契约（固定高度断言 + pointerdown guard 断言），196 全绿
+- [x] **2026-08-16 视觉验收反馈第 8 轮（info 浮窗接入 cart + ID/标题样式对调）**：
+  - **info 浮窗接入 cart**：搜索结果项与购物车抽屉项的 code·credits 行右侧加 `<SchedulerCourseInfoPopover>`（与侧边栏课程卡同一组件，绑定 course_code/course_title/credit/semesterId），hover 查看课程详情
+  - **浮窗层级修复**：`SchedulerCourseInfoPopover` 的 popover z-index `90`→`1300`——原低于购物车面板 `1120`，Teleport 到 body 后浮窗会被面板遮住；侧边栏场景无副作用；宽度 `280`→`420px`（用户调整，更适配面板内宽布局）
+  - **ID 与标题样式对调**（用户反馈"样式反了"）：cart 中课程 ID 由粗体黑改小号灰色（`--text-secondary`），标题由小号灰改加粗黑（`--text-primary`），对齐原版 `CoursePlan.search` cart-panel（`text-xs text-gray-500` + `font-semibold`）；搜索结果与抽屉两处同步
+  - 测试更新：`cart-panel.test.ts` 新增 info 浮窗契约（两处均绑定 4 个 prop），13 个全绿，197 全绿
 
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`

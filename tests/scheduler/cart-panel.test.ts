@@ -110,6 +110,28 @@ describe('scheduler cart panel', () => {
     expect(cartPanelSource).toContain('creditColorVar(item.credit)')
   })
 
+  it('offers the course info popover on search results and drawer items', () => {
+    const cartPanelSource = source()
+
+    // Search result rows show the hover info popover (same component as the
+    // side panel course cards), wired with the course identity
+    expect(cartPanelSource).toContain('<SchedulerCourseInfoPopover')
+    expect(cartPanelSource).toContain(':course-code="item.course_code"')
+    expect(cartPanelSource).toContain(':course-title="item.course_title"')
+    expect(cartPanelSource).toContain(':credit="item.credit"')
+    expect(cartPanelSource).toContain(':semester-id="semesterId"')
+
+    // Cart drawer items also show it
+    expect(cartPanelSource).toContain(':course-code="course.course_code"')
+    expect(cartPanelSource).toContain(':course-title="course.course_title"')
+    expect(cartPanelSource).toContain(':credit="course.credit"')
+
+    // Both anchor the popover to the icon's left edge so it opens rightwards
+    // instead of covering the list to the left
+    expect(cartPanelSource).toContain('align="left"')
+    expect(cartPanelSource.match(/align="left"/g)?.length).toBe(2)
+  })
+
   it('shows the result count in the pagination info', () => {
     const cartPanelSource = source()
 
