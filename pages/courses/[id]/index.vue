@@ -659,7 +659,7 @@ useHead({
 .kg-academic-chip.is-interested {
   background: color-mix(in srgb, var(--semantic-warning) 14%, var(--surface-primary));
   border-color: color-mix(in srgb, var(--semantic-warning) 32%, var(--border-primary));
-  color: #a45c04;
+  color: var(--semantic-warning);
 }
 
 .kg-interest-btn {
