@@ -18,6 +18,7 @@
   - `themeStore.applyTheme()` 同步 `color-scheme`（原生滚动条/表单控件跟随）与 `data-theme` 属性
   - 修复 `ThemeSettings` 自动深色模式：`selectTheme('dark')` 引用不存在的主题 id、`removeEventListener` 传空函数失效、`onMounted` 判断恒为 false 三个 bug
   - 主题文档：`docs/THEME_SYSTEM.md` 更新当前启用的 2 个主题，早期设计的 6 个主题保留在"Planned / Not Yet Enabled Themes"（暂未使用）
+- **主题深色适配补齐**：顶栏 logo 提供深色版（`public/icons/topbar_logo_w.svg`，`data-theme='deep-dark'` 下自动切换）；设置页 `/setting/theme`、`/setting/account` 硬编码颜色改为主题变量；修复 `ThemeSettings` 样式块 `//` 行注释导致的 SCSS 编译失败（样式整体丢失）
 
 ### 课程板块（排课助手迁移与完善）
 
@@ -105,6 +106,7 @@
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选
+- **课程详情页深色适配**：课程详情、开课信息（offerings）、课程评论（reviews）页面硬编码颜色全部替换为主题 CSS 变量，深色主题下不再出现亮色残留（评分星标、输入框、按钮、spinner、标签等）
 - **学术地图**：学术要求矩阵、进度计算、专业标签、成绩默认保留
 - **排课热度**：课程热度信号、热度历史曲线（`SchedulerPopularity*`）
 
