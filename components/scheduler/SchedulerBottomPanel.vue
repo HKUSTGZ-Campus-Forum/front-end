@@ -224,6 +224,8 @@ onUnmounted(() => {
     height: 18px;
     border-radius: 50%;
     background: var(--btn-primary-bg);
+    /* thumb 阴影刻意保留：尺寸/透明度为小圆形滑块定制，
+       token 阴影系列（--shadow-*）无法表达，色相与交互色一致 */
     box-shadow: 0 2px 6px rgba(38, 164, 255, 0.35);
     transition: left 0.18s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.15s ease, box-shadow 0.15s ease;
 

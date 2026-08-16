@@ -558,7 +558,7 @@ onBeforeUnmount(() => {
   &__coverage-warning { margin: 8px 0 12px; padding: 9px 11px; border-left: 3px solid var(--semantic-warning); border-radius: 6px; background: color-mix(in srgb, var(--semantic-warning) 9%, transparent); color: var(--text-primary); font-size: 0.76rem; line-height: 1.5; }
   &__chart { min-height: 320px; }
   &__chart-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 0; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; }
-  &__partial-key { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border: 2px solid #92400e; border-radius: 50%; background: var(--surface-primary); }
+  &__partial-key { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border: 2px solid var(--warning-color, #92400e); border-radius: 50%; background: var(--surface-primary); }
   &__meta { margin: 8px 0 0; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; }
   &__data { margin-top: 14px; border-top: 1px solid var(--border-secondary); padding-top: 12px; }
   &__data summary { color: var(--interactive-active); cursor: pointer; font-size: 0.8rem; font-weight: 700; }

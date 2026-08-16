@@ -69,6 +69,8 @@ const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
     color: color-mix(in srgb, var(--semantic-success) 78%, var(--text-primary));
   }
 
+  /* compact 模式用于地图/彩色底衬场景：
+     白色文字 + 半透明黑底为刻意设计（在任意彩色背景上均保持可读），不随主题变化 */
   &--compact {
     gap: 3px;
     color: white;

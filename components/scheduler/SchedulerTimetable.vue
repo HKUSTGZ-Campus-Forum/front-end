@@ -481,6 +481,8 @@ function onCellClick(day: number, period: number) {
     }
 
     &--banned {
+      /* 白色斜纹刻意保留：叠加在错误色混合底上的警示纹理，
+         在浅/深两种主题下均保持可见，不随主题变化 */
       background:
         repeating-linear-gradient(
           135deg,
