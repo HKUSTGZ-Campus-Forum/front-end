@@ -83,6 +83,9 @@
   - 底部翻页按钮去边框改 lucide 图标（`chevrons-left`/`chevron-left`/`chevron-right`/`chevrons-right`，与底部控制栏一致）；loading/success 状态图标包进 30px 居中占位槽，与 +/- 按钮几何一致消除水平偏移
   - 底部控制栏两端图标同步：`skip-back`/`skip-forward` → `chevrons-left`/`chevrons-right`（保持两处翻页图标一致）
   - 测试更新：`cart-panel.test.ts` 扩至 10 个契约（状态反馈 / 抽屉 / credit 分色 / 分页 / 硬编码科目两行 / borderless 翻页图标等）；`hardening-ui.test.ts` 同步（subject 请求移除断言）
+  - 购物车面板高度固定：`__content` 改 `height: min(85vh,960px)`（移动端 `min(88vh, 640px)`），`__results` `flex: 1` 自动填充——"搜索中"、空状态、短结果（末页）时面板不再大幅缩高；loading/empty/error 状态 `min-height: 100%` + flex 垂直居中
+  - 修复拖拽误关：在卡片内按住拖到遮罩上松开，click 事件会派发到 DOM 公共祖先，被 `@click.self` 误判为点击遮罩而关闭；改用 pointerdown 位置标记（卡片内按下置位、遮罩按下复位，click 时校验），仅当按下与松开都在遮罩上才关闭——面板与购物车抽屉均加此 guard
+  - 测试更新：`cart-panel.test.ts` 扩至 12 个契约（新增固定高度 + pointerdown guard 契约）
 - **课程宇宙图谱**：完整课程关系图渲染（前置/共修/互斥逻辑节点、路由连线、悬停高亮、拖拽平移）
   - 新增 `utils/courseUniverse.ts` 完整图适配器与 `tests/course-universe/` 回归测试
 - **课程探索与详情**：课程探索页、课程详情与评论、开课信息、学季筛选

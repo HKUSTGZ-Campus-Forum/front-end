@@ -164,6 +164,39 @@ const totalCredits = computed(() => (
   props.courseList.reduce((sum, c) => sum + (c.credit || 0), 0)
 ))
 
+// Guard against closing via the click event's nearest-common-ancestor
+// behaviour: if a pointer goes down inside the card and is released on the
+// backdrop, the click event fires on the panel root, which @click.self would
+// misread as "clicked the backdrop". Track where the pointer went down so we
+// only close when the press also started outside the card.
+const panelPointerDownInside = ref(false)
+
+function handlePanelPointerDown() {
+  panelPointerDownInside.value = true
+}
+
+function handlePanelClick() {
+  if (panelPointerDownInside.value) {
+    panelPointerDownInside.value = false
+    return
+  }
+  emit('close')
+}
+
+const drawerPointerDownInside = ref(false)
+
+function handleDrawerPointerDown() {
+  drawerPointerDownInside.value = true
+}
+
+function handleDrawerClick() {
+  if (drawerPointerDownInside.value) {
+    drawerPointerDownInside.value = false
+    return
+  }
+  showCartDrawer.value = false
+}
+
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
   searchRequests.invalidate()
@@ -175,8 +208,8 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="visible" class="cart-panel" @click.self="emit('close')">
-        <div class="cart-panel__content">
+      <div v-if="visible" class="cart-panel" @pointerdown.self="panelPointerDownInside = false" @click.self="handlePanelClick">
+        <div class="cart-panel__content" @pointerdown="handlePanelPointerDown">
           <div class="cart-panel__header">
             <div>
               <h2>{{ t('scheduler.cart') }}</h2>
@@ -270,8 +303,8 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <div v-if="showCartDrawer" class="cart-panel__drawer-overlay" @click.self="showCartDrawer = false">
-            <div class="cart-panel__drawer-card">
+          <div v-if="showCartDrawer" class="cart-panel__drawer-overlay" @pointerdown.self="drawerPointerDownInside = false" @click.self="handleDrawerClick">
+            <div class="cart-panel__drawer-card" @pointerdown="handleDrawerPointerDown">
               <div class="cart-panel__drawer-header">
                 <h3>{{ t('scheduler.cart') }}</h3>
                 <button type="button" class="cart-panel__drawer-close" :aria-label="t('scheduler.close')" @click="showCartDrawer = false">
@@ -322,7 +355,7 @@ onUnmounted(() => {
   &__content {
     position: relative;
     width: min(92vw, 680px);
-    max-height: 85vh;
+    height: min(85vh,960px);
     background: var(--surface-primary);
     border-radius: 16px;
     display: flex;
@@ -439,14 +472,20 @@ onUnmounted(() => {
     flex: 1;
     overflow-y: auto;
     padding: 0 22px;
-    min-height: 260px;
+    min-height: 0;
   }
 
   &__loading,
   &__empty {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     color: var(--text-secondary);
     padding: 44px 24px;
+    box-sizing: border-box;
   }
 
   &__empty-title {
@@ -461,7 +500,16 @@ onUnmounted(() => {
     line-height: 1.6;
   }
 
-  &__error { text-align: center; color: var(--semantic-error); padding: 2rem; }
+  &__error {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--semantic-error);
+    padding: 2rem;
+    box-sizing: border-box;
+  }
 
   &__result {
     display: flex;
@@ -757,7 +805,7 @@ onUnmounted(() => {
 
     &__content {
       width: 100%;
-      max-height: 88vh;
+      height: min(88vh, 640px);
       border-radius: 16px 16px 0 0;
     }
 

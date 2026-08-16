@@ -265,6 +265,13 @@ UI 复刻的第一步聚焦**排课工作台 dashboard**（搜索 / 课表 / 购
   - **反馈**：底部翻页四个按钮无需边框，图标参考课程表控制栏（`SchedulerBottomPanel`）
   - **改动**：`&#171;`/`&#8249;`/`&#8250;`/`&#187;` 字符 → `lucide:skip-back`/`chevron-left`/`chevron-right`/`skip-forward`（复用现有 `scheduler.firstPlan/previousPlan/nextPlan/lastPlan` aria-label，无新 i18n key）；按钮样式对齐 bottom-panel——去边框/背景（`border: none; background: transparent`）、`min-height: 0` 防全局 button 样式覆盖、hover 变交互色（`--interactive-active`）、disabled `opacity: 0.3`
   - 测试更新：`cart-panel.test.ts` 新增"borderless lucide 翻页按钮"契约（4 图标 + 无边框断言），194 全绿
+- [x] **2026-08-16 视觉验收反馈第 7 轮（固定高度 + 拖拽误关修复）**：
+  - **反馈 1（高度跳动）**：cart 高度未固定，"搜索中"状态或末页短结果时面板高度大幅减小
+  - **修复 1**：`__content` 从 `max-height: 85vh` 改为固定 `height: min(85vh,960px)`（移动端 `min(88vh, 640px)`），`__results` `flex: 1` + `min-height: 0` 自动填充滚动；loading/empty/error 改 `min-height: 100%` + flex 垂直居中，固定高度下内容不再顶在上部
+  - **反馈 2（拖拽误关）**：在卡片内按住、松开时在卡片外，也会关闭购物车——不应如此
+  - **根因**：mousedown 在卡片内 + mouseup 在遮罩上时，click 事件派发到** DOM 公共祖先**（`.cart-panel`），`@click.self` 误判为"点击了遮罩"
+  - **修复 2**：pointerdown 位置标记 guard——遮罩 `@pointerdown.self` 复位标记、卡片 `@pointerdown` 置位标记，click 时校验标记，仅当按下也始于卡片外才关闭；面板与购物车抽屉均加此 guard
+  - 测试更新：`cart-panel.test.ts` 扩至 12 个契约（固定高度断言 + pointerdown guard 断言），196 全绿
 
 **收尾（每步独立验收）**
 - [ ] 每步完成后 `npm run i18n:check` + `npm test` + `npm run build`

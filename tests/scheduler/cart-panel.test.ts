@@ -63,13 +63,43 @@ describe('scheduler cart panel', () => {
     const cartPanelSource = source()
 
     expect(cartPanelSource).toContain('cart-panel__drawer-overlay')
-    expect(cartPanelSource).toContain('@click.self="showCartDrawer = false"')
+    expect(cartPanelSource).toContain('@click.self="handleDrawerClick"')
     expect(cartPanelSource).toContain('cart-panel__drawer-card')
     expect(cartPanelSource).toContain('cart-panel__drawer-header')
     expect(cartPanelSource).toContain('cart-panel__drawer-remove')
     expect(cartPanelSource).toContain('t(\'scheduler.totalCredits\')')
     expect(cartPanelSource).toContain('totalCredits')
     expect(cartPanelSource).toContain('--drawer-backdrop')
+  })
+
+  it('keeps a stable fixed height across loading/empty/full result states', () => {
+    const cartPanelSource = source()
+
+    // Fixed card height so "searching" and short last-page results do not
+    // shrink the panel (mirrors the original h-full cart panel)
+    expect(cartPanelSource).toContain('height: min(85vh,960px)')
+    expect(cartPanelSource).toContain('height: min(88vh, 640px)')
+    // Results area flexes to fill the remaining space and scrolls
+    expect(cartPanelSource).toContain('flex: 1')
+    expect(cartPanelSource).toContain('overflow-y: auto')
+    // Loading/empty/error states center vertically inside the fixed height
+    expect(cartPanelSource).toContain('justify-content: center')
+  })
+
+  it('only closes when the pointer press also starts outside the card', () => {
+    const cartPanelSource = source()
+
+    // A pointerdown inside the card must not close the panel even if the
+    // pointer is released on the backdrop (click fires on the common ancestor)
+    expect(cartPanelSource).toContain('@pointerdown.self="panelPointerDownInside = false"')
+    expect(cartPanelSource).toContain('@click.self="handlePanelClick"')
+    expect(cartPanelSource).toContain('@pointerdown="handlePanelPointerDown"')
+    expect(cartPanelSource).toContain('panelPointerDownInside')
+
+    // Same guard applies to the cart drawer overlay
+    expect(cartPanelSource).toContain('@pointerdown.self="drawerPointerDownInside = false"')
+    expect(cartPanelSource).toContain('@pointerdown="handleDrawerPointerDown"')
+    expect(cartPanelSource).toContain('drawerPointerDownInside')
   })
 
   it('color-codes credits with the shared credit level variables', () => {
