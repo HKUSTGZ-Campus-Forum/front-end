@@ -84,6 +84,90 @@ export const themes: ThemeConfig[] = [
         high: 0.96
       }
     }
+  },
+
+  // ── 深邃黑 ──────────────────────────────────────────────────
+  {
+    id: 'deep-dark',
+    name: '深邃黑',
+    description: '科广汇定制深色主题，深蓝黑背景搭配科广蓝强调色',
+    category: 'dark',
+
+    background: {
+      primary: '#0e1726',
+      secondary: '#16233a',
+      gradient: 'linear-gradient(160deg, #0e1726 0%, #16233a 100%)'
+    },
+
+    colors: {
+      text: {
+        primary: '#e6edf7',
+        secondary: '#9fb0c9',
+        muted: '#64748b',
+        inverse: '#0e1726'
+      },
+      surface: {
+        primary: '#16233a',
+        secondary: '#1d2d49',
+        elevated: '#223453',
+        overlay: 'rgba(14, 23, 38, 0.96)'
+      },
+      interactive: {
+        primary: '#26a4ff',
+        secondary: '#2d4a73',
+        hover: '#4db6ff',
+        active: '#1a8fe0',
+        disabled: '#33507a'
+      },
+      semantic: {
+        success: '#34d399',
+        warning: '#fbbf24',
+        error: '#f87171',
+        info: '#26a4ff'
+      },
+      border: {
+        primary: '#2d4a73',
+        secondary: '#24375a',
+        focus: '#26a4ff'
+      }
+    },
+
+    components: {
+      sidebar: {
+        background: '#0b1220',
+        backdrop: 'none',
+        shadow: '2px 0 12px rgba(0, 0, 0, 0.35)'
+      },
+      topbar: {
+        background: 'rgba(22, 35, 58, 0.85)',
+        backdrop: 'blur(8px)',
+        shadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
+      },
+      card: {
+        background: '#16233a',
+        shadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+        border: '1px solid #24375a'
+      },
+      modal: {
+        background: '#1d2d49',
+        backdrop: 'rgba(0, 0, 0, 0.6)',
+        shadow: '0 20px 40px rgba(0, 0, 0, 0.45)'
+      }
+    },
+
+    effects: {
+      blur: 'blur(8px)',
+      shadow: {
+        small: '0 1px 3px rgba(0, 0, 0, 0.3)',
+        medium: '0 4px 12px rgba(0, 0, 0, 0.35)',
+        large: '0 10px 24px rgba(0, 0, 0, 0.4)'
+      },
+      opacity: {
+        low: 0.6,
+        medium: 0.85,
+        high: 0.96
+      }
+    }
   }
 ];
 
@@ -100,7 +184,8 @@ export function getThemesByCategory(category: 'light' | 'dark'): ThemeConfig[] {
 export function getLogoFilter(themeId: string): string {
   switch (themeId) {
     case 'keguang-blue':
-      // 科广蓝：侧边栏深色，图标调亮为白色
+    case 'deep-dark':
+      // 科广蓝/深邃黑：侧边栏深色，图标调亮为白色
       return 'brightness(10) saturate(0)';
 
     default:

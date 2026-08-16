@@ -178,10 +178,15 @@ function selectTheme(themeId) {
   }, 300);
 }
 
-// Generate preview style for theme cards
+// Generate preview style for theme cards. Preview blocks use the *previewed*
+// theme's own component colors (via CSS custom props), not the current theme's
+// variables, so each card previews accurately in both light and dark mode.
 function getThemePreviewStyle(theme) {
   return {
     background: theme.background.gradient || theme.background.primary,
+    '--preview-sidebar': theme.components.sidebar.background,
+    '--preview-topbar': theme.components.topbar.background,
+    '--preview-card': theme.components.card.background,
     transition: 'all 0.2s ease'
   };
 }
@@ -198,31 +203,38 @@ function toggleAutoDarkMode() {
 }
 
 let mediaQuery = null;
+let mediaQueryHandler = null;
+
+function getPreferredThemeId(isDark) {
+  const category = isDark ? 'dark' : 'light';
+  const theme = getThemesByCategory(category)[0];
+  return theme ? theme.id : 'keguang-blue';
+}
 
 function enableAutoTheme() {
   if (window.matchMedia) {
     mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleChange = (e) => {
       if (autoDarkMode.value) {
-        const preferredTheme = e.matches ? 'dark' : 'light';
-        selectTheme(preferredTheme);
+        selectTheme(getPreferredThemeId(e.matches));
       }
     };
-    
+
+    mediaQueryHandler = handleChange;
     mediaQuery.addEventListener('change', handleChange);
-    
-    // Apply initial theme
-    const preferredTheme = mediaQuery.matches ? 'dark' : 'light';
-    selectTheme(preferredTheme);
+
+    // Apply initial theme based on system preference
+    selectTheme(getPreferredThemeId(mediaQuery.matches));
   }
 }
 
 function disableAutoTheme() {
-  if (mediaQuery) {
-    mediaQuery.removeEventListener('change', () => {});
-    mediaQuery = null;
+  if (mediaQuery && mediaQueryHandler) {
+    mediaQuery.removeEventListener('change', mediaQueryHandler);
+    mediaQueryHandler = null;
   }
+  mediaQuery = null;
 }
 
 // Quick actions
@@ -243,9 +255,9 @@ function navigateToHome() {
 
 // Lifecycle
 onMounted(() => {
-  // Initialize auto dark mode if user prefers dark theme
+  // Initialize auto dark mode if user prefers dark theme and is on a dark theme
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    if (themeStore.currentTheme === 'dark') {
+    if (themeStore.activeTheme?.category === 'dark') {
       autoDarkMode.value = true;
       enableAutoTheme();
     }
@@ -311,7 +323,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
 }
 
-// Category tabs
+/* Category tabs */
 .category-tabs {
   display: flex;
   gap: 0.5rem;
@@ -356,7 +368,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
 }
 
-// Theme grid
+/* Theme grid */
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -385,7 +397,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   
   &.active {
     border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 25%, transparent);
   }
 }
 
@@ -413,17 +425,17 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   
   &.sidebar {
     grid-row: 1 / -1;
-    background: var(--sidebar-bg);
+    background: var(--preview-sidebar, var(--sidebar-bg));
     opacity: 0.9;
   }
   
   &.topbar {
-    background: var(--topbar-bg);
+    background: var(--preview-topbar, var(--topbar-bg));
     opacity: 0.9;
   }
   
   &.card {
-    background: var(--card-bg);
+    background: var(--preview-card, var(--card-bg));
     opacity: 0.9;
   }
 }
@@ -459,13 +471,13 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   justify-content: center;
   
   .check-icon {
-    color: white;
+    color: var(--text-inverse);
     font-size: 0.8rem;
     font-weight: bold;
   }
 }
 
-// Advanced options
+/* Advanced options */
 .advanced-options {
   display: flex;
   flex-direction: column;
@@ -510,7 +522,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   color: var(--text-primary);
 }
 
-// Custom theme info
+/* Custom theme info */
 .custom-theme-info {
   .info-text {
     font-size: 1rem;
@@ -542,7 +554,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
 }
 
-// Quick actions
+/* Quick actions */
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -584,7 +596,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
     color: var(--text-inverse);
     
     &:hover {
-      background: #d97706;
+      background: color-mix(in srgb, var(--semantic-warning) 85%, #000);
     }
   }
   
@@ -593,7 +605,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
     color: var(--text-inverse);
     
     &:hover {
-      background: #2563eb;
+      background: color-mix(in srgb, var(--semantic-info) 85%, #000);
     }
   }
   
@@ -607,7 +619,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
 }
 
-// Applying overlay
+/* Applying overlay */
 .applying-overlay {
   position: fixed;
   top: 0;

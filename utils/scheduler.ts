@@ -692,9 +692,27 @@ export function getSchedulerMapLinePath(
   return `M ${start.x_coordinate},${start.y_coordinate} H ${elbowX} V ${end.y_coordinate} H ${end.x_coordinate}`
 }
 
-export function getCourseColor(index: number, isDark: boolean = false): string {
+export interface CourseTimetableColors {
+  background: string
+  text: string
+  accent: string
+}
+
+/**
+ * Soft pastel palette for timetable blocks, mirroring the original planner:
+ * a light tinted background with dark text in both light and dark themes.
+ */
+export function getCourseTimetableColors(index: number, isDark: boolean = false): CourseTimetableColors {
   const hue = (index * 137.5) % 360
-  const sat = isDark ? 55 : 65
-  const light = isDark ? 45 : 55
-  return `hsl(${hue}, ${sat}%, ${light}%)`
+  const sat = isDark ? 25 : 40
+  const light = isDark ? 70 : 85
+  return {
+    background: `hsl(${hue}, ${sat}%, ${light}%)`,
+    text: `hsl(${hue}, ${sat}%, 30%)`,
+    accent: `hsl(${hue}, 20%, 38%)`,
+  }
+}
+
+export function getCourseColor(index: number, isDark: boolean = false): string {
+  return getCourseTimetableColors(index, isDark).background
 }
