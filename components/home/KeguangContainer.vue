@@ -35,8 +35,8 @@ const sidebarExpanded = ref(false)
 
 .kg-layout__main {
   margin-left: 72px;
-  margin-top: 84px;
-  min-height: calc(100vh - 84px);
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
   background: var(--bg-primary);
   transition: margin-left 0.3s ease;
   display: flex;

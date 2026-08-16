@@ -25,6 +25,11 @@
       "zh": "中文",
       "en": "EN"
     },
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "show": "Show",
     "hide": "Hide"
   },
