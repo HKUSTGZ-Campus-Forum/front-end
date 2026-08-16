@@ -57,6 +57,10 @@ const badgeClasses = computed(() => [
 ])
 
 const badgeStyles = computed(() => ({
+  // Identity color comes from the backend (dynamic per identity_type), so it
+  // can't be a theme token. '#2563eb' is only a fallback when no color is
+  // configured. Kept as-is (keguang-blue) since it reads acceptably on both
+  // themes as a badge border/text color.
   '--badge-color': props.identity?.identity_type?.color || '#2563eb',
   '--badge-bg': `${props.identity?.identity_type?.color || '#2563eb'}20`
 }))

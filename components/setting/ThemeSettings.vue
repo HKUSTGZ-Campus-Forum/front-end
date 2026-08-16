@@ -594,8 +594,10 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   &.reset-btn {
     background: var(--semantic-warning);
     color: var(--text-inverse);
-    
+
     &:hover {
+      /* Darken the warning color for the hover state. #000 is only the
+         color-mix blending target, not a visible hardcoded color. */
       background: color-mix(in srgb, var(--semantic-warning) 85%, #000);
     }
   }
@@ -605,6 +607,8 @@ watch(() => themeStore.currentTheme, (newTheme) => {
     color: var(--text-inverse);
     
     &:hover {
+      /* Darken the info color for the hover state. #000 is only the
+         color-mix blending target, not a visible hardcoded color. */
       background: color-mix(in srgb, var(--semantic-info) 85%, #000);
     }
   }

@@ -852,6 +852,9 @@ onMounted(() => {
   min-height: 152px;
   font-family: inherit;
   line-height: 1.6;
+  /* Deliberately kept: a subtle inset shadow to give the textarea a
+     recessed look. The --shadow-* tokens are all outer shadows, so an inset
+     can't reuse them. */
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
 
   &:focus {

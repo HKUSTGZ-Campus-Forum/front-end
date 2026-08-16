@@ -411,7 +411,9 @@ const handleMenuLogout = async () => {
   height: 20px;
   border-radius: 999px;
   /* White knob on both themes, matching the CoursePlan toggle (bg-white).
-     --text-inverse is near-black in the dark theme, so it can't be reused. */
+     --text-inverse is near-black in the dark theme, so it can't be reused.
+     The subtle drop shadow is also kept as-is (tailwind shadow-sm) to lift
+     the knob off the track. */
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   /* Matches the CoursePlan geometry (tailwind translate-x-1): the knob sits

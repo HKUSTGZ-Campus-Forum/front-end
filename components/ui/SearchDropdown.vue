@@ -372,6 +372,8 @@ const stripHtml = (html: string) => {
 </template>
 
 <style lang="scss" scoped>
+/* 搜索关键词高亮（:deep(mark) 的 #fef3c7 底 + #92400e 字）刻意保留：
+   双主题恒定配色，两种主题下均需突出显示（与主题无关），不 token 化 */
 .search-dropdown {
   position: relative;
   width: 100%;
@@ -396,7 +398,7 @@ const stripHtml = (html: string) => {
   &:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   }
   
   &::placeholder {
@@ -524,7 +526,7 @@ const stripHtml = (html: string) => {
     transition: color 0.2s ease;
     
     &:hover {
-      color: #dc2626;
+      color: var(--semantic-error);
     }
   }
 }

@@ -341,6 +341,7 @@ onUnmounted(() => {
   line-height: 1;
   min-width: 16px;
   text-align: center;
+  /* 徽章小投影刻意保留：尺寸/透明度为小元素定制，token 阴影系列无法表达 */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   z-index: 10; /* Ensure it appears on top */
 }

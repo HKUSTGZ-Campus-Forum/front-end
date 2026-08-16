@@ -130,9 +130,9 @@ function closeForgotPassword() {
   max-width: 480px;
   margin: 0 auto;
   padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: color-mix(in srgb, var(--surface-primary) 95%, transparent);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
 
   @media (min-width: 480px) {
     padding: 1.5rem;
@@ -140,15 +140,15 @@ function closeForgotPassword() {
 
   @media (min-width: 768px) {
     padding: 2rem;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    background-color: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+    box-shadow: var(--shadow-large);
   }
 }
 
 .page-title {
   text-align: center;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.5rem;
 
   @media (min-width: 480px) {
@@ -194,7 +194,7 @@ function closeForgotPassword() {
       left: 1rem;
       top: 50%;
       transform: translateY(-50%);
-      color: #6c757d;
+      color: var(--text-muted);
       font-size: 1rem;
 
       @media (max-width: 479px) {
@@ -205,7 +205,7 @@ function closeForgotPassword() {
     input {
       width: 100%;
       padding: 0.875rem 1rem 0.875rem 2.75rem;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--border-primary);
       border-radius: 6px;
       font-size: 1rem;
       min-height: 44px; // Touch-friendly minimum height
@@ -218,8 +218,8 @@ function closeForgotPassword() {
       }
 
       &:focus {
-        border-color: #4361ee;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+        border-color: var(--interactive-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 25%, transparent);
         outline: none;
       }
 
@@ -239,7 +239,7 @@ function closeForgotPassword() {
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #6c757d;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 0.5rem;
     min-height: 44px; // Touch-friendly minimum size
@@ -252,11 +252,11 @@ function closeForgotPassword() {
     }
 
     &:hover {
-      color: #4361ee;
+      color: var(--interactive-primary);
     }
 
     &:active {
-      background-color: rgba(67, 97, 238, 0.1);
+      background-color: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
       border-radius: 4px;
     }
   }
@@ -301,7 +301,7 @@ function closeForgotPassword() {
   }
 
   .forgot-password {
-    color: #4361ee;
+    color: var(--interactive-primary);
     text-decoration: none;
     font-size: 0.9rem;
     padding: 0.5rem;
@@ -325,23 +325,23 @@ function closeForgotPassword() {
 
     &:hover {
       text-decoration: underline;
-      background-color: rgba(67, 97, 238, 0.05);
+      background-color: color-mix(in srgb, var(--interactive-primary) 5%, transparent);
     }
 
     &:active {
-      background-color: rgba(67, 97, 238, 0.1);
+      background-color: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
     }
   }
 }
 
 .error-message {
   padding: 1rem;
-  background-color: #ffebee;
-  color: #d32f2f;
+  background-color: var(--error-background);
+  color: var(--semantic-error);
   border-radius: 6px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
-  border-left: 4px solid #d32f2f;
+  border-left: 4px solid var(--semantic-error);
 
   @media (min-width: 480px) {
     padding: 0.75rem;
@@ -355,8 +355,8 @@ function closeForgotPassword() {
 
 .login-button {
   padding: 0.875rem;
-  background-color: #4361ee;
-  color: white;
+  background-color: var(--btn-primary-bg);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -375,7 +375,7 @@ function closeForgotPassword() {
   }
 
   &:hover:not(:disabled) {
-    background-color: #3a56d4;
+    background-color: var(--btn-primary-bg-hover);
     transform: translateY(-1px);
   }
 
@@ -384,7 +384,7 @@ function closeForgotPassword() {
   }
 
   &:disabled {
-    background-color: #a0a0a0;
+    background-color: var(--interactive-disabled);
     cursor: not-allowed;
   }
 }
@@ -399,7 +399,7 @@ function closeForgotPassword() {
   }
 
   a {
-    color: #4361ee;
+    color: var(--interactive-primary);
     text-decoration: none;
     font-weight: 500;
     padding: 0.5rem;
@@ -415,11 +415,11 @@ function closeForgotPassword() {
 
     &:hover {
       text-decoration: underline;
-      background-color: rgba(67, 97, 238, 0.05);
+      background-color: color-mix(in srgb, var(--interactive-primary) 5%, transparent);
     }
 
     &:active {
-      background-color: rgba(67, 97, 238, 0.1);
+      background-color: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
     }
   }
 }
