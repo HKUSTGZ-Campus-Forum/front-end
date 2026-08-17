@@ -82,7 +82,14 @@ Dark mode works through three cooperating layers:
 2. **SCSS fallback** (`assets/css/variables.scss`): `:root` holds the light defaults, and `:root[data-theme='deep-dark']` holds the dark overrides. The dark block must stay in sync with the `deep-dark` config in `utils/themes.ts`.
 3. **Inline script** (`app.vue` `useHead`): a tiny synchronous script reads the persisted theme from `localStorage['theme']` and sets `data-theme` before first paint, preventing a light-flash (FOUC) on reload for dark users.
 
-When adding or changing a dark theme you must update **all three** places (registry config, SCSS override block, and any theme-specific logic).
+When adding or changing a theme you must keep **all of the following** in sync:
+
+1. **Theme registry** — `utils/themes.ts`: add the theme config (id, name, category `light`/`dark`, component color map). `themeStore.applyTheme()` generates CSS variables from it, sets `color-scheme` and the `data-theme` attribute.
+2. **SCSS override block** — `assets/css/variables.scss`: the `:root` block holds the light defaults; each dark theme gets a `:root[data-theme='...']` override block. **This must stay in sync with the registry config in `utils/themes.ts`** (tokens are duplicated in both places by design).
+3. **Theme selection UI** — `components/setting/ThemeSettings.vue`: the theme grid is driven by `getThemesByCategory()` so a new registered theme appears automatically, but its category tab (`light`/`dark`) must exist and the preview relies on `theme.components.*` colors being present.
+4. **Theme logic** — `composables/useTheme.ts` / `store/themeStore.ts` and any code that branches on theme id (e.g. `toggleTheme` toggles between `keguang-blue` and `deep-dark`).
+5. **Deliberately hardcoded colors** — re-verify the intentional hardcoded spots documented under "Deliberately Kept Hardcoded Colors" still read correctly on the new theme (PDF/Office viewers, image modal, avatar pastels, mark highlights, etc.).
+6. **i18n scan allowlist** — if any new SCSS/JS comments contain CJK text, add the file to `scripts/i18n-scan-allowlist.json` or `npm run i18n:check` will fail.
 
 ### CSS Variable System
 Each theme generates CSS custom properties that components use for styling:
@@ -92,7 +99,14 @@ Each theme generates CSS custom properties that components use for styling:
 --text-primary      /* Main text - adapts to background */
 --text-secondary    /* Secondary text - slightly muted */
 --text-muted        /* Muted text - for less important content */
---text-inverse      /* ❌ AVOID - opposite of background (poor contrast) */
+--text-inverse      /* ⚠️ USE WITH CARE - in the dark theme this is NEAR-BLACK
+                       (#0e1726), NOT white. Only use it as the foreground on
+                       colored backgrounds (primary buttons, badges on
+                       --btn-primary-bg / semantic fills). Never use it as
+                       body text on --surface-* backgrounds. */
+--overlay-text      /* Constant light text on BOTH themes (#eef3fa) - for
+                       code blocks / media overlays that must stay light */
+--overlay-text-secondary
 
 /* Background Colors */
 --bg-primary        /* Main page background */
@@ -101,11 +115,21 @@ Each theme generates CSS custom properties that components use for styling:
 --surface-secondary /* Elevated surfaces */
 --surface-elevated  /* Highest elevation surfaces */
 --surface-overlay   /* Overlay/modal backgrounds */
+--surface-hover     /* Hover surfaces */
+--surface-tertiary  /* Lowest emphasis surfaces */
+--surface-disabled  /* Disabled surfaces */
 
 /* Interactive Elements */
 --interactive-primary    /* Primary buttons, links */
 --interactive-secondary  /* Secondary interactive elements */
 --interactive-hover      /* Hover states */
+--interactive-active     /* Active/pressed states */
+--interactive-disabled   /* Disabled states */
+--interactive-active-text
+
+/* Buttons */
+--btn-primary-bg      /* Primary button fill (= interactive) */
+--btn-primary-bg-hover
 
 /* Borders & Shadows */
 --border-primary    /* Main borders */
@@ -114,13 +138,35 @@ Each theme generates CSS custom properties that components use for styling:
 --shadow-small      /* Subtle shadows */
 --shadow-medium     /* Standard shadows */
 --shadow-large      /* Prominent shadows */
+--shadow-soft
 
 /* Semantic Colors */
 --semantic-success  /* Success states (green) */
 --semantic-warning  /* Warning states (yellow) */
 --semantic-error    /* Error states (red) */
 --semantic-info     /* Info states (blue) */
+--semantic-purple   /* Purple states (verified identity, special tags) */
+
+/* Semantic Alias Block (all derived from --semantic-*) */
+--success-color / --success-background
+--warning-color / --warning-background
+--error-color   / --error-background
+--info-color    / --info-background
+--purple-color  / --purple-background
+
+/* Layout / Component Tokens */
+--topbar-bg / --topbar-shadow
+--sidebar-bg / --sidebar-shadow
+--modal-bg / --modal-backdrop / --modal-shadow
+--drawer-backdrop / --sidebar-backdrop
+--scheduler-chip-* / --timetable-* / --credit-level-*
+--effect-blur / --transition-fast / --transition-normal / --transition-slow
 ```
+
+> **Convention**: colored elements (primary buttons, badges) use
+> `color: var(--text-inverse)` on the colored fill. For translucent tints,
+> prefer `color-mix(in srgb, var(--token) NN%, transparent)` over hardcoded
+> `rgba()`.
 
 ## Critical Development Rules
 
@@ -179,14 +225,21 @@ Each theme generates CSS custom properties that components use for styling:
 
 #### 2. Don't Use --text-inverse for Regular Text
 ```scss
-// ❌ WRONG - Creates poor contrast
+// ❌ WRONG - In the dark theme --text-inverse is NEAR-BLACK, so this
+//            renders dark-on-dark (unreadable)
 .bad-text {
-  color: var(--text-inverse);  // White on white, black on black!
+  color: var(--text-inverse);  // Dark theme: #0e1726 on #16233a = invisible
 }
 
 // ✅ CORRECT - Use primary for readable text
 .good-text {
   color: var(--text-primary);  // Always readable
+}
+
+// ✅ CORRECT - --text-inverse is only for foreground ON colored fills
+.primary-button {
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);  // Colored background → correct
 }
 ```
 
@@ -275,7 +328,7 @@ When creating a new component, ensure:
   
   &:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   }
   
   &::placeholder {
@@ -341,15 +394,41 @@ border: 1px solid var(--border-primary);
 | `border: 1px solid #ddd` | `border: 1px solid var(--border-primary)` |
 | `box-shadow: 0 2px 4px rgba(0,0,0,0.1)` | `box-shadow: var(--shadow-small)` |
 
+## Deliberately Kept Hardcoded Colors
+
+A small set of hardcoded colors is **intentional** and documented inline with
+CJK comments in the source (each carries a "刻意保留" note). They fall into two
+groups:
+
+**Cross-theme constants** — the color must stay identical on both themes:
+- PDF/Office viewers (`PostPdfPageViewer.vue` / `PostOfficeDocViewer.vue`): white page canvas `rgb(255,255,255)` (pdf.js rendering requirement) + classic dark-gray backdrop `#525659`
+- Fullscreen image modal (`ImageModal.vue`): constant dark backdrop + white controls (media needs a dark surround)
+- Search keyword highlight (`SearchDropdown.vue`): `mark` `#fef3c7` / `#92400e`
+- White toggle knobs (`KeguangPinned.vue`, contest admin): white knob on both themes (`--text-inverse` is near-black in dark, unusable)
+- White diagonal-stripe texture on banned timetable cells (`SchedulerTimetable.vue`)
+- Compact badge white text + translucent black on map/colored backgrounds (`SchedulerPopularityBadge.vue`)
+
+**Dynamic per-content colors** — theme tokens cannot express them:
+- Avatar placeholder pastel palette (`UserAvatar.vue`), hashed by username
+- Course timetable color palette (`utils/scheduler.ts` `getCourseTimetableColors`)
+- 8-category chart palettes (`AdminAreaChart/BarChart/DonutChart.client.vue`)
+- Course subject node text on dynamically generated HSL backgrounds (`SchedulerMap.vue`)
+- Backend-driven identity badge color fallback `#2563eb` (`IdentityBadge.vue`)
+
+When adding a new theme, re-verify these spots still read correctly (see the
+theme-sync checklist above).
+
 ## Advanced Features
 
 ### Custom Theme Creation
 If you need to add a new theme:
 
-1. Add theme configuration to `/utils/themes.ts`
-2. Follow existing theme structure
-3. Test all components with new theme
-4. Update theme selection UI
+1. Add the theme configuration to `/utils/themes.ts` (id, name, category `light`/`dark`, component color map)
+2. Add the matching `:root[data-theme='<id>']` override block to `assets/css/variables.scss` — **every token that differs from light must be overridden, or it will silently fall back to the light value**
+3. Make sure the theme's `category` maps to an existing tab in `ThemeSettings.vue` (`light` or `dark`)
+4. Re-verify the deliberately hardcoded colors (see "Deliberately Kept Hardcoded Colors") on the new theme
+5. Run `npm run i18n:check` and `npm run test`
+6. Test all components with the new theme (both categories if it is a dark theme)
 
 ### Dynamic Theme Switching
 ```typescript
@@ -460,12 +539,12 @@ color: var(--text-muted);
 ### Remember
 - **Always** use theme variables, never hardcoded colors
 - **Test** in both `keguang-blue` and `deep-dark` before committing
-- **Use** `--text-primary` for readable text, avoid `--text-inverse`
+- **Use** `--text-primary` for readable text; `--text-inverse` only as foreground on colored fills (`--btn-primary-bg` / semantic colors)
 - **Layer** backgrounds using surface variables
-- **Follow** semantic color meaning (success = green, error = red)
-- **Keep** `assets/css/variables.scss` dark block in sync with `utils/themes.ts`
+- **Follow** semantic color meaning (success = green, error = red); use the `-color` / `-background` alias block or `color-mix()` for tints
+- **Keep** `assets/css/variables.scss` override block in sync with `utils/themes.ts`
 
 ---
 
 *Last Updated: August 2026*  
-*Version: 3.0*  
+*Version: 3.1*  

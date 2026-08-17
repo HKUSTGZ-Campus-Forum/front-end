@@ -10,6 +10,18 @@
 
 ## [Unreleased]
 
+### 主题 token 化（深色适配）
+
+- **全组件硬编码颜色清理**：forum、feedback、scheduler、admin 图表、academic-map、common、ui、home、identity、setting、user、matching、contest、profile 等全部组件与页面的硬编码颜色统一替换为主题变量（`--surface-*` / `--text-*` / `--border-*` / `--interactive-*` / `--semantic-*` / `--shadow-*` 等），深色主题下不再有亮色残留
+- **新增语义色 token**：`--semantic-purple` 及 `--success/-warning/-error/-info/-purple-color`、`-background` 等别名块；primary 按钮统一 `--btn-primary-bg` + `--text-inverse`
+- **刻意保留的硬编码（均带注释说明）**：PDF/Office 查看器白底、全屏图片查看器恒定深色、动态头像 pastel 色板、课程学科彩色节点文字、8 色图表分类色板、搜索关键词高亮、白色 toggle knob 等——因 token 无法表达或需跨主题恒定而刻意保留
+- **i18n 扫描白名单**：10 个含中文说明注释的组件加入 `i18n-scan-allowlist.json`
+
+### 课程板块
+
+- **"图谱" 独立 URL**：课程图谱从 `/courses` 迁至 `/courses/graph`（导航文案 "Graph" → "Course Map"）；`/courses` 作为课程板块入口重定向至 `/courses/planner`，`utils/courseUniverse.ts` 同步更新模式路径与重定向映射
+- **四页宽度统一**：Planner / Explore / Academic Map / Course Map 四页 `max-width` 统一为 1100px、水平内边距统一 20px，切换页面时导航按钮位置不再跳变
+
 ### 主站顶栏 UI 优化
 
 - **顶栏高度 84→64px**：顶栏与内容区偏移同步
@@ -24,7 +36,7 @@
 - **头像菜单修复**：图标改 lucide；`font: inherit` 简写致字体异常 → `font-family: inherit`；头像 hover 热区 240px→100%（原横跨语言按钮下方，选语言时误触发头像菜单）
 - i18n 新增 `common.theme.label/light/dark`
 
-### 排课工作台（已提交，待合并）
+### 排课工作台
 
 - **求解提示 emoji → lucide 图标**：`SchedulerDashboard` 求解提示（信息/警告/错误）emoji 替换为 lucide 图标，en/zh 文案精简
 - **banned 格可见性 + 持久化**：筛选（banned）格在非编辑模式始终渲染（保持可见），仅编辑模式可点击切换；banned 时间段按学期持久化
