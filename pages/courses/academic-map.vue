@@ -465,7 +465,7 @@ useHead({
 <style scoped lang="scss">
 .am-page {
   width: 100%;
-  max-width: 1180px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 24px 20px 64px;
 }

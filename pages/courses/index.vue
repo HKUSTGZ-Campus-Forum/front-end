@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import CourseUniversePage from '~/components/courses/universe/CourseUniversePage.vue'
-
 definePageMeta({ layout: 'keguang' })
 
-const { t } = useI18n()
+const router = useRouter()
+const { getLocalePath } = useAppLocale()
 
-useHead(() => ({
-  title: `${t('courseUniverse.hubTitle')} - ${t('common.appName')}`,
-}))
+router.replace(getLocalePath('/courses/planner'))
 </script>
 
 <template>
-  <CourseUniversePage mode="universe" />
+  <div></div>
 </template>

@@ -120,9 +120,9 @@ export const COURSE_UNIVERSE_MAX_ZOOM = 2.25
 export const COURSE_UNIVERSE_FOCUS_ZOOM = 1.45
 
 export const COURSE_UNIVERSE_MODES: CourseUniverseMode[] = [
-  { key: 'universe', labelKey: 'courseUniverse.modes.universe', path: '/courses' },
-  { key: 'explore', labelKey: 'courseUniverse.modes.explore', path: '/courses/explore' },
   { key: 'planner', labelKey: 'courseUniverse.modes.planner', path: '/courses/planner' },
+  { key: 'explore', labelKey: 'courseUniverse.modes.explore', path: '/courses/explore' },
+  { key: 'universe', labelKey: 'courseUniverse.modes.universe', path: '/courses/graph' },
   { key: 'academicMap', labelKey: 'courseUniverse.modes.academicMap', path: '/courses/academic-map' },
 ]
 
@@ -148,7 +148,7 @@ export function getCourseUniverseNodePrefix(code: string) {
 }
 
 export function buildCourseUniverseModePath(mode: CourseUniverseModeKey) {
-  return COURSE_UNIVERSE_MODES.find(item => item.key === mode)?.path || '/courses'
+  return COURSE_UNIVERSE_MODES.find(item => item.key === mode)?.path || '/courses/planner'
 }
 
 export function buildCourseUniverseCourseDetailPath(code: string) {
@@ -162,6 +162,7 @@ export function isCourseUniverseActivePath(path: string) {
 }
 
 export function getCourseUniverseRedirect(path: string) {
+  if (path === '/courses' || path === '/courses/') return '/courses/planner'
   if (path === '/schedule' || path === '/schedule/dashboard') return '/courses/planner'
   if (path.startsWith('/schedule/dashboard/')) {
     return path.replace('/schedule/dashboard', '/courses/planner')
