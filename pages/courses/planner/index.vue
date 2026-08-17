@@ -15,6 +15,12 @@ const semesters = ref<SemesterInfo[]>([])
 const loading = ref(true)
 const loadError = ref(false)
 
+const SEASON_COLUMNS = [
+  { key: '10', labelKey: 'courses.semester.fall' },
+  { key: '30', labelKey: 'courses.semester.spring' },
+  { key: '40', labelKey: 'courses.semester.summer' },
+] as const
+
 const sortedSemesters = computed(() =>
   [...semesters.value].sort((a, b) => Number(b.id) - Number(a.id))
 )
@@ -50,6 +56,25 @@ function groupByYear(sems: SemesterInfo[]) {
 }
 
 const semesterGroups = computed(() => groupByYear(sortedSemesters.value))
+
+function getSemesterSeason(sem: SemesterInfo) {
+  const match = String(sem.id || '').trim().match(/^\d{2}(\d{2})$/)
+  return match?.[1] || ''
+}
+
+const semestersByYearSeason = computed(() => {
+  const map: Record<string, Partial<Record<string, SemesterInfo>>> = {}
+  for (const [year, sems] of Object.entries(semesterGroups.value)) {
+    map[year] = {}
+    for (const sem of sems) {
+      const season = getSemesterSeason(sem)
+      if (SEASON_COLUMNS.some(column => column.key === season)) {
+        map[year][season] = sem
+      }
+    }
+  }
+  return map
+})
 
 function getSemesterName(sem: SemesterInfo) {
   return locale.value === 'zh' ? sem.name_zh : sem.name
@@ -99,25 +124,39 @@ function getSemesterName(sem: SemesterInfo) {
       </section>
 
       <div v-if="semesters.length > 0" class="scheduler-home__panel scheduler-home__timeline">
-        <div
-          v-for="(sems, year) in semesterGroups"
-          :key="year"
-          class="scheduler-home__year"
-        >
-          <div class="scheduler-home__year-label">{{ year }}</div>
-          <div class="scheduler-home__semesters">
-            <NuxtLink
-              v-for="sem in sems"
-              :key="sem.id"
-              :to="getLocalePath(`/courses/planner/${sem.id}`)"
-              class="scheduler-home__card"
+        <div class="scheduler-home__semester-table">
+          <div class="scheduler-home__semester-table-row scheduler-home__semester-table-row--head">
+            <div class="scheduler-home__semester-table-cell scheduler-home__semester-table-cell--year" aria-hidden="true"></div>
+            <div
+              v-for="column in SEASON_COLUMNS"
+              :key="column.key"
+              class="scheduler-home__semester-table-cell scheduler-home__semester-table-cell--head"
             >
-              <div class="scheduler-home__card-main">
-                <div class="scheduler-home__card-name">{{ getSemesterName(sem) }}</div>
-                <div class="scheduler-home__card-count">{{ t('scheduler.sections', { count: sem.section_count }) }}</div>
-              </div>
-              <span class="scheduler-home__card-action">{{ t('scheduler.enterPlanner') }}</span>
-            </NuxtLink>
+              {{ t(column.labelKey) }}
+            </div>
+          </div>
+          <div
+            v-for="(yearSeasons, year) in semestersByYearSeason"
+            :key="year"
+            class="scheduler-home__semester-table-row"
+          >
+            <div class="scheduler-home__semester-table-cell scheduler-home__semester-table-cell--year">
+              {{ year }}
+            </div>
+            <div
+              v-for="column in SEASON_COLUMNS"
+              :key="column.key"
+              class="scheduler-home__semester-table-cell"
+            >
+              <NuxtLink
+                v-if="yearSeasons[column.key]"
+                :to="getLocalePath(`/courses/planner/${yearSeasons[column.key].id}`)"
+                class="scheduler-home__card"
+              >
+                <div class="scheduler-home__card-name">{{ getSemesterName(yearSeasons[column.key]) }}</div>
+                <div class="scheduler-home__card-count">{{ t('scheduler.sections', { count: yearSeasons[column.key].section_count }) }}</div>
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -132,9 +171,9 @@ function getSemesterName(sem: SemesterInfo) {
 <style lang="scss" scoped>
 .scheduler-home {
   width: 100%;
-  max-width: 1160px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 22px 24px 64px;
+  padding: 24px 20px 64px;
 
   &__primary {
     flex-shrink: 0;
@@ -227,37 +266,59 @@ function getSemesterName(sem: SemesterInfo) {
     padding: 10px 18px 4px;
   }
 
-  &__year {
+  &__semester-table {
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  &__semester-table-row {
     display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
-    gap: 18px;
-    padding: 18px 0;
+    grid-template-columns: 128px repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: stretch;
+    padding: 14px 0;
+    min-width: 640px;
 
     & + & {
       border-top: 1px solid var(--border-secondary);
     }
+
+    &--head {
+      border-bottom: 1px solid var(--border-secondary);
+      padding-bottom: 10px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
   }
 
-  &__year-label {
-    font-size: 0.96rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    padding-top: 10px;
-  }
+  &__semester-table-cell {
+    min-width: 0;
 
-  &__semesters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
+    &--head {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    &--year {
+      display: flex;
+      align-items: center;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      padding-top: 2px;
+    }
   }
 
   &__card {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: 82px;
-    padding: 16px 18px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    min-height: 72px;
+    padding: 12px 14px;
     background: var(--surface-secondary);
     border: 1px solid var(--border-secondary);
     border-radius: 12px;
@@ -271,25 +332,14 @@ function getSemesterName(sem: SemesterInfo) {
     }
 
     &-name {
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 0.95rem;
+      font-weight: 650;
       color: var(--text-primary);
     }
 
     &-count {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-
-    &-action {
-      flex-shrink: 0;
-      padding: 5px 10px;
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
-      color: var(--interactive-active);
-      font-size: 0.78rem;
-      font-weight: 700;
     }
   }
 
@@ -310,15 +360,6 @@ function getSemesterName(sem: SemesterInfo) {
 
     &__stats {
       grid-template-columns: 1fr;
-    }
-
-    &__year {
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    &__year-label {
-      padding-top: 0;
     }
   }
 }
