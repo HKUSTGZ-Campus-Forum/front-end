@@ -28,6 +28,7 @@
     "components/setting/Login.vue",
     "components/setting/ThemeSettings.vue",
     "components/common/MarkdownEditor*.vue",
+    "components/common/Footer.vue",
     "components/courses/CoursePosts.vue",
     "components/FileUpload.vue",
     "components/ui/ImageModal.vue",
