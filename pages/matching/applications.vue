@@ -46,13 +46,13 @@ definePageMeta({
   padding: 40px;
   background: var(--surface-primary, white);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  border: 1px solid #e9ecef;
+  box-shadow: var(--shadow-medium, 0 2px 10px rgba(0,0,0,0.08));
+  border: 1px solid var(--border-primary, #e9ecef);
 }
 
 .info-icon {
   font-size: 4rem;
-  color: #3498db;
+  color: var(--interactive-primary, #3498db);
   margin-bottom: 20px;
 }
 
@@ -92,23 +92,23 @@ p {
 }
 
 .btn-primary {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
+  background: var(--btn-primary-bg, #3498db);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--btn-primary-bg, #3498db);
 }
 
 .btn-primary:hover {
-  background: #2980b9;
+  background: var(--btn-primary-bg-hover, #2980b9);
 }
 
 .btn-outline {
   background: transparent;
   color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  border-color: var(--border-secondary, #bdc3c7);
 }
 
 .btn-outline:hover {
-  background: #ecf0f1;
+  background: var(--surface-secondary, #ecf0f1);
 }
 
 @media (max-width: 768px) {

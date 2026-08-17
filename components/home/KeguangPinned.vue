@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import SearchDropdown from '~/components/ui/SearchDropdown.vue'
@@ -9,6 +9,7 @@ const { t } = useI18n()
 const router = useRouter()
 const { isLoggedIn, logout, user } = useAuth()
 const { locale, availableLocales, getLocalePath, switchToLocale } = useAppLocale()
+const { setTheme, isDarkTheme } = useTheme()
 
 const props = defineProps<{
   sidebarExpanded?: boolean
@@ -21,6 +22,34 @@ const navStyle = computed(() => ({
 
 const searchQuery = ref('')
 const isLoggingOut = ref(false)
+
+// Language dropdown
+const isLocaleOpen = ref(false)
+const localeMenuRef = ref<HTMLElement>()
+
+const selectLocale = async (code: string) => {
+  isLocaleOpen.value = false
+  await switchToLocale(code as 'zh' | 'en')
+}
+
+const handleLocaleClickOutside = (event: Event) => {
+  if (localeMenuRef.value && !localeMenuRef.value.contains(event.target as Node)) {
+    isLocaleOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleLocaleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleLocaleClickOutside)
+})
+
+// Theme toggle (replicates the CoursePlan.search darkmode toggle)
+const toggleTheme = () => {
+  setTheme(isDarkTheme.value ? 'keguang-blue' : 'deep-dark')
+}
 
 const handleSearch = (query: string) => {
   if (query.trim()) {
@@ -64,16 +93,76 @@ const handleMenuLogout = async () => {
         />
       </div>
 
-      <div class="kg-topnav__locale-switch">
+      <!-- Light/dark theme toggle, replicating the CoursePlan.search
+           darkmode-toggle: an animated sun/moon icon (expand transition)
+           next to a sliding switch. -->
+      <div class="kg-topnav__theme">
         <button
-          v-for="item in availableLocales"
-          :key="item.code"
           type="button"
-          :class="['kg-topnav__locale-btn', { active: locale === item.code }]"
-          @click="switchToLocale(item.code)"
+          class="kg-topnav__theme-icon-btn"
+          :class="{ 'kg-topnav__theme-icon-btn--toggled': isDarkTheme }"
+          :aria-label="isDarkTheme ? t('common.theme.light') : t('common.theme.dark')"
+          @click="toggleTheme"
         >
-          {{ item.code === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            width="2em"
+            height="2em"
+            class="kg-topnav__theme-icon"
+            viewBox="0 0 32 32"
+          >
+            <clipPath id="kg-theme-toggle-cutout">
+              <path d="M0-11h25a1 1 0 0017 13v30H0Z" />
+            </clipPath>
+            <g clip-path="url(#kg-theme-toggle-cutout)">
+              <circle cx="16" cy="16" r="8.4" />
+              <path d="M18.3 3.2c0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3S14.7.9 16 .9s2.3 1 2.3 2.3zm-4.6 25.6c0-1.3 1-2.3 2.3-2.3s2.3 1 2.3 2.3-1 2.3-2.3 2.3-2.3-1-2.3-2.3zm15.1-10.5c-1.3 0-2.3-1-2.3-2.3s1-2.3 2.3-2.3 2.3 1 2.3 2.3-1 2.3-2.3 2.3zM3.2 13.7c1.3 0 2.3 1 2.3 2.3s-1 2.3-2.3 2.3S.9 17.3.9 16s1-2.3 2.3-2.3zm5.8-7C9 7.9 7.9 9 6.7 9S4.4 8 4.4 6.7s1-2.3 2.3-2.3S9 5.4 9 6.7zm16.3 21c-1.3 0-2.3-1-2.3-2.3s1-2.3 2.3-2.3 2.3 1 2.3 2.3-1 2.3-2.3 2.3zm2.4-21c0 1.3-1 2.3-2.3 2.3S23 7.9 23 6.7s1-2.3 2.3-2.3 2.4 1 2.4 2.3zM6.7 23C8 23 9 24 9 25.3s-1 2.3-2.3 2.3-2.3-1-2.3-2.3 1-2.3 2.3-2.3z" />
+            </g>
+          </svg>
         </button>
+
+        <button
+          type="button"
+          class="kg-topnav__theme-switch"
+          :class="{ 'kg-topnav__theme-switch--on': isDarkTheme }"
+          :aria-label="isDarkTheme ? t('common.theme.light') : t('common.theme.dark')"
+          @click="toggleTheme"
+        >
+          <span class="kg-topnav__theme-knob" />
+        </button>
+      </div>
+
+      <!-- Language dropdown -->
+      <div ref="localeMenuRef" class="kg-topnav__locale">
+        <button
+          type="button"
+          class="kg-topnav__locale-btn"
+          :aria-label="t('common.locale.label')"
+          :aria-expanded="isLocaleOpen"
+          @click="isLocaleOpen = !isLocaleOpen"
+        >
+          <Icon name="lucide:globe" class="kg-topnav__locale-icon" aria-hidden="true" />
+          <span>{{ locale === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}</span>
+          <Icon
+            name="lucide:chevron-down"
+            class="kg-topnav__locale-icon kg-topnav__locale-icon--chevron"
+            aria-hidden="true"
+          />
+        </button>
+
+        <div v-if="isLocaleOpen" class="kg-topnav__locale-menu">
+          <button
+            v-for="item in availableLocales"
+            :key="item.code"
+            type="button"
+            :class="['kg-topnav__locale-option', { active: locale === item.code }]"
+            @click="selectLocale(item.code)"
+          >
+            <span>{{ item.code === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}</span>
+            <Icon v-if="locale === item.code" name="lucide:check" class="kg-topnav__locale-check" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <div class="kg-topnav__user">
@@ -96,15 +185,15 @@ const handleMenuLogout = async () => {
 
             <div class="kg-topnav__menu-list">
               <NuxtLink :to="getLocalePath('/setting/account')" class="kg-topnav__menu-item">
-                <ForumUiIcon name="settings" class="kg-topnav__menu-icon" />
+                <Icon name="lucide:settings" class="kg-topnav__menu-icon" aria-hidden="true" />
                 <span>{{ t('layout.accountSettings') }}</span>
               </NuxtLink>
               <NuxtLink :to="getLocalePath('/setting/identity')" class="kg-topnav__menu-item">
-                <ForumUiIcon name="academic-cap" class="kg-topnav__menu-icon" />
+                <Icon name="lucide:graduation-cap" class="kg-topnav__menu-icon" aria-hidden="true" />
                 <span>{{ t('layout.identityVerification') }}</span>
               </NuxtLink>
               <NuxtLink :to="getLocalePath('/setting/theme')" class="kg-topnav__menu-item">
-                <ForumUiIcon name="palette" class="kg-topnav__menu-icon" />
+                <Icon name="lucide:palette" class="kg-topnav__menu-icon" aria-hidden="true" />
                 <span>{{ t('layout.themeSettings') }}</span>
               </NuxtLink>
               <button
@@ -113,7 +202,7 @@ const handleMenuLogout = async () => {
                 :disabled="isLoggingOut"
                 @click="handleMenuLogout"
               >
-                <ForumUiIcon name="logout" class="kg-topnav__menu-icon" />
+                <Icon name="lucide:log-out" class="kg-topnav__menu-icon" aria-hidden="true" />
                 <span>{{ isLoggingOut ? t('layout.loggingOut') : t('actions.logout') }}</span>
               </button>
             </div>
@@ -132,7 +221,7 @@ const handleMenuLogout = async () => {
   position: fixed;
   top: 0;
   right: 0;
-  height: 84px;
+  height: 64px;
   background: var(--surface-primary);
   box-shadow: var(--topbar-shadow);
   display: flex;
@@ -145,9 +234,28 @@ const handleMenuLogout = async () => {
 .kg-topnav__brand {
   text-decoration: none;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  /* Replicates the CoursePlan header logo hover exactly: the card is taller
+     than the topbar (72px in a 64px bar) so it pokes out below it, and on
+     hover it lifts 4px (translate-y-1) with a soft border and tinted
+     background, raised above the bar via z-index. */
+  height: 72px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  transition: all 0.2s ease-out;
+  z-index: 0;
+
+  &:hover {
+    transform: translateY(4px);
+    border-color: var(--border-primary);
+    background: var(--surface-secondary);
+    z-index: 50;
+  }
 
   &-logo {
-    height: 56px;
+    height: 44px;
     width: auto;
     display: flex;
     align-items: center;
@@ -184,15 +292,158 @@ const handleMenuLogout = async () => {
   margin-left: auto;
 }
 
-.kg-topnav__locale-switch {
+.kg-topnav__theme {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+/* Animated sun/moon icon. The expand transition CSS is a port of the MIT
+   licensed theme-toggles "expand" variant (edent/theme-toggles) used by
+   CoursePlan.search, adapted to theme CSS variables. */
+.kg-topnav__theme-icon-btn {
+  --kg-theme-toggle-duration: 500ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  /* Reset the global touch-friendly button rule (min-height: 44px,
+     padding: 0.75rem 1rem) that would inflate the control. */
+  min-height: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--interactive-primary);
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: var(--interactive-active);
+  }
+
+  &--toggled {
+    color: var(--semantic-warning);
+
+    // Keep the moon yellow on hover — the generic :hover rule below would
+    // otherwise override it with the blue interactive-active color.
+    &:hover {
+      color: var(--semantic-warning);
+    }
+  }
+}
+
+.kg-topnav__theme-icon {
+  display: block;
+  fill: currentColor;
+
+  g circle,
+  g path {
+    transform-origin: center;
+    transition: transform
+        calc(var(--kg-theme-toggle-duration) * 0.65)
+        cubic-bezier(0, 0, 0, 1.25)
+        calc(var(--kg-theme-toggle-duration) * 0.35);
+  }
+
+  :first-child path {
+    transition-property: transform, d;
+    transition-duration: calc(var(--kg-theme-toggle-duration) * 0.6);
+    transition-timing-function: cubic-bezier(0, 0, 0.5, 1);
+  }
+}
+
+.kg-topnav__theme-icon-btn--toggled .kg-topnav__theme-icon {
+  g circle {
+    transform: scale(1.4);
+    transition-delay: 0s;
+  }
+
+  g path {
+    transform: scale(0.75);
+    transition-delay: 0s;
+  }
+
+  :first-child path {
+    d: path('M-9 3h25a1 1 0 0017 13v30H0Z');
+    transition-delay: calc(var(--kg-theme-toggle-duration) * 0.4);
+    transition-timing-function: cubic-bezier(0, 0, 0, 1.25);
+  }
+}
+
+@supports not (d: path('')) {
+  .kg-topnav__theme-icon-btn--toggled .kg-topnav__theme-icon :first-child path {
+    transform: translate3d(-9px, 14px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kg-topnav__theme-icon-btn * {
+    transition: none !important;
+  }
+}
+
+/* Sliding switch track + knob. */
+.kg-topnav__theme-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 28px;
+  /* Reset the global touch-friendly button rule (min-height: 44px,
+     padding: 0.75rem 1rem) that would inflate the track. */
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  /* Visible gray track in both themes (the CoursePlan toggle uses
+     gray-300 / gray-500). --border-secondary is nearly invisible on the
+     light topbar, so --text-muted is used instead. */
+  background: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.4s ease;
+
+  &--on {
+    background: var(--btn-primary-bg);
+
+    &:hover {
+      background: var(--btn-primary-bg-hover);
+    }
+  }
+}
+
+.kg-topnav__theme-knob {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  /* White knob on both themes, matching the CoursePlan toggle (bg-white).
+     --text-inverse is near-black in the dark theme, so it can't be reused.
+     The subtle drop shadow is also kept as-is (tailwind shadow-sm) to lift
+     the knob off the track. */
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  /* Matches the CoursePlan geometry (tailwind translate-x-1): the knob sits
+     4px from the left edge. Do NOT add a left offset on top of this — the
+     on-state translate must end 4px before the right edge of the 48px track. */
+  transform: translateX(4px);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kg-topnav__theme-switch--on .kg-topnav__theme-knob {
+  transform: translateX(24px);
+}
+
+.kg-topnav__locale {
+  position: relative;
 }
 
 .kg-topnav__locale-btn {
-  min-width: 48px;
-  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  /* Reset global touch-friendly button rule (min-height: 44px). */
+  min-height: 0;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--border-secondary);
   background: var(--surface-secondary);
@@ -202,12 +453,80 @@ const handleMenuLogout = async () => {
   cursor: pointer;
   transition: all 0.2s ease;
 
-  &.active,
-  &:hover {
+  &:hover,
+  &[aria-expanded='true'] {
     color: var(--interactive-active);
     border-color: var(--border-focus);
     background: var(--bg-secondary);
   }
+}
+
+.kg-topnav__locale-icon {
+  font-size: 1rem;
+  line-height: 1;
+
+  &--chevron {
+    font-size: 0.9rem;
+  }
+}
+
+.kg-topnav__locale-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 130px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-secondary);
+  box-shadow: var(--modal-shadow);
+  z-index: 1020;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background: var(--surface-overlay);
+    border-left: 1px solid var(--border-secondary);
+    border-top: 1px solid var(--border-secondary);
+    transform: rotate(45deg);
+  }
+}
+
+.kg-topnav__locale-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  /* Reset global touch-friendly button rule (min-height: 44px). */
+  min-height: 0;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  &:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    color: var(--interactive-active);
+    font-weight: 700;
+  }
+}
+
+.kg-topnav__locale-check {
+  font-size: 1rem;
+  color: var(--interactive-active);
 }
 
 .kg-topnav__search {
@@ -225,13 +544,16 @@ const handleMenuLogout = async () => {
   position: relative;
   padding: 8px 0;
 
+  // Hover bridge between the avatar and the menu panel. Kept to the avatar's
+  // own width (left: 0; width: 100%) so it never overlaps the neighboring
+  // language control, which would open the menu when clicking there.
   &::after {
     content: '';
     position: absolute;
     top: calc(100% - 6px);
-    right: 0;
-    width: 240px;
-    height: 18px;
+    left: 0;
+    width: 100%;
+    height: 12px;
   }
 
   &:hover,
@@ -343,11 +665,17 @@ const handleMenuLogout = async () => {
 }
 
 .kg-topnav__menu-item--button {
+  /* Reset global touch-friendly button rule (min-height: 44px,
+     padding: 0.75rem 1rem). */
+  min-height: 0;
+  padding: 10px 12px;
   cursor: pointer;
-  font: inherit;
+  font-family: inherit;
 }
 
 .kg-topnav__menu-icon {
+  font-size: 18px;
+  line-height: 1;
   width: 18px;
   height: 18px;
   color: currentColor;
@@ -369,7 +697,7 @@ const handleMenuLogout = async () => {
   transition: background 0.2s ease;
 
   &:hover {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
   }
 }

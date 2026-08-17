@@ -113,22 +113,55 @@ describe('scheduler hardening UI contract', () => {
     expect(en.cartStateUnverified).toMatch(/locked/i)
   })
 
-  it('persists the plan index per semester and display options globally', () => {
+  it('keeps banned period markers visible outside edit mode', () => {
+    const timetable = source('../../components/scheduler/SchedulerTimetable.vue')
+
+    // Ban cells are always rendered (not gated behind `v-if="filterMode"`),
+    // so blocked periods stay visible after leaving edit mode.
+    expect(timetable).not.toContain('<template v-if="filterMode">')
+    expect(timetable).toContain("'timetable__cell--readonly': !filterMode")
+    // Only edit mode makes the cells clickable.
+    expect(timetable).toContain('if (!props.filterMode) return')
+    expect(timetable).toContain("emit('toggle-ban', day, period)")
+    // Hover hint icons render only in edit mode.
+    expect(timetable).toContain('v-if="filterMode && !isBanned(d - 1, p - 1)"')
+    expect(timetable).toContain('v-else-if="filterMode"')
+    // Read-only markers pass pointer events through to lecture blocks.
+    expect(timetable).toContain('&--readonly {')
+    expect(timetable).toContain('pointer-events: none;')
+    // The revert (unban) icon is hidden at rest and only fades in on hover.
+    expect(timetable).toContain('&--unban {')
+    expect(timetable).not.toContain('&--banned &-icon--unban {')
+    expect(timetable).toContain('&--banned:hover &-icon--unban {')
+    expect(timetable).toContain('opacity: 0.9;')
+  })
+
+  it('persists the plan index and banned periods per semester, display options globally', () => {
     const dashboard = source('../../components/scheduler/SchedulerDashboard.vue')
 
-    // Plan index is stored per semester; display options are a global pref.
+    // Plan index and banned periods are stored per semester; display options
+    // are a global pref.
     expect(dashboard).toContain("const PLAN_INDEX_STORAGE_PREFIX = 'scheduler.plan-index.'")
+    expect(dashboard).toContain("const BANNED_PERIODS_STORAGE_PREFIX = 'scheduler.banned-periods.'")
     expect(dashboard).toContain("const DISPLAY_OPTIONS_STORAGE_KEY = 'scheduler.display-options'")
     expect(dashboard).toContain('`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`')
+    expect(dashboard).toContain('`${BANNED_PERIODS_STORAGE_PREFIX}${props.semesterId}`')
 
     // Restore is guarded (SSR-safe localStorage access wrapped in try/catch).
     expect(dashboard).toContain('localStorage.getItem(`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`)')
+    expect(dashboard).toContain('localStorage.getItem(`${BANNED_PERIODS_STORAGE_PREFIX}${props.semesterId}`)')
     expect(dashboard).toContain('localStorage.getItem(DISPLAY_OPTIONS_STORAGE_KEY)')
     // A restored index waits for the plan list, then clamps to its length.
     expect(dashboard).toContain('Math.min(pendingPlanIndex.value, plans.length)')
     // Only known boolean display keys are applied from a stored payload.
     expect(dashboard).toContain("typeof parsed[key] === 'boolean'")
-    // Writes happen through deep watchers so in-place option updates persist.
+    // Banned periods are validated against the 7×8 boolean grid shape.
+    expect(dashboard).toContain('function parseBannedPeriods(payload: unknown): boolean[][] | null')
+    expect(dashboard).toContain('payload.length !== 7')
+    expect(dashboard).toContain('row.length !== 8')
+    expect(dashboard).toContain("typeof value !== 'boolean'")
+    // Writes happen through deep watchers so in-place mutations persist.
+    expect(dashboard).toContain('watch(bannedPeriods, (periods) => {')
     expect(dashboard).toContain('watch(displayOptions, (options) => {')
     expect(dashboard).toContain('}, { deep: true })')
   })

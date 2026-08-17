@@ -242,7 +242,7 @@ onMounted(() => {
       </div>
 
       <div v-if="showError" class="alert alert-error">
-        <span class="alert-icon">⚠️</span>
+        <span class="alert-icon"><Icon name="lucide:circle-alert" aria-hidden="true" /></span>
         <div class="alert-content">
           <strong>申请失败</strong>
           <p>{{ errorMessage }}</p>
@@ -409,10 +409,10 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .identity-request-form {
-  background: #fcfeff;
+  background: var(--surface-primary);
   border-radius: 24px;
-  box-shadow: 0 28px 72px rgba(34, 65, 118, 0.18);
-  border: 1px solid rgba(181, 212, 255, 0.9);
+  box-shadow: var(--shadow-large);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
   max-width: 760px;
   width: 100%;
   max-height: min(88vh, 920px);
@@ -433,9 +433,9 @@ onMounted(() => {
   align-items: flex-start;
   gap: 1rem;
   padding: 1.75rem 2rem 1.25rem;
-  border-bottom: 1px solid rgba(188, 214, 248, 0.9);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
   background:
-    linear-gradient(180deg, rgba(240, 248, 255, 0.95) 0%, rgba(252, 254, 255, 0.95) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 95%, transparent) 0%, color-mix(in srgb, var(--surface-primary) 95%, transparent) 100%);
   
   @media (max-width: 480px) {
     padding: 1.25rem 1.25rem 1rem;
@@ -448,7 +448,7 @@ onMounted(() => {
 
     h3 {
       margin: 0;
-      color: #20335a;
+      color: var(--text-primary);
       font-size: 2rem;
       font-weight: 800;
 
@@ -459,17 +459,17 @@ onMounted(() => {
 
     p {
       margin: 0;
-      color: #5e7497;
+      color: var(--text-secondary);
       font-size: 0.98rem;
       line-height: 1.6;
     }
   }
 
   .close-btn {
-    background: #ffffff;
-    border: 1px solid rgba(188, 214, 248, 0.95);
+    background: var(--surface-primary);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
     font-size: 1.45rem;
-    color: #6d82a5;
+    color: var(--text-muted);
     cursor: pointer;
     width: 2.75rem;
     height: 2.75rem;
@@ -481,8 +481,8 @@ onMounted(() => {
     justify-content: center;
 
     &:hover {
-      background: #eef6ff;
-      color: #20335a;
+      background: var(--surface-secondary);
+      color: var(--text-primary);
       transform: translateY(-1px);
     }
   }
@@ -509,14 +509,14 @@ onMounted(() => {
 .form-label {
   display: block;
   font-weight: 700;
-  color: #22355c;
+  color: var(--text-primary);
   font-size: 1.1rem;
 }
 
 .form-hint {
   margin: 0;
   font-size: 0.98rem;
-  color: #6f84a6;
+  color: var(--text-muted);
   line-height: 1.7;
 }
 
@@ -532,12 +532,12 @@ onMounted(() => {
 }
 
 .locked-identity-card {
-  border: 1px solid rgba(171, 205, 252, 0.95);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
   border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(240, 248, 255, 0.96) 0%, rgba(247, 251, 255, 0.96) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 96%, transparent) 0%, color-mix(in srgb, var(--surface-secondary) 96%, transparent) 100%);
   padding: 1.2rem 1.25rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface-primary) 90%, transparent);
 }
 
 .locked-identity-header {
@@ -554,8 +554,8 @@ onMounted(() => {
   width: 3.25rem;
   height: 3.25rem;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(189, 216, 249, 0.9);
+  background: color-mix(in srgb, var(--surface-primary) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 90%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -578,8 +578,8 @@ onMounted(() => {
   align-self: flex-start;
   padding: 0.28rem 0.7rem;
   border-radius: 999px;
-  background: rgba(46, 130, 255, 0.1);
-  color: #2f73de;
+  background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
+  color: var(--interactive-primary);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -587,21 +587,21 @@ onMounted(() => {
 
 .locked-identity-title {
   margin: 0;
-  color: #1f3157;
+  color: var(--text-primary);
   font-size: 1.55rem;
   font-weight: 800;
 }
 
 .locked-identity-label {
   margin: 0;
-  color: #445a80;
+  color: var(--text-secondary);
   font-size: 0.98rem;
   line-height: 1.55;
 }
 
 .locked-identity-description {
   margin: 0;
-  color: #7c90af;
+  color: var(--text-muted);
   line-height: 1.6;
   font-size: 0.96rem;
 }
@@ -626,7 +626,7 @@ onMounted(() => {
 
   &.selected {
     border-color: var(--interactive-primary);
-    background: var(--interactive-primary)10;
+    background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   }
 
   &.disabled {
@@ -637,8 +637,8 @@ onMounted(() => {
       position: absolute;
       top: 0.5rem;
       right: 0.5rem;
-      background: var(--warning);
-      color: white;
+      background: var(--semantic-warning);
+      color: var(--text-inverse);
       font-size: 0.7rem;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
@@ -672,17 +672,17 @@ onMounted(() => {
 
 .upload-shell {
   position: relative;
-  border: 2px dashed rgba(182, 211, 250, 0.95);
+  border: 2px dashed color-mix(in srgb, var(--border-primary) 95%, transparent);
   border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(245, 250, 255, 0.95) 0%, rgba(252, 254, 255, 0.98) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 95%, transparent) 0%, color-mix(in srgb, var(--surface-primary) 98%, transparent) 100%);
   padding: 1.2rem;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: rgba(86, 155, 255, 0.95);
+    border-color: color-mix(in srgb, var(--interactive-primary) 95%, transparent);
     background:
-      linear-gradient(180deg, rgba(239, 247, 255, 0.98) 0%, rgba(250, 253, 255, 1) 100%);
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-secondary) 98%, transparent) 0%, color-mix(in srgb, var(--surface-primary) 100%, transparent) 100%);
   }
 }
 
@@ -706,28 +706,28 @@ onMounted(() => {
   width: 3rem;
   height: 3rem;
   border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid rgba(187, 215, 249, 0.95);
-  color: #2f73de;
+  background: var(--surface-primary);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
+  color: var(--interactive-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
   font-weight: 700;
-  box-shadow: 0 10px 20px rgba(80, 140, 220, 0.1);
+  box-shadow: var(--shadow-medium);
 }
 
 .upload-copy {
   h4 {
     margin: 0 0 0.3rem;
-    color: #20345d;
+    color: var(--text-primary);
     font-size: 1rem;
     font-weight: 700;
   }
 
   p {
     margin: 0;
-    color: #7085a7;
+    color: var(--text-muted);
     line-height: 1.6;
     font-size: 0.94rem;
   }
@@ -738,14 +738,14 @@ onMounted(() => {
   border-radius: 12px;
   padding: 0.85rem 1.15rem;
   min-width: 6.5rem;
-  background: #2f73de;
-  color: #ffffff;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: #235fbf;
+    background: var(--btn-primary-bg-hover);
     transform: translateY(-1px);
   }
 
@@ -776,10 +776,10 @@ onMounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.95rem 1rem;
-  background: #ffffff;
+  background: var(--surface-primary);
   border-radius: 16px;
-  border: 1px solid rgba(194, 218, 248, 0.95);
-  box-shadow: 0 10px 25px rgba(55, 92, 143, 0.07);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
+  box-shadow: var(--shadow-medium);
   
   @media (max-width: 480px) {
     flex-direction: column;
@@ -800,26 +800,26 @@ onMounted(() => {
   .file-badge {
     font-size: 0.76rem;
     font-weight: 700;
-    color: #2f73de;
+    color: var(--interactive-primary);
     letter-spacing: 0.02em;
     text-transform: uppercase;
   }
 
   .file-name {
     font-weight: 700;
-    color: #21355c;
+    color: var(--text-primary);
   }
 
   .file-size {
     font-size: 0.85rem;
-    color: #7186a8;
+    color: var(--text-muted);
   }
 }
 
 .remove-file-btn {
-  background: #fff2f2;
-  color: #d34a4a;
-  border: 1px solid rgba(238, 178, 178, 0.95);
+  background: color-mix(in srgb, var(--semantic-error) 6%, transparent);
+  color: var(--semantic-error);
+  border: 1px solid color-mix(in srgb, var(--semantic-error) 30%, transparent);
   border-radius: 12px;
   min-width: 2.5rem;
   width: 2.5rem;
@@ -832,7 +832,7 @@ onMounted(() => {
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: #ffe4e4;
+    background: color-mix(in srgb, var(--semantic-error) 10%, transparent);
   }
 
   &:disabled {
@@ -844,36 +844,39 @@ onMounted(() => {
 .form-textarea {
   width: 100%;
   padding: 1rem 1.05rem;
-  border: 1px solid rgba(191, 216, 248, 0.95);
+  border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
   border-radius: 18px;
-  background: #ffffff;
-  color: #20345d;
+  background: var(--surface-primary);
+  color: var(--text-primary);
   resize: vertical;
   min-height: 152px;
   font-family: inherit;
   line-height: 1.6;
-  box-shadow: inset 0 1px 2px rgba(20, 57, 104, 0.03);
+  /* Deliberately kept: a subtle inset shadow to give the textarea a
+     recessed look. The --shadow-* tokens are all outer shadows, so an inset
+     can't reuse them. */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
 
   &:focus {
     outline: none;
-    border-color: #5b9fff;
-    box-shadow: 0 0 0 4px rgba(91, 159, 255, 0.14);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--border-focus) 14%, transparent);
   }
 
   &::placeholder {
-    color: #91a2bb;
+    color: var(--text-muted);
   }
 
   &:disabled {
     opacity: 0.6;
-    background: #f4f8fc;
+    background: var(--surface-secondary);
   }
 }
 
 .character-count {
   text-align: right;
   font-size: 0.8rem;
-  color: #8fa1b9;
+  color: var(--text-muted);
   margin-top: 0.35rem;
 }
 
@@ -886,21 +889,22 @@ onMounted(() => {
   position: relative;
 
   &.alert-success {
-    background: rgba(52, 181, 120, 0.09);
-    border: 1px solid rgba(72, 181, 128, 0.34);
-    color: #18734c;
+    background: color-mix(in srgb, var(--semantic-success) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--semantic-success) 34%, transparent);
+    color: var(--semantic-success);
   }
 
   &.alert-error {
-    background: rgba(239, 99, 99, 0.1);
-    border: 1px solid rgba(226, 116, 116, 0.3);
-    color: #b84242;
+    background: color-mix(in srgb, var(--semantic-error) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--semantic-error) 30%, transparent);
+    color: var(--semantic-error);
   }
 
   .alert-icon {
     font-size: 1.1rem;
     flex-shrink: 0;
     margin-top: 0.05rem;
+    display: inline-flex;
   }
 
   .alert-content {
@@ -940,8 +944,8 @@ onMounted(() => {
   padding: 1.15rem 0 1.35rem;
   position: sticky;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(252, 254, 255, 0) 0%, rgba(252, 254, 255, 0.96) 22%, rgba(252, 254, 255, 1) 100%);
-  border-top: 1px solid rgba(228, 239, 253, 0.95);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-primary) 0%, transparent) 0%, color-mix(in srgb, var(--surface-primary) 96%, transparent) 22%, var(--surface-primary) 100%);
+  border-top: 1px solid color-mix(in srgb, var(--border-secondary) 95%, transparent);
   
   @media (max-width: 480px) {
     flex-direction: column-reverse;
@@ -968,9 +972,9 @@ onMounted(() => {
   }
 
   &.btn-primary {
-    background: linear-gradient(135deg, #2f73de 0%, #4f9cff 100%);
-    color: white;
-    box-shadow: 0 12px 28px rgba(47, 115, 222, 0.24);
+    background: var(--btn-primary-bg);
+    color: var(--text-inverse);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--interactive-primary) 24%, transparent);
 
     &:hover:not(:disabled) {
       filter: brightness(0.98);
@@ -979,12 +983,12 @@ onMounted(() => {
   }
 
   &.btn-secondary {
-    background: #ffffff;
-    color: #33486d;
-    border: 1px solid rgba(194, 218, 248, 0.95);
+    background: var(--surface-primary);
+    color: var(--text-secondary);
+    border: 1px solid color-mix(in srgb, var(--border-primary) 95%, transparent);
 
     &:hover:not(:disabled) {
-      background: #f3f8ff;
+      background: var(--surface-secondary);
     }
   }
 }

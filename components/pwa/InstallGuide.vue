@@ -213,7 +213,7 @@ onUnmounted(() => {
   position: fixed;
   bottom: 84px;
   right: 24px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse, #ffffff);
   padding: 10px 14px;
   border-radius: 24px;
@@ -225,12 +225,12 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   font-size: 14px;
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--text-inverse) 10%, transparent);
 }
 
 .install-float-btn:hover {
   transform: translateY(-2px);
-  background: var(--interactive-hover);
+  background: var(--btn-primary-bg-hover);
   box-shadow: var(--shadow-large, 0 10px 24px rgba(38, 164, 255, 0.16));
 }
 
@@ -330,7 +330,7 @@ onUnmounted(() => {
 /* Primary Install Button */
 .install-btn-primary {
   width: 100%;
-  background: var(--interactive-primary, #26a4ff);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse, #ffffff);
   border: none;
   padding: 12px 16px;
@@ -385,7 +385,7 @@ onUnmounted(() => {
 }
 
 .tab-btn.active {
-  background: var(--interactive-primary, #26a4ff);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse, #ffffff);
   border-color: var(--interactive-primary, #26a4ff);
 }
@@ -409,7 +409,7 @@ onUnmounted(() => {
 .step-number {
   width: 24px;
   height: 24px;
-  background: var(--interactive-primary, #26a4ff);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse, #ffffff);
   border-radius: 50%;
   display: flex;

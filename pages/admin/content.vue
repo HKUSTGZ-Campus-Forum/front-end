@@ -364,7 +364,7 @@ onMounted(loadContent);
 .admin-content__primary,
 .admin-content__tabs button.active {
   border-color: transparent;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 }
 

@@ -19,7 +19,7 @@
       <div class="form-group">
         <label for="email">邮箱地址</label>
         <div class="input-wrapper">
-          <span class="input-icon">📧</span>
+          <span class="input-icon"><Icon name="lucide:mail" aria-hidden="true" /></span>
           <input
             id="email"
             v-model="email"
@@ -247,6 +247,8 @@ onUnmounted(() => {
         transform: translateY(-50%);
         font-size: 1rem;
         z-index: 1;
+        display: flex;
+        align-items: center;
 
         @media (max-width: 479px) {
           font-size: 1.1rem;
@@ -293,8 +295,8 @@ onUnmounted(() => {
 .reset-button {
   width: 100%;
   padding: 0.875rem;
-  background: var(--primary-color, #4361ee);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -361,7 +363,7 @@ onUnmounted(() => {
 
   .email-hint {
     font-size: 0.9rem;
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
     margin-bottom: 2rem;
   }
 
@@ -383,8 +385,8 @@ onUnmounted(() => {
     }
 
     &:hover:not(:disabled) {
-      background: var(--primary-color, #4361ee);
-      color: white;
+      background: var(--primary-color);
+      color: var(--text-inverse);
     }
 
     &:disabled {

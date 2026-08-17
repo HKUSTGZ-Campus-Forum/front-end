@@ -411,6 +411,9 @@ watch(() => props.show, (newShow) => {
 </script>
 
 <style lang="scss" scoped>
+/* 全屏图片查看器：恒定深色背景 + 白色控件文字为刻意设计
+   （与 PDF/Office 查看器同理，图片本身需深色底衬托，不随主题变化），
+   故下方 rgba(0,0,0,...) / white 均刻意保留 */
 .image-modal-overlay {
   position: fixed;
   top: 0;

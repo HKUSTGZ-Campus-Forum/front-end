@@ -118,6 +118,18 @@ onMounted(() => {
   } catch {
     // Malformed payload; keep the defaults.
   }
+
+  // Restore the per-semester banned periods. The shape check guards against
+  // malformed or foreign payloads; a failed parse keeps the empty grid.
+  try {
+    const savedBans = localStorage.getItem(`${BANNED_PERIODS_STORAGE_PREFIX}${props.semesterId}`)
+    if (savedBans !== null) {
+      const parsed = parseBannedPeriods(JSON.parse(savedBans))
+      if (parsed) bannedPeriods.value = parsed
+    }
+  } catch {
+    // Malformed payload; keep the defaults.
+  }
 })
 
 function onResizeStart(event: MouseEvent) {
@@ -165,12 +177,33 @@ const displayOptions = ref({
 })
 
 // Persisted state. The current plan index is remembered per semester (plan
-// lists are semester-specific); display options are a global preference.
+// lists are semester-specific); banned periods follow the same per-semester
+// scope since the blocked grid belongs to that semester's timetable; display
+// options are a global preference.
 const PLAN_INDEX_STORAGE_PREFIX = 'scheduler.plan-index.'
+const BANNED_PERIODS_STORAGE_PREFIX = 'scheduler.banned-periods.'
 const DISPLAY_OPTIONS_STORAGE_KEY = 'scheduler.display-options'
 // Holds a restored plan index until the plan list is solved (plans load
 // asynchronously after mount); the planList watcher applies it when ready.
 const pendingPlanIndex = ref<number | null>(null)
+
+// Banned periods persist as a 7-day × 8-period boolean grid. A payload that
+// does not match that exact shape (malformed JSON, an older version, a
+// foreign key) is ignored so it cannot corrupt the planner state.
+function parseBannedPeriods(payload: unknown): boolean[][] | null {
+  if (!Array.isArray(payload) || payload.length !== 7) return null
+  const result: boolean[][] = []
+  for (const row of payload) {
+    if (!Array.isArray(row) || row.length !== 8) return null
+    const parsed: boolean[] = []
+    for (const value of row) {
+      if (typeof value !== 'boolean') return null
+      parsed.push(value)
+    }
+    result.push(parsed)
+  }
+  return result
+}
 
 watch(viewIndex, (index) => {
   try {
@@ -179,6 +212,17 @@ watch(viewIndex, (index) => {
     // Storage unavailable; keep the in-memory index for this session.
   }
 })
+
+watch(bannedPeriods, (periods) => {
+  try {
+    localStorage.setItem(
+      `${BANNED_PERIODS_STORAGE_PREFIX}${props.semesterId}`,
+      JSON.stringify(periods),
+    )
+  } catch {
+    // Storage unavailable; keep the in-memory bans for this session.
+  }
+}, { deep: true })
 
 watch(displayOptions, (options) => {
   try {
@@ -280,12 +324,12 @@ const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: strin
   return null
 })
 
-const planEmoji = computed(() => {
+const planIcon = computed(() => {
   const msg = planMessage.value
   if (!msg) return ''
-  if (msg.level === 'info') return '😉'
-  if (msg.level === 'warning') return '😲'
-  return '😢'
+  if (msg.level === 'info') return 'lucide:face-slightly-smiling'
+  if (msg.level === 'warning') return 'lucide:face-neutral'
+  return 'lucide:face-slightly-frowning'
 })
 
 // Reset viewIndex when plans change; a restored (persisted) plan index is
@@ -510,7 +554,12 @@ function toggleBan(day: number, period: number) {
                (like the original planner), so the side panel stays visible. -->
           <Transition name="overlay">
             <div v-if="planMessage" class="dashboard__overlay" role="status">
-              <span class="dashboard__overlay-emoji" aria-hidden="true">{{ planEmoji }}</span>
+              <span
+                :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
+                aria-hidden="true"
+              >
+                <Icon v-if="planIcon" :name="planIcon" />
+              </span>
               <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
               <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
             </div>
@@ -815,7 +864,7 @@ function toggleBan(day: number, period: number) {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-tertiary);
+    color: var(--text-muted);
   }
 
   /* Dim overlay (solver hint). Scoped to the timetable card (the nearest
@@ -836,10 +885,22 @@ function toggleBan(day: number, period: number) {
     text-align: center;
   }
 
-  &__overlay-emoji {
+  &__overlay-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 3.4rem;
     line-height: 1;
     margin-bottom: 14px;
+    color: var(--overlay-text);
+
+    &.is-warning {
+      color: var(--semantic-warning);
+    }
+
+    &.is-error {
+      color: var(--semantic-error);
+    }
   }
 
   &__overlay-title {
@@ -856,6 +917,7 @@ function toggleBan(day: number, period: number) {
     color: var(--overlay-text-secondary);
     font-size: 0.94rem;
     line-height: 1.6;
+    text-wrap: balance;
   }
 }
 

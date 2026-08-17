@@ -387,9 +387,9 @@ onMounted(async () => {
 }
 
 .progress-step.completed .step-indicator {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg, #3498db);
   border-color: var(--interactive-primary, #3498db);
-  color: white;
+  color: var(--text-inverse, #ffffff);
 }
 
 .progress-step.active .step-indicator {
@@ -407,15 +407,15 @@ onMounted(async () => {
 }
 
 .progress-line.filled {
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg, #3498db);
 }
 
 .profile-prompt-card {
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: linear-gradient(135deg, var(--btn-primary-bg, #3498db), var(--btn-primary-bg-hover, #2980b9));
   border-radius: 12px;
   padding: 30px;
-  color: white;
-  box-shadow: 0 4px 20px rgba(52, 152, 219, 0.3);
+  color: var(--text-inverse, #ffffff);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--btn-primary-bg, #3498db) 30%, transparent);
 }
 
 .prompt-content {
@@ -459,7 +459,7 @@ onMounted(async () => {
 
 .requirement.completed {
   opacity: 1;
-  color: #a8f5a8;
+  color: var(--success-color, #a8f5a8);
 }
 
 .req-icon {
@@ -499,7 +499,7 @@ onMounted(async () => {
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-large, 0 4px 20px rgba(0,0,0,0.12));
 }
 
 .stat-number {
@@ -537,8 +537,8 @@ onMounted(async () => {
 
 .action-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 25px rgba(0,0,0,0.15);
-  border-color: #3498db;
+  box-shadow: var(--shadow-large, 0 6px 25px rgba(0,0,0,0.15));
+  border-color: var(--interactive-primary, #3498db);
 }
 
 .action-icon {
@@ -563,8 +563,8 @@ onMounted(async () => {
   position: absolute;
   top: 15px;
   right: 15px;
-  background: #e74c3c;
-  color: white;
+  background: var(--error-color, #e74c3c);
+  color: var(--text-inverse, #ffffff);
   border-radius: 12px;
   padding: 4px 8px;
   font-size: 0.8rem;
@@ -588,7 +588,7 @@ onMounted(async () => {
 
 .completion-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--interactive-primary, #3498db), #2ecc71);
+  background: linear-gradient(90deg, var(--interactive-primary, #3498db), var(--success-color, #2ecc71));
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -612,34 +612,34 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: var(--interactive-primary, #3498db);
-  color: white;
-  border-color: #3498db;
+  background: var(--btn-primary-bg, #3498db);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--btn-primary-bg, #3498db);
 }
 
 .btn-primary:hover {
-  background: #2980b9;
-  border-color: #2980b9;
+  background: var(--btn-primary-bg-hover, #2980b9);
+  border-color: var(--btn-primary-bg-hover, #2980b9);
 }
 
 .btn-success {
-  background: #27ae60;
-  color: white;
-  border-color: #27ae60;
+  background: var(--success-color, #27ae60);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--success-color, #27ae60);
 }
 
 .btn-success:hover {
-  background: #219a52;
+  background: color-mix(in srgb, var(--success-color, #27ae60) 85%, black);
 }
 
 .btn-outline {
   background: transparent;
   color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  border-color: var(--border-secondary, #bdc3c7);
 }
 
 .btn-outline:hover {
-  background: #ecf0f1;
+  background: var(--surface-secondary, #ecf0f1);
 }
 
 .login-hint {

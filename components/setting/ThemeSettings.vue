@@ -354,7 +354,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   }
   
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     box-shadow: var(--shadow-small);
   }
@@ -464,7 +464,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   right: 0.75rem;
   width: 24px;
   height: 24px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -542,13 +542,16 @@ watch(() => themeStore.currentTheme, (newTheme) => {
     margin: 0;
     
     li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       padding: 0.25rem 0;
       color: var(--text-secondary);
       font-size: 0.9rem;
       
-      &::before {
-        content: "✨ ";
-        margin-right: 0.5rem;
+      .feature-list__icon {
+        font-size: 1rem;
+        flex-shrink: 0;
       }
     }
   }
@@ -594,8 +597,10 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   &.reset-btn {
     background: var(--semantic-warning);
     color: var(--text-inverse);
-    
+
     &:hover {
+      /* Darken the warning color for the hover state. #000 is only the
+         color-mix blending target, not a visible hardcoded color. */
       background: color-mix(in srgb, var(--semantic-warning) 85%, #000);
     }
   }
@@ -605,16 +610,18 @@ watch(() => themeStore.currentTheme, (newTheme) => {
     color: var(--text-inverse);
     
     &:hover {
+      /* Darken the info color for the hover state. #000 is only the
+         color-mix blending target, not a visible hardcoded color. */
       background: color-mix(in srgb, var(--semantic-info) 85%, #000);
     }
   }
   
   &.home-btn {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
   }
 }

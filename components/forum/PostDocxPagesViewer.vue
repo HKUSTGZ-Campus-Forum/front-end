@@ -211,7 +211,7 @@ watch(
   max-height: 70vh;
   overflow: auto;
   border-radius: 6px;
-  background: #d1d5db;
+  background: var(--surface-secondary, #d1d5db);
   padding: 8px;
 }
 

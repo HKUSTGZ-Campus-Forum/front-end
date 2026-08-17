@@ -427,7 +427,7 @@ onMounted(async () => {
 }
 
 .title-icon {
-  color: #3498db;
+  color: var(--interactive-primary);
 }
 
 .page-header p {
@@ -461,16 +461,16 @@ onMounted(async () => {
 }
 
 .project-card {
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  border: 1px solid #e9ecef;
+  box-shadow: var(--shadow-small);
+  border: 1px solid var(--border-primary);
   transition: all 0.2s ease;
 }
 
 .project-card:hover {
-  box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-medium);
 }
 
 .project-header {
@@ -502,14 +502,14 @@ onMounted(async () => {
   text-transform: uppercase;
 }
 
-.status-recruiting { background: #d4edda; color: #155724; }
-.status-active { background: #cce5ff; color: #0056b3; }
-.status-completed { background: #e2e3e5; color: #6c757d; }
-.status-cancelled { background: #f8d7da; color: #721c24; }
+.status-recruiting { background: var(--success-background); color: var(--success-color); }
+.status-active { background: var(--info-background); color: var(--info-color); }
+.status-completed { background: var(--surface-disabled); color: var(--text-muted); }
+.status-cancelled { background: var(--error-background); color: var(--error-color); }
 
 .project-type {
-  background: #ecf0f1;
-  color: #7f8c8d;
+  background: var(--surface-tertiary);
+  color: var(--text-muted);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -524,9 +524,9 @@ onMounted(async () => {
   text-transform: capitalize;
 }
 
-.difficulty-beginner { background: #d5f4e6; color: #27ae60; }
-.difficulty-intermediate { background: #fef9e7; color: #f39c12; }
-.difficulty-advanced { background: #fadbd8; color: #e74c3c; }
+.difficulty-beginner { background: var(--success-background); color: var(--success-color); }
+.difficulty-intermediate { background: var(--warning-background); color: var(--warning-color); }
+.difficulty-advanced { background: var(--error-background); color: var(--error-color); }
 
 .project-stats {
   display: flex;
@@ -559,8 +559,8 @@ onMounted(async () => {
 }
 
 .skill-tag {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
   padding: 4px 8px;
   border-radius: 10px;
   font-size: 0.8rem;
@@ -568,7 +568,7 @@ onMounted(async () => {
 }
 
 .more-skills {
-  color: #7f8c8d;
+  color: var(--text-muted);
   font-size: 0.8rem;
   font-style: italic;
 }
@@ -581,7 +581,7 @@ onMounted(async () => {
 .pending-section {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--border-primary);
 }
 
 .pending-section h4 {
@@ -601,7 +601,7 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   border-radius: 8px;
 }
 
@@ -616,7 +616,7 @@ onMounted(async () => {
 
 .match-score {
   font-size: 0.8rem;
-  color: #f39c12;
+  color: var(--warning-color);
   font-weight: 600;
 }
 
@@ -636,7 +636,7 @@ onMounted(async () => {
   gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-secondary);
 }
 
 .load-more {
@@ -664,48 +664,48 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
+  border-color: var(--interactive-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2980b9;
+  background: var(--btn-primary-bg-hover);
 }
 
 .btn-secondary {
-  background: #f39c12;
-  color: white;
-  border-color: #f39c12;
+  background: var(--warning-color);
+  color: var(--text-inverse);
+  border-color: var(--warning-color);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #e67e22;
+  filter: brightness(0.92);
 }
 
 .btn-success {
-  background: #27ae60;
-  color: white;
-  border-color: #27ae60;
+  background: var(--success-color);
+  color: var(--text-inverse);
+  border-color: var(--success-color);
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #219a52;
+  filter: brightness(0.92);
 }
 
 .btn-outline {
   background: transparent;
-  color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  color: var(--text-secondary);
+  border-color: var(--border-primary);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: #ecf0f1;
+  background: var(--surface-tertiary);
 }
 
 .btn-link {
   background: transparent;
-  color: #3498db;
+  color: var(--interactive-primary);
   border: none;
   text-decoration: none;
 }

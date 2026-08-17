@@ -207,7 +207,7 @@ function formatPostDate(iso: string): string {
   min-height: 126px;
 
   &:hover {
-    box-shadow: 0 4px 16px rgba(38, 164, 255, 0.15);
+    box-shadow: var(--shadow-medium);
     transform: translateY(-2px);
   }
 }
@@ -313,7 +313,7 @@ function formatPostDate(iso: string): string {
 .skeleton-card {
   height: 140px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #e8f4fd 25%, #d7edf9 50%, #e8f4fd 75%);
+  background: linear-gradient(90deg, var(--surface-secondary) 25%, var(--border-secondary) 50%, var(--surface-secondary) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }

@@ -341,6 +341,7 @@ onUnmounted(() => {
   line-height: 1;
   min-width: 16px;
   text-align: center;
+  /* 徽章小投影刻意保留：尺寸/透明度为小元素定制，token 阴影系列无法表达 */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   z-index: 10; /* Ensure it appears on top */
 }
@@ -410,12 +411,12 @@ onUnmounted(() => {
 }
 
 .view-all-btn {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 1px solid var(--interactive-primary);
   color: var(--text-inverse);
   
   &:hover {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     border-color: var(--interactive-hover);
   }
 }
@@ -456,7 +457,7 @@ onUnmounted(() => {
 .retry-btn {
   margin-top: 8px;
   padding: 6px 12px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
   border-radius: 6px;
@@ -464,7 +465,7 @@ onUnmounted(() => {
   font-size: 12px;
   
   &:hover {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
   }
 }
 
@@ -486,7 +487,7 @@ onUnmounted(() => {
   }
   
   &.unread {
-    background: rgba(59, 130, 246, 0.04);
+    background: color-mix(in srgb, var(--interactive-primary) 4%, transparent);
     border-left: 3px solid var(--interactive-primary);
   }
 }
@@ -521,13 +522,13 @@ onUnmounted(() => {
 
 .notification-time {
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
 }
 
 .unread-indicator {
   width: 8px;
   height: 8px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 6px;

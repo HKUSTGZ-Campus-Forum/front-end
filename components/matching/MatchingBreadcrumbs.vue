@@ -104,7 +104,7 @@ const breadcrumbItems = computed(() => {
 
 .breadcrumb-separator {
   font-size: 0.8rem;
-  color: var(--text-tertiary, #bdc3c7);
+  color: var(--text-muted);
   margin: 0 4px;
 }
 

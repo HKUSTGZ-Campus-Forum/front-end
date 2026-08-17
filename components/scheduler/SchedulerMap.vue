@@ -213,6 +213,8 @@ function getNodeColor(comp: MapComponent): string {
                   :stroke="hoveredId === comp.id ? 'var(--text-primary)' : 'none'"
                   stroke-width="2"
                 />
+                <!-- 课程节点文字刻意保留白色：节点背景为按学科动态生成的彩色 HSL，
+                     白色文字在任意彩色底上均保持可读，不随主题变化 -->
                 <text
                   x="12" y="28"
                   fill="white"
@@ -245,7 +247,7 @@ function getNodeColor(comp: MapComponent): string {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-tertiary);
+    color: var(--text-muted);
   }
 
   &__search {

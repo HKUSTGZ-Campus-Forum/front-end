@@ -180,10 +180,10 @@ const getCompletionPercentage = (profile) => {
 
 <style scoped>
 .user-card {
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-small);
   transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
@@ -192,16 +192,17 @@ const getCompletionPercentage = (profile) => {
 
 .user-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  border-color: var(--interactive-primary, #3498db);
+  box-shadow: var(--shadow-medium);
+  border-color: var(--interactive-primary);
 }
 
+/* 匹配度徽章保持金色：两种主题下金色徽章+白字均清晰可读 */
 .match-badge {
   position: absolute;
   top: 12px;
   right: 12px;
   background: linear-gradient(135deg, #ffd700, #ffb347);
-  color: white;
+  color: #fff;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -244,18 +245,18 @@ const getCompletionPercentage = (profile) => {
 }
 
 .experience-badge {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
 }
 
-.exp-beginner { background: #d5f4e6; color: #27ae60; }
-.exp-intermediate { background: #fef9e7; color: #f39c12; }
-.exp-advanced { background: #fadbd8; color: #e74c3c; }
-.exp-expert { background: #e8e8ff; color: #6633cc; }
+.exp-beginner { background: var(--success-background); color: var(--success-color); }
+.exp-intermediate { background: var(--warning-background); color: var(--warning-color); }
+.exp-advanced { background: var(--error-background); color: var(--error-color); }
+.exp-expert { background: var(--purple-background); color: var(--purple-color); }
 
 .availability-badge {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--purple-background);
+  color: var(--purple-color);
 }
 
 .user-bio {
@@ -285,8 +286,8 @@ const getCompletionPercentage = (profile) => {
 }
 
 .skill-tag {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -294,8 +295,8 @@ const getCompletionPercentage = (profile) => {
 }
 
 .interest-tag {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--purple-background);
+  color: var(--purple-color);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -310,8 +311,8 @@ const getCompletionPercentage = (profile) => {
 }
 
 .match-reasons {
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(41, 128, 185, 0.05));
-  border: 1px solid rgba(52, 152, 219, 0.2);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--interactive-primary) 5%, transparent), color-mix(in srgb, var(--interactive-primary) 8%, transparent));
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 20%, transparent);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 16px;
@@ -352,7 +353,7 @@ const getCompletionPercentage = (profile) => {
   flex-wrap: wrap;
   gap: 12px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-secondary);
 }
 
 .stat-item {

@@ -39,24 +39,24 @@ const handleRegisterSuccess = () => {
 .kg-register-card {
   width: 100%;
   max-width: 480px;
-  background: #F5FBFE;
-  border: 1.5px solid #c8dff8;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-primary);
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(40, 57, 101, 0.12);
+  box-shadow: var(--shadow-large);
   padding: 40px 36px;
 }
 
 .kg-register-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 6px;
   text-align: center;
 }
 
 .kg-register-subtitle {
   font-size: 0.9rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   margin: 0 0 32px;
   text-align: center;
 }
@@ -65,11 +65,11 @@ const handleRegisterSuccess = () => {
   text-align: center;
   margin-top: 20px;
   font-size: 0.9rem;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-link {
-  color: #26a4ff;
+  color: var(--interactive-primary);
   text-decoration: none;
   font-weight: 600;
   &:hover { text-decoration: underline; }

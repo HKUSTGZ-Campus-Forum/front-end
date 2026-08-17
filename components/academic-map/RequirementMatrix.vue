@@ -492,7 +492,7 @@ watch(activeMajorCode, () => {
   }
 
   small {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.74rem;
   }
 }
@@ -677,7 +677,7 @@ watch(activeMajorCode, () => {
 }
 
 .am-expand-indicator {
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 800;
 }
@@ -780,7 +780,7 @@ watch(activeMajorCode, () => {
   }
 
   small {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.7rem;
     line-height: 1.28;
     overflow: hidden;

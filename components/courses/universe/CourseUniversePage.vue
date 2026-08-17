@@ -207,8 +207,8 @@ onMounted(loadUniverse)
 <style scoped lang="scss">
 .cu-page {
   margin: 0 auto;
-  max-width: 1600px;
-  padding: 18px 20px 28px;
+  max-width: 1100px;
+  padding: 24px 20px 28px;
 }
 
 .cu-page__state {

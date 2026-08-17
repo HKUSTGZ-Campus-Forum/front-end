@@ -264,7 +264,7 @@ const formatFileSize = (bytes: number): string => {
 
 .progress-fill {
   height: 100%;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   transition: width 0.3s ease;
 }
 
@@ -282,13 +282,13 @@ const formatFileSize = (bytes: number): string => {
 .compression-info {
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background: #e8f5e8;
-  border: 1px solid #c3e6c3;
+  background: var(--success-background);
+  border: 1px solid color-mix(in srgb, var(--semantic-success) 34%, transparent);
   border-radius: 4px;
 }
 
 .compression-text {
-  color: #2d5016;
+  color: var(--success-color);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -335,10 +335,10 @@ const formatFileSize = (bytes: number): string => {
   padding: 0.5rem;
   min-width: 2rem;
   min-height: 2rem;
-  background: rgba(255, 0, 0, 0.8);
+  background: color-mix(in srgb, var(--semantic-error) 80%, transparent);
   border: none;
   border-radius: 50%;
-  color: white;
+  color: var(--text-inverse);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -348,8 +348,8 @@ const formatFileSize = (bytes: number): string => {
 }
 
 .delete-button:hover {
-  background: rgba(255, 0, 0, 1);
+  background: var(--semantic-error);
   transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--semantic-error) 30%, transparent);
 }
 </style> 

@@ -601,8 +601,8 @@ onMounted(() => {
   .retry-btn {
     margin-top: 1rem;
     padding: 0.75rem 1.5rem;
-    background: var(--interactive-primary);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--text-inverse);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -700,7 +700,7 @@ onMounted(() => {
     font-weight: 500;
     
     &.approved {
-      background: var(--success)20;
+      background: color-mix(in srgb, var(--success) 20%, transparent);
       color: var(--success);
     }
   }
@@ -781,22 +781,22 @@ onMounted(() => {
   font-weight: 500;
   
   &.status-approved {
-    background: var(--success)20;
+    background: color-mix(in srgb, var(--success) 20%, transparent);
     color: var(--success);
   }
   
   &.status-pending {
-    background: var(--warning)20;
+    background: color-mix(in srgb, var(--warning) 20%, transparent);
     color: var(--warning);
   }
   
   &.status-rejected {
-    background: var(--error)20;
+    background: color-mix(in srgb, var(--error) 20%, transparent);
     color: var(--error);
   }
   
   &.status-revoked {
-    background: var(--text-muted)20;
+    background: color-mix(in srgb, var(--text-muted) 20%, transparent);
     color: var(--text-muted);
   }
 }
@@ -922,7 +922,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--modal-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1032,7 +1032,7 @@ onMounted(() => {
   
   &.selected {
     border-color: var(--interactive-primary);
-    background: var(--interactive-primary)10;
+    background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   }
 }
 
@@ -1080,12 +1080,12 @@ onMounted(() => {
   
   &.toast-success {
     background: var(--success);
-    color: white;
+    color: var(--text-inverse);
   }
   
   &.toast-error {
     background: var(--error);
-    color: white;
+    color: var(--text-inverse);
   }
   
   .toast-close {
@@ -1118,8 +1118,8 @@ onMounted(() => {
   }
   
   &.btn-primary {
-    background: var(--interactive-primary);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--text-inverse);
     
     &:hover:not(:disabled) {
       background: var(--interactive-primary-dark);
@@ -1138,7 +1138,7 @@ onMounted(() => {
   
   &.btn-danger {
     background: var(--error);
-    color: white;
+    color: var(--text-inverse);
     
     &:hover:not(:disabled) {
       background: var(--error-dark);
@@ -1151,8 +1151,8 @@ onMounted(() => {
     border: 1px solid var(--interactive-primary);
     
     &:hover:not(:disabled) {
-      background: var(--interactive-primary);
-      color: white;
+      background: var(--btn-primary-bg);
+      color: var(--text-inverse);
     }
   }
   

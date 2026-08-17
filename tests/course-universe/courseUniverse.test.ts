@@ -307,19 +307,32 @@ describe('course universe helpers', () => {
     )
     expect(plannerSource).toContain('<template #actions>')
     expect(plannerSource).not.toContain('scheduler-home__hero')
+
+    const graphPageSource = readFileSync(
+      new URL('../../pages/courses/graph.vue', import.meta.url),
+      'utf8',
+    )
+    expect(graphPageSource).toContain('CourseUniversePage')
+    expect(graphPageSource).toContain('mode="universe"')
+
+    const coursesIndexSource = readFileSync(
+      new URL('../../pages/courses/index.vue', import.meta.url),
+      'utf8',
+    )
+    expect(coursesIndexSource).toContain("router.replace(getLocalePath('/courses/planner'))")
   })
 
   it('exports the expected course modes', () => {
     expect(COURSE_UNIVERSE_MODES.map(mode => mode.key)).toEqual([
-      'universe',
-      'explore',
       'planner',
+      'explore',
+      'universe',
       'academicMap',
     ])
   })
 
   it('builds localized mode paths without hardcoding locale prefixes', () => {
-    expect(buildCourseUniverseModePath('universe')).toBe('/courses')
+    expect(buildCourseUniverseModePath('universe')).toBe('/courses/graph')
     expect(buildCourseUniverseModePath('explore')).toBe('/courses/explore')
     expect(buildCourseUniverseModePath('planner')).toBe('/courses/planner')
     expect(buildCourseUniverseModePath('academicMap')).toBe('/courses/academic-map')
@@ -344,7 +357,7 @@ describe('course universe helpers', () => {
     expect(getCourseUniverseRedirect('/schedule/dashboard')).toBe('/courses/planner')
     expect(getCourseUniverseRedirect('/schedule/dashboard/2530')).toBe('/courses/planner/2530')
     expect(getCourseUniverseRedirect('/academic-map')).toBe('/courses/academic-map')
-    expect(getCourseUniverseRedirect('/courses')).toBeNull()
+    expect(getCourseUniverseRedirect('/courses')).toBe('/courses/planner')
   })
 
   it('normalizes map nodes with academic and planner status', () => {

@@ -211,6 +211,8 @@ async function paintPage() {
   canvas.style.height = `${Math.floor(viewport.height / outputScale)}px`;
 
   // PDF.js v6 renders from the canvas element directly.
+  // 注意：background 刻意保持白色 —— PDF 页面内容本身即为白底，
+  // 这是 pdf.js 渲染所必需的，不应随主题变化。
   await page
     .render({
       canvas,
@@ -303,6 +305,8 @@ onUnmounted(() => {
   overflow: auto;
   max-width: 100%;
   border-radius: 6px;
+  /* 刻意保留 #525659：PDF 查看器经典深灰衬底，用于衬托白色 PDF 页面，
+     与主题无关（PDF 页面内容始终为白底），故不 token 化 */
   background: #525659;
   padding: 8px;
 }

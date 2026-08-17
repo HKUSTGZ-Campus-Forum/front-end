@@ -53,6 +53,7 @@
   --semantic-warning: #f59e0b;
   --semantic-error: #ef4444;
   --semantic-info: #26a4ff;
+  --semantic-purple: #7c3aed;
 
   // Scheduler credit levels (per-credit color coding, mirrors the original planner)
   --credit-level-1: #10b981;
@@ -149,6 +150,43 @@
   --transition-fast: 0.2s;
   --transition-normal: 0.3s;
   --transition-slow: 0.4s;
+
+  /* 兼容别名：历史组件直接使用的自定义变量 → 映射到主题 token。
+     此处只需定义一次（引用型别名会随主题动态解析），保证换主题时自动生效。 */
+  --primary-color: var(--interactive-primary);
+  --primary-color-hover: var(--interactive-hover);
+  --primary-color-alpha: color-mix(in srgb, var(--interactive-primary) 12%, transparent);
+  --accent-primary: var(--interactive-primary);
+  --accent-secondary: var(--interactive-secondary);
+  // Primary button background: brand blue in light mode, a deeper blue in dark
+  // mode so large blue buttons don't glare on the dark background.
+  --btn-primary-bg: var(--interactive-primary);
+  --btn-primary-bg-hover: var(--interactive-hover);
+  --success-color: var(--semantic-success);
+  --success-background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  --success: var(--semantic-success);
+  --warning-color: var(--semantic-warning);
+  --warning-background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
+  --warning-text: var(--semantic-warning);
+  --warning: var(--semantic-warning);
+  --error-color: var(--semantic-error);
+  --error-background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+  --error-dark: var(--semantic-error);
+  --error: var(--semantic-error);
+  --info-color: var(--semantic-info);
+  --info-background: color-mix(in srgb, var(--semantic-info) 10%, transparent);
+  --info-text: var(--semantic-info);
+  --purple-color: var(--semantic-purple);
+  --purple-background: color-mix(in srgb, var(--semantic-purple) 12%, transparent);
+  --surface-disabled: var(--surface-secondary);
+  --surface-hover: var(--surface-secondary);
+  --surface-tertiary: var(--surface-secondary);
+  --interactive-primary-dark: var(--interactive-hover);
+  --background-gradient: var(--bg-gradient);
+  --shadow-soft: var(--shadow-small);
+  --color-blue-7: var(--interactive-secondary);
+  --border-dark: var(--border-primary);
+  --border-light: var(--border-secondary);
 }
 
 // 深色主题变量覆盖（首屏防 FOUC：由 app.vue 内联脚本设置 data-theme）
@@ -176,11 +214,16 @@
   --interactive-active: #1a8fe0;
   --interactive-active-text: #6cc5ff;
   --interactive-disabled: #33507a;
+  // Primary buttons use a deeper blue in dark mode so large blue buttons
+  // don't glare on the dark background; hover brightens back toward the brand.
+  --btn-primary-bg: var(--interactive-active);
+  --btn-primary-bg-hover: var(--interactive-hover);
 
   --semantic-success: #34d399;
   --semantic-warning: #fbbf24;
   --semantic-error: #f87171;
   --semantic-info: #26a4ff;
+  --semantic-purple: #a78bfa;
 
   // Scheduler side-panel bundle capsules & tabs (dark mode: the original
   // planner's brighter "sticker" chips — pastel blue when enabled, muted gray

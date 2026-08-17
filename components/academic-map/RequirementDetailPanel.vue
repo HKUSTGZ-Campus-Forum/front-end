@@ -258,13 +258,13 @@ const cellTitle = (cell: AcademicRequirementCell) => cell.title || t('academicMa
   }
 
   small {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.72rem;
     line-height: 1.3;
   }
 
   em {
-    color: #6e4bd8;
+    color: var(--purple-color);
     font-size: 0.66rem;
     font-style: normal;
     font-weight: 850;
@@ -283,23 +283,23 @@ const cellTitle = (cell: AcademicRequirementCell) => cell.title || t('academicMa
 }
 
 .is-now {
-  background: rgba(38, 164, 255, 0.11);
-  border-color: rgba(38, 164, 255, 0.38);
+  background: color-mix(in srgb, var(--interactive-primary) 11%, transparent);
+  border-color: color-mix(in srgb, var(--interactive-primary) 38%, transparent);
 }
 
 .is-done {
-  background: rgba(35, 190, 110, 0.1);
-  border-color: rgba(35, 190, 110, 0.36);
+  background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-success) 36%, transparent);
 }
 
 .is-need {
-  background: rgba(255, 172, 64, 0.1);
-  border-color: rgba(255, 172, 64, 0.35);
+  background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-warning) 35%, transparent);
 }
 
 .is-choice {
-  background: rgba(130, 89, 255, 0.08);
-  border-color: rgba(130, 89, 255, 0.3);
+  background: color-mix(in srgb, var(--semantic-purple) 8%, transparent);
+  border-color: color-mix(in srgb, var(--semantic-purple) 30%, transparent);
 }
 
 .is-more {

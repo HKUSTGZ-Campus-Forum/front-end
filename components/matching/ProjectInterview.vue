@@ -356,7 +356,7 @@ onMounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--interactive-primary, #3498db), #2ecc71);
+  background: linear-gradient(90deg, var(--interactive-primary), var(--semantic-success));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -368,9 +368,9 @@ onMounted(() => {
 }
 
 .question-section {
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-small);
   padding: 30px;
   margin-bottom: 20px;
 }
@@ -392,10 +392,10 @@ onMounted(() => {
 
 .option-button {
   padding: 16px 20px;
-  border: 2px solid var(--border-primary, #e9ecef);
+  border: 2px solid var(--border-primary);
   border-radius: 8px;
-  background: var(--surface-primary, white);
-  color: var(--text-primary, #2c3e50);
+  background: var(--surface-primary);
+  color: var(--text-primary);
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -407,26 +407,26 @@ onMounted(() => {
 }
 
 .option-button:hover {
-  border-color: var(--interactive-primary, #3498db);
-  background: rgba(52, 152, 219, 0.02);
+  border-color: var(--interactive-primary);
+  background: color-mix(in srgb, var(--interactive-primary) 3%, transparent);
 }
 
 .option-button.selected {
-  border-color: var(--interactive-primary, #3498db);
-  background: rgba(52, 152, 219, 0.1);
-  color: var(--interactive-primary, #3498db);
+  border-color: var(--interactive-primary);
+  background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
+  color: var(--interactive-primary);
   font-weight: 500;
 }
 
 .option-button.other-button {
-  background: var(--surface-secondary, #f8f9fa);
+  background: var(--surface-secondary);
   border-style: dashed;
 }
 
 .option-button.skip-button {
-  background: #fff5f5;
-  border-color: #fed7d7;
-  color: var(--text-secondary, #7f8c8d);
+  background: var(--error-background);
+  border-color: color-mix(in srgb, var(--error-color) 30%, transparent);
+  color: var(--text-secondary);
 }
 
 .custom-input-section {
@@ -436,17 +436,17 @@ onMounted(() => {
 .custom-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid var(--interactive-primary, #3498db);
+  border: 2px solid var(--interactive-primary);
   border-radius: 8px;
   font-size: 1rem;
   resize: vertical;
-  background: var(--surface-primary, white);
-  color: var(--text-primary, #2c3e50);
+  background: var(--surface-primary);
+  color: var(--text-primary);
 }
 
 .custom-input:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent);
 }
 
 .action-buttons {
@@ -464,9 +464,9 @@ onMounted(() => {
 .loading-section {
   text-align: center;
   padding: 60px 20px;
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-small);
   position: relative;
   overflow: hidden;
 }
@@ -491,13 +491,14 @@ onMounted(() => {
   transform: translate(-50%, -50%);
   width: 40px;
   height: 40px;
-  background: linear-gradient(45deg, var(--interactive-primary, #3498db), #2ecc71);
+  background: linear-gradient(45deg, var(--interactive-primary), var(--semantic-success));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* 大脑脉冲点保持白色：置于彩色渐变核心上，两种主题下均清晰 */
 .brain-pulse {
   width: 20px;
   height: 20px;
@@ -506,6 +507,7 @@ onMounted(() => {
   animation: brain-pulse 2s ease-in-out infinite;
 }
 
+/* 金色闪烁点保持金色：加载动画装饰，两种主题下均醒目 */
 .brain-spark {
   position: absolute;
   width: 6px;
@@ -549,7 +551,7 @@ onMounted(() => {
 
 .neural-line {
   position: absolute;
-  background: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
   border-radius: 2px;
   opacity: 0.6;
   animation: neural-pulse 2.5s ease-in-out infinite;
@@ -586,7 +588,7 @@ onMounted(() => {
   position: absolute;
   width: 8px;
   height: 8px;
-  background: #2ecc71;
+  background: var(--semantic-success);
   border-radius: 50%;
   animation: node-glow 3s ease-in-out infinite;
 }
@@ -660,7 +662,7 @@ onMounted(() => {
 
 .wave {
   width: 4px;
-  background: linear-gradient(to top, var(--interactive-primary, #3498db), rgba(52, 152, 219, 0.3));
+  background: linear-gradient(to top, var(--interactive-primary), color-mix(in srgb, var(--interactive-primary) 30%, transparent));
   border-radius: 2px;
   animation: wave-bounce 1.8s ease-in-out infinite;
 }
@@ -724,11 +726,11 @@ onMounted(() => {
 
 @keyframes node-glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--semantic-success) 50%, transparent);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.8);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--semantic-success) 80%, transparent);
     transform: scale(1.3);
   }
 }
@@ -754,9 +756,9 @@ onMounted(() => {
 }
 
 .completion-section {
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-small);
   padding: 30px;
 }
 
@@ -767,7 +769,7 @@ onMounted(() => {
 
 .completion-icon {
   font-size: 3rem;
-  color: #27ae60;
+  color: var(--success-color);
   margin-bottom: 16px;
 }
 
@@ -795,19 +797,19 @@ onMounted(() => {
 .description-textarea {
   width: 100%;
   padding: 16px;
-  border: 1px solid var(--border-primary, #ddd);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   font-size: 1rem;
   line-height: 1.5;
   resize: vertical;
-  background: var(--surface-primary, white);
-  color: var(--text-primary, #2c3e50);
+  background: var(--surface-primary);
+  color: var(--text-primary);
 }
 
 .description-textarea:focus {
   outline: none;
-  border-color: var(--interactive-primary, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--interactive-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent);
 }
 
 .char-count {
@@ -843,24 +845,24 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: var(--interactive-primary, #3498db);
-  color: white;
-  border-color: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
+  border-color: var(--interactive-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2980b9;
-  border-color: #2980b9;
+  background: var(--btn-primary-bg-hover);
+  border-color: var(--interactive-hover);
 }
 
 .btn-secondary {
-  background: var(--surface-primary, white);
-  color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  border-color: var(--border-primary);
 }
 
 .btn-secondary:hover {
-  background: #ecf0f1;
+  background: var(--surface-tertiary);
 }
 
 .spinning {

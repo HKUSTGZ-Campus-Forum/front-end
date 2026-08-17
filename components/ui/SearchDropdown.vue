@@ -188,8 +188,8 @@ const stripHtml = (html: string) => {
         @click="handleSearch"
         :disabled="inputValue.trim().length < 2"
       >
-        <span v-if="!isSearching" aria-hidden="true">🔍</span>
-        <span v-else class="spin-icon" aria-hidden="true">↻</span>
+        <Icon v-if="!isSearching" name="lucide:search" class="search-icon" aria-hidden="true" />
+        <Icon v-else name="lucide:loader-circle" class="spin-icon" aria-hidden="true" />
       </button>
       
       <!-- Clear button -->
@@ -199,7 +199,7 @@ const stripHtml = (html: string) => {
         type="button"
         @click="clearInput"
       >
-        <span aria-hidden="true">✕</span>
+        <Icon name="lucide:x" class="clear-icon" aria-hidden="true" />
       </button>
     </div>
     
@@ -208,7 +208,7 @@ const stripHtml = (html: string) => {
       <!-- Loading state -->
       <div v-if="isSearching" class="dropdown-section">
         <div class="loading-item">
-          <span class="spin-icon" aria-hidden="true">↻</span>
+          <Icon name="lucide:loader-circle" class="status-icon spin-icon" aria-hidden="true" />
           <span>{{ t('common.searching') }}</span>
         </div>
       </div>
@@ -216,7 +216,7 @@ const stripHtml = (html: string) => {
       <!-- Error state -->
       <div v-else-if="searchError" class="dropdown-section">
         <div class="error-item">
-          <span aria-hidden="true">⚠</span>
+          <Icon name="lucide:circle-alert" class="status-icon" aria-hidden="true" />
           <span>{{ searchError }}</span>
         </div>
       </div>
@@ -226,7 +226,7 @@ const stripHtml = (html: string) => {
         <div class="section-header">
           <span>{{ t('common.history') }}</span>
           <button @click="clearSearchHistory" class="clear-history-btn">
-            <span aria-hidden="true">🗑</span>
+            <Icon name="lucide:trash-2" class="status-icon" aria-hidden="true" />
             {{ t('common.clear') }}
           </button>
         </div>
@@ -237,8 +237,8 @@ const stripHtml = (html: string) => {
             class="history-item"
             @click="selectHistoryItem(query)"
           >
-            <span aria-hidden="true">🕘</span>
-            <span>{{ query }}</span>
+            <Icon name="lucide:clock" class="status-icon" aria-hidden="true" />
+            <span class="history-query">{{ query }}</span>
           </button>
         </div>
       </div>
@@ -248,7 +248,7 @@ const stripHtml = (html: string) => {
         <!-- Posts section -->
         <div v-if="searchResults.posts.length > 0" class="dropdown-section">
           <div class="section-header">
-            <span class="section-icon" aria-hidden="true">📝</span>
+            <span class="section-icon" aria-hidden="true"><Icon name="lucide:file-text" /></span>
             <span>{{ t('search.tabs.posts') }} ({{ searchResults.posts.length }})</span>
           </div>
           <div class="results-list">
@@ -271,8 +271,8 @@ const stripHtml = (html: string) => {
                   />
                   <span class="author-name">{{ post.author }}</span>
                   <span class="post-stats">
-                    <span aria-hidden="true">❤️</span> {{ post.reaction_count }}
-                    <span aria-hidden="true">💬</span> {{ post.comment_count }}
+                    <span><Icon name="lucide:heart" class="status-icon" aria-hidden="true" /> {{ post.reaction_count }}</span>
+                    <span><Icon name="lucide:message-square" class="status-icon" aria-hidden="true" /> {{ post.comment_count }}</span>
                   </span>
                 </div>
               </div>
@@ -283,7 +283,7 @@ const stripHtml = (html: string) => {
         <!-- Users section -->
         <div v-if="searchResults.users.length > 0" class="dropdown-section">
           <div class="section-header">
-            <span class="section-icon" aria-hidden="true">👥</span>
+            <span class="section-icon" aria-hidden="true"><Icon name="lucide:users" /></span>
             <span>{{ t('search.tabs.users') }} ({{ searchResults.users.length }})</span>
           </div>
           <div class="results-list">
@@ -310,7 +310,7 @@ const stripHtml = (html: string) => {
         <!-- Tags section -->
         <div v-if="searchResults.tags.length > 0" class="dropdown-section">
           <div class="section-header">
-            <span class="section-icon" aria-hidden="true">🏷</span>
+            <span class="section-icon" aria-hidden="true"><Icon name="lucide:tag" /></span>
             <span>{{ t('search.tabs.tags') }} ({{ searchResults.tags.length }})</span>
           </div>
           <div class="results-list">
@@ -320,7 +320,7 @@ const stripHtml = (html: string) => {
               class="result-item tag-item"
               @click="selectItem('tag', tag)"
             >
-              <span class="section-icon" aria-hidden="true">#</span>
+              <span class="section-icon" aria-hidden="true"><Icon name="lucide:hash" /></span>
               <div class="tag-info">
                 <h4 class="tag-name" v-html="tag.name_highlighted"></h4>
                 <span class="tag-count">{{ t('search.tagPostCount', { count: tag.post_count }) }}</span>
@@ -332,7 +332,7 @@ const stripHtml = (html: string) => {
         <!-- Courses section -->
         <div v-if="searchResults.courses.length > 0" class="dropdown-section">
           <div class="section-header">
-            <span class="section-icon" aria-hidden="true">📚</span>
+            <span class="section-icon" aria-hidden="true"><Icon name="lucide:book-open" /></span>
             <span>{{ t('search.tabs.courses') }} ({{ searchResults.courses.length }})</span>
           </div>
           <div class="results-list">
@@ -342,7 +342,7 @@ const stripHtml = (html: string) => {
               class="result-item course-item"
               @click="selectItem('course', course)"
             >
-              <span class="section-icon" aria-hidden="true">🎓</span>
+              <span class="section-icon" aria-hidden="true"><Icon name="lucide:graduation-cap" /></span>
               <div class="course-info">
                 <h4 class="course-code" v-html="course.code_highlighted"></h4>
                 <p class="course-name" v-html="course.name_highlighted"></p>
@@ -354,7 +354,7 @@ const stripHtml = (html: string) => {
         <!-- View all results -->
         <div class="dropdown-footer">
           <button class="view-all-btn" @click="handleSearch">
-            <span aria-hidden="true">🔎</span>
+            <Icon name="lucide:search" class="status-icon" aria-hidden="true" />
             {{ t('common.viewAllResults', { count: totalResults }) }}
           </button>
         </div>
@@ -363,7 +363,7 @@ const stripHtml = (html: string) => {
       <!-- No results -->
       <div v-else-if="inputValue.trim().length >= 2" class="dropdown-section">
         <div class="no-results">
-          <span aria-hidden="true">🔍</span>
+          <Icon name="lucide:search" class="status-icon" aria-hidden="true" />
           <span>{{ t('common.noResults') }}</span>
         </div>
       </div>
@@ -372,6 +372,8 @@ const stripHtml = (html: string) => {
 </template>
 
 <style lang="scss" scoped>
+/* 搜索关键词高亮（:deep(mark) 的 #fef3c7 底 + #92400e 字）刻意保留：
+   双主题恒定配色，两种主题下均需突出显示（与主题无关），不 token 化 */
 .search-dropdown {
   position: relative;
   width: 100%;
@@ -396,7 +398,7 @@ const stripHtml = (html: string) => {
   &:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 10%, transparent);
   }
   
   &::placeholder {
@@ -443,8 +445,24 @@ const stripHtml = (html: string) => {
   }
 }
 
+/* Shared lucide icon sizing in the search box and dropdown. */
+.search-icon,
+.clear-icon,
+.status-icon {
+  font-size: 1rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.status-icon {
+  margin-right: 0.4rem;
+}
+
 .spin-icon {
   display: inline-block;
+  font-size: 1rem;
+  line-height: 1;
+  vertical-align: middle;
   animation: search-dropdown-spin 0.8s linear infinite;
 }
 
@@ -488,10 +506,17 @@ const stripHtml = (html: string) => {
   letter-spacing: 0.05em;
   
   .section-icon {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.95rem;
     margin-right: 0.5rem;
+    vertical-align: middle;
   }
   
   .clear-history-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     background: none;
     border: none;
     color: var(--semantic-error);
@@ -501,11 +526,7 @@ const stripHtml = (html: string) => {
     transition: color 0.2s ease;
     
     &:hover {
-      color: #dc2626;
-    }
-    
-    span {
-      margin-right: 0.25rem;
+      color: var(--semantic-error);
     }
   }
 }
@@ -643,10 +664,6 @@ const stripHtml = (html: string) => {
   padding: 2rem 1rem;
   color: var(--text-secondary);
   font-size: 0.875rem;
-  
-  > span:first-child {
-    margin-right: 0.5rem;
-  }
 }
 
 .error-item {
@@ -673,12 +690,11 @@ const stripHtml = (html: string) => {
     background-color: var(--interactive-secondary);
   }
   
-  > span:first-child {
+  .status-icon {
     color: var(--text-muted);
-    margin-right: 0.75rem;
   }
   
-  span {
+  .history-query {
     color: var(--text-secondary);
     font-size: 0.875rem;
   }
@@ -690,6 +706,9 @@ const stripHtml = (html: string) => {
 }
 
 .view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   padding: 0.5rem 1rem;
   background: var(--surface-secondary);
@@ -704,10 +723,6 @@ const stripHtml = (html: string) => {
   &:hover {
     background: var(--interactive-secondary);
     border-color: var(--border-focus);
-  }
-  
-  > span:first-child {
-    margin-right: 0.5rem;
   }
 }
 

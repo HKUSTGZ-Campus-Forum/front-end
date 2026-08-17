@@ -15,6 +15,8 @@ const props = withDefaults(defineProps<{
   horizontal: false,
 });
 
+// 8 色分类色板刻意保留：多分类图表需要色相分离以保证分类可区分，
+// 无法用语义 token（--semantic-* / --interactive-*）表达，不随主题变化
 const palette = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#ea580c", "#64748b"];
 const categories = computed(() => props.items.map((item) => item.label));
 const values = computed(() => props.items.map((item) => item.value));
@@ -41,12 +43,12 @@ const chartOptions = computed<ApexOptions>(() => ({
   legend: { show: false },
   xaxis: {
     categories: categories.value,
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
     axisBorder: { color: "var(--border-primary)" },
     axisTicks: { color: "var(--border-primary)" },
   },
   yaxis: {
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
   },
   tooltip: {
     theme: "light",

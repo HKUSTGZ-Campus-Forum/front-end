@@ -743,7 +743,7 @@ useHead({
   }
 
   &.is-added {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
   }
@@ -829,12 +829,12 @@ useHead({
 }
 
 .kg-btn--primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 1px solid var(--interactive-primary);
   color: var(--text-inverse);
 
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     border-color: var(--interactive-hover);
   }
 }

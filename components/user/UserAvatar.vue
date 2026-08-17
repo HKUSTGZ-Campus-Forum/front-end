@@ -345,7 +345,7 @@ onUnmounted(() => {
 
     &:hover {
       transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-medium);
     }
   }
 
@@ -435,8 +435,8 @@ onUnmounted(() => {
     height: 25%;
     min-width: 8px;
     min-height: 8px;
-    background: #28a745;
-    border: 2px solid #fff;
+    background: var(--success-color);
+    border: 2px solid var(--surface-primary);
     border-radius: 50%;
     z-index: 1;
   }
@@ -446,7 +446,7 @@ onUnmounted(() => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--modal-backdrop);
     border-radius: 50%;
     width: 18px;
     height: 18px;
@@ -456,7 +456,7 @@ onUnmounted(() => {
     justify-content: center;
 
     .refresh-indicator__icon {
-      color: #fff;
+      color: var(--text-inverse);
       font-size: 10px;
       line-height: 1;
       animation: avatar-spin 0.8s linear infinite;

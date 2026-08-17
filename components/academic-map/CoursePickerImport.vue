@@ -609,7 +609,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 
   &:focus {
     border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px rgba(38, 164, 255, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent);
   }
 }
 
@@ -635,7 +635,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
   padding: 0 10px;
 
   small {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.76rem;
   }
 
@@ -743,7 +743,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 }
 
 .am-picker__course.selected .am-picker__checkbox {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border-color: var(--interactive-primary);
 
   &::after {
@@ -774,7 +774,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
   }
 
   small {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.76rem;
     font-weight: 800;
   }
@@ -893,7 +893,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 }
 
 .am-picker__cart-meta {
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   display: block;
   font-size: 0.74rem;
   font-weight: 750;
@@ -948,7 +948,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 
   &:focus {
     border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px rgba(38, 164, 255, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent);
   }
 }
 
@@ -1017,7 +1017,7 @@ defineExpose({ mergeImportedRows, restoreDraft })
 }
 
 .am-picker__primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 0;
   color: var(--text-inverse);
 

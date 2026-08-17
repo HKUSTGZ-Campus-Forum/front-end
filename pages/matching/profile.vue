@@ -194,7 +194,7 @@ onMounted(async () => {
 }
 
 .title-icon {
-  color: #3498db;
+  color: var(--interactive-primary, #3498db);
 }
 
 .setup-header p {
@@ -219,7 +219,7 @@ onMounted(async () => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--interactive-primary, #3498db), #2ecc71);
+  background: linear-gradient(90deg, var(--interactive-primary, #3498db), var(--success-color, #2ecc71));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -233,13 +233,13 @@ onMounted(async () => {
 .profile-form {
   background: var(--surface-primary, white);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-medium, 0 2px 10px rgba(0,0,0,0.08));
   overflow: hidden;
 }
 
 .form-section {
   padding: 30px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border-primary, #e9ecef);
 }
 
 .form-section:last-child {
@@ -286,7 +286,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--interactive-primary, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary, #3498db) 10%, transparent);
 }
 
 textarea {
@@ -318,7 +318,7 @@ textarea {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-primary, #e9ecef);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -326,7 +326,7 @@ textarea {
 
 .radio-option:hover {
   border-color: var(--interactive-primary, #3498db);
-  background: rgba(52, 152, 219, 0.02);
+  background: color-mix(in srgb, var(--interactive-primary, #3498db) 2%, transparent);
 }
 
 .radio-option input[type="radio"] {
@@ -368,7 +368,7 @@ textarea {
   display: flex;
   justify-content: flex-end;
   gap: 16px;
-  background: #f8f9fa;
+  background: var(--surface-secondary, #f8f9fa);
 }
 
 .btn {
@@ -391,35 +391,35 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--interactive-primary, #3498db);
-  color: white;
-  border-color: var(--interactive-primary, #3498db);
+  background: var(--btn-primary-bg, #3498db);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--btn-primary-bg, #3498db);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2980b9;
-  border-color: #2980b9;
+  background: var(--btn-primary-bg-hover, #2980b9);
+  border-color: var(--btn-primary-bg-hover, #2980b9);
 }
 
 .btn-secondary {
   background: var(--surface-primary, white);
   color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  border-color: var(--border-secondary, #bdc3c7);
 }
 
 .btn-secondary:hover {
-  background: #ecf0f1;
+  background: var(--surface-secondary, #ecf0f1);
 }
 
 .btn-success {
-  background: #27ae60;
-  color: white;
-  border-color: #27ae60;
+  background: var(--success-color, #27ae60);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--success-color, #27ae60);
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #219a52;
-  border-color: #219a52;
+  background: color-mix(in srgb, var(--success-color, #27ae60) 85%, black);
+  border-color: color-mix(in srgb, var(--success-color, #27ae60) 85%, black);
 }
 
 .spinning {

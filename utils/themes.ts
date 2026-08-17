@@ -39,7 +39,8 @@ export const themes: ThemeConfig[] = [
         success: '#10b981',
         warning: '#f59e0b',
         error: '#ef4444',
-        info: '#26a4ff'
+        info: '#26a4ff',
+        purple: '#7c3aed'
       },
       border: {
         primary: '#bfd7fb',
@@ -123,7 +124,8 @@ export const themes: ThemeConfig[] = [
         success: '#34d399',
         warning: '#fbbf24',
         error: '#f87171',
-        info: '#26a4ff'
+        info: '#26a4ff',
+        purple: '#a78bfa'
       },
       border: {
         primary: '#2d4a73',
@@ -233,6 +235,9 @@ export function generateCSSVariables(theme: ThemeConfig): Record<string, string>
   variables['--semantic-warning'] = theme.colors.semantic.warning;
   variables['--semantic-error'] = theme.colors.semantic.error;
   variables['--semantic-info'] = theme.colors.semantic.info;
+  if (theme.colors.semantic.purple) {
+    variables['--semantic-purple'] = theme.colors.semantic.purple;
+  }
 
   // Border color variables
   variables['--border-primary'] = theme.colors.border.primary;

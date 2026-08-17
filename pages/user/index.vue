@@ -22,6 +22,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b8aaa;
+  color: var(--text-secondary);
 }
 </style>

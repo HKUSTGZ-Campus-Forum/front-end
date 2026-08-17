@@ -56,7 +56,7 @@ const statusMeta = computed(() => {
   &--warning {
     background: color-mix(in srgb, var(--semantic-warning) 16%, var(--surface-primary, #fff));
     border-color: color-mix(in srgb, var(--semantic-warning) 28%, var(--surface-primary, #fff));
-    color: #9a6500;
+    color: var(--warning-color, #9a6500);
   }
 
   &--danger {
@@ -66,9 +66,9 @@ const statusMeta = computed(() => {
   }
 
   &--info {
-    background: color-mix(in srgb, #3157a3 12%, var(--surface-primary, #fff));
-    border-color: color-mix(in srgb, #3157a3 22%, var(--surface-primary, #fff));
-    color: #3157a3;
+    background: color-mix(in srgb, var(--info-color, #3157a3) 12%, var(--surface-primary, #fff));
+    border-color: color-mix(in srgb, var(--info-color, #3157a3) 22%, var(--surface-primary, #fff));
+    color: var(--info-color, #3157a3);
   }
 
   &--success {

@@ -31,6 +31,6 @@ const defaultToolbars = [
 <style scoped>
 :deep(.md-editor) {
   border-radius: 12px !important;
-  border-color: #c8dff8 !important;
+  border-color: var(--border-primary, #c8dff8) !important;
 }
 </style>

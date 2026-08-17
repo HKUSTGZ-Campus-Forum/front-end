@@ -284,7 +284,7 @@ useHead(() => ({
   .email-hint {
     margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
     
     p {
       margin: 0;

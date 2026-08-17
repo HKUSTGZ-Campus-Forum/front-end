@@ -177,7 +177,7 @@ watch(currentPage, () => { loadNotifications() })
 .kg-back-btn {
   background: none;
   border: none;
-  color: #26a4ff;
+  color: var(--interactive-primary);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0;
@@ -187,13 +187,13 @@ watch(currentPage, () => { loadNotifications() })
 .kg-page-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .kg-unread-badge {
-  background: #e05a5a;
-  color: #fff;
+  background: var(--semantic-error);
+  color: var(--text-inverse);
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -202,14 +202,14 @@ watch(currentPage, () => { loadNotifications() })
 
 .kg-btn-ghost {
   padding: 7px 18px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 14px;
-  background: #F5FBFE;
-  color: #4a6080;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.2s;
-  &:hover:not(:disabled) { border-color: #26a4ff; color: #26a4ff; }
+  &:hover:not(:disabled) { border-color: var(--interactive-primary); color: var(--interactive-primary); }
   &:disabled { opacity: 0.5; }
 }
 
@@ -224,19 +224,19 @@ watch(currentPage, () => { loadNotifications() })
   align-items: center;
   gap: 6px;
   padding: 7px 20px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  background: #F5FBFE;
-  color: #4a6080;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
-  &:hover { border-color: #26a4ff; color: #26a4ff; }
-  &.active { background: #26a4ff; border-color: #26a4ff; color: #fff; font-weight: 600; }
+  &:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
+  &.active { background: var(--btn-primary-bg); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
 }
 
 .kg-tab-count {
-  background: rgba(255,255,255,0.35);
+  background: color-mix(in srgb, var(--overlay-text) 35%, transparent);
   border-radius: 8px;
   font-size: 0.72rem;
   padding: 0 5px;
@@ -249,14 +249,14 @@ watch(currentPage, () => { loadNotifications() })
   justify-content: center;
   gap: 12px;
   padding: 60px;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #c8dff8;
-  border-top-color: #26a4ff;
+  border: 3px solid var(--border-primary);
+  border-top-color: var(--interactive-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -266,7 +266,7 @@ watch(currentPage, () => { loadNotifications() })
 .kg-error, .kg-empty {
   text-align: center;
   padding: 60px 20px;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-empty { .kg-empty-icon { font-size: 2.5rem; margin-bottom: 8px; } p { margin: 0; } }
@@ -280,15 +280,15 @@ watch(currentPage, () => { loadNotifications() })
 .kg-notif-item {
   display: flex;
   align-items: center;
-  background: #F5FBFE;
-  border: 1.5px solid #c8dff8;
+  background: var(--surface-secondary);
+  border: 1.5px solid var(--border-primary);
   border-radius: 12px;
   overflow: hidden;
   transition: border-color 0.2s;
-  &:hover { border-color: #26a4ff; }
+  &:hover { border-color: var(--interactive-primary); }
   &--unread {
-    background: rgba(38, 164, 255, 0.04);
-    border-color: rgba(38, 164, 255, 0.3);
+    background: color-mix(in srgb, var(--interactive-primary) 4%, transparent);
+    border-color: color-mix(in srgb, var(--interactive-primary) 30%, transparent);
   }
 }
 
@@ -306,7 +306,7 @@ watch(currentPage, () => { loadNotifications() })
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #26a4ff;
+  background: var(--btn-primary-bg);
   margin-top: 6px;
 }
 
@@ -315,13 +315,13 @@ watch(currentPage, () => { loadNotifications() })
 .kg-notif-text {
   margin: 0 0 4px;
   font-size: 0.9rem;
-  color: #1a2a4a;
+  color: var(--text-primary);
   line-height: 1.5;
 }
 
 .kg-notif-time {
   font-size: 0.78rem;
-  color: #9ab0c6;
+  color: var(--text-muted);
 }
 
 .kg-notif-actions {
@@ -334,18 +334,18 @@ watch(currentPage, () => { loadNotifications() })
 .kg-icon-btn {
   width: 30px;
   height: 30px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 8px;
   background: transparent;
-  color: #6a85a0;
+  color: var(--text-muted);
   font-size: 0.8rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  &:hover { border-color: #26a4ff; color: #26a4ff; }
-  &--danger:hover { border-color: #e05a5a; color: #e05a5a; }
+  &:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
+  &--danger:hover { border-color: var(--semantic-error); color: var(--semantic-error); }
 }
 
 .kg-pagination {
@@ -358,19 +358,19 @@ watch(currentPage, () => { loadNotifications() })
 
 .kg-page-btn {
   padding: 7px 20px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 14px;
-  background: #F5FBFE;
-  color: #4a6080;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s;
-  &:hover:not(:disabled) { border-color: #26a4ff; color: #26a4ff; }
+  &:hover:not(:disabled) { border-color: var(--interactive-primary); color: var(--interactive-primary); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .kg-page-info {
   font-size: 0.875rem;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 </style>

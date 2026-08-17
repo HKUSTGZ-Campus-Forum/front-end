@@ -503,7 +503,7 @@ onUnmounted(() => {
   }
 
   &.user-reacted {
-    background: rgba(59, 130, 246, 0.1);
+    background: color-mix(in srgb, var(--interactive-primary, #3b82f6) 10%, transparent);
     border-color: var(--interactive-primary);
     color: var(--interactive-primary);
   }
@@ -558,7 +558,7 @@ onUnmounted(() => {
   }
 
   &.active {
-    background: rgba(38, 164, 255, 0.1);
+    background: var(--info-background, rgba(38, 164, 255, 0.1));
     color: var(--interactive-primary);
   }
 
@@ -652,7 +652,7 @@ onUnmounted(() => {
   .category-title {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #666;
+    color: var(--text-muted, #666);
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -718,16 +718,16 @@ onUnmounted(() => {
 }
 
 .emoji-picker::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--surface-secondary, #f1f1f1);
   border-radius: 3px;
 }
 
 .emoji-picker::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--interactive-disabled, #c1c1c1);
   border-radius: 3px;
 
   &:hover {
-    background: #a8a8a8;
+    background: var(--interactive-disabled, #a8a8a8);
   }
 }
 
