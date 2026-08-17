@@ -322,6 +322,12 @@ const handleMenuLogout = async () => {
 
   &--toggled {
     color: var(--semantic-warning);
+
+    // Keep the moon yellow on hover — the generic :hover rule below would
+    // otherwise override it with the blue interactive-active color.
+    &:hover {
+      color: var(--semantic-warning);
+    }
   }
 }
 
