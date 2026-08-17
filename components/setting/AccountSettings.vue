@@ -9,11 +9,10 @@
             <span class="email-address">{{ user.email }}</span>
             <div class="verification-badge">
               <span v-if="user.email_verified" class="verified">
-                ✓ 已验证
+                已验证
               </span>
               <span v-else class="unverified">
-                <Icon name="lucide:alert-triangle" class="unverified__icon" aria-hidden="true" />
-                <span>未验证</span>
+                未验证
               </span>
             </div>
           </div>
@@ -22,25 +21,29 @@
             <p class="verification-note">
               邮箱未验证将会在未来被限制某些功能
             </p>
-            <button 
-              @click="resendVerificationEmail" 
-              class="verify-btn"
-              :disabled="resendCooldown > 0 || isResending"
-            >
-              <span v-if="isResending">发送中...</span>
-              <span v-else-if="resendCooldown > 0">{{ resendCooldown }}秒后重试</span>
-              <span v-else>重新发送验证邮件</span>
-            </button>
           </div>
           
           <!-- Change Email Section -->
           <div class="email-change-section">
-            <button 
-              @click="showChangeEmailForm = !showChangeEmailForm" 
-              class="change-email-btn"
-            >
-              {{ showChangeEmailForm ? '取消更换邮箱' : '更换邮箱地址' }}
-            </button>
+            <div class="email-actions-row">
+              <button 
+                v-if="!user.email_verified"
+                @click="resendVerificationEmail" 
+                class="verify-btn"
+                :disabled="resendCooldown > 0 || isResending"
+              >
+                <span v-if="isResending">发送中...</span>
+                <span v-else-if="resendCooldown > 0">{{ resendCooldown }}秒后重试</span>
+                <span v-else>重新发送验证邮件</span>
+              </button>
+              <button 
+                @click="showChangeEmailForm = !showChangeEmailForm" 
+                class="change-email-btn"
+                :class="{ 'is-open': showChangeEmailForm }"
+              >
+                {{ showChangeEmailForm ? '取消更换邮箱' : '更换邮箱地址' }}
+              </button>
+            </div>
             
             <div v-if="showChangeEmailForm" class="change-email-form">
               <h4>更换邮箱地址</h4>
@@ -874,14 +877,14 @@ onUnmounted(() => {
 }
 
 .settings-section {
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   background: var(--surface-primary, rgba(255, 255, 255, 0.95));
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-small, 0 2px 8px rgba(0, 0, 0, 0.1));
   
   @media (min-width: 768px) {
-    padding: 2rem;
+    padding: 1.5rem;
     box-shadow: var(--shadow-medium, 0 4px 15px rgba(0, 0, 0, 0.1));
   }
 }
@@ -890,9 +893,9 @@ onUnmounted(() => {
   color: var(--text-primary, #333);
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border-bottom: 2px solid var(--border-primary, #e0e0e0);
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
   
   @media (min-width: 768px) {
     font-size: 1.5rem;
@@ -906,47 +909,36 @@ onUnmounted(() => {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 1rem;
-      
-      @media (max-width: 479px) {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
+      gap: 1rem;
+      margin-bottom: 0.75rem;
       
       .email-address {
         font-family: monospace;
         font-size: 1.1rem;
         color: var(--text-primary, #333);
         word-break: break-all;
+        min-width: 0;
+        flex: 1;
       }
       
       .verification-badge {
-        .verified {
-          color: var(--semantic-success);
-          font-weight: 600;
-          background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+        flex-shrink: 0;
+        .verified, .unverified {
+          display: inline-block;
           padding: 0.25rem 0.75rem;
           border-radius: 20px;
           font-size: 0.9rem;
+          font-weight: 600;
+        }
+        
+        .verified {
+          color: var(--semantic-success);
+          background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
         }
         
         .unverified {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.3rem;
           color: var(--semantic-warning);
-          font-weight: 600;
           background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.9rem;
-          
-          .unverified__icon {
-            font-size: 1em;
-            line-height: 1;
-            flex-shrink: 0;
-          }
         }
       }
     }
@@ -956,20 +948,92 @@ onUnmounted(() => {
     .verification-note {
       color: var(--text-secondary, #666);
       font-size: 0.9rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
       line-height: 1.4;
+    }
+  }
+  
+  .email-change-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-primary, #e0e0e0);
+    
+    .email-actions-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    
+    .change-email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.875rem;
+      background: transparent;
+      color: var(--interactive-primary);
+      border: 1px solid var(--border-primary, #e0e0e0);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 44px;
+      
+      @media (min-width: 480px) {
+        padding: 0.4rem 0.75rem;
+        border-radius: 4px;
+        min-height: auto;
+      }
+      
+      &:hover:not(:disabled) {
+        border-color: var(--interactive-primary);
+        background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      
+      &.is-open {
+        border-color: var(--interactive-primary);
+        background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
+      }
+    }
+    
+    .change-email-form {
+      margin-top: 0.75rem;
+      padding: 1rem;
+      border: 1px solid var(--border-primary, #e0e0e0);
+      border-radius: 8px;
+      background: var(--surface-secondary, #fafafa);
+      
+      h4 {
+        margin: 0 0 0.4rem 0;
+        color: var(--text-primary, #333);
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      
+      .change-email-note {
+        color: var(--text-secondary, #666);
+        font-size: 0.9rem;
+        margin: 0 0 0.75rem 0;
+        line-height: 1.4;
+      }
     }
   }
   
   .no-email {
     .no-email-message {
       color: var(--text-secondary, #666);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       line-height: 1.4;
     }
     
     .benefits-list {
-      margin: 1rem 0 1.5rem 1.5rem;
+      margin: 0.75rem 0 1rem 1.5rem;
       color: var(--text-secondary, #666);
       
       li {
@@ -1191,7 +1255,7 @@ onUnmounted(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 // Message Styles
@@ -1275,7 +1339,7 @@ onUnmounted(() => {
 .connected-apps-card {
   .section-description {
     color: var(--text-secondary, #666);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     font-size: 0.95rem;
     line-height: 1.4;
   }
@@ -1462,7 +1526,7 @@ onUnmounted(() => {
   }
   
   .apps-actions {
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     display: flex;
     justify-content: center;
   }
