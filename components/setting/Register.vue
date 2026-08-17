@@ -102,7 +102,10 @@
       <div class="verification-notice">
         <p>{{ t("auth.register.verificationNotice") }}</p>
         <div class="trash-mail-reminder">
-          <strong>⚠️ {{ t("auth.register.verificationWarningTitle") }}</strong>
+          <strong class="trash-mail-reminder__title">
+            <Icon name="lucide:alert-triangle" class="trash-mail-reminder__icon" aria-hidden="true" />
+            {{ t("auth.register.verificationWarningTitle") }}
+          </strong>
           <p>{{ t("auth.register.verificationWarningBody") }}</p>
         </div>
       </div>
@@ -548,6 +551,17 @@ const emit = defineEmits(['register-success']);
       strong {
         color: var(--warning-text, #f57c00);
         font-size: 0.85rem;
+      }
+
+      .trash-mail-reminder__title {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        .trash-mail-reminder__icon {
+          font-size: 1em;
+          flex-shrink: 0;
+        }
       }
 
       p {

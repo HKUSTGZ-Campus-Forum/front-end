@@ -19,7 +19,7 @@
       <div class="form-group">
         <label for="email">邮箱地址</label>
         <div class="input-wrapper">
-          <span class="input-icon">📧</span>
+          <span class="input-icon"><Icon name="lucide:mail" aria-hidden="true" /></span>
           <input
             id="email"
             v-model="email"
@@ -247,6 +247,8 @@ onUnmounted(() => {
         transform: translateY(-50%);
         font-size: 1rem;
         z-index: 1;
+        display: flex;
+        align-items: center;
 
         @media (max-width: 479px) {
           font-size: 1.1rem;

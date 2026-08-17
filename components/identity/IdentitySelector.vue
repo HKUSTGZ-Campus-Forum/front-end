@@ -236,13 +236,13 @@ onUnmounted(() => {
 
         <!-- Error state -->
         <div v-if="error" class="dropdown-error">
-          <span class="error-icon">⚠️</span>
+          <span class="error-icon"><Icon name="lucide:circle-alert" aria-hidden="true" /></span>
           <span>加载失败</span>
         </div>
 
         <!-- Empty state -->
         <div v-if="!loading && !error && availableIdentities.length === 0" class="dropdown-empty">
-          <span class="empty-icon">📝</span>
+          <span class="empty-icon"><Icon name="lucide:file-text" aria-hidden="true" /></span>
           <div class="empty-content">
             <span class="empty-title">暂无认证身份</span>
             <span class="empty-description">您可以在设置中申请身份认证</span>
@@ -483,6 +483,7 @@ onUnmounted(() => {
   .empty-icon {
     font-size: 2rem;
     opacity: 0.5;
+    display: inline-flex;
   }
   
   .empty-content {

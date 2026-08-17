@@ -242,7 +242,7 @@ onMounted(() => {
       </div>
 
       <div v-if="showError" class="alert alert-error">
-        <span class="alert-icon">⚠️</span>
+        <span class="alert-icon"><Icon name="lucide:circle-alert" aria-hidden="true" /></span>
         <div class="alert-content">
           <strong>申请失败</strong>
           <p>{{ errorMessage }}</p>
@@ -904,6 +904,7 @@ onMounted(() => {
     font-size: 1.1rem;
     flex-shrink: 0;
     margin-top: 0.05rem;
+    display: inline-flex;
   }
 
   .alert-content {

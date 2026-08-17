@@ -542,13 +542,16 @@ watch(() => themeStore.currentTheme, (newTheme) => {
     margin: 0;
     
     li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       padding: 0.25rem 0;
       color: var(--text-secondary);
       font-size: 0.9rem;
       
-      &::before {
-        content: "✨ ";
-        margin-right: 0.5rem;
+      .feature-list__icon {
+        font-size: 1rem;
+        flex-shrink: 0;
       }
     }
   }

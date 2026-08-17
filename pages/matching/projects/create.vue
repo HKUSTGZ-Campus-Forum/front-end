@@ -13,7 +13,7 @@
         <!-- Creation tip -->
         <div v-if="!showInterview" class="creation-tip">
           <Icon name="lightbulb" class="tip-icon" />
-          <span>💡 输入你的想法后，AI会问几个问题帮你完善项目描述，让队友更容易理解你的项目！</span>
+          <span>输入你的想法后，AI会问几个问题帮你完善项目描述，让队友更容易理解你的项目！</span>
         </div>
       </div>
 
@@ -47,7 +47,8 @@
             直接创建项目
           </button>
           <button type="submit" :disabled="!isFormValid" class="btn btn-primary">
-            开始AI问答完善 ✨
+            开始AI问答完善
+            <Icon name="lucide:sparkles" aria-hidden="true" />
           </button>
         </div>
       </form>

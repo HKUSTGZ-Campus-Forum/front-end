@@ -12,7 +12,8 @@
                 ✓ 已验证
               </span>
               <span v-else class="unverified">
-                ⚠️ 未验证
+                <Icon name="lucide:alert-triangle" class="unverified__icon" aria-hidden="true" />
+                <span>未验证</span>
               </span>
             </div>
           </div>
@@ -931,12 +932,21 @@ onUnmounted(() => {
         }
         
         .unverified {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
           color: var(--semantic-warning);
           font-weight: 600;
           background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
           padding: 0.25rem 0.75rem;
           border-radius: 20px;
           font-size: 0.9rem;
+          
+          .unverified__icon {
+            font-size: 1em;
+            line-height: 1;
+            flex-shrink: 0;
+          }
         }
       }
     }
