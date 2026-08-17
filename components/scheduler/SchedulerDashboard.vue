@@ -622,12 +622,17 @@ function toggleBan(day: number, period: number) {
 <style lang="scss" scoped>
 .dashboard {
   position: relative;
-  min-height: calc(100vh - 84px);
+  /* Fixed height bounds the planner so a long side-panel course list scrolls
+     inside its own panel instead of stretching the whole page. The dashboard
+     itself scrolls only when header + notices + body floor exceed this
+     height (short viewports); the page never grows. */
+  height: calc(100vh - 84px);
+  min-height: 760px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 20px 24px 28px;
-  overflow: visible;
+  overflow-y: auto;
 
   &__header {
     display: flex;
@@ -783,8 +788,12 @@ function toggleBan(day: number, period: number) {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--side-panel-width, 400px);
+    /* Single bounded row: the grid fills the body height and never grows past
+       it, so the side panel stays within the row and its course list scrolls
+       internally while the timetable keeps its size. */
+    grid-template-rows: minmax(0, 1fr);
     gap: 14px;
-    overflow: visible;
+    overflow: hidden;
   }
 
   &__resize-handle {
@@ -835,6 +844,7 @@ function toggleBan(day: number, period: number) {
 
   &__left {
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
@@ -856,6 +866,7 @@ function toggleBan(day: number, period: number) {
 
   &__right {
     min-width: 0;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -940,6 +951,12 @@ function toggleBan(day: number, period: number) {
 
 @media (max-width: 1024px) {
   .dashboard {
+    /* Single-column layout flows naturally again: no fixed height, no inner
+       scroll, the page scrolls as usual. */
+    height: auto;
+    min-height: calc(100vh - 84px);
+    overflow: visible;
+
     &__header {
       align-items: stretch;
       flex-direction: column;
@@ -956,7 +973,9 @@ function toggleBan(day: number, period: number) {
 
     &__body {
       grid-template-columns: 1fr;
+      grid-template-rows: auto;
       min-height: 0;
+      overflow: visible;
     }
 
     &__timetable-card {
