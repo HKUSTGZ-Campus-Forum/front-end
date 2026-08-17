@@ -10,55 +10,44 @@
 
 ## [Unreleased]
 
-### 主题 token 化（深色适配）
+（暂无未发布内容）
 
-- **全组件硬编码颜色清理**：forum、feedback、scheduler、admin 图表、academic-map、common、ui、home、identity、setting、user、matching、contest、profile 等全部组件与页面的硬编码颜色统一替换为主题变量（`--surface-*` / `--text-*` / `--border-*` / `--interactive-*` / `--semantic-*` / `--shadow-*` 等），深色主题下不再有亮色残留
-- **新增语义色 token**：`--semantic-purple` 及 `--success/-warning/-error/-info/-purple-color`、`-background` 等别名块；primary 按钮统一 `--btn-primary-bg` + `--text-inverse`
-- **刻意保留的硬编码（均带注释说明）**：PDF/Office 查看器白底、全屏图片查看器恒定深色、动态头像 pastel 色板、课程学科彩色节点文字、8 色图表分类色板、搜索关键词高亮、白色 toggle knob 等——因 token 无法表达或需跨主题恒定而刻意保留
-- **i18n 扫描白名单**：10 个含中文说明注释的组件加入 `i18n-scan-allowlist.json`
+## [0.2.1] - 2026-08-17
 
-### 课程板块
+### Added
 
-- **"图谱" 独立 URL**：课程图谱从 `/courses` 迁至 `/courses/graph`（导航文案 "Graph" → "Course Map"）；`/courses` 作为课程板块入口重定向至 `/courses/planner`，`utils/courseUniverse.ts` 同步更新模式路径与重定向映射
-- **四页宽度统一**：Planner / Explore / Academic Map / Course Map 四页 `max-width` 统一为 1100px、水平内边距统一 20px，切换页面时导航按钮位置不再跳变
-
-### 主站顶栏 UI 优化
-
-- **顶栏高度 84→64px**：顶栏与内容区偏移同步
-- **logo hover 卡片（复刻原排课助手）**：悬停时卡片突出顶栏下方并上浮（`translateY(4px)` + 边框 + 背景 + z-index 提升），logo 放大
-- **搜索框图标 lucide 化**：`SearchDropdown.vue` 全部 emoji 替换为 lucide 图标
-- **主题切换控件（复刻原排课助手 darkmode-toggle）**：expand 动画太阳/月亮图标 + 滑动开关，点击在 `keguang-blue` / `deep-dark` 间互切
-  - 修复全局按钮规则撑高紧凑控件（统一 `min-height: 0` 重置）
-  - 修复 SVG `clipPath` 属性大小写（须为 `clip-path`）致月亮裁切不生效
-  - 修复 knob 基准位移叠加致超出轨道
-  - 修复 `--text-inverse` 在深色主题为近黑色致 knob 变黑、off 轨道浅色下不可见
-- **语言切换改下拉菜单**：双按钮 → globe 图标 + 当前语言单按钮 + 下拉选项（当前项勾选），点击外部关闭
-- **头像菜单修复**：图标改 lucide；`font: inherit` 简写致字体异常 → `font-family: inherit`；头像 hover 热区 240px→100%（原横跨语言按钮下方，选语言时误触发头像菜单）
-- **月亮图标深色 hover 保持黄色**：修复通用 hover 规则（`--interactive-active` 蓝色）覆盖深色主题下月亮图标 hover 变蓝的问题，hover 时保持 `--semantic-warning` 黄
+- **语义色 token**：新增 `--semantic-purple` 及 `--success/-warning/-error/-info/-purple-color`、`-background` 等别名块；primary 按钮统一 `--btn-primary-bg` + `--text-inverse`（新增 `--interactive-hover` 等交互 token）
+- **课程图谱独立 URL**：课程图谱从 `/courses` 迁至 `/courses/graph`，`/courses` 作为课程板块入口重定向至 `/courses/planner`
+- **顶栏 logo hover 卡片**（复刻原排课助手）：悬停时卡片突出顶栏下方并上浮，logo 放大
+- **顶栏主题切换控件**（复刻原排课助手 darkmode-toggle）：expand 动画太阳/月亮图标 + 滑动开关，点击在 `keguang-blue` / `deep-dark` 间互切
+- **顶栏语言切换下拉菜单**：双按钮 → globe 图标 + 当前语言单按钮 + 下拉选项（当前项勾选），点击外部关闭
+- **账户页更换邮箱表单样式补齐**：切换按钮由浏览器默认样式改为次级按钮（边框 + 交互色 + hover/展开激活态），展开表单改为 `--surface-secondary` 卡片
 - i18n 新增 `common.theme.label/light/dark`
 
-### 通用页脚优化
+### Changed
 
-- **深色主题一致性**：页脚配色/边框/间隔对齐整体 UI 风格
-- **二维码卡片优化**：白色卡片 96px、`loading="lazy"`，与深色背景形成对比
-- **邮箱链接 lucide 化**：`📧` emoji 替换为 `lucide:mail` 图标（配对齐样式）
-- **宽度对齐**：页脚内容区与全站 1100px 断点/内边距统一，切换页面不再跳位
+- **全组件硬编码颜色 token 化**：forum、feedback、scheduler、admin 图表、academic-map、common、ui、home、identity、setting、user、matching、contest、profile 等全部组件与页面的硬编码颜色统一替换为主题变量（`--surface-*` / `--text-*` / `--border-*` / `--interactive-*` / `--semantic-*` / `--shadow-*` 等），深色主题下不再有亮色残留
+- **四页宽度统一**：Planner / Explore / Academic Map / Course Map 四页 `max-width` 统一为 1100px、水平内边距统一 20px，切换页面时导航按钮位置不再跳变
+- **顶栏高度 84→64px**：顶栏与内容区偏移同步
+- **搜索框图标 lucide 化**：`SearchDropdown.vue` 全部 emoji 替换为 lucide 图标
+- **通用页脚优化**：配色/边框/间隔对齐深色主题；二维码白色卡片 96px + `loading="lazy"`；邮箱链接 `📧` emoji → `lucide:mail` 图标；内容区与全站 1100px 断点/内边距统一
+- **账户页邮箱验证徽标统一**：`已验证` / `未验证` 均改为纯文字胶囊徽标（绿/黄圆角底），任意窗口宽度下与邮箱地址保持同一排
+- **账户页操作按钮同排**：`重新发送验证邮件`（未验证时）与 `更换邮箱地址` 合并到同一操作行
+- **账户页垂直节奏压缩**：section 间距、标题边距、表单组/操作区边距与按钮 padding 整体收紧
+- **全局装饰性 emoji → lucide 图标**：`ForgotPassword`、`IdentityRequestForm`、`IdentitySelector`、`AccountSettings`、`Register`、`ThemeSettings`、`matching/projects/create` 7 个文件，统一 `<Icon name="lucide:...">` 并带 `aria-hidden` / 对齐样式
+- **排课求解提示 emoji → lucide 图标**：`SchedulerDashboard` 求解提示（信息/警告/错误）替换，en/zh 文案精简
+- **i18n 扫描白名单**：10 个含中文说明注释的组件加入 `i18n-scan-allowlist.json`
 
-### 账户设置页优化
+### Fixed
 
-- **邮箱验证徽标统一**：`已验证` / `未验证` 均改为纯文字胶囊徽标（绿/黄圆角底），并保证任意窗口宽度下与邮箱地址保持同一排（邮箱可收缩、徽标不换行）
-- **操作按钮同排**：`重新发送验证邮件`（未验证时）与 `更换邮箱地址` 合并到同一操作行；更换邮箱展开表单置于其下方
-- **更换邮箱控件样式补齐**：切换按钮由浏览器默认样式改为次级按钮（边框 + 交互色文字 + hover/展开激活态）；展开表单改为带边框的 `--surface-secondary` 卡片
-- **垂直节奏压缩**：section 间距、标题边距、表单组/操作区边距与按钮 padding 整体收紧，页面不再臃肿
+- **顶栏主题切换控件 4 个 bug**：全局按钮规则撑高紧凑控件（统一 `min-height: 0` 重置）；SVG `clipPath` 属性大小写（须为 `clip-path`）致月亮裁切不生效；knob 基准位移叠加致超出轨道；`--text-inverse` 在深色主题为近黑色致 knob 变黑、off 轨道浅色下不可见
+- **头像菜单修复**：图标改 lucide；`font: inherit` 简写致字体异常 → `font-family: inherit`；头像 hover 热区 240px→100%（原横跨语言按钮下方，选语言时误触发头像菜单）
+- **月亮图标深色 hover 保持黄色**：修复通用 hover 规则（`--interactive-active` 蓝色）覆盖深色主题下月亮图标 hover 变蓝的问题
+- **banned 格可见性**：筛选（banned）格在非编辑模式始终渲染（保持可见），仅编辑模式可点击切换
 
-### 全局图标统一
+### Notes
 
-- **装饰性 emoji → lucide 图标**：`ForgotPassword`、`IdentityRequestForm`、`IdentitySelector`、`AccountSettings`、`Register`、`ThemeSettings`、`matching/projects/create` 7 个文件的装饰性 emoji 替换为 lucide 图标，统一使用 `<Icon name="lucide:...">` 并带 `aria-hidden` / 对齐样式
-
-### 排课工作台
-
-- **求解提示 emoji → lucide 图标**：`SchedulerDashboard` 求解提示（信息/警告/错误）emoji 替换为 lucide 图标，en/zh 文案精简
-- **banned 格可见性 + 持久化**：筛选（banned）格在非编辑模式始终渲染（保持可见），仅编辑模式可点击切换；banned 时间段按学期持久化
+- **刻意保留的硬编码（均带注释说明）**：PDF/Office 查看器白底、全屏图片查看器恒定深色、动态头像 pastel 色板、课程学科彩色节点文字、8 色图表分类色板、搜索关键词高亮、白色 toggle knob 等——因 token 无法表达或需跨主题恒定而刻意保留
 
 ## [0.2.0] - 2026-08-16
 
