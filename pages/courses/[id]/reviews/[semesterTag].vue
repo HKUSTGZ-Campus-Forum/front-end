@@ -468,18 +468,18 @@ useHead({
 }
 
 .kg-back-link {
-  color: #26a4ff;
+  color: var(--interactive-primary);
   text-decoration: none;
   font-size: 0.9rem;
   &:hover { text-decoration: underline; }
-  &--muted { color: #6a85a0; }
+  &--muted { color: var(--text-secondary); }
 }
 
 .kg-card {
-  background: #F5FBFE;
-  border: 1.5px solid #c8dff8;
+  background: var(--surface-primary);
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  box-shadow: var(--shadow-medium);
   padding: 24px 28px;
   margin-bottom: 20px;
   min-width: 0;
@@ -520,13 +520,13 @@ useHead({
   align-items: center;
   padding: 8px 18px;
   border-radius: 999px;
-  background: rgba(38, 164, 255, 0.12);
-  color: #1178c8;
+  background: color-mix(in srgb, var(--interactive-primary) 12%, transparent);
+  color: var(--interactive-active);
   font-size: 0.82rem;
   font-weight: 700;
   &--outline {
     background: transparent;
-    border: 1px solid rgba(17, 120, 200, 0.25);
+    border: 1px solid color-mix(in srgb, var(--interactive-active) 25%, transparent);
   }
 }
 
@@ -534,7 +534,7 @@ useHead({
   flex: 1;
   min-width: 0;
   margin: 0;
-  color: #1d3560;
+  color: var(--text-primary);
   font-size: clamp(1.55rem, 2.2vw, 2.4rem);
   line-height: 1.12;
   font-weight: 800;
@@ -550,7 +550,7 @@ useHead({
 }
 
 .kg-page-intro {
-  color: #4a6080;
+  color: var(--text-secondary);
   margin: 14px 0 0;
   line-height: 1.7;
   font-size: 0.9rem;
@@ -561,8 +561,8 @@ useHead({
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
-  &.active { background: rgba(38, 200, 120, 0.15); color: #17934f; border: 1px solid rgba(38, 200, 120, 0.28); }
-  &.inactive { background: rgba(160, 160, 160, 0.12); color: #888; border: 1px solid rgba(160, 160, 160, 0.3); }
+  &.active { background: color-mix(in srgb, var(--semantic-success) 15%, transparent); color: var(--semantic-success); border: 1px solid color-mix(in srgb, var(--semantic-success) 28%, transparent); }
+  &.inactive { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-muted); border: 1px solid color-mix(in srgb, var(--text-muted) 30%, transparent); }
 }
 
 .kg-meta-chip {
@@ -573,8 +573,8 @@ useHead({
   padding: 10px 18px;
   min-width: 80px;
   border-radius: 999px;
-  background: rgba(40, 57, 101, 0.06);
-  color: #4a6080;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   font-weight: 700;
   white-space: nowrap;
@@ -583,7 +583,7 @@ useHead({
 .kg-section-title,
 .kg-form-title {
   margin: 0;
-  color: #1a2a4a;
+  color: var(--text-primary);
 }
 
 .kg-form-title {
@@ -600,7 +600,7 @@ useHead({
 }
 
 .kg-fixed-tags__label {
-  color: #4a6080;
+  color: var(--text-secondary);
   font-size: 0.86rem;
   font-weight: 700;
 }
@@ -616,9 +616,9 @@ useHead({
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(38, 164, 255, 0.22);
-  background: rgba(38, 164, 255, 0.08);
-  color: #1f73b7;
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
+  color: var(--interactive-active);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -640,31 +640,31 @@ useHead({
 
 .kg-btn-primary {
   padding: 8px 20px;
-  background: #26a4ff;
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
   border: none;
-  &:hover:not(:disabled) { background: #0d8de0; }
+  &:hover:not(:disabled) { background: var(--btn-primary-bg-hover); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .kg-btn-primary-outline,
 .kg-btn-ghost {
   padding: 8px 18px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   background: transparent;
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-btn-primary-outline:hover,
 .kg-btn-ghost:hover,
 .kg-action-btn:hover {
-  border-color: #26a4ff;
-  color: #26a4ff;
+  border-color: var(--interactive-primary);
+  color: var(--interactive-primary);
 }
 
 .kg-review-form,
 .kg-review-item {
-  border-top: 1px solid #e8f4fd;
+  border-top: 1px solid var(--border-secondary);
   padding-top: 18px;
   margin-top: 18px;
   min-width: 0;
@@ -675,7 +675,7 @@ useHead({
   label {
     display: block;
     margin-bottom: 8px;
-    color: #4a6080;
+    color: var(--text-secondary);
     font-weight: 600;
   }
 }
@@ -685,17 +685,17 @@ useHead({
   width: 100%;
   box-sizing: border-box;
   padding: 12px 14px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-primary);
   font-size: 0.92rem;
-  color: #1a2a4a;
+  color: var(--text-primary);
 }
 
 .kg-char-count {
   display: inline-block;
   margin-top: 6px;
-  color: #7d94ae;
+  color: var(--text-muted);
   font-size: 0.78rem;
 }
 
@@ -707,7 +707,7 @@ useHead({
 
 .kg-star,
 .kg-star-icon {
-  color: #d4dce5;
+  color: var(--text-muted);
 }
 
 .kg-star {
@@ -715,10 +715,10 @@ useHead({
   border: none;
   cursor: pointer;
   font-size: 1.4rem;
-  &.active { color: #ffb648; }
+  &.active { color: var(--semantic-warning); }
 }
 
-.kg-star-icon.active { color: #ffb648; }
+.kg-star-icon.active { color: var(--semantic-warning); }
 
 .kg-uploaded-images {
   display: flex;
@@ -733,7 +733,7 @@ useHead({
   height: 92px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #c8dff8;
+  border: 1px solid var(--border-primary);
   img {
     width: 100%;
     height: 100%;
@@ -749,8 +749,8 @@ useHead({
   height: 24px;
   border: none;
   border-radius: 50%;
-  background: rgba(20, 31, 51, 0.72);
-  color: #fff;
+  background: var(--modal-backdrop);
+  color: var(--text-inverse, #ffffff);
   cursor: pointer;
 }
 
@@ -764,7 +764,7 @@ useHead({
 
 .kg-reviewer-name,
 .kg-review-title {
-  color: #1a2a4a;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -781,7 +781,7 @@ useHead({
 .kg-review-content,
 .kg-loading,
 .kg-error-box {
-  color: #4a6080;
+  color: var(--text-secondary);
 }
 
 .kg-review-content {
@@ -805,7 +805,7 @@ useHead({
   padding: 0;
   background: transparent;
   border: none;
-  color: #26a4ff;
+  color: var(--interactive-primary);
   &--link { font-weight: 700; }
 }
 
@@ -821,8 +821,8 @@ useHead({
 .kg-spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #c8dff8;
-  border-top-color: #26a4ff;
+  border: 3px solid var(--border-primary);
+  border-top-color: var(--interactive-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   &--sm { width: 18px; height: 18px; border-width: 2px; }

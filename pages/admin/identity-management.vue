@@ -595,7 +595,7 @@ onMounted(refreshData);
 .admin-identity__primary-btn,
 .admin-identity__inline-btn {
   border: 0;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
 }
 
@@ -736,7 +736,7 @@ onMounted(refreshData);
   flex: 0 0 auto;
   overflow: hidden;
   border-radius: 50%;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   display: grid;
   place-items: center;
@@ -772,18 +772,18 @@ onMounted(refreshData);
 
 .identity-status--pending {
   background: color-mix(in srgb, var(--semantic-warning) 14%, white);
-  color: #9a5b00;
+  color: var(--warning-color, #9a5b00);
 }
 
 .identity-status--approved {
   background: color-mix(in srgb, var(--semantic-success) 14%, white);
-  color: #08754f;
+  color: var(--success-color, #08754f);
 }
 
 .identity-status--rejected,
 .identity-status--revoked {
   background: color-mix(in srgb, var(--semantic-error) 12%, white);
-  color: #b42323;
+  color: var(--error-color, #b42323);
 }
 
 .admin-identity-card__identity,

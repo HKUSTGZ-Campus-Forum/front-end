@@ -63,7 +63,7 @@ const normalizedValue = computed(() => (
 
   &.active {
     background: var(--surface-primary);
-    box-shadow: 0 1px 4px rgba(31, 83, 130, 0.12);
+    box-shadow: var(--shadow-small);
   }
 
   &--completed.active {

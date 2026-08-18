@@ -461,8 +461,8 @@ onMounted(loadOverview);
 .admin-overview__refresh,
 .admin-overview__day-switcher button {
   border: 0;
-  background: var(--interactive-primary);
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse, #ffffff);
   cursor: pointer;
 
   &:disabled {
@@ -478,7 +478,7 @@ onMounted(loadOverview);
 
   &.admin-overview__day-button--active {
     border-color: var(--interactive-primary);
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
   }
 }
@@ -685,8 +685,8 @@ onMounted(loadOverview);
 
 .admin-overview__action {
   width: fit-content;
-  background: var(--interactive-primary);
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse, #ffffff);
 }
 
 @media (max-width: 768px) {

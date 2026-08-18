@@ -46,6 +46,7 @@ export interface ThemeConfig {
       warning: string;
       error: string;
       info: string;
+      purple?: string;
     };
 
     // Border colors

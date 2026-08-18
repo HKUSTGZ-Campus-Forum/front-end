@@ -18,6 +18,8 @@ const props = withDefaults(defineProps<{
   height: 360,
 });
 
+// 8 色分类色板刻意保留：多系列图表需要色相分离以保证分类可区分，
+// 无法用语义 token（--semantic-* / --interactive-*）表达，不随主题变化
 const palette = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#ea580c", "#475569"];
 
 const hasData = computed(() => props.series.some((item) => item.data.some((value) => value > 0)));
@@ -47,14 +49,14 @@ const chartOptions = computed<ApexOptions>(() => ({
   },
   xaxis: {
     categories: props.categories,
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
     axisBorder: { color: "var(--border-primary)" },
     axisTicks: { color: "var(--border-primary)" },
   },
   yaxis: {
     min: 0,
     forceNiceScale: true,
-    labels: { style: { colors: "var(--text-tertiary)" } },
+    labels: { style: { colors: "var(--text-muted)" } },
   },
   tooltip: {
     theme: "light",

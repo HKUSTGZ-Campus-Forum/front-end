@@ -42,11 +42,11 @@ const { isUpdateAvailable, isApplyingUpdate, availableVersion, dismissUpdate, ap
   width: min(420px, calc(100vw - 32px));
   padding: 18px;
   border-radius: 20px;
-  border: 1px solid rgba(79, 70, 229, 0.18);
+  border: 1px solid color-mix(in srgb, var(--semantic-purple) 25%, transparent);
   background:
-    radial-gradient(circle at top right, rgba(191, 219, 254, 0.85), transparent 40%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(238, 242, 255, 0.96));
-  box-shadow: 0 24px 60px rgba(79, 70, 229, 0.16);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--semantic-purple) 14%, var(--surface-elevated)), transparent 40%),
+    var(--surface-elevated);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--semantic-purple) 16%, transparent);
   backdrop-filter: blur(12px);
 }
 
@@ -55,8 +55,8 @@ const { isUpdateAvailable, isApplyingUpdate, availableVersion, dismissUpdate, ap
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(79, 70, 229, 0.12);
-  color: #4338ca;
+  background: var(--purple-background);
+  color: var(--purple-color);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -67,14 +67,14 @@ const { isUpdateAvailable, isApplyingUpdate, availableVersion, dismissUpdate, ap
 
   h2 {
     margin: 0;
-    color: #111827;
+    color: var(--text-primary);
     font-size: 20px;
     line-height: 1.2;
   }
 
   p {
     margin: 8px 0 0;
-    color: #4b5563;
+    color: var(--text-secondary);
     font-size: 14px;
     line-height: 1.6;
   }
@@ -82,7 +82,7 @@ const { isUpdateAvailable, isApplyingUpdate, availableVersion, dismissUpdate, ap
   small {
     display: block;
     margin-top: 8px;
-    color: #6366f1;
+    color: var(--purple-color);
     font-size: 12px;
   }
 }
@@ -116,14 +116,17 @@ const { isUpdateAvailable, isApplyingUpdate, availableVersion, dismissUpdate, ap
 }
 
 .update-toast__button--primary {
-  background: linear-gradient(135deg, #4f46e5, #2563eb);
-  color: #fff;
-  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.22);
+  background: var(--semantic-purple);
+  color: var(--text-inverse);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--semantic-purple) 22%, transparent);
+  &:hover {
+    background: color-mix(in srgb, var(--semantic-purple) 85%, white);
+  }
 }
 
 .update-toast__button--secondary {
-  background: rgba(255, 255, 255, 0.75);
-  color: #374151;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
 }
 
 .update-toast-enter-active,

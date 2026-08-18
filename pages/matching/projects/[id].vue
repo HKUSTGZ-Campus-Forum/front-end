@@ -462,7 +462,7 @@ onMounted(async () => {
 
 .error-icon {
   font-size: 3rem;
-  color: #e74c3c;
+  color: var(--error-color, #e74c3c);
   margin-bottom: 16px;
 }
 
@@ -481,7 +481,7 @@ onMounted(async () => {
 .project-content {
   background: var(--surface-primary, white);
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-medium, 0 2px 10px rgba(0,0,0,0.08));
   overflow: hidden;
 }
 
@@ -490,7 +490,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 30px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border-primary, #e9ecef);
 }
 
 .project-title {
@@ -515,13 +515,13 @@ onMounted(async () => {
   text-transform: uppercase;
 }
 
-.status-recruiting { background: #d4edda; color: #155724; }
-.status-active { background: #cce5ff; color: #0056b3; }
-.status-completed { background: #e2e3e5; color: #6c757d; }
+.status-recruiting { background: color-mix(in srgb, var(--success-color, #28a745) 15%, transparent); color: var(--success-color, #155724); }
+.status-active { background: color-mix(in srgb, var(--interactive-primary, #26a4ff) 15%, transparent); color: var(--interactive-primary, #0056b3); }
+.status-completed { background: var(--surface-secondary, #e2e3e5); color: var(--text-muted, #6c757d); }
 
 .project-type, .tool-tag {
-  background: #ecf0f1;
-  color: #7f8c8d;
+  background: var(--surface-secondary, #ecf0f1);
+  color: var(--text-secondary, #7f8c8d);
   padding: 6px 12px;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -535,9 +535,9 @@ onMounted(async () => {
   text-transform: capitalize;
 }
 
-.difficulty-beginner { background: #d5f4e6; color: #27ae60; }
-.difficulty-intermediate { background: #fef9e7; color: #f39c12; }
-.difficulty-advanced { background: #fadbd8; color: #e74c3c; }
+.difficulty-beginner { background: color-mix(in srgb, var(--success-color, #27ae60) 15%, transparent); color: var(--success-color, #27ae60); }
+.difficulty-intermediate { background: color-mix(in srgb, var(--warning-color, #f39c12) 15%, transparent); color: var(--warning-color, #f39c12); }
+.difficulty-advanced { background: color-mix(in srgb, var(--error-color, #e74c3c) 15%, transparent); color: var(--error-color, #e74c3c); }
 
 .header-stats {
   display: flex;
@@ -557,8 +557,8 @@ onMounted(async () => {
   align-items: center;
   gap: 16px;
   padding: 20px 30px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--surface-secondary, #f8f9fa);
+  border-bottom: 1px solid var(--border-primary, #e9ecef);
 }
 
 
@@ -583,8 +583,8 @@ onMounted(async () => {
 }
 
 .view-profile-btn {
-  background: var(--accent-primary, #3498db);
-  color: white;
+  background: var(--btn-primary-bg, #3498db);
+  color: var(--text-inverse, #ffffff);
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -598,7 +598,7 @@ onMounted(async () => {
 }
 
 .view-profile-btn:hover {
-  background: var(--accent-secondary, #2980b9);
+  background: var(--btn-primary-bg-hover, #2980b9);
 }
 
 .created-date {
@@ -608,7 +608,7 @@ onMounted(async () => {
 
 .project-section {
   padding: 30px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-primary, #f0f0f0);
 }
 
 .project-section:last-child {
@@ -656,18 +656,18 @@ onMounted(async () => {
 }
 
 .skill-tag.required {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background, #e3f2fd);
+  color: var(--info-color, #1976d2);
 }
 
 .skill-tag.preferred {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--purple-background, #f3e5f5);
+  color: var(--purple-color, #7b1fa2);
 }
 
 .role-tag {
-  background: #fff3e0;
-  color: #f57c00;
+  background: var(--warning-background, #fff3e0);
+  color: var(--warning-color, #f57c00);
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -700,7 +700,7 @@ onMounted(async () => {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  background: #f8f9fa;
+  background: var(--surface-secondary, #f8f9fa);
 }
 
 .btn {
@@ -723,35 +723,35 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
+  background: var(--btn-primary-bg, #3498db);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--btn-primary-bg, #3498db);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2980b9;
+  background: var(--btn-primary-bg-hover, #2980b9);
 }
 
 .btn-secondary {
-  background: #f39c12;
-  color: white;
-  border-color: #f39c12;
+  background: var(--warning-color, #f39c12);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--warning-color, #f39c12);
 }
 
 .btn-success {
-  background: #27ae60;
-  color: white;
-  border-color: #27ae60;
+  background: var(--success-color, #27ae60);
+  color: var(--text-inverse, #ffffff);
+  border-color: var(--success-color, #27ae60);
 }
 
 .btn-outline {
   background: transparent;
   color: var(--text-secondary, #7f8c8d);
-  border-color: #bdc3c7;
+  border-color: var(--border-secondary, #bdc3c7);
 }
 
 .btn-outline:hover {
-  background: #ecf0f1;
+  background: var(--surface-secondary, #ecf0f1);
 }
 
 .btn-lg {

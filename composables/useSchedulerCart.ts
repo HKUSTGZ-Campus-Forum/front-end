@@ -138,6 +138,14 @@ export function useSchedulerCart(
 
   async function toggleCourse(code: string, enabled: boolean) {
     if (loggedIn.value) {
+      if (requiresReload.value || reloading.value) {
+        throw new SchedulerCartMutationError('blocked')
+      }
+      // Optimistic apply: flip the local state immediately so the UI responds
+      // before the round-trip. The queued authoritative write + reconciliation
+      // below confirms the change; on failure `requiresReload` freezes further
+      // mutations and the user can reload the authoritative cart.
+      courses.value = setGuestCourseEnabled(courses.value, code, enabled)
       return enqueueMutation(() => (
         mutateAuthenticated(() => api.toggleCourse(semesterId, code, enabled))
       ))
@@ -148,6 +156,10 @@ export function useSchedulerCart(
 
   async function toggleBundle(code: string, bundleId: number, layer: number, enabled: boolean) {
     if (loggedIn.value) {
+      if (requiresReload.value || reloading.value) {
+        throw new SchedulerCartMutationError('blocked')
+      }
+      courses.value = setGuestBundleEnabled(courses.value, code, bundleId, layer, enabled)
       return enqueueMutation(() => (
         mutateAuthenticated(() => api.toggleBundle(semesterId, code, bundleId, layer, enabled))
       ))
@@ -158,6 +170,10 @@ export function useSchedulerCart(
 
   async function toggleLayer(code: string, layer: number, enabled: boolean) {
     if (loggedIn.value) {
+      if (requiresReload.value || reloading.value) {
+        throw new SchedulerCartMutationError('blocked')
+      }
+      courses.value = setGuestLayerEnabled(courses.value, code, layer, enabled)
       return enqueueMutation(() => (
         mutateAuthenticated(() => api.toggleLayer(semesterId, code, layer, enabled))
       ))

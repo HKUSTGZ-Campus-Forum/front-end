@@ -311,8 +311,8 @@ onMounted(() => {
 
 .test-btn {
   padding: 0.75rem 1.5rem;
-  background: var(--interactive-primary);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -338,12 +338,12 @@ onMounted(() => {
   border-radius: 6px;
   
   &.success {
-    background: var(--success)20;
+    background: color-mix(in srgb, var(--success) 20%, transparent);
     border: 1px solid var(--success);
   }
   
   &.info {
-    background: var(--interactive-primary)20;
+    background: color-mix(in srgb, var(--interactive-primary) 20%, transparent);
     border: 1px solid var(--interactive-primary);
   }
 }
@@ -410,7 +410,7 @@ onMounted(() => {
 }
 
 .admin-warning {
-  background: var(--warning)20;
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
   color: var(--warning);
   padding: 1rem;
   border-radius: 6px;
@@ -427,17 +427,17 @@ onMounted(() => {
 .summary-item {
   padding: 0.75rem;
   border-radius: 6px;
-  background: var(--error)20;
+  background: color-mix(in srgb, var(--error) 20%, transparent);
   color: var(--error);
   
   &.success {
-    background: var(--success)20;
+    background: color-mix(in srgb, var(--success) 20%, transparent);
     color: var(--success);
   }
 }
 
 .error-section {
-  background: var(--error)20;
+  background: color-mix(in srgb, var(--error) 20%, transparent);
   color: var(--error);
   padding: 2rem;
   border-radius: 8px;
@@ -445,7 +445,7 @@ onMounted(() => {
   margin: 2rem 0;
 
   pre {
-    background: rgba(0,0,0,0.1);
+    background: var(--surface-secondary);
     padding: 1rem;
     border-radius: 4px;
     overflow: auto;
@@ -459,7 +459,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--modal-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;

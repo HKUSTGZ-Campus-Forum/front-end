@@ -42,17 +42,17 @@ const homeStore = usePersistHomeStore();
 .kg-page-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 
-.kg-page-subtitle { font-size: 0.9rem; color: #4a6080; margin: 0; }
+.kg-page-subtitle { font-size: 0.9rem; color: var(--text-secondary); margin: 0; }
 
 .kg-card {
-  background: #F5FBFE;
-  border: 1.5px solid #c8dff8;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  box-shadow: var(--shadow-medium);
   padding: 28px 32px;
 }
 </style>

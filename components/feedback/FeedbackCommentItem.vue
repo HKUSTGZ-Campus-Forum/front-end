@@ -76,7 +76,7 @@ const dateFormatter = computed(
 
 .feedback-comment-item__hidden-note {
   margin: 8px 0 0;
-  color: #9a6500;
+  color: var(--warning-color, #9a6500);
   font-size: 0.88rem;
 }
 

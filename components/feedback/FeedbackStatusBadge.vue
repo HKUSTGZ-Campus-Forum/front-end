@@ -56,7 +56,7 @@ const statusMeta = computed(() => {
   &--pending {
     background: color-mix(in srgb, var(--semantic-warning) 16%, var(--surface-primary));
     border-color: color-mix(in srgb, var(--semantic-warning) 28%, var(--surface-primary));
-    color: #9a6500;
+    color: var(--warning-color, #9a6500);
   }
 
   &--rejected {

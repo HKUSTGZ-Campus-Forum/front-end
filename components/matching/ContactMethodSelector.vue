@@ -311,8 +311,8 @@ const updateContactValue = (method) => {
 
 .contact-input:focus {
   outline: none;
-  border-color: var(--accent-primary, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 12%, transparent);
 }
 
 .contact-input::placeholder {
@@ -324,8 +324,8 @@ const updateContactValue = (method) => {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   margin-top: 20px;
 }

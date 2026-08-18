@@ -51,6 +51,30 @@ describe('scheduler cart refresh ordering', () => {
     await expect(refresh).rejects.toThrow('current request failed')
   })
 
+  it('applies the toggle optimistically before the write resolves', async () => {
+    const serverCourses = [{ course_code: 'AIAA1001', enabled: false } as CartCourse]
+    const write = deferred<void>()
+    const toggleCourse = vi.fn(async () => {
+      await write.promise
+      serverCourses[0] = { ...serverCourses[0], enabled: true }
+    })
+    const getCart = vi.fn(async () => serverCourses.map(course => ({ ...course })))
+    vi.stubGlobal('useScheduler', () => ({ getCart, toggleCourse }))
+
+    const initial = [{ course_code: 'AIAA1001', enabled: false } as CartCourse]
+    const cart = useSchedulerCart('2610', ref(true), ref(initial))
+
+    const outcome = cart.toggleCourse('AIAA1001', true)
+
+    // Optimistic: the local card flips before the server round-trip finishes.
+    expect(cart.courses.value[0]?.enabled).toBe(true)
+    expect(getCart).not.toHaveBeenCalled()
+
+    write.resolve()
+    await expect(outcome).resolves.toBeUndefined()
+    expect(cart.courses.value[0]?.enabled).toBe(true)
+  })
+
   it('reconciles authoritative state after a committed write loses its response', async () => {
     const serverCourses = [{ course_code: 'AIAA1001', enabled: false } as CartCourse]
     const toggleCourse = vi.fn(async () => {
@@ -88,7 +112,7 @@ describe('scheduler cart refresh ordering', () => {
     expect(cart.courses.value).toEqual(authoritative)
   })
 
-  it('keeps prior stable state and reports failure when reconciliation remains unavailable', async () => {
+  it('keeps the optimistic value and reports failure when reconciliation remains unavailable', async () => {
     const getCart = vi.fn().mockRejectedValue(new Error('GET unavailable'))
     const toggleCourse = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('useScheduler', () => ({ getCart, toggleCourse }))
@@ -101,13 +125,16 @@ describe('scheduler cart refresh ordering', () => {
       getSchedulerCartMutationFailureKind(error) === 'state-unverified'
     ))
     expect(getCart).toHaveBeenCalledTimes(2)
-    expect(cart.courses.value).toEqual(initial)
+    // The optimistic flip stays visible; requiresReload freezes further
+    // mutations until the user reloads the authoritative cart.
+    expect(cart.courses.value[0]?.enabled).toBe(true)
     expect(cart.requiresReload.value).toBe(true)
 
     await expect(cart.toggleCourse('AIAA1001', false)).rejects.toSatisfy(error => (
       getSchedulerCartMutationFailureKind(error) === 'blocked'
     ))
     expect(toggleCourse).toHaveBeenCalledOnce()
+    expect(cart.courses.value[0]?.enabled).toBe(true)
 
     getCart.mockResolvedValueOnce([{ ...initial[0], enabled: true }])
     await expect(cart.reloadAuthoritative()).resolves.toBeUndefined()

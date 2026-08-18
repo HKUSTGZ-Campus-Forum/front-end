@@ -78,6 +78,9 @@ importers:
         specifier: ^1.11.1
         version: 1.11.1(apexcharts@5.16.0)(vue@3.5.35(typescript@5.7.3))
     devDependencies:
+      '@iconify-json/lucide':
+        specifier: ^1.2.123
+        version: 1.2.123
       '@nuxtjs/i18n':
         specifier: ^9.5.2
         version: 9.5.2(@vue/compiler-dom@3.5.41)(eslint@9.20.1(jiti@2.7.0))(magicast@0.5.3)(rollup@4.60.4)(vue@3.5.35(typescript@5.7.3))
@@ -998,6 +1001,11 @@ packages:
 
   '@iconify/collections@1.0.555':
     resolution: {integrity: sha512-lI82hhzkE4la6zjy/t4hbd6pQtl5HjASxsm+Rzcy6P9B9/2pk1FtnWzjDAaSfdHnc2wCsmZZzZW9jSz2LvtlrQ==}
+
+  '@iconify-json/lucide@1.2.123':
+    resolution: {integrity: sha512-0CozmpKXEOEEhltrfT2zt+/t1hez67Y+hM2VJWoIcBKdBrb83VYuKf+b5A0QU9HfQm+RNn2GjFWlTOwi+Ss6IA==}
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -7488,6 +7496,10 @@ snapshots:
   '@hutson/parse-repository-url@3.0.2': {}
 
   '@iconify/collections@1.0.555':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/lucide@1.2.123':
     dependencies:
       '@iconify/types': 2.0.0
 

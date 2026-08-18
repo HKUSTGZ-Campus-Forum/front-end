@@ -378,11 +378,11 @@ onMounted(() => {
 
   &:hover {
     border-color: var(--interactive-primary);
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
   }
 
   &.active {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     border-color: var(--interactive-primary);
   }
@@ -439,7 +439,7 @@ onMounted(() => {
     font-weight: 500;
 
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
     
     // Mobile optimization
@@ -516,7 +516,7 @@ onMounted(() => {
   }
 
   .create-first-post-btn {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     color: var(--text-inverse);
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
@@ -532,7 +532,7 @@ onMounted(() => {
     justify-content: center;
 
     &:hover {
-      background: var(--interactive-hover);
+      background: var(--btn-primary-bg-hover);
     }
   }
   

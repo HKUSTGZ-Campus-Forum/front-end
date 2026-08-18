@@ -41,8 +41,8 @@ const partialMarkers = computed(() => [props.series.looking, props.series.schedu
     ? [{
         seriesIndex,
         dataPointIndex,
-        fillColor: '#ffffff',
-        strokeColor: '#92400e',
+        fillColor: 'var(--surface-primary)',
+        strokeColor: 'var(--warning-color)',
         size: 5,
       }]
     : []),

@@ -659,7 +659,7 @@ useHead({
 .kg-academic-chip.is-interested {
   background: color-mix(in srgb, var(--semantic-warning) 14%, var(--surface-primary));
   border-color: color-mix(in srgb, var(--semantic-warning) 32%, var(--border-primary));
-  color: #a45c04;
+  color: var(--semantic-warning);
 }
 
 .kg-interest-btn {
@@ -743,7 +743,7 @@ useHead({
   }
 
   &.is-added {
-    background: var(--interactive-primary);
+    background: var(--btn-primary-bg);
     border-color: var(--interactive-primary);
     color: var(--text-inverse);
   }
@@ -829,12 +829,12 @@ useHead({
 }
 
 .kg-btn--primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   border: 1px solid var(--interactive-primary);
   color: var(--text-inverse);
 
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     border-color: var(--interactive-hover);
   }
 }

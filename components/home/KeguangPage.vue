@@ -251,17 +251,22 @@ onMounted(() => {
         </button>
       </div>
       <div class="kg-chat-input-row">
-        <textarea
-          ref="kgChatInputRef"
-          class="kg-chat-input"
-          v-model="kgGuguInputText"
-          :placeholder="kgReplyTarget
-            ? t('homePage.chat.replyPlaceholder', { name: getReplyDisplayName(kgReplyTarget) })
-            : t('homePage.chat.placeholder')"
-          rows="2"
-          @keydown.enter.exact.prevent="sendKgGuguMessage"
-          @keydown.enter.shift.exact="() => {}"
-        />
+        <div class="kg-chat-input-wrap">
+          <textarea
+            ref="kgChatInputRef"
+            class="kg-chat-input"
+            v-model="kgGuguInputText"
+            :placeholder="kgReplyTarget
+              ? t('homePage.chat.replyPlaceholder', { name: getReplyDisplayName(kgReplyTarget) })
+              : t('homePage.chat.placeholder')"
+            rows="2"
+            @keydown.enter.exact.prevent="sendKgGuguMessage"
+            @keydown.enter.shift.exact="() => {}"
+          />
+          <span class="kg-chat-input-icon" aria-hidden="true">
+            <Icon name="lucide:pen-line" />
+          </span>
+        </div>
         <button
           class="kg-chat-send-btn"
           @click="sendKgGuguMessage"
@@ -340,9 +345,9 @@ onMounted(() => {
 }
 
 .kg-card {
-  background: #FFFFFF;
+  background: var(--surface-primary);
   border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  box-shadow: var(--card-shadow);
 }
 
 .kg-top-card {
@@ -380,10 +385,10 @@ onMounted(() => {
 .kg-links-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eef5ff;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .kg-link-btn {
@@ -393,12 +398,12 @@ onMounted(() => {
   justify-content: center;
   padding: 0 12px;
   border-radius: 8px;
-  border: 1px solid #c8dff8;
+  border: 1px solid var(--border-primary);
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #1a2a4a;
-  background: #FFFFFF;
+  color: var(--text-primary);
+  background: var(--surface-primary);
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   margin-bottom: 8px;
 
@@ -407,9 +412,9 @@ onMounted(() => {
   }
 
   &:hover {
-    background: #d7edf9;
-    border-color: #26a4ff;
-    color: #1278c4;
+    background: var(--bg-secondary);
+    border-color: var(--border-focus);
+    color: var(--interactive-active);
   }
 }
 
@@ -425,7 +430,7 @@ onMounted(() => {
   display: inline-block;
   font-size: 1rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 16px;
 }
 
@@ -444,8 +449,8 @@ onMounted(() => {
   margin-bottom: 10px;
   padding: 10px 14px;
   border-radius: 12px;
-  background: #eef4ff;
-  border: 1px solid #c9d8ff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
 }
 
 .kg-chat-reply-banner__content {
@@ -456,13 +461,13 @@ onMounted(() => {
 }
 
 .kg-chat-reply-banner__label {
-  color: #42548f;
+  color: var(--interactive-active-text);
   font-size: 0.85rem;
   font-weight: 600;
 }
 
 .kg-chat-reply-banner__text {
-  color: #5b6994;
+  color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.45;
   word-break: break-word;
@@ -471,20 +476,37 @@ onMounted(() => {
 .kg-chat-reply-banner__clear {
   border: none;
   background: transparent;
-  color: #5871c8;
+  color: var(--interactive-active);
   font-size: 0.82rem;
   cursor: pointer;
   padding: 0;
+}
+
+.kg-chat-input-wrap {
+  position: relative;
+}
+
+.kg-chat-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kg-chat-input {
   width: 100%;
   padding: 10px 14px 10px 36px;
   border-radius: 8px;
-  border: 1px solid #c8dff8;
-  background: #FFFFFF;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-primary);
   font-size: 0.875rem;
-  color: #4a6080;
+  color: var(--text-secondary);
   outline: none;
   min-height: 42px;
   max-height: 120px;
@@ -493,12 +515,9 @@ onMounted(() => {
   line-height: 1.5;
   transition: border-color 0.15s;
   box-sizing: border-box;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a0b8cc' stroke-width='2'%3E%3Cpath d='M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 12px 12px;
 
-  &::placeholder { color: #a0b8cc; }
-  &:focus { border-color: #8b9de8; }
+  &::placeholder { color: var(--text-muted); }
+  &:focus { border-color: var(--border-focus); }
 }
 
 .kg-chat-send-btn {
@@ -506,8 +525,8 @@ onMounted(() => {
   height: 36px;
   padding: 0 22px;
   border-radius: 18px;
-  background: #9EAAF4;
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
   border: none;
   font-size: 0.85rem;
   font-weight: 600;
@@ -516,8 +535,8 @@ onMounted(() => {
   transition: background 0.15s, opacity 0.15s;
   letter-spacing: 0.02em;
 
-  &:hover  { background: #8896ec; }
-  &:active { background: #7480e0; }
+  &:hover  { background: var(--btn-primary-bg-hover); }
+  &:active { background: var(--interactive-active); }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
@@ -529,7 +548,7 @@ onMounted(() => {
 
 .kg-msg-placeholder {
   text-align: center;
-  color: #4a6080;
+  color: var(--text-secondary);
   padding: 24px;
   font-size: 0.875rem;
 }
@@ -554,9 +573,9 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
   position: relative;
-  background: #BFD7FB;
+  background: var(--interactive-secondary);
   border-radius: 12px;
-  border: 1.5px solid #BFD7FB;
+  border: 1.5px solid var(--interactive-secondary);
   overflow: visible;
 
   &::before {
@@ -568,7 +587,7 @@ onMounted(() => {
     height: 0;
     border-top: 7px solid transparent;
     border-bottom: 7px solid transparent;
-    border-right: 8px solid #BFD7FB;
+    border-right: 8px solid var(--interactive-secondary);
   }
 }
 
@@ -578,39 +597,39 @@ onMounted(() => {
   gap: 8px;
   background: transparent;
   padding: 9px 14px 7px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid color-mix(in srgb, var(--surface-primary) 55%, transparent);
 }
 
 .kg-msg-author {
   font-weight: 600;
   font-size: 0.85rem;
-  color: #1a2458;
+  color: var(--text-primary);
 }
 
 .kg-msg-time {
   font-size: 0.76rem;
-  color: #5a6890;
+  color: var(--text-muted);
 }
 
 .kg-msg-reply {
   font-size: 0.78rem;
-  color: #4a5a9a;
+  color: var(--interactive-active-text);
   cursor: pointer;
   margin-left: auto;
   padding: 2px 8px;
   border-radius: 4px;
   transition: background 0.15s;
 
-  &:hover { background: rgba(255, 255, 255, 0.45); }
+  &:hover { background: color-mix(in srgb, var(--surface-primary) 45%, transparent); }
 }
 
 .kg-msg-text {
   font-size: 0.875rem;
-  color: #2a3a5a;
+  color: var(--text-primary);
   line-height: 1.55;
   word-break: break-word;
   padding: 10px 14px 12px;
-  background: #FFFFFF;
+  background: var(--surface-primary);
   border-radius: 0 0 10px 10px;
   display: flex;
   flex-direction: column;
@@ -619,40 +638,40 @@ onMounted(() => {
 
 .kg-msg-quote {
   padding-left: 10px;
-  border-left: 3px solid #9bb2ef;
+  border-left: 3px solid var(--interactive-secondary);
   opacity: 0.92;
 }
 
 .kg-msg-quote__author {
   font-size: 0.73rem;
   font-weight: 600;
-  color: #5870bb;
+  color: var(--interactive-active-text);
   margin-bottom: 2px;
 }
 
 .kg-msg-quote__text {
   font-size: 0.78rem;
-  color: #7a86a5;
+  color: var(--text-secondary);
   line-height: 1.4;
   word-break: break-word;
 }
 
 .kg-msg-text__content {
-  color: #2a3a5a;
+  color: var(--text-primary);
 }
 
 .kg-view-more-chat {
   text-align: center;
   padding: 12px;
-  color: #6b8fe6;
+  color: var(--interactive-active);
   font-size: 0.85rem;
   cursor: pointer;
-  border-top: 1px solid #f0f7ff;
+  border-top: 1px solid var(--border-secondary);
   margin-top: 4px;
   transition: color 0.15s;
 
   &:hover {
-    color: #5577d4;
+    color: var(--interactive-primary);
     text-decoration: underline;
   }
 
@@ -666,9 +685,9 @@ onMounted(() => {
 .kg-no-more-chat {
   text-align: center;
   padding: 12px;
-  color: #a0b8cc;
+  color: var(--text-muted);
   font-size: 0.8rem;
-  border-top: 1px solid #f0f7ff;
+  border-top: 1px solid var(--border-secondary);
   margin-top: 4px;
 }
 </style>

@@ -548,7 +548,7 @@ onBeforeUnmount(() => {
   &__body { min-height: 390px; padding: 18px 22px 24px; }
   &__state { min-height: 350px; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--text-secondary); text-align: center; }
   &__state--error { color: var(--semantic-error); }
-  &__state button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--interactive-primary); color: var(--text-inverse); cursor: pointer; font-weight: 700; }
+  &__state button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--btn-primary-bg); color: var(--text-inverse); cursor: pointer; font-weight: 700; }
   &__summary { margin: 0 0 10px; color: var(--text-secondary); font-size: 0.84rem; line-height: 1.5; }
   &__scope-explanation { margin: -4px 0 12px; color: var(--text-secondary); font-size: 0.76rem; line-height: 1.5; }
   &__truth { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; margin-bottom: 10px; color: var(--text-secondary); font-size: 0.75rem; line-height: 1.4; }
@@ -558,7 +558,7 @@ onBeforeUnmount(() => {
   &__coverage-warning { margin: 8px 0 12px; padding: 9px 11px; border-left: 3px solid var(--semantic-warning); border-radius: 6px; background: color-mix(in srgb, var(--semantic-warning) 9%, transparent); color: var(--text-primary); font-size: 0.76rem; line-height: 1.5; }
   &__chart { min-height: 320px; }
   &__chart-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 0; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; }
-  &__partial-key { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border: 2px solid #92400e; border-radius: 50%; background: var(--surface-primary); }
+  &__partial-key { display: inline-block; width: 10px; height: 10px; margin-left: 6px; border: 2px solid var(--warning-color, #92400e); border-radius: 50%; background: var(--surface-primary); }
   &__meta { margin: 8px 0 0; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; }
   &__data { margin-top: 14px; border-top: 1px solid var(--border-secondary); padding-top: 12px; }
   &__data summary { color: var(--interactive-active); cursor: pointer; font-size: 0.8rem; font-weight: 700; }

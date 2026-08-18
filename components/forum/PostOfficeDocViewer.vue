@@ -47,6 +47,7 @@ const embedUrl = computed(() => {
   min-height: 560px;
   border: none;
   border-radius: 6px;
+  /* Office 在线预览文档本身为白底，加载期间保持白色避免闪烁 */
   background: #fff;
 }
 </style>

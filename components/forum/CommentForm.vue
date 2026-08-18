@@ -164,7 +164,7 @@ const submitComment = async () => {
     &:focus {
       outline: none;
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-primary, #3498db) 20%, transparent);
     }
     
     // Placeholder styling for mobile
@@ -237,18 +237,18 @@ const submitComment = async () => {
       // Touch feedback
       &:active {
         @media (max-width: 768px) {
-          background-color: #d5d5d5;
+          background-color: var(--interactive-disabled, #d5d5d5);
           transform: translateY(1px);
         }
       }
     }
 
     &.submit-btn {
-      background: var(--interactive-primary);
+      background: var(--btn-primary-bg);
       color: var(--text-inverse);
 
       &:hover:not(:disabled) {
-        background: var(--interactive-hover);
+        background: var(--btn-primary-bg-hover);
       }
 
       &:disabled {
@@ -259,7 +259,7 @@ const submitComment = async () => {
       // Touch feedback
       &:active:not(:disabled) {
         @media (max-width: 768px) {
-          background-color: #2574a9;
+          background-color: var(--interactive-active, #2574a9);
           transform: translateY(1px);
         }
       }
@@ -268,13 +268,13 @@ const submitComment = async () => {
 }
 
 .error-message {
-  color: #e74c3c;
+  color: var(--error-color, #e74c3c);
   font-size: 0.9rem;
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background-color: rgba(231, 76, 60, 0.1);
+  background-color: var(--error-background, rgba(231, 76, 60, 0.1));
   border-radius: 4px;
-  border-left: 3px solid #e74c3c;
+  border-left: 3px solid var(--error-color, #e74c3c);
   
   // Mobile error message styling
   @media (max-width: 480px) {

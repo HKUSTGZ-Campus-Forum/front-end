@@ -26,21 +26,21 @@ describe('scheduler popularity UI contract', () => {
     const handler = dashboard.slice(handlerStart, handlerEnd)
 
     expect(handler.indexOf('await action()')).toBeLessThan(handler.indexOf('await popularity.refresh()'))
-    expect(dashboard).toContain('popularityVerifiedOnly')
     expect(dashboard).toContain(':show-popularity="popularity.canShowPopularity.value"')
-    expect(dashboard).toContain(':popularity-generated-at="popularity.generatedAt.value"')
+    expect(dashboard).toContain(':popularity-by-course="popularity.popularityByCourse.value"')
   })
 
-  it('keeps section identifiers on lecture blocks and shows section counts on disabled cards', () => {
+  it('keeps section identifiers on lecture blocks and shows course-level counts in cards only', () => {
     const timetable = source('../../components/scheduler/SchedulerTimetable.vue')
     const courseCard = source('../../components/scheduler/SchedulerCourseCard.vue')
 
     expect(timetable).toContain('sectionId: section.section_id')
-    expect(timetable).toContain('coursePopularity?.sections[section.section_id]')
-    expect(timetable).toContain('showPopularity && block.popularity')
-    expect(courseCard).toContain('course.enabled || (showPopularity && popularity)')
-    expect(courseCard).toContain('v-for="section in bundle.sections"')
-    expect(courseCard).toContain('popularity.sections[section.section_id]')
+    expect(timetable).not.toContain('SchedulerPopularityBadge')
+    expect(timetable).not.toContain('block.popularity')
+    expect(courseCard).toContain('v-if="course.enabled" class="course-card__bundles"')
+    expect(courseCard).toContain('SchedulerPopularitySummary')
+    expect(courseCard).not.toContain('popularity.sections[section.section_id]')
+    expect(courseCard).not.toContain('v-for="section in bundle.sections"')
   })
 
   it('keeps the popularity payload anonymous', () => {
@@ -52,7 +52,7 @@ describe('scheduler popularity UI contract', () => {
     expect(popularityTypes).not.toMatch(/user_?id|username|email|display_name/i)
   })
 
-  it('loads history only from the authenticated user-triggered dialog', () => {
+  it('loads history only from the authenticated user-triggered flow (UI entry deferred)', () => {
     const scheduler = source('../../composables/useScheduler.ts')
     const dashboard = source('../../components/scheduler/SchedulerDashboard.vue')
     const sidePanel = source('../../components/scheduler/SchedulerSidePanel.vue')
@@ -69,12 +69,12 @@ describe('scheduler popularity UI contract', () => {
     expect(historyMethod).toContain("params.set('from', options.from)")
     expect(historyMethod).toContain("params.set('to', options.to)")
     expect(historyMethod).toContain('signal: options.signal')
-    expect(courseCard).toContain('v-if="showPopularityHistory"')
-    expect(sidePanel).toContain(':show-popularity-history="showPopularityHistory"')
+    expect(courseCard).not.toContain('showPopularityHistory')
+    expect(sidePanel).not.toContain('showPopularityHistory')
+    expect(sidePanel).not.toContain('@show-popularity-history')
     expect(dashboard).toContain("props.semesterId === POPULARITY_HISTORY_SEMESTER_ID")
-    expect(courseCard).toContain("@click.stop=\"emit('show-popularity-history'")
-    expect(sidePanel).toContain('@show-popularity-history')
-    expect(dashboard).toContain('@show-popularity-history="handleShowPopularityHistory"')
+    expect(dashboard).toContain('function handleShowPopularityHistory')
+    expect(dashboard).not.toContain('@show-popularity-history')
     expect(history).toContain('await props.getHistory')
     expect(history).toContain('activeRequest?.abort()')
     expect(history).toContain('signal: requestController.signal')
@@ -139,8 +139,8 @@ describe('scheduler popularity UI contract', () => {
     expect(history).not.toContain('Date.parse(response.generated_at)')
     expect(chart).toContain('data: props.series.looking')
     expect(chart).toContain('discrete: partialMarkers.value')
-    expect(chart).toContain('fillColor: \'#ffffff\'')
-    expect(chart).toContain('strokeColor: \'#92400e\'')
+    expect(chart).toContain('fillColor: \'var(--surface-primary)\'')
+    expect(chart).toContain('strokeColor: \'var(--warning-color)\'')
     expect(chart).toContain('text: props.accountsLabel')
     expect(chart).toContain('props.observedTimeLabel')
     expect(chart).toContain('props.partialLabel')

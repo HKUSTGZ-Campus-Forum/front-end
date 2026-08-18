@@ -199,7 +199,7 @@ onMounted(loadOverview);
   padding: 0.65rem 1rem;
   border: 0;
   border-radius: 999px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   font-weight: 700;
   cursor: pointer;

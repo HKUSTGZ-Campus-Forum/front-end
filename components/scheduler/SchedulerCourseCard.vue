@@ -5,16 +5,14 @@ import type {
   BundleData,
   CartCourse,
   IndexedSchedulerCoursePopularity,
-  SchedulerSection,
 } from '~/utils/scheduler'
 
 const props = defineProps<{
   course: CartCourse
-  courseIndex: number
+  semesterId: string
   currentSelection?: Record<number, number>
   popularity?: IndexedSchedulerCoursePopularity
   showPopularity: boolean
-  showPopularityHistory: boolean
   mutationsDisabled: boolean
 }>()
 const { t } = useI18n()
@@ -23,58 +21,52 @@ const emit = defineEmits<{
   (e: 'toggle-course', code: string, currentEnabled: boolean): void
   (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
-  (e: 'show-info', code: string): void
-  (e: 'show-popularity-history', code: string): void
 }>()
 
 function getBundleLabel(bundle: BundleData): string {
   return bundle.sections.map(s => s.section_type + s.name.replace(/\D/g, '')).join('/')
 }
 
-function getSectionLabel(section: SchedulerSection): string {
-  return section.section_type + section.name.replace(/\D/g, '')
+function isBundleSelected(layer: number, bundleId: number): boolean {
+  return props.currentSelection?.[layer] === bundleId
 }
 
+function creditColorVar(credit: number): string {
+  const level = Math.min(6, Math.max(1, credit))
+  return `var(--credit-level-${level})`
+}
 </script>
 
 <template>
   <div class="course-card" :class="{ 'course-card--disabled': !course.enabled }">
+    <!-- Header: one compact line of meta + title, click toggles the course -->
     <div class="course-card__header" @click="!mutationsDisabled && emit('toggle-course', course.course_code, course.enabled)">
-      <div class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
       <div class="course-card__info">
-        <div class="course-card__code">{{ course.course_code }}</div>
+        <div class="course-card__meta">
+          <span class="course-card__code">{{ course.course_code }}</span>
+          <span class="course-card__credits" :style="{ color: creditColorVar(course.credit) }">· {{ t('scheduler.credits', { count: course.credit }) }}</span>
+          <SchedulerPopularitySummary
+            v-if="showPopularity && popularity"
+            class="course-card__popularity"
+            :counts="popularity"
+          />
+        </div>
         <div class="course-card__title">{{ course.course_title }}</div>
-        <SchedulerPopularityBadge
-          v-if="showPopularity && popularity"
-          class="course-card__popularity"
-          :counts="popularity"
-        />
       </div>
-      <span class="course-card__credits">{{ t('scheduler.credits', { count: course.credit }) }}</span>
-      <button class="course-card__detail" type="button" @click.stop="emit('show-info', course.course_code)">
-        {{ t('scheduler.details') }}
-      </button>
-      <button
-        v-if="showPopularityHistory"
-        class="course-card__history"
-        type="button"
-        :aria-label="t('scheduler.popularityHistoryOpenFor', { course: course.course_code })"
-        @click.stop="emit('show-popularity-history', course.course_code)"
-      >
-        {{ t('scheduler.popularityHistoryButton') }}
-      </button>
+      <div class="course-card__actions">
+        <SchedulerCourseInfoPopover
+          :course-code="course.course_code"
+          :course-title="course.course_title"
+          :credit="course.credit"
+          :semester-id="semesterId"
+        />
+        <span class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
+      </div>
     </div>
 
-    <div
-      v-if="course.enabled || (showPopularity && popularity)"
-      class="course-card__bundles"
-    >
+    <!-- Bundle selection: one row per layer, capsules + enable-all/disable-all icons -->
+    <div v-if="course.enabled" class="course-card__bundles">
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
-        <div class="course-card__layer-header">
-          <span>{{ t('scheduler.layer', { layer }) }}</span>
-          <button type="button" class="course-card__layer-btn" :disabled="mutationsDisabled" @click="emit('toggle-layer', course.course_code, Number(layer), true)">{{ t('scheduler.all') }}</button>
-          <button type="button" class="course-card__layer-btn" :disabled="mutationsDisabled" @click="emit('toggle-layer', course.course_code, Number(layer), false)">{{ t('scheduler.none') }}</button>
-        </div>
         <div class="course-card__bundle-row">
           <button
             v-for="bundle in bundles"
@@ -82,26 +74,33 @@ function getSectionLabel(section: SchedulerSection): string {
             class="course-card__bundle"
             :class="{
               'course-card__bundle--active': bundle.enabled,
-              'course-card__bundle--selected': currentSelection?.[Number(layer)] === bundle.id,
+              'course-card__bundle--selected': isBundleSelected(Number(layer), bundle.id),
             }"
             type="button"
             :disabled="mutationsDisabled"
             @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), bundle.enabled)"
           >
-            <template v-if="showPopularity && popularity">
-              <span
-                v-for="section in bundle.sections"
-                :key="section.section_id"
-                class="course-card__section-popularity"
-              >
-                <span>{{ getSectionLabel(section) }}</span>
-                <SchedulerPopularityBadge
-                  v-if="popularity.sections[section.section_id]"
-                  :counts="popularity.sections[section.section_id]"
-                />
-              </span>
-            </template>
-            <template v-else>{{ getBundleLabel(bundle) }}</template>
+            {{ getBundleLabel(bundle) }}
+          </button>
+        </div>
+        <div class="course-card__layer-actions">
+          <button
+            type="button"
+            :title="t('scheduler.all')"
+            :aria-label="t('scheduler.all')"
+            :disabled="mutationsDisabled"
+            @click="emit('toggle-layer', course.course_code, Number(layer), true)"
+          >
+            <Icon name="lucide:layers-plus" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            :title="t('scheduler.none')"
+            :aria-label="t('scheduler.none')"
+            :disabled="mutationsDisabled"
+            @click="emit('toggle-layer', course.course_code, Number(layer), false)"
+          >
+            <Icon name="lucide:trash" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -114,25 +113,88 @@ function getSectionLabel(section: SchedulerSection): string {
   background: var(--surface-primary);
   border: 1px solid var(--border-secondary);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   margin-bottom: 10px;
   box-shadow: var(--shadow-small);
-  transition: opacity 0.2s, border-color 0.2s;
+  transition: opacity 0.2s, border-color 0.2s, background 0.2s;
 
   &:hover {
-    border-color: var(--interactive-secondary);
+    border-color: color-mix(in srgb, var(--interactive-primary) 42%, var(--border-secondary));
+    background: color-mix(in srgb, var(--interactive-primary) 4%, var(--surface-primary));
   }
 
   &--disabled {
     box-shadow: none;
-    background: color-mix(in srgb, var(--surface-secondary) 42%, var(--surface-primary));
+    background: var(--surface-secondary);
+    border-color: var(--border-secondary);
+    opacity: 0.62;
+
+    &:hover {
+      border-color: var(--border-secondary);
+      background: var(--surface-secondary);
+    }
+
+    .course-card__code,
+    .course-card__title {
+      color: var(--text-secondary);
+    }
   }
 
   &__header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     cursor: pointer;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__code {
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  &__credits {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  &__popularity {
+    flex-shrink: 0;
+    align-self: center;
+    margin-left: 8px;
+  }
+
+  &__title {
+    margin-top: 3px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-top: 2px;
   }
 
   &__dot {
@@ -145,148 +207,57 @@ function getSectionLabel(section: SchedulerSection): string {
     &--on { background: var(--semantic-success); }
   }
 
-  &__info { flex: 1; min-width: 0; }
-
-  &__code {
-    font-weight: 700;
-    font-size: 0.88rem;
-    color: var(--text-primary);
-  }
-
-  &__credits {
-    flex-shrink: 0;
-    padding: 3px 8px;
-    border-radius: 999px;
-    background: var(--surface-secondary);
-    border: 1px solid var(--border-secondary);
-    font-weight: 700;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-
-  &__title {
-    margin-top: 2px;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__popularity {
-    margin-top: 6px;
-  }
-
-  &__detail {
-    flex-shrink: 0;
-    min-height: 30px;
-    padding: 0 9px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
-    color: var(--interactive-primary);
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 700;
-
-    &:hover {
-      border-color: color-mix(in srgb, var(--interactive-primary) 28%, transparent);
-      color: var(--interactive-active);
-    }
-  }
-
-  &__history {
-    flex-shrink: 0;
-    min-height: 30px;
-    padding: 0 9px;
-    border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, var(--border-secondary));
-    border-radius: 999px;
-    background: var(--surface-primary);
-    color: var(--interactive-active);
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 700;
-
-    &:hover {
-      background: color-mix(in srgb, var(--interactive-primary) 8%, var(--surface-primary));
-    }
-  }
-
   &__bundles {
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px solid var(--border-secondary);
   }
 
   &__layer {
-    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
 
     &:last-child {
       margin-bottom: 0;
     }
   }
 
-  &__layer-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-
-    span {
-      margin-right: auto;
-      font-weight: 700;
-    }
-  }
-
-  &__layer-btn {
-    min-height: 24px;
-    background: var(--surface-secondary);
-    border: 1px solid var(--border-secondary);
-    border-radius: 999px;
-    font-size: 0.68rem;
-    padding: 0 8px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    &:hover {
-      border-color: var(--interactive-secondary);
-      color: var(--interactive-active);
-    }
-  }
-
   &__bundle-row {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 5px;
   }
 
   &__bundle {
     display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    gap: 5px;
-    background: var(--surface-secondary);
-    border: 1px solid var(--border-secondary);
-    border-radius: 999px;
-    min-height: 28px;
-    padding: 5px 10px;
-    font-size: 0.75rem;
+    background: var(--scheduler-chip-bg);
+    border: 1px solid var(--scheduler-chip-border);
+    border-radius: 8px;
+    min-height: 26px;
+    padding: 2px 10px;
+    font-size: 0.74rem;
     cursor: pointer;
-    color: var(--text-primary);
+    color: var(--scheduler-chip-text);
     position: relative;
     transition: all 0.15s;
 
     &--active {
-      background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
-      border-color: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
-      color: var(--interactive-active);
+      background: var(--scheduler-chip-bg-active);
+      border-color: var(--scheduler-chip-border-active);
+      color: var(--scheduler-chip-text-active);
     }
 
     &--selected {
-      border-color: var(--semantic-warning);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--semantic-warning) 18%, transparent);
+      background: var(--scheduler-chip-bg-selected);
+      border-color: var(--scheduler-chip-border-selected);
+      color: var(--scheduler-chip-text-active);
+      box-shadow: var(--shadow-small);
       &::after {
         content: '';
         position: absolute;
@@ -299,39 +270,63 @@ function getSectionLabel(section: SchedulerSection): string {
       }
     }
 
-    &:hover { background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); }
+    // Disabled bundle (not enabled): hover stays muted gray, never turns blue
+    &:hover:not(:disabled) {
+      background: var(--scheduler-chip-bg-hover);
+      border-color: var(--scheduler-chip-border-hover);
+      color: var(--scheduler-chip-text);
+    }
+
+    &--active:hover:not(:disabled) {
+      background: var(--scheduler-chip-bg-active-hover);
+      border-color: var(--scheduler-chip-border-active);
+      color: var(--scheduler-chip-text-active);
+    }
+
+    &--selected:hover:not(:disabled) {
+      background: var(--scheduler-chip-bg-selected-hover);
+      border-color: var(--scheduler-chip-border-selected);
+      color: var(--scheduler-chip-text-active);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
   }
 
-  &__section-popularity {
+  &__layer-actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 7px;
-    width: 100%;
+    gap: 2px;
+    flex-shrink: 0;
 
-    > span:first-child {
+    button {
+      width: 26px;
+      height: 26px;
+      min-height: 0;
+      padding: 0;
       flex-shrink: 0;
-      font-weight: 700;
-    }
-  }
-}
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
 
-@media (max-width: 520px) {
-  .course-card {
-    &__header {
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
+      &:hover:not(:disabled) {
+        background: var(--surface-secondary);
+        color: var(--interactive-active-text);
+      }
 
-    &__info {
-      flex-basis: calc(100% - 24px);
-      order: 1;
-    }
-
-    &__credits,
-    &__detail,
-    &__history {
-      order: 2;
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
     }
   }
 }

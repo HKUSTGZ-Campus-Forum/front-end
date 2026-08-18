@@ -9,10 +9,10 @@
             <span class="email-address">{{ user.email }}</span>
             <div class="verification-badge">
               <span v-if="user.email_verified" class="verified">
-                ✓ 已验证
+                已验证
               </span>
               <span v-else class="unverified">
-                ⚠️ 未验证
+                未验证
               </span>
             </div>
           </div>
@@ -21,25 +21,29 @@
             <p class="verification-note">
               邮箱未验证将会在未来被限制某些功能
             </p>
-            <button 
-              @click="resendVerificationEmail" 
-              class="verify-btn"
-              :disabled="resendCooldown > 0 || isResending"
-            >
-              <span v-if="isResending">发送中...</span>
-              <span v-else-if="resendCooldown > 0">{{ resendCooldown }}秒后重试</span>
-              <span v-else>重新发送验证邮件</span>
-            </button>
           </div>
           
           <!-- Change Email Section -->
           <div class="email-change-section">
-            <button 
-              @click="showChangeEmailForm = !showChangeEmailForm" 
-              class="change-email-btn"
-            >
-              {{ showChangeEmailForm ? '取消更换邮箱' : '更换邮箱地址' }}
-            </button>
+            <div class="email-actions-row">
+              <button 
+                v-if="!user.email_verified"
+                @click="resendVerificationEmail" 
+                class="verify-btn"
+                :disabled="resendCooldown > 0 || isResending"
+              >
+                <span v-if="isResending">发送中...</span>
+                <span v-else-if="resendCooldown > 0">{{ resendCooldown }}秒后重试</span>
+                <span v-else>重新发送验证邮件</span>
+              </button>
+              <button 
+                @click="showChangeEmailForm = !showChangeEmailForm" 
+                class="change-email-btn"
+                :class="{ 'is-open': showChangeEmailForm }"
+              >
+                {{ showChangeEmailForm ? '取消更换邮箱' : '更换邮箱地址' }}
+              </button>
+            </div>
             
             <div v-if="showChangeEmailForm" class="change-email-form">
               <h4>更换邮箱地址</h4>
@@ -873,14 +877,14 @@ onUnmounted(() => {
 }
 
 .settings-section {
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   background: var(--surface-primary, rgba(255, 255, 255, 0.95));
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-small, 0 2px 8px rgba(0, 0, 0, 0.1));
   
   @media (min-width: 768px) {
-    padding: 2rem;
+    padding: 1.5rem;
     box-shadow: var(--shadow-medium, 0 4px 15px rgba(0, 0, 0, 0.1));
   }
 }
@@ -889,9 +893,9 @@ onUnmounted(() => {
   color: var(--text-primary, #333);
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border-bottom: 2px solid var(--border-primary, #e0e0e0);
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
   
   @media (min-width: 768px) {
     font-size: 1.5rem;
@@ -905,38 +909,36 @@ onUnmounted(() => {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 1rem;
-      
-      @media (max-width: 479px) {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
+      gap: 1rem;
+      margin-bottom: 0.75rem;
       
       .email-address {
         font-family: monospace;
         font-size: 1.1rem;
         color: var(--text-primary, #333);
         word-break: break-all;
+        min-width: 0;
+        flex: 1;
       }
       
       .verification-badge {
-        .verified {
-          color: var(--success-color, #28a745);
-          font-weight: 600;
-          background: var(--success-background, rgba(40, 167, 69, 0.1));
+        flex-shrink: 0;
+        .verified, .unverified {
+          display: inline-block;
           padding: 0.25rem 0.75rem;
           border-radius: 20px;
           font-size: 0.9rem;
+          font-weight: 600;
+        }
+        
+        .verified {
+          color: var(--semantic-success);
+          background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
         }
         
         .unverified {
-          color: var(--warning-color, #ffc107);
-          font-weight: 600;
-          background: var(--warning-background, rgba(255, 193, 7, 0.1));
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.9rem;
+          color: var(--semantic-warning);
+          background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
         }
       }
     }
@@ -946,20 +948,92 @@ onUnmounted(() => {
     .verification-note {
       color: var(--text-secondary, #666);
       font-size: 0.9rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
       line-height: 1.4;
+    }
+  }
+  
+  .email-change-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-primary, #e0e0e0);
+    
+    .email-actions-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    
+    .change-email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.875rem;
+      background: transparent;
+      color: var(--interactive-primary);
+      border: 1px solid var(--border-primary, #e0e0e0);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 44px;
+      
+      @media (min-width: 480px) {
+        padding: 0.4rem 0.75rem;
+        border-radius: 4px;
+        min-height: auto;
+      }
+      
+      &:hover:not(:disabled) {
+        border-color: var(--interactive-primary);
+        background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      
+      &.is-open {
+        border-color: var(--interactive-primary);
+        background: color-mix(in srgb, var(--interactive-primary) 8%, transparent);
+      }
+    }
+    
+    .change-email-form {
+      margin-top: 0.75rem;
+      padding: 1rem;
+      border: 1px solid var(--border-primary, #e0e0e0);
+      border-radius: 8px;
+      background: var(--surface-secondary, #fafafa);
+      
+      h4 {
+        margin: 0 0 0.4rem 0;
+        color: var(--text-primary, #333);
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      
+      .change-email-note {
+        color: var(--text-secondary, #666);
+        font-size: 0.9rem;
+        margin: 0 0 0.75rem 0;
+        line-height: 1.4;
+      }
     }
   }
   
   .no-email {
     .no-email-message {
       color: var(--text-secondary, #666);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       line-height: 1.4;
     }
     
     .benefits-list {
-      margin: 1rem 0 1.5rem 1.5rem;
+      margin: 0.75rem 0 1rem 1.5rem;
       color: var(--text-secondary, #666);
       
       li {
@@ -1000,13 +1074,13 @@ onUnmounted(() => {
     }
     
     &:focus {
-      border-color: var(--primary-color, #4361ee);
-      box-shadow: 0 0 0 3px var(--primary-color-alpha, rgba(67, 97, 238, 0.25));
+      border-color: var(--interactive-primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 25%, transparent);
       outline: none;
     }
     
     &:disabled {
-      background: var(--surface-disabled, #f5f5f5);
+      background: var(--surface-secondary);
       cursor: not-allowed;
     }
     
@@ -1061,7 +1135,7 @@ onUnmounted(() => {
   .strength-bar {
     width: 100%;
     height: 4px;
-    background: var(--surface-disabled, #f0f0f0);
+    background: var(--surface-secondary);
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 0.25rem;
@@ -1071,33 +1145,33 @@ onUnmounted(() => {
       transition: all 0.3s ease;
       
       &.weak {
-        background: var(--error-color, #dc3545);
+        background: var(--semantic-error);
       }
       
       &.medium {
-        background: var(--warning-color, #ffc107);
+        background: var(--semantic-warning);
       }
       
       &.good {
-        background: var(--info-color, #17a2b8);
+        background: var(--semantic-info);
       }
       
       &.strong {
-        background: var(--success-color, #28a745);
+        background: var(--semantic-success);
       }
     }
   }
   
   .strength-text {
     font-size: 0.8rem;
-    color: var(--text-tertiary, #888);
+    color: var(--text-muted);
   }
 }
 
 .email-hint {
   margin-top: 0.5rem;
   font-size: 0.8rem;
-  color: var(--text-tertiary, #888);
+  color: var(--text-muted);
   
   p {
     margin: 0 0 0.25rem 0;
@@ -1111,7 +1185,7 @@ onUnmounted(() => {
     li {
       margin-bottom: 0.125rem;
       font-family: monospace;
-      color: var(--primary-color, #4361ee);
+      color: var(--interactive-primary);
     }
   }
 }
@@ -1119,8 +1193,8 @@ onUnmounted(() => {
 // Button Styles
 .verify-btn, .add-email-btn, .change-password-btn {
   padding: 0.875rem 1.5rem;
-  background: var(--primary-color, #4361ee);
-  color: white;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -1136,12 +1210,12 @@ onUnmounted(() => {
   }
   
   &:hover:not(:disabled) {
-    background: var(--primary-color-hover, #3a56d4);
+    background: var(--btn-primary-bg-hover);
     transform: translateY(-1px);
   }
   
   &:disabled {
-    background: var(--surface-disabled, #a0a0a0);
+    background: var(--interactive-disabled);
     cursor: not-allowed;
     transform: none;
   }
@@ -1167,7 +1241,7 @@ onUnmounted(() => {
   
   &:hover:not(:disabled) {
     border-color: var(--text-secondary, #666);
-    background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+    background: var(--surface-secondary);
   }
   
   &:disabled {
@@ -1181,13 +1255,13 @@ onUnmounted(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 // Message Styles
 .error-text {
   display: block;
-  color: var(--error-color, #dc3545);
+  color: var(--semantic-error);
   font-size: 0.85rem;
   margin-top: 0.25rem;
   
@@ -1198,12 +1272,12 @@ onUnmounted(() => {
 
 .error-message {
   padding: 1rem;
-  background: var(--error-background, #ffebee);
-  color: var(--error-color, #d32f2f);
+  background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+  color: var(--semantic-error);
   border-radius: 6px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
-  border-left: 4px solid var(--error-color, #d32f2f);
+  border-left: 4px solid var(--semantic-error);
   
   @media (min-width: 480px) {
     padding: 0.75rem;
@@ -1213,12 +1287,12 @@ onUnmounted(() => {
 
 .success-message {
   padding: 1rem;
-  background: var(--success-background, rgba(40, 167, 69, 0.1));
-  color: var(--success-color, #28a745);
+  background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  color: var(--semantic-success);
   border-radius: 6px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
-  border-left: 4px solid var(--success-color, #28a745);
+  border-left: 4px solid var(--semantic-success);
   
   @media (min-width: 480px) {
     padding: 0.75rem;
@@ -1233,7 +1307,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-backdrop);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
@@ -1265,7 +1339,7 @@ onUnmounted(() => {
 .connected-apps-card {
   .section-description {
     color: var(--text-secondary, #666);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     font-size: 0.95rem;
     line-height: 1.4;
   }
@@ -1360,8 +1434,8 @@ onUnmounted(() => {
     
     .app-status {
       .status-active {
-        background: var(--success-background, rgba(40, 167, 69, 0.1));
-        color: var(--success-color, #28a745);
+        background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+        color: var(--semantic-success);
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         font-size: 0.85rem;
@@ -1369,8 +1443,8 @@ onUnmounted(() => {
       }
       
       .status-expired {
-        background: var(--warning-background, rgba(255, 193, 7, 0.1));
-        color: var(--warning-color, #ffc107);
+        background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
+        color: var(--semantic-warning);
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
         font-size: 0.85rem;
@@ -1420,8 +1494,8 @@ onUnmounted(() => {
       gap: 0.5rem;
       
       .scope-tag {
-        background: var(--primary-color-alpha, rgba(67, 97, 238, 0.1));
-        color: var(--primary-color, #4361ee);
+        background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
+        color: var(--interactive-primary);
         padding: 0.25rem 0.75rem;
         border-radius: 16px;
         font-size: 0.8rem;
@@ -1430,7 +1504,7 @@ onUnmounted(() => {
     }
     
     .app-link {
-      color: var(--primary-color, #4361ee);
+      color: var(--interactive-primary);
       text-decoration: none;
       word-break: break-all;
       
@@ -1452,7 +1526,7 @@ onUnmounted(() => {
   }
   
   .apps-actions {
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     display: flex;
     justify-content: center;
   }
@@ -1461,8 +1535,8 @@ onUnmounted(() => {
 .revoke-btn {
   padding: 0.5rem 1rem;
   background: transparent;
-  color: var(--error-color, #dc3545);
-  border: 1px solid var(--error-color, #dc3545);
+  color: var(--semantic-error);
+  border: 1px solid var(--semantic-error);
   border-radius: 4px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -1470,8 +1544,8 @@ onUnmounted(() => {
   font-weight: 500;
   
   &:hover:not(:disabled) {
-    background: var(--error-color, #dc3545);
-    color: white;
+    background: var(--semantic-error);
+    color: var(--text-inverse);
   }
   
   &:disabled {
@@ -1495,7 +1569,7 @@ onUnmounted(() => {
   
   &:hover:not(:disabled) {
     border-color: var(--text-secondary, #666);
-    background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+    background: var(--surface-secondary);
   }
   
   &:disabled {

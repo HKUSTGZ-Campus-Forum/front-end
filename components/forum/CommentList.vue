@@ -126,7 +126,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .comments-section {
   margin-top: 2rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-primary, #e0e0e0);
   padding-top: 1.5rem;
   
   // Mobile spacing adjustments
@@ -172,7 +172,7 @@ onMounted(() => {
 .login-prompt {
   text-align: center;
   padding: 1rem;
-  background-color: #f8f9fa;
+  background-color: var(--surface-secondary, #f8f9fa);
   border-radius: 4px;
   margin-bottom: 2rem;
   
@@ -189,7 +189,7 @@ onMounted(() => {
   }
 
   a {
-    color: #3498db;
+    color: var(--interactive-primary, #3498db);
     text-decoration: none;
     transition: color 0.2s ease;
     
@@ -208,8 +208,8 @@ onMounted(() => {
     // Touch feedback
     &:active {
       @media (max-width: 768px) {
-        color: #2980b9;
-        background-color: rgba(52, 152, 219, 0.1);
+        color: var(--interactive-active, #2980b9);
+        background-color: color-mix(in srgb, var(--interactive-primary, #3498db) 10%, transparent);
       }
     }
   }
@@ -232,7 +232,7 @@ onMounted(() => {
 
 .no-comments {
   text-align: center;
-  color: #666;
+  color: var(--text-muted, #666);
   padding: 2rem;
   
   // Mobile optimizations

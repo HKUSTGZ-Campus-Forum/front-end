@@ -23,6 +23,11 @@ export default defineNuxtConfig({
   ui: {
     fonts: false,
   },
+  icon: {
+    // 避开 devProxy 的 /api 前缀劫持（nitro devProxy 在 listener 层拦截所有 /api 请求，
+    // 导致默认的 /api/_nuxt_icon 图标接口被转发到后端而 404）。
+    localApiEndpoint: "/_nuxt_icon",
+  },
   modules: [
     // Pinia 配置
     "@pinia/nuxt",

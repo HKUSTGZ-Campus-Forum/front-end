@@ -124,14 +124,14 @@ input {
   padding: 0.8rem 1.2rem;
   border: none;
   border-radius: 999px;
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: var(--interactive-hover);
+    background: var(--btn-primary-bg-hover);
     transform: translateY(-1px);
   }
 

@@ -1,16 +1,19 @@
 <!-- front-end/components/scheduler/SchedulerDashboard.vue -->
 <script setup lang="ts">
-import { ref, computed, onUnmounted, toRef, watch } from 'vue'
+import { ref, computed, toRef, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartCourse, CourseDetail } from '~/utils/scheduler'
+import type {
+  CartCourse,
+  SchedulerPopularityByCourse,
+} from '~/utils/scheduler'
 import {
   getMaxDayNum,
   POPULARITY_HISTORY_SEMESTER_ID,
+  schedulerCourseKey,
   solvePlans,
 } from '~/utils/scheduler'
 import {
   createBooleanIntentTracker,
-  createLatestRequestTracker,
   createLatestSettlementTracker,
   getSchedulerCartMutationFailureKind,
 } from '~/utils/schedulerAsync'
@@ -29,7 +32,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
-const { getCourseDetail, getPopularity, getPopularityHistory } = useScheduler()
+const { getPopularity, getPopularityHistory } = useScheduler()
 const loggedIn = toRef(props, 'isLoggedIn')
 const cart = useSchedulerCart(
   props.semesterId,
@@ -48,6 +51,110 @@ const canShowPopularityHistory = computed(() => (
   props.semesterId === POPULARITY_HISTORY_SEMESTER_ID
   && popularity.canShowPopularity.value
 ))
+
+// Resizable side panel: defaults to max(400px, 1/6 of the viewport) on wide
+// screens, clamped while dragging and remembered in localStorage.
+const SIDE_PANEL_MIN = 320
+const SIDE_PANEL_MAX = 640
+const SIDE_PANEL_STORAGE_KEY = 'scheduler.side-panel-width'
+const bodyRef = ref<HTMLElement | null>(null)
+const sidePanelWidth = ref(400)
+const sidePanelWidthPx = computed(() => `${sidePanelWidth.value}px`)
+
+function clampSidePanelWidth(width: number): number {
+  return Math.min(SIDE_PANEL_MAX, Math.max(SIDE_PANEL_MIN, Math.round(width)))
+}
+
+onMounted(() => {
+  let saved: string | null = null
+  try {
+    saved = localStorage.getItem(SIDE_PANEL_STORAGE_KEY)
+  } catch {
+    // Storage unavailable; fall through to the default width.
+  }
+  if (saved !== null) {
+    const parsed = Number(saved)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      sidePanelWidth.value = clampSidePanelWidth(parsed)
+    } else {
+      sidePanelWidth.value = clampSidePanelWidth(Math.max(400, window.innerWidth / 6))
+    }
+  } else {
+    sidePanelWidth.value = clampSidePanelWidth(Math.max(400, window.innerWidth / 6))
+  }
+
+  // Restore the per-semester plan index. If plans are already solved apply it
+  // now; otherwise the planList watcher applies it once they arrive.
+  try {
+    const savedIndex = localStorage.getItem(`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`)
+    if (savedIndex !== null) {
+      const parsed = Number(savedIndex)
+      if (Number.isFinite(parsed) && parsed > 0) {
+        pendingPlanIndex.value = parsed
+      }
+    }
+  } catch {
+    // Storage unavailable; fall through to the default index.
+  }
+  if (pendingPlanIndex.value !== null && planList.value.length > 0) {
+    viewIndex.value = Math.min(pendingPlanIndex.value, planList.value.length)
+    pendingPlanIndex.value = null
+  }
+
+  // Restore the global display options. Only known boolean keys are applied so
+  // a stale or foreign payload cannot corrupt the menu.
+  try {
+    const savedOptions = localStorage.getItem(DISPLAY_OPTIONS_STORAGE_KEY)
+    if (savedOptions !== null) {
+      const parsed = JSON.parse(savedOptions)
+      if (parsed && typeof parsed === 'object') {
+        for (const key of Object.keys(displayOptions.value)) {
+          if (typeof parsed[key] === 'boolean') {
+            displayOptions.value[key as keyof typeof displayOptions.value] = parsed[key]
+          }
+        }
+      }
+    }
+  } catch {
+    // Malformed payload; keep the defaults.
+  }
+
+  // Restore the per-semester banned periods. The shape check guards against
+  // malformed or foreign payloads; a failed parse keeps the empty grid.
+  try {
+    const savedBans = localStorage.getItem(`${BANNED_PERIODS_STORAGE_PREFIX}${props.semesterId}`)
+    if (savedBans !== null) {
+      const parsed = parseBannedPeriods(JSON.parse(savedBans))
+      if (parsed) bannedPeriods.value = parsed
+    }
+  } catch {
+    // Malformed payload; keep the defaults.
+  }
+})
+
+function onResizeStart(event: MouseEvent) {
+  event.preventDefault()
+  document.body.classList.add('scheduler-resizing')
+  const onMove = (moveEvent: MouseEvent) => {
+    const rect = bodyRef.value?.getBoundingClientRect()
+    if (!rect) return
+    // The handle sits at the side panel's left edge: width = body right - x.
+    sidePanelWidth.value = clampSidePanelWidth(rect.right - moveEvent.clientX)
+  }
+  const onUp = () => {
+    document.body.classList.remove('scheduler-resizing')
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    try {
+      localStorage.setItem(SIDE_PANEL_STORAGE_KEY, String(sidePanelWidth.value))
+    } catch {
+      // Storage unavailable; keep the in-memory width for this session.
+    }
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
@@ -55,13 +162,8 @@ const bannedPeriods = ref<boolean[][]>(
 const filterMode = ref(false)
 const showCartPanel = ref(false)
 const showGuestHint = ref(true)
-const selectedCourse = ref<CourseDetail | null>(null)
-const showCourseDetail = ref(false)
 const historyCourse = ref<CartCourse | null>(null)
 const showPopularityHistory = ref(false)
-const courseDetailStatus = ref<'loading' | 'ready' | 'error'>('loading')
-const requestedCourseCode = ref('')
-const detailRequests = createLatestRequestTracker()
 const toggleIntents = createBooleanIntentTracker()
 const cartActionSettlements = createLatestSettlementTracker()
 const cartError = ref<'ambiguous' | 'failed' | 'unverified' | ''>('')
@@ -73,6 +175,62 @@ const displayOptions = ref({
   instructor: false,
   duration: false,
 })
+
+// Persisted state. The current plan index is remembered per semester (plan
+// lists are semester-specific); banned periods follow the same per-semester
+// scope since the blocked grid belongs to that semester's timetable; display
+// options are a global preference.
+const PLAN_INDEX_STORAGE_PREFIX = 'scheduler.plan-index.'
+const BANNED_PERIODS_STORAGE_PREFIX = 'scheduler.banned-periods.'
+const DISPLAY_OPTIONS_STORAGE_KEY = 'scheduler.display-options'
+// Holds a restored plan index until the plan list is solved (plans load
+// asynchronously after mount); the planList watcher applies it when ready.
+const pendingPlanIndex = ref<number | null>(null)
+
+// Banned periods persist as a 7-day × 8-period boolean grid. A payload that
+// does not match that exact shape (malformed JSON, an older version, a
+// foreign key) is ignored so it cannot corrupt the planner state.
+function parseBannedPeriods(payload: unknown): boolean[][] | null {
+  if (!Array.isArray(payload) || payload.length !== 7) return null
+  const result: boolean[][] = []
+  for (const row of payload) {
+    if (!Array.isArray(row) || row.length !== 8) return null
+    const parsed: boolean[] = []
+    for (const value of row) {
+      if (typeof value !== 'boolean') return null
+      parsed.push(value)
+    }
+    result.push(parsed)
+  }
+  return result
+}
+
+watch(viewIndex, (index) => {
+  try {
+    localStorage.setItem(`${PLAN_INDEX_STORAGE_PREFIX}${props.semesterId}`, String(index))
+  } catch {
+    // Storage unavailable; keep the in-memory index for this session.
+  }
+})
+
+watch(bannedPeriods, (periods) => {
+  try {
+    localStorage.setItem(
+      `${BANNED_PERIODS_STORAGE_PREFIX}${props.semesterId}`,
+      JSON.stringify(periods),
+    )
+  } catch {
+    // Storage unavailable; keep the in-memory bans for this session.
+  }
+}, { deep: true })
+
+watch(displayOptions, (options) => {
+  try {
+    localStorage.setItem(DISPLAY_OPTIONS_STORAGE_KEY, JSON.stringify(options))
+  } catch {
+    // Storage unavailable; keep the in-memory options for this session.
+  }
+}, { deep: true })
 
 watch(canShowPopularityHistory, (authorized) => {
   if (!authorized) closePopularityHistory()
@@ -114,62 +272,80 @@ const currentPlan = computed(() => {
 
 const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
 
-const planMessage = computed(() => {
+const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: string; description: string } | null>(() => {
   if (props.loading || props.cartLoadError) return null
-  if (solverResult.value.status === 'empty-cart') return t('scheduler.emptyCartHint')
-  if (solverResult.value.status === 'all-disabled') return t('scheduler.allDisabled')
-  if (solverResult.value.status === 'unavailable-layer') {
-    return t('scheduler.unavailableLayer', {
-      course: solverResult.value.courseCode,
-      layer: solverResult.value.layer,
-    })
+  if (solverResult.value.status === 'empty-cart') {
+    return {
+      level: 'info',
+      title: t('scheduler.emptyCartTitle'),
+      description: t('scheduler.emptyCartHint'),
+    }
   }
-  if (solverResult.value.status === 'search-limit') return t('scheduler.searchLimited')
-  if (solverResult.value.status === 'no-solution') return t('scheduler.noSolution')
+  if (solverResult.value.status === 'all-disabled') {
+    return {
+      level: 'warning',
+      title: t('scheduler.allDisabledTitle'),
+      description: t('scheduler.allDisabled'),
+    }
+  }
+  if (solverResult.value.status === 'unavailable-layer') {
+    return {
+      level: 'error',
+      title: t('scheduler.unavailableLayerTitle'),
+      description: t('scheduler.unavailableLayer', {
+        course: solverResult.value.courseCode,
+        layer: solverResult.value.layer,
+      }),
+    }
+  }
+  if (solverResult.value.status === 'search-limit') {
+    return {
+      level: 'error',
+      title: t('scheduler.searchLimitedTitle'),
+      description: t('scheduler.searchLimited'),
+    }
+  }
+  if (solverResult.value.status === 'no-solution') {
+    return {
+      level: 'error',
+      title: t('scheduler.noSolutionTitle'),
+      description: t('scheduler.noSolution'),
+    }
+  }
   if (solverResult.value.status === 'ok' && solverResult.value.truncated) {
-    return solverResult.value.truncationReason === 'plan-limit'
-      ? t('scheduler.plansTruncated', { count: solverResult.value.plans.length })
-      : t('scheduler.searchLimited')
+    return {
+      level: 'info',
+      title: t('scheduler.plansTruncatedTitle'),
+      description: solverResult.value.truncationReason === 'plan-limit'
+        ? t('scheduler.plansTruncated', { count: solverResult.value.plans.length })
+        : t('scheduler.searchLimited'),
+    }
   }
   return null
 })
 
-// Reset viewIndex when plans change
+const planIcon = computed(() => {
+  const msg = planMessage.value
+  if (!msg) return ''
+  if (msg.level === 'info') return 'lucide:face-slightly-smiling'
+  if (msg.level === 'warning') return 'lucide:face-neutral'
+  return 'lucide:face-slightly-frowning'
+})
+
+// Reset viewIndex when plans change; a restored (persisted) plan index is
+// applied as soon as plans are available, clamped to the plan count.
 watch(planList, (plans) => {
+  if (pendingPlanIndex.value !== null) {
+    if (plans.length > 0) {
+      viewIndex.value = Math.min(pendingPlanIndex.value, plans.length)
+      pendingPlanIndex.value = null
+    }
+    return
+  }
   if (viewIndex.value > plans.length) {
     viewIndex.value = Math.max(1, plans.length)
   }
 })
-
-watch(() => props.semesterId, () => {
-  closeCourseDetail()
-})
-
-async function handleShowInfo(code: string) {
-  const request = detailRequests.begin()
-  requestedCourseCode.value = code
-  selectedCourse.value = null
-  courseDetailStatus.value = 'loading'
-  showCourseDetail.value = true
-  try {
-    const course = await getCourseDetail(code, props.semesterId, request.signal)
-    if (!request.isCurrent() || requestedCourseCode.value !== code) return
-    selectedCourse.value = course
-    courseDetailStatus.value = 'ready'
-  } catch {
-    if (request.isCurrent()) courseDetailStatus.value = 'error'
-  }
-}
-
-function closeCourseDetail() {
-  detailRequests.invalidate()
-  showCourseDetail.value = false
-  selectedCourse.value = null
-}
-
-function retryCourseDetail() {
-  if (requestedCourseCode.value) void handleShowInfo(requestedCourseCode.value)
-}
 
 async function handleCartAction(action: () => Promise<void>) {
   const settlement = cartActionSettlements.begin()
@@ -290,18 +466,22 @@ function handleToggleLayer(code: string, layer: number, enabled: boolean) {
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
-
-onUnmounted(() => detailRequests.invalidate())
 </script>
 
 <template>
   <div class="dashboard">
     <header class="dashboard__header">
       <div class="dashboard__heading">
-        <NuxtLink class="dashboard__back" :to="getLocalePath('/courses/planner')">
-          {{ t('scheduler.backToSemesters') }}
-        </NuxtLink>
-        <h1>{{ t('scheduler.title') }}</h1>
+        <div class="dashboard__heading-row">
+          <NuxtLink
+            class="dashboard__back"
+            :to="getLocalePath('/courses/planner')"
+            :aria-label="t('scheduler.backToSemesters')"
+          >
+            <Icon name="lucide:arrow-left" class="dashboard__back-icon" aria-hidden="true" />
+          </NuxtLink>
+          <h1>{{ t('scheduler.title') }}</h1>
+        </div>
         <p>{{ t('scheduler.workspaceSubtitle') }}</p>
       </div>
       <div class="dashboard__summary" aria-label="planner summary">
@@ -320,13 +500,9 @@ onUnmounted(() => detailRequests.invalidate())
       </div>
     </header>
 
-    <div v-if="!isLoggedIn && showGuestHint" class="dashboard__notice dashboard__notice--warning">
+    <div v-if="!isLoggedIn && showGuestHint && !planMessage" class="dashboard__notice dashboard__notice--warning">
       <span>{{ t('scheduler.guestHint') }}</span>
       <button type="button" :aria-label="t('scheduler.close')" @click="showGuestHint = false">&times;</button>
-    </div>
-
-    <div v-if="popularity.forbidden.value" class="dashboard__notice dashboard__notice--warning">
-      {{ t('scheduler.popularityVerifiedOnly') }}
     </div>
 
     <div v-if="cartLoadError" class="dashboard__notice dashboard__notice--error" role="alert">
@@ -335,12 +511,12 @@ onUnmounted(() => detailRequests.invalidate())
     </div>
 
     <div
-      v-if="cartErrorMessage || historyAccessError || planMessage"
+      v-if="cartErrorMessage || historyAccessError"
       class="dashboard__notice"
       :class="{ 'dashboard__notice--error': cartError === 'unverified' }"
       :role="cartError === 'unverified' ? 'alert' : undefined"
     >
-      <span>{{ cartErrorMessage || historyAccessError || planMessage }}</span>
+      <span>{{ cartErrorMessage || historyAccessError }}</span>
       <button
         v-if="cartError === 'unverified'"
         type="button"
@@ -351,7 +527,12 @@ onUnmounted(() => detailRequests.invalidate())
       </button>
     </div>
 
-    <div v-if="!cartLoadError && !loading" class="dashboard__body">
+    <div
+      v-if="!cartLoadError && !loading"
+      ref="bodyRef"
+      class="dashboard__body"
+      :style="{ '--side-panel-width': sidePanelWidthPx }"
+    >
       <div class="dashboard__left">
         <div class="dashboard__timetable-card">
           <SchedulerTimetable
@@ -361,8 +542,6 @@ onUnmounted(() => detailRequests.invalidate())
             :filter-mode="filterMode"
             :display-options="displayOptions"
             :max-day-num="maxDayNum"
-            :popularity-by-course="popularity.popularityByCourse.value"
-            :show-popularity="popularity.canShowPopularity.value"
             @toggle-ban="toggleBan"
           />
           <SchedulerBottomPanel
@@ -370,6 +549,21 @@ onUnmounted(() => detailRequests.invalidate())
             :total-plans="planList.length"
             @update:index="viewIndex = $event"
           />
+
+          <!-- Dim overlay with solver hint. Scoped to the timetable card only
+               (like the original planner), so the side panel stays visible. -->
+          <Transition name="overlay">
+            <div v-if="planMessage" class="dashboard__overlay" role="status">
+              <span
+                :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
+                aria-hidden="true"
+              >
+                <Icon v-if="planIcon" :name="planIcon" />
+              </span>
+              <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
+              <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+            </div>
+          </Transition>
         </div>
       </div>
 
@@ -379,19 +573,27 @@ onUnmounted(() => detailRequests.invalidate())
           :current-plan="currentPlan"
           :display-options="displayOptions"
           :popularity-by-course="popularity.popularityByCourse.value"
-          :popularity-generated-at="popularity.generatedAt.value"
           :show-popularity="popularity.canShowPopularity.value"
-          :show-popularity-history="canShowPopularityHistory"
+          :semester-id="semesterId"
+          :filter-mode="filterMode"
           :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
           @toggle-course="handleToggleCourse"
           @toggle-bundle="handleToggleBundle"
           @toggle-layer="handleToggleLayer"
-          @show-info="handleShowInfo"
-          @show-popularity-history="handleShowPopularityHistory"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
           @update:display-option="(key, value) => displayOptions[key] = value"
         />
+      </div>
+
+      <!-- Drag handle between timetable and side panel (wide screens only) -->
+      <div
+        class="dashboard__resize-handle"
+        role="separator"
+        aria-orientation="vertical"
+        @mousedown="onResizeStart"
+      >
+        <Icon name="lucide:grip-vertical" class="dashboard__resize-handle-icon" aria-hidden="true" />
       </div>
     </div>
     <div v-else-if="loading" class="dashboard__loading">{{ t('scheduler.loading') }}</div>
@@ -404,14 +606,6 @@ onUnmounted(() => detailRequests.invalidate())
       :add-course="handleAddCourse"
       :remove-course="handleRemoveCourse"
       @close="showCartPanel = false"
-    />
-
-    <SchedulerCourseDetail
-      :visible="showCourseDetail"
-      :course="selectedCourse"
-      :status="courseDetailStatus"
-      @close="closeCourseDetail"
-      @retry="retryCourseDetail"
     />
 
     <SchedulerPopularityHistory
@@ -427,12 +621,18 @@ onUnmounted(() => detailRequests.invalidate())
 
 <style lang="scss" scoped>
 .dashboard {
-  min-height: calc(100vh - 84px);
+  position: relative;
+  /* Fixed height bounds the planner so a long side-panel course list scrolls
+     inside its own panel instead of stretching the whole page. The dashboard
+     itself scrolls only when header + notices + body floor exceed this
+     height (short viewports); the page never grows. */
+  height: calc(100vh - 84px);
+  min-height: 760px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 20px 24px 28px;
-  overflow: visible;
+  overflow-y: auto;
 
   &__header {
     display: flex;
@@ -444,16 +644,26 @@ onUnmounted(() => detailRequests.invalidate())
   &__heading {
     min-width: 0;
 
+    &-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
     h1 {
-      margin: 4px 0 0;
+      margin: 0;
       color: var(--text-primary);
       font-size: 1.5rem;
       line-height: 1.25;
       font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     p {
-      margin: 7px 0 0;
+      margin: 5px 0 0 calc(32px + 12px); /* aligns with the title, clearing the icon button + row gap */
       color: var(--text-secondary);
       font-size: 0.92rem;
       line-height: 1.55;
@@ -461,14 +671,32 @@ onUnmounted(() => detailRequests.invalidate())
   }
 
   &__back {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--surface-primary);
     color: var(--interactive-active);
-    font-size: 0.84rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 
     &:hover {
+      background: var(--surface-secondary);
+      border-color: color-mix(in srgb, var(--interactive-primary) 35%, var(--border-secondary));
       color: var(--interactive-hover);
     }
+  }
+
+  &__back-icon {
+    font-size: 0.92rem;
+    line-height: 1;
   }
 
   &__summary {
@@ -479,8 +707,8 @@ onUnmounted(() => detailRequests.invalidate())
   }
 
   &__summary-item {
-    min-height: 62px;
-    padding: 10px 14px;
+    min-height: 46px;
+    padding: 6px 12px;
     border: 1px solid var(--border-secondary);
     border-radius: 12px;
     background: var(--surface-primary);
@@ -488,15 +716,15 @@ onUnmounted(() => detailRequests.invalidate())
 
     span {
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       color: var(--text-secondary);
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       white-space: nowrap;
     }
 
     strong {
       color: var(--text-primary);
-      font-size: 1.14rem;
+      font-size: 1.02rem;
       line-height: 1.2;
     }
   }
@@ -557,33 +785,88 @@ onUnmounted(() => detailRequests.invalidate())
   &__body {
     flex: 1;
     min-height: 620px;
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    grid-template-columns: minmax(0, 1fr) var(--side-panel-width, 400px);
+    /* Single bounded row: the grid fills the body height and never grows past
+       it, so the side panel stays within the row and its course list scrolls
+       internally while the timetable keeps its size. */
+    grid-template-rows: minmax(0, 1fr);
     gap: 14px;
-    overflow: visible;
+    overflow: hidden;
+  }
+
+  &__resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc(var(--side-panel-width, 400px));
+    width: 14px; /* matches the grid gap, so the pill is centered in the gutter */
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+
+    /* White vertical pill (rounded bar) floating in the gutter between the
+       two panels: tall enough to cover the grip dots, white fill, inset from
+       both edges so it reads as a separate handle, not part of either panel. */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 64px;
+      border-radius: 999px;
+      background: var(--surface-primary);
+      box-shadow: var(--shadow-small);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    &-icon {
+      position: relative;
+      z-index: 1;
+      font-size: 15px;
+      line-height: 1;
+      color: var(--text-secondary);
+      transition: color 0.15s;
+    }
+
+    &:hover,
+    &:active {
+      .dashboard__resize-handle-icon {
+        color: var(--interactive-primary);
+      }
+    }
   }
 
   &__left {
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
   &__timetable-card {
+    position: relative;
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-secondary);
-    border-radius: 16px;
-    background: var(--surface-primary);
-    box-shadow: var(--shadow-small);
+    /* Light mode: white rounded card on the blue page background. Dark mode:
+       transparent (theme variables) so the table blends with the page. */
+    background: var(--timetable-card-bg);
+    border: var(--timetable-card-border);
+    border-radius: var(--timetable-card-radius);
+    box-shadow: var(--timetable-card-shadow);
   }
 
   &__right {
     min-width: 0;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -592,15 +875,95 @@ onUnmounted(() => detailRequests.invalidate())
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-tertiary);
+    color: var(--text-muted);
   }
+
+  /* Dim overlay (solver hint). Scoped to the timetable card (the nearest
+     positioned ancestor), stays below modal layers (cart panel z-index 1120).
+     Non-interactive on purpose: the hint clears as soon as the cart/banned
+     periods change. */
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: var(--overlay-backdrop);
+    pointer-events: none;
+    text-align: center;
+  }
+
+  &__overlay-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.4rem;
+    line-height: 1;
+    margin-bottom: 14px;
+    color: var(--overlay-text);
+
+    &.is-warning {
+      color: var(--semantic-warning);
+    }
+
+    &.is-error {
+      color: var(--semantic-error);
+    }
+  }
+
+  &__overlay-title {
+    margin: 0;
+    color: var(--overlay-text);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  &__overlay-description {
+    max-width: 440px;
+    margin: 10px 0 0;
+    color: var(--overlay-text-secondary);
+    font-size: 0.94rem;
+    line-height: 1.6;
+    text-wrap: balance;
+  }
+}
+
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+}
+
+/* While dragging the side-panel handle, suppress text selection and keep the
+   col-resize cursor over the whole page. */
+:global(body.scheduler-resizing) {
+  user-select: none;
+  cursor: col-resize;
 }
 
 @media (max-width: 1024px) {
   .dashboard {
+    /* Single-column layout flows naturally again: no fixed height, no inner
+       scroll, the page scrolls as usual. */
+    height: auto;
+    min-height: calc(100vh - 84px);
+    overflow: visible;
+
     &__header {
       align-items: stretch;
       flex-direction: column;
+    }
+
+    &__resize-handle {
+      display: none;
     }
 
     &__summary {
@@ -610,7 +973,9 @@ onUnmounted(() => detailRequests.invalidate())
 
     &__body {
       grid-template-columns: 1fr;
+      grid-template-rows: auto;
       min-height: 0;
+      overflow: visible;
     }
 
     &__timetable-card {
@@ -649,7 +1014,6 @@ onUnmounted(() => detailRequests.invalidate())
 
     &__timetable-card {
       min-height: 560px;
-      padding: 8px;
     }
   }
 }

@@ -257,7 +257,7 @@ onMounted(() => {
 
   &.reply-comment {
     margin-left: 2rem;
-    border-left: 2px solid #e0e0e0;
+    border-left: 2px solid var(--border-secondary);
     padding-left: 1rem;
     
     // Mobile reply indentation
@@ -294,7 +294,7 @@ onMounted(() => {
   justify-content: space-between;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-muted);
   align-items: center;
   flex-wrap: wrap;
   
@@ -387,34 +387,34 @@ onMounted(() => {
     }
 
     &.reply-btn {
-      background-color: #e3f2fd;
-      color: #1976d2;
+      background-color: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+      color: var(--interactive-active-text);
 
       &:hover {
-        background-color: #bbdefb;
+        background-color: color-mix(in srgb, var(--interactive-primary) 20%, var(--surface-primary));
       }
       
       // Touch feedback
       &:active {
         @media (max-width: 768px) {
-          background-color: #90caf9;
+          background-color: color-mix(in srgb, var(--interactive-primary) 30%, var(--surface-primary));
           transform: translateY(1px);
         }
       }
     }
 
     &.delete-btn {
-      background-color: #ffebee;
-      color: #d32f2f;
+      background-color: color-mix(in srgb, var(--semantic-error) 12%, var(--surface-primary));
+      color: var(--semantic-error);
 
       &:hover {
-        background-color: #ffcdd2;
+        background-color: color-mix(in srgb, var(--semantic-error) 20%, var(--surface-primary));
       }
       
       // Touch feedback
       &:active {
         @media (max-width: 768px) {
-          background-color: #ffb3ba;
+          background-color: color-mix(in srgb, var(--semantic-error) 30%, var(--surface-primary));
           transform: translateY(1px);
         }
       }

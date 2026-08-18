@@ -318,10 +318,10 @@ useHead({
 
 /* ── Shared card base ── */
 .kg-card {
-  background: #FFFFFF;
-  border: 1px solid rgba(38, 164, 255, 0.18);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 22px;
-  box-shadow: 0 10px 26px rgba(38, 164, 255, 0.08);
+  box-shadow: var(--shadow-medium);
   padding: 28px 30px;
 }
 
@@ -352,7 +352,7 @@ useHead({
 
 .kg-pane--review,
 .kg-pane--discussion {
-  background: #FFFFFF;
+  background: var(--surface-primary);
 }
 
 .kg-intro-top {
@@ -390,13 +390,13 @@ useHead({
   align-items: center;
   padding: 5px 14px;
   border-radius: 999px;
-  background: rgba(38, 164, 255, 0.12);
+  background: color-mix(in srgb, var(--interactive-primary) 12%, transparent);
   color: var(--interactive-active);
   font-size: 0.82rem;
   font-weight: 700;
   &--outline {
     background: transparent;
-    border: 1px solid rgba(17, 120, 200, 0.25);
+    border: 1px solid color-mix(in srgb, var(--interactive-active) 25%, transparent);
   }
 }
 
@@ -416,8 +416,8 @@ useHead({
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
-  &.active { background: rgba(38, 200, 120, 0.15); color: #1a9a55; border: 1px solid rgba(38, 200, 120, 0.3); }
-  &.inactive { background: rgba(160, 160, 160, 0.12); color: #888; border: 1px solid rgba(160, 160, 160, 0.3); }
+  &.active { background: color-mix(in srgb, var(--semantic-success) 15%, transparent); color: var(--semantic-success); border: 1px solid color-mix(in srgb, var(--semantic-success) 30%, transparent); }
+  &.inactive { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-muted); border: 1px solid color-mix(in srgb, var(--text-muted) 30%, transparent); }
 }
 
 .kg-course-meta {
@@ -433,7 +433,7 @@ useHead({
   padding: 6px 13px;
   border-radius: 999px;
   font-size: 0.8rem;
-  background: rgba(40, 57, 101, 0.06);
+  background: var(--surface-secondary);
   color: var(--text-secondary);
 }
 
@@ -500,15 +500,15 @@ useHead({
   min-width: 0;
   padding: 16px 18px;
   border-radius: 16px;
-  background: #FFFFFF;
-  border: 1px solid rgba(191, 215, 251, 0.75);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-secondary);
   color: inherit;
   text-decoration: none;
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
   &:hover {
     border-color: var(--interactive-primary);
-    box-shadow: 0 6px 18px rgba(38, 164, 255, 0.1);
+    box-shadow: var(--shadow-medium);
     transform: translateY(-1px);
   }
 }
@@ -564,8 +564,8 @@ useHead({
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 0.75rem;
-  background: rgba(38, 164, 255, 0.1);
-  border: 1px solid rgba(38, 164, 255, 0.25);
+  background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, transparent);
   color: var(--interactive-active);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -599,10 +599,10 @@ useHead({
 }
 
 .kg-btn-primary {
-  background: var(--interactive-primary);
+  background: var(--btn-primary-bg);
   color: var(--text-inverse);
   border: none;
-  &:hover { background: var(--interactive-hover); }
+  &:hover { background: var(--btn-primary-bg-hover); }
   &--block {
     width: 100%;
     min-height: 48px;

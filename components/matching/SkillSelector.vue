@@ -223,7 +223,7 @@ watch(inputValue, (newValue) => {
 .skill-input {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--border-primary, #ddd);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.2s ease;
@@ -231,8 +231,8 @@ watch(inputValue, (newValue) => {
 
 .skill-input:focus {
   outline: none;
-  border-color: var(--interactive-primary, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--interactive-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 12%, transparent);
 }
 
 .suggestions-dropdown {
@@ -240,21 +240,21 @@ watch(inputValue, (newValue) => {
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--surface-primary, white);
-  border: 1px solid var(--border-primary, #ddd);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-top: none;
   border-radius: 0 0 8px 8px;
   max-height: 200px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-small);
 }
 
 .suggestion-item {
   padding: 12px;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .suggestion-item:last-child {
@@ -263,12 +263,12 @@ watch(inputValue, (newValue) => {
 
 .suggestion-item:hover,
 .suggestion-item.active {
-  background-color: #f8f9fa;
+  background-color: var(--surface-secondary);
 }
 
 .suggestion-item.active {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: var(--info-background);
+  color: var(--info-color);
 }
 
 .popular-tags {
@@ -294,19 +294,19 @@ watch(inputValue, (newValue) => {
 
 .popular-tag {
   padding: 6px 12px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
   border-radius: 20px;
   font-size: 0.85rem;
-  color: var(--text-secondary, #7f8c8d);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .popular-tag:hover {
-  background: #e3f2fd;
-  border-color: #3498db;
-  color: #1976d2;
+  background: var(--info-background);
+  border-color: var(--interactive-primary);
+  color: var(--info-color);
 }
 
 .selected-skills {
@@ -319,8 +319,8 @@ watch(inputValue, (newValue) => {
 .skill-tag {
   display: flex;
   align-items: center;
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-background);
+  color: var(--info-color);
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -330,7 +330,7 @@ watch(inputValue, (newValue) => {
 }
 
 .skill-tag:hover {
-  background: #bbdefb;
+  background: color-mix(in srgb, var(--interactive-primary) 20%, transparent);
 }
 
 .skill-name {
@@ -343,7 +343,7 @@ watch(inputValue, (newValue) => {
 .remove-btn {
   background: none;
   border: none;
-  color: #1976d2;
+  color: var(--info-color);
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
@@ -359,8 +359,8 @@ watch(inputValue, (newValue) => {
 }
 
 .remove-btn:hover {
-  background: rgba(25, 118, 210, 0.1);
-  color: #d32f2f;
+  background: color-mix(in srgb, var(--info-color) 12%, transparent);
+  color: var(--error-color);
 }
 
 @media (max-width: 768px) {

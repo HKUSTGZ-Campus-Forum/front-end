@@ -136,11 +136,11 @@ const isProfileComplete = computed(() => {
 
 <style scoped>
 .matching-navigation {
-  background: var(--surface-primary, white);
+  background: var(--surface-primary);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: var(--shadow-medium, 0 2px 10px rgba(0,0,0,0.08));
-  border: 1px solid var(--border-primary, #e3e8ef);
+  box-shadow: var(--shadow-medium);
+  border: 1px solid var(--border-primary);
 }
 
 .nav-header {
@@ -171,7 +171,7 @@ const isProfileComplete = computed(() => {
   align-items: center;
   gap: 16px;
   padding: 20px;
-  border: 1px solid var(--border-primary, #e3e8ef);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
@@ -180,19 +180,19 @@ const isProfileComplete = computed(() => {
 }
 
 .nav-card:hover:not(.nav-card--disabled) {
-  border-color: var(--interactive-primary, #3498db);
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+  border-color: var(--interactive-primary);
+  box-shadow: var(--shadow-small);
   transform: translateY(-1px);
 }
 
 .nav-card--primary {
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(41, 128, 185, 0.05));
-  border-color: var(--interactive-primary, #3498db);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--interactive-primary) 5%, transparent), color-mix(in srgb, var(--interactive-primary) 8%, transparent));
+  border-color: var(--interactive-primary);
 }
 
 .nav-card--completed {
-  background: rgba(46, 204, 113, 0.05);
-  border-color: #2ecc71;
+  background: color-mix(in srgb, var(--semantic-success) 6%, transparent);
+  border-color: var(--semantic-success);
 }
 
 .nav-card--disabled {
@@ -208,15 +208,15 @@ const isProfileComplete = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-secondary, #f8f9fa);
+  background: var(--surface-secondary);
   border-radius: 8px;
-  color: var(--interactive-primary, #3498db);
+  color: var(--interactive-primary);
   font-size: 1.5rem;
 }
 
 .nav-card--completed .nav-card-icon {
-  background: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
+  background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  color: var(--semantic-success);
 }
 
 .nav-card-content {
@@ -250,49 +250,49 @@ const isProfileComplete = computed(() => {
 }
 
 .status-required {
-  background: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
+  background: var(--error-background);
+  color: var(--error-color);
 }
 
 .status-completed {
-  background: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
+  background: var(--success-background);
+  color: var(--success-color);
 }
 
 .status-locked {
-  background: rgba(149, 165, 166, 0.1);
-  color: #95a5a6;
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  color: var(--text-muted);
 }
 
 .status-available {
-  background: rgba(52, 152, 219, 0.1);
-  color: #3498db;
+  background: var(--info-background);
+  color: var(--info-color);
 }
 
 .status-optional {
-  background: rgba(155, 89, 182, 0.1);
-  color: #9b59b6;
+  background: var(--purple-background);
+  color: var(--purple-color);
 }
 
 .status-attention {
-  background: rgba(241, 196, 15, 0.1);
-  color: #f1c40f;
+  background: var(--warning-background);
+  color: var(--warning-color);
 }
 
 .status-info {
-  background: rgba(52, 152, 219, 0.1);
-  color: #3498db;
+  background: var(--info-background);
+  color: var(--info-color);
 }
 
 .nav-card-arrow {
   flex-shrink: 0;
   font-size: 1rem;
-  color: var(--text-tertiary, #bdc3c7);
+  color: var(--text-muted);
   transition: all 0.2s ease;
 }
 
 .nav-card:hover:not(.nav-card--disabled) .nav-card-arrow {
-  color: var(--interactive-primary, #3498db);
+  color: var(--interactive-primary);
   transform: translateX(2px);
 }
 
@@ -301,16 +301,16 @@ const isProfileComplete = computed(() => {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: rgba(52, 152, 219, 0.05);
-  border: 1px solid rgba(52, 152, 219, 0.2);
+  background: color-mix(in srgb, var(--interactive-primary) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 20%, transparent);
   border-radius: 8px;
   font-size: 0.9rem;
-  color: var(--text-secondary, #7f8c8d);
+  color: var(--text-secondary);
 }
 
 .tip-icon {
   flex-shrink: 0;
-  color: var(--interactive-primary, #3498db);
+  color: var(--interactive-primary);
   margin-top: 2px;
 }
 

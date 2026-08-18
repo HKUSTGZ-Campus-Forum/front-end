@@ -61,23 +61,23 @@ const currentSection = computed<CommunitySection>(() => {
 
 .community-primary-tabs__button {
   padding: 6px 18px;
-  border: 1.5px solid #c8dff8;
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  background: #ffffff;
-  color: #4a6080;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #26a4ff;
-    color: #26a4ff;
+    border-color: var(--interactive-primary);
+    color: var(--interactive-primary);
   }
 
   &.active {
-    background: #26a4ff;
-    border-color: #26a4ff;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    border-color: var(--interactive-primary);
+    color: var(--text-inverse);
     font-weight: 600;
   }
 }

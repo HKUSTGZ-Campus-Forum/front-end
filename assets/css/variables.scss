@@ -4,6 +4,7 @@
   --bg-secondary: #f5fbfe;
   --bg-gradient: linear-gradient(160deg, #d7edf9 0%, #eaf4fd 100%);
   --bg-image: none;
+  color-scheme: light;
 
   // Text colors
   --text-primary: #1a2a4a;
@@ -22,18 +23,66 @@
   --interactive-secondary: #bfd7fb;
   --interactive-hover: #1a8fe0;
   --interactive-active: #1278c4;
+  // Text/icon color on tinted interactive backgrounds (e.g. active scheduler
+  // bundle capsules, side-panel tabs). Dark mode needs a brighter tone than
+  // --interactive-active for sufficient contrast on dark tinted surfaces.
+  --interactive-active-text: #1278c4;
   --interactive-disabled: #b3d4f0;
+
+  // Scheduler side-panel bundle capsules & tabs (mirrors the original planner
+  // chip states). Light mode keeps the tinted-chip look; dark mode switches to
+  // the original's brighter "sticker" chips (pastel blue enabled vs muted gray
+  // disabled) and a solid active tab, so enabled/disabled stay clearly apart.
+  --scheduler-chip-bg: var(--surface-secondary);
+  --scheduler-chip-border: var(--border-secondary);
+  --scheduler-chip-text: var(--text-secondary);
+  --scheduler-chip-bg-hover: #e8f1fb;
+  --scheduler-chip-border-hover: #c7dcf4;
+  --scheduler-chip-bg-active: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+  --scheduler-chip-border-active: color-mix(in srgb, var(--interactive-primary) 40%, transparent);
+  --scheduler-chip-text-active: var(--interactive-active-text);
+  --scheduler-chip-bg-active-hover: color-mix(in srgb, var(--interactive-primary) 18%, var(--surface-primary));
+  --scheduler-chip-bg-selected: color-mix(in srgb, var(--interactive-primary) 26%, var(--surface-primary));
+  --scheduler-chip-border-selected: color-mix(in srgb, var(--interactive-primary) 72%, transparent);
+  --scheduler-chip-bg-selected-hover: color-mix(in srgb, var(--interactive-primary) 32%, var(--surface-primary));
+  --scheduler-tab-active-bg: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+  --scheduler-tab-active-text: var(--interactive-active-text);
 
   // Semantic colors
   --semantic-success: #10b981;
   --semantic-warning: #f59e0b;
   --semantic-error: #ef4444;
   --semantic-info: #26a4ff;
+  --semantic-purple: #7c3aed;
+
+  // Scheduler credit levels (per-credit color coding, mirrors the original planner)
+  --credit-level-1: #10b981;
+  --credit-level-2: #06b6d4;
+  --credit-level-3: #0ea5e9;
+  --credit-level-4: #6366f1;
+  --credit-level-5: #d946ef;
+  --credit-level-6: #f43f5e;
 
   // Border colors
   --border-primary: #bfd7fb;
   --border-secondary: #daeef9;
   --border-focus: #26a4ff;
+
+  // Scheduler timetable (light mode: neutral gray lines on a white surface,
+  // mirroring the original planner instead of the light-blue theme borders)
+  --timetable-grid: #e5e7eb;
+  --timetable-header-text: #475569;
+  --timetable-header-bg: #f1f5f9;
+  // Icon on a banned (red) filter cell: dark in light mode (red tint is a
+  // light surface), white in dark mode (red tint is a dark surface).
+  --timetable-ban-icon: #ac1c1c;
+
+  // Scheduler timetable card (light mode: white rounded card on the blue page
+  // background; dark mode: transparent so the table blends with the page)
+  --timetable-card-bg: #ffffff;
+  --timetable-card-radius: 16px;
+  --timetable-card-border: 1px solid #e5e7eb;
+  --timetable-card-shadow: 0 1px 3px rgba(38, 164, 255, 0.08);
 
   // Component backgrounds
   --sidebar-bg: #283965;
@@ -51,6 +100,12 @@
   --modal-bg: #ffffff;
   --modal-backdrop: rgba(26, 42, 74, 0.45);
   --modal-shadow: 0 20px 40px rgba(26, 42, 74, 0.15);
+
+  // Fullscreen dim overlay (solver hint / blocked states).
+  // Fixed dark backdrop + light text in both themes (see scheduler dashboard).
+  --overlay-backdrop: rgba(0, 0, 0, 0.55);
+  --overlay-text: #eef3fa;
+  --overlay-text-secondary: rgba(238, 243, 250, 0.8);
 
   // Effects
   --effect-blur: blur(8px);
@@ -95,6 +150,156 @@
   --transition-fast: 0.2s;
   --transition-normal: 0.3s;
   --transition-slow: 0.4s;
+
+  /* 兼容别名：历史组件直接使用的自定义变量 → 映射到主题 token。
+     此处只需定义一次（引用型别名会随主题动态解析），保证换主题时自动生效。 */
+  --primary-color: var(--interactive-primary);
+  --primary-color-hover: var(--interactive-hover);
+  --primary-color-alpha: color-mix(in srgb, var(--interactive-primary) 12%, transparent);
+  --accent-primary: var(--interactive-primary);
+  --accent-secondary: var(--interactive-secondary);
+  // Primary button background: brand blue in light mode, a deeper blue in dark
+  // mode so large blue buttons don't glare on the dark background.
+  --btn-primary-bg: var(--interactive-primary);
+  --btn-primary-bg-hover: var(--interactive-hover);
+  --success-color: var(--semantic-success);
+  --success-background: color-mix(in srgb, var(--semantic-success) 10%, transparent);
+  --success: var(--semantic-success);
+  --warning-color: var(--semantic-warning);
+  --warning-background: color-mix(in srgb, var(--semantic-warning) 10%, transparent);
+  --warning-text: var(--semantic-warning);
+  --warning: var(--semantic-warning);
+  --error-color: var(--semantic-error);
+  --error-background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+  --error-dark: var(--semantic-error);
+  --error: var(--semantic-error);
+  --info-color: var(--semantic-info);
+  --info-background: color-mix(in srgb, var(--semantic-info) 10%, transparent);
+  --info-text: var(--semantic-info);
+  --purple-color: var(--semantic-purple);
+  --purple-background: color-mix(in srgb, var(--semantic-purple) 12%, transparent);
+  --surface-disabled: var(--surface-secondary);
+  --surface-hover: var(--surface-secondary);
+  --surface-tertiary: var(--surface-secondary);
+  --interactive-primary-dark: var(--interactive-hover);
+  --background-gradient: var(--bg-gradient);
+  --shadow-soft: var(--shadow-small);
+  --color-blue-7: var(--interactive-secondary);
+  --border-dark: var(--border-primary);
+  --border-light: var(--border-secondary);
+}
+
+// 深色主题变量覆盖（首屏防 FOUC：由 app.vue 内联脚本设置 data-theme）
+// 注意：配色须与 utils/themes.ts 的 deep-dark 配置保持同步
+:root[data-theme='deep-dark'] {
+  --bg-primary: #0e1726;
+  --bg-secondary: #16233a;
+  --bg-gradient: linear-gradient(160deg, #0e1726 0%, #16233a 100%);
+  --bg-image: none;
+  color-scheme: dark;
+
+  --text-primary: #e6edf7;
+  --text-secondary: #9fb0c9;
+  --text-muted: #64748b;
+  --text-inverse: #0e1726;
+
+  --surface-primary: #16233a;
+  --surface-secondary: #1d2d49;
+  --surface-elevated: #223453;
+  --surface-overlay: rgba(14, 23, 38, 0.96);
+
+  --interactive-primary: #26a4ff;
+  --interactive-secondary: #2d4a73;
+  --interactive-hover: #4db6ff;
+  --interactive-active: #1a8fe0;
+  --interactive-active-text: #6cc5ff;
+  --interactive-disabled: #33507a;
+  // Primary buttons use a deeper blue in dark mode so large blue buttons
+  // don't glare on the dark background; hover brightens back toward the brand.
+  --btn-primary-bg: var(--interactive-active);
+  --btn-primary-bg-hover: var(--interactive-hover);
+
+  --semantic-success: #34d399;
+  --semantic-warning: #fbbf24;
+  --semantic-error: #f87171;
+  --semantic-info: #26a4ff;
+  --semantic-purple: #a78bfa;
+
+  // Scheduler side-panel bundle capsules & tabs (dark mode: the original
+  // planner's brighter "sticker" chips — pastel blue when enabled, muted gray
+  // when disabled, solid blue active tab).
+  --scheduler-chip-bg: #5b6b85;
+  --scheduler-chip-border: #6b7b96;
+  --scheduler-chip-text: #22314a;
+  --scheduler-chip-bg-hover: #64748e;
+  --scheduler-chip-border-hover: #75869f;
+  --scheduler-chip-bg-active: #a8d8ff;
+  --scheduler-chip-border-active: #7cc2ff;
+  --scheduler-chip-text-active: #0a3a66;
+  --scheduler-chip-bg-active-hover: #8fceff;
+  --scheduler-chip-bg-selected: #7cc2ff;
+  --scheduler-chip-border-selected: #4db0ff;
+  --scheduler-chip-bg-selected-hover: #66b8ff;
+  --scheduler-tab-active-bg: var(--interactive-primary);
+  --scheduler-tab-active-text: var(--text-inverse);
+
+  // Scheduler credit levels (dark mode: brighter tones for contrast on dark surfaces)
+  --credit-level-1: #34d399;
+  --credit-level-2: #22d3ee;
+  --credit-level-3: #38bdf8;
+  --credit-level-4: #818cf8;
+  --credit-level-5: #e879f9;
+  --credit-level-6: #fb7185;
+
+  --border-primary: #2d4a73;
+  --border-secondary: #24375a;
+  --border-focus: #26a4ff;
+
+  // Scheduler timetable (dark mode keeps the existing deep blue-gray lines)
+  --timetable-grid: #24375a;
+  --timetable-header-text: #9fb0c9;
+  --timetable-header-bg: var(--surface-primary);
+  // Same fixed white as light mode: banned cells are always red-tinted.
+  --timetable-ban-icon: #ffffff;
+
+  // Scheduler timetable card (dark mode: blends with the page background)
+  --timetable-card-bg: transparent;
+  --timetable-card-radius: 0;
+  --timetable-card-border: none;
+  --timetable-card-shadow: none;
+
+  --sidebar-bg: #0b1220;
+  --sidebar-backdrop: none;
+  --sidebar-shadow: 2px 0 12px rgba(0, 0, 0, 0.35);
+
+  --topbar-bg: rgba(22, 35, 58, 0.85);
+  --topbar-backdrop: blur(8px);
+  --topbar-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+
+  --card-bg: #16233a;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --card-border: 1px solid #24375a;
+
+  --modal-bg: #1d2d49;
+  --modal-backdrop: rgba(0, 0, 0, 0.6);
+  --modal-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+
+  // In-panel cart drawer overlay
+  --drawer-backdrop: rgba(0, 0, 0, 0.45);
+
+  --overlay-backdrop: rgba(0, 0, 0, 0.55);
+  --overlay-text: #eef3fa;
+  --overlay-text-secondary: rgba(238, 243, 250, 0.8);
+
+  --effect-blur: blur(8px);
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-large: 0 10px 24px rgba(0, 0, 0, 0.4);
+  --opacity-low: 0.6;
+  --opacity-medium: 0.85;
+  --opacity-high: 0.96;
+
+  --logo-filter: brightness(10) saturate(0);
 }
 
 body {

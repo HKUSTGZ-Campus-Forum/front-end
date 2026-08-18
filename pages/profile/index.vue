@@ -96,16 +96,16 @@ onMounted(async () => {
   gap: 12px;
   padding: 16px 20px;
   border-radius: 14px;
-  border: 1.5px solid #c8dff8;
-  background: #f5fbfe;
-  color: #4a6080;
+  border: 1.5px solid color-mix(in srgb, var(--interactive-primary, #26a4ff) 22%, transparent);
+  background: var(--info-background, rgba(38, 164, 255, 0.08));
+  color: var(--text-secondary, #4a6080);
 }
 
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #c8dff8;
-  border-top-color: #26a4ff;
+  border: 2px solid color-mix(in srgb, var(--interactive-primary, #26a4ff) 22%, transparent);
+  border-top-color: var(--interactive-primary, #26a4ff);
   border-radius: 50%;
   animation: profile-redirect-spin 0.8s linear infinite;
 }

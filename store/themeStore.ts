@@ -48,9 +48,16 @@ export const useThemeStore = defineStore('theme', {
         documentElement.style.setProperty(property, value);
       });
 
+      // Sync native color-scheme so scrollbars/form controls follow the theme
+      documentElement.style.colorScheme = theme.category;
+
+      // Sync data-theme attribute (used by SCSS fallback for FOUC prevention)
+      documentElement.dataset.theme = theme.id;
+
       // Update body class for theme-specific styling
       document.body.className = document.body.className
-        .replace(/theme-\w+/g, '')
+        .replace(/\btheme-\w+/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
       document.body.classList.add(`theme-${theme.id}`);
     },
