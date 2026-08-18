@@ -67,7 +67,7 @@ const handlePostSuccess = (postId) => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #26a4ff;
+  color: var(--interactive-primary);
   text-decoration: none;
   font-size: 0.9rem;
   &:hover { text-decoration: underline; }
@@ -80,17 +80,17 @@ const handlePostSuccess = (postId) => {
 }
 
 .kg-card {
-  background: #F5FBFE;
-  border: 1.5px solid #c8dff8;
+  background: var(--surface-primary);
+  border: 1.5px solid var(--border-primary);
   border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(40, 57, 101, 0.07);
+  box-shadow: var(--card-shadow);
   padding: 28px 32px;
 }
 
 .kg-page-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--text-primary);
   margin: 0 0 24px;
 }
 </style>

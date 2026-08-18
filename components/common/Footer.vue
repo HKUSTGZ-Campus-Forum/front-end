@@ -112,19 +112,15 @@ const { getLocalePath } = useAppLocale()
       gap: 1.5rem;
       
       .contact-section {
+        // Span the full second row in the tablet two-column layout.
         grid-column: 1 / -1;
-        text-align: left;
-        
-        .contact-tags {
-          justify-content: flex-start;
-        }
       }
     }
     
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
-      gap: 1rem;
-      padding: 1rem 0 0.75rem;
+      gap: 1.75rem;
+      padding: 1.25rem 0 0.75rem;
     }
   }
   
@@ -136,12 +132,17 @@ const { getLocalePath } = useAppLocale()
       gap: 1rem;
       
       @media (max-width: 768px) {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.75rem;
+        // Compact side-by-side on phones: brand copy left, QR right. This
+        // drops the vertical stack that previously made the section ~180px tall.
+        justify-content: flex-start;
+        text-align: left;
+        gap: 1.25rem;
       }
       
       .brand-info {
+        flex: 1;
+        min-width: 0;
+        
         .footer-title {
           font-size: 1.25rem;
           font-weight: 700;
@@ -149,7 +150,7 @@ const { getLocalePath } = useAppLocale()
           margin-bottom: 0.25rem;
           
           @media (max-width: 768px) {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
           }
         }
         
@@ -158,6 +159,10 @@ const { getLocalePath } = useAppLocale()
           color: var(--text-secondary);
           margin: 0;
           opacity: 0.8;
+          
+          @media (max-width: 768px) {
+            font-size: 0.78rem;
+          }
         }
       }
       
@@ -165,6 +170,16 @@ const { getLocalePath } = useAppLocale()
         display: flex;
         flex-direction: column;
         align-items: center;
+        flex-shrink: 0;
+        
+        // Hide the QR on tablets and phones — only useful on wide desktop.
+        @media (max-width: 1100px) {
+          display: none;
+        }
+        
+        @media (max-width: 768px) {
+          margin-left: auto;
+        }
         
         .qr-code {
           // 刻意保留：二维码图片本身为白底，卡片背景恒为白色，跨主题不变
@@ -175,8 +190,13 @@ const { getLocalePath } = useAppLocale()
           border: 1px solid var(--border-primary);
           border-radius: 12px;
           box-shadow: var(--shadow-small);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.4rem;
           transition: transform 0.18s ease;
+          
+          @media (max-width: 768px) {
+            width: 80px;
+            height: 80px;
+          }
           
           &:hover {
             transform: scale(1.6);
@@ -196,22 +216,25 @@ const { getLocalePath } = useAppLocale()
       justify-content: center;
       
       @media (max-width: 768px) {
-        gap: 1.5rem;
-        justify-content: space-around;
+        gap: 2rem;
+        justify-content: flex-start;
       }
       
       @media (max-width: 480px) {
         flex-direction: column;
-        gap: 1rem;
-        text-align: center;
+        gap: 1.25rem;
+        text-align: left;
       }
     }
     
     &.contact-section {
       text-align: right;
       
-      @media (max-width: 768px) {
-        text-align: center;
+      @media (max-width: 1100px) {
+        // Tablets and phones: the contact block spans the full row (and on
+        // phones the single column), so left-align title/email/tags together
+        // instead of a broken right/left split.
+        text-align: left;
       }
     }
     
@@ -224,20 +247,27 @@ const { getLocalePath } = useAppLocale()
   }
   
   .link-group {
+    @media (max-width: 480px) {
+      .section-title {
+        margin-bottom: 0.35rem;
+      }
+    }
+    
     .link-row {
       display: flex;
       flex-wrap: wrap;
       gap: 0.75rem;
       
       @media (max-width: 480px) {
-        flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.45rem 1.25rem;
+        align-items: flex-start;
       }
       
       a {
         color: var(--text-secondary);
         text-decoration: none;
         font-size: 0.85rem;
+        line-height: 1.5;
         transition: color 0.2s ease;
         
         &:hover {
@@ -273,8 +303,8 @@ const { getLocalePath } = useAppLocale()
     gap: 0.5rem;
     justify-content: flex-end;
     
-    @media (max-width: 768px) {
-      justify-content: center;
+    @media (max-width: 1100px) {
+      justify-content: flex-start;
     }
     
     .tag {
@@ -348,14 +378,22 @@ const { getLocalePath } = useAppLocale()
 }
 
 // Mobile optimizations
+@media (max-width: 768px) {
+  .site-footer {
+    .footer-container {
+      padding: 0 1.5rem;
+    }
+  }
+}
+
 @media (max-width: 480px) {
   .site-footer {
     .footer-container {
-      padding: 0 0.75rem;
+      padding: 0 1.25rem;
     }
     
     .footer-main {
-      padding: 0.75rem 0 0.5rem;
+      padding: 1rem 0 0.5rem;
     }
     
     .footer-bottom {

@@ -31,7 +31,8 @@
       "dark": "Dark"
     },
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "menu": "Menu"
   },
   "actions": {
     "login": "Login",
@@ -1679,8 +1680,7 @@
       "empty": "No posts yet. Be the first to start the conversation.",
       "sort": {
         "latest": "Latest",
-        "hot": "Hot",
-        "oldest": "Oldest"
+        "hot": "Hot"
       },
       "errors": {
         "loadFailed": "Failed to load the post list.",

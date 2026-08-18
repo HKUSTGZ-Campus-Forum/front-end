@@ -63,9 +63,17 @@ const headerHeight = 36
 
 const dayColWidth = computed(() => {
   const available = containerWidth.value - timeColWidth
-  const minWidth = containerWidth.value < 560 ? 52 : 86
+  // Keep day columns readable on phones: raise the minimum instead of
+  // squeezing all days into ~50px columns. When the content is wider than the
+  // container, the timetable scrolls horizontally (overflow-x applied below).
+  const minWidth = containerWidth.value < 768 ? 90 : 86
   return Math.max(minWidth, available / props.maxDayNum)
 })
+
+// Total width of the timetable content (time column + all day columns). The
+// grid overlay and lecture blocks are positioned up to this extent; when it
+// exceeds the container the table scrolls sideways.
+const timetableContentWidth = computed(() => timeColWidth + props.maxDayNum * dayColWidth.value)
 
 const rowHeight = computed(() => {
   // Mirror the original planner: 8 rows fill (container - header - a small
@@ -82,6 +90,7 @@ const rowHeight = computed(() => {
 const timetableGridStyle = computed(() => ({
   top: `${headerHeight}px`,
   left: `${timeColWidth}px`,
+  width: `${timetableContentWidth.value - timeColWidth}px`,
   backgroundSize: `${dayColWidth.value}px ${rowHeight.value}px`,
   backgroundPosition: '0 0',
 }))
@@ -426,7 +435,12 @@ function onCellClick(day: number, period: number) {
   height: 100%;
   min-height: 400px;
   background: transparent;
-  overflow: hidden;
+  // Allow horizontal scrolling on narrow screens when the day columns can no
+  // longer fit; keep vertical overflow clipped for the hover-expand fade.
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
 
   /* Inset grid layer: vertical/horizontal lines are drawn at the top and left
      edge of every tiled cell, starting at (timeColWidth, headerHeight). The
@@ -577,25 +591,25 @@ function onCellClick(day: number, period: number) {
     &-code {
       font-weight: 500; /* original: font-medium */
       font-size: 0.875rem; /* original: text-sm */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     &-code-section {
       font-weight: 500;
       font-size: 0.875rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     &-title {
       font-size: 0.75rem; /* original: text-xs */
       margin-bottom: 4px; /* original: mb-1 */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     &-detail {
@@ -604,14 +618,12 @@ function onCellClick(day: number, period: number) {
       gap: 8px; /* original: gap-2 */
       opacity: 0.7; /* original: opacity-70 */
       font-size: 0.75rem; /* original: text-xs */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
 
       > span {
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
     }
 
