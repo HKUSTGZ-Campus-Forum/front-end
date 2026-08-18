@@ -31,7 +31,8 @@
       "dark": "Dark"
     },
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "menu": "Menu"
   },
   "actions": {
     "login": "Login",

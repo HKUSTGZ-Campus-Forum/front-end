@@ -1020,8 +1020,10 @@ function toggleBan(day: number, period: number) {
 
 @media (max-width: 520px) {
   .dashboard {
+    // Keep the three summary cards on a single row even on small phones.
     &__summary {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
     }
   }
 }

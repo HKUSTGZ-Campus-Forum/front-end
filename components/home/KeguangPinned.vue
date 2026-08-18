@@ -13,6 +13,11 @@ const { setTheme, isDarkTheme } = useTheme()
 
 const props = defineProps<{
   sidebarExpanded?: boolean
+  mobileNavOpen?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'toggle-mobile-nav'): void
 }>()
 
 const navStyle = computed(() => ({
@@ -57,6 +62,11 @@ const handleSearch = (query: string) => {
   }
 }
 
+// Mobile shortcut: jump straight to the full search page.
+const handleSearchGo = () => {
+  router.push(getLocalePath('/search'))
+}
+
 const handleLoginOrLogout = () => {
   navigateTo(getLocalePath('/login'))
 }
@@ -83,6 +93,20 @@ const handleMenuLogout = async () => {
       </div>
     </NuxtLink>
 
+    <!-- Mobile menu toggle -->
+    <button
+      type="button"
+      class="kg-topnav__menu-toggle"
+      :class="{ 'kg-topnav__menu-toggle--open': mobileNavOpen }"
+      :aria-label="t('common.menu')"
+      :aria-expanded="mobileNavOpen"
+      @click="emit('toggle-mobile-nav')"
+    >
+      <span class="kg-topnav__menu-toggle-line" />
+      <span class="kg-topnav__menu-toggle-line" />
+      <span class="kg-topnav__menu-toggle-line" />
+    </button>
+
     <div class="kg-topnav__right">
       <div class="kg-topnav__search">
         <SearchDropdown
@@ -92,6 +116,16 @@ const handleMenuLogout = async () => {
           @search="handleSearch"
         />
       </div>
+
+      <!-- Mobile search shortcut: hidden on desktop, shows on phones -->
+      <button
+        type="button"
+        class="kg-topnav__search-btn"
+        :aria-label="t('search.placeholder')"
+        @click="handleSearchGo"
+      >
+        <Icon name="lucide:search" class="kg-topnav__search-icon" aria-hidden="true" />
+      </button>
 
       <!-- Light/dark theme toggle, replicating the CoursePlan.search
            darkmode-toggle: an animated sun/moon icon (expand transition)
@@ -143,7 +177,7 @@ const handleMenuLogout = async () => {
           @click="isLocaleOpen = !isLocaleOpen"
         >
           <Icon name="lucide:globe" class="kg-topnav__locale-icon" aria-hidden="true" />
-          <span>{{ locale === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}</span>
+          <span class="kg-topnav__locale-text">{{ locale === 'zh' ? t('common.locale.zh') : t('common.locale.en') }}</span>
           <Icon
             name="lucide:chevron-down"
             class="kg-topnav__locale-icon kg-topnav__locale-icon--chevron"
@@ -229,6 +263,7 @@ const handleMenuLogout = async () => {
   padding: 0 32px 0 28px;
   z-index: 1009;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .kg-topnav__brand {
@@ -535,6 +570,73 @@ const handleMenuLogout = async () => {
   flex: 1;
 }
 
+/* Mobile-only controls: hidden on desktop, revealed inside the media query. */
+.kg-topnav__menu-toggle,
+.kg-topnav__search-btn {
+  display: none;
+}
+
+.kg-topnav__menu-toggle {
+  flex-shrink: 0;
+  min-height: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--interactive-primary);
+
+  &-line {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  &--open {
+    .kg-topnav__menu-toggle-line:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .kg-topnav__menu-toggle-line:nth-child(2) {
+      opacity: 0;
+    }
+
+    .kg-topnav__menu-toggle-line:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+}
+
+.kg-topnav__search-btn {
+  flex-shrink: 0;
+  min-height: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border-secondary);
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.kg-topnav__search-icon {
+  font-size: 1.1rem;
+}
+
 .kg-topnav__user {
   position: relative;
   flex-shrink: 0;
@@ -706,16 +808,122 @@ const handleMenuLogout = async () => {
   .kg-topnav {
     left: 0 !important;
     height: 64px;
-    padding: 0 16px;
+    padding: 0 12px;
+    gap: 0.6rem;
+    // Note: do NOT use overflow:hidden here — it clips the right-hand
+    // controls (locale pill, avatar) off screen on narrow phones.
   }
 
+  .kg-topnav__brand {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 1;
+    min-width: 0;
+    padding: 0 6px;
+
+    // Natural height-based sizing (no width capping / cropping).
+    &-logo {
+      height: 36px;
+      width: auto;
+      display: flex;
+      align-items: center;
+
+      img {
+        height: 100%;
+        width: auto;
+        object-fit: contain;
+      }
+    }
+  }
+
+  // Reveal mobile controls: hamburger + search shortcut.
+  .kg-topnav__menu-toggle {
+    display: flex;
+    width: 34px;
+    height: 34px;
+  }
+
+  .kg-topnav__menu-toggle-line {
+    width: 18px;
+    height: 2px;
+  }
+
+  .kg-topnav__search-btn {
+    display: flex;
+    width: 34px;
+    height: 34px;
+  }
+
+  .kg-topnav__search-icon {
+    font-size: 1rem;
+  }
+
+  // Collapse the inline search box on phones.
   .kg-topnav__search {
-    min-width: 120px;
+    display: none;
+  }
+
+  // Let the right group shrink with the viewport instead of overflowing.
+  .kg-topnav__right {
+    gap: 0.4rem;
+    margin-left: auto;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  // Smaller, consistent touch targets.
+  .kg-topnav__theme {
+    gap: 2px;
+  }
+
+  // Icon-only theme toggle on phones: hide the sliding switch.
+  .kg-topnav__theme-switch {
+    display: none;
+  }
+
+  .kg-topnav__theme-icon {
+    width: 1.4em;
+    height: 1.4em;
+  }
+
+  .kg-topnav__locale-btn {
+    padding: 7px;
+    border-radius: 999px;
+
+    // Icon-only pill on phones: drop the language label + chevron.
+    .kg-topnav__locale-text,
+    .kg-topnav__locale-icon--chevron {
+      display: none;
+    }
+  }
+
+  .kg-topnav__locale-icon {
+    font-size: 1.05rem;
   }
 
   .kg-topnav__menu-panel {
     right: -8px;
     min-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kg-topnav {
+    padding: 0 8px;
+    gap: 0.4rem;
+  }
+
+  .kg-topnav__brand {
+    padding: 0 4px;
+  }
+
+  .kg-topnav__brand-logo {
+    height: 30px;
+
+    img {
+      height: 100%;
+    }
   }
 }
 </style>

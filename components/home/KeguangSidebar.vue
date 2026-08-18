@@ -8,8 +8,16 @@ const route = useRoute()
 const { user, isLoggedIn } = useAuth()
 const { getLocalePath } = useAppLocale()
 
-const emit = defineEmits<{ (e: 'update:expanded', value: boolean): void }>()
+const props = defineProps<{
+  mobileOpen?: boolean
+}>()
 
+const emit = defineEmits<{
+  (e: 'update:expanded', value: boolean): void
+  (e: 'close-mobile-nav'): void
+}>()
+
+// Desktop hover-expansion state (only meaningful on pointer devices).
 const isExpanded = ref(false)
 
 function onMouseEnter() {
@@ -20,6 +28,11 @@ function onMouseEnter() {
 function onMouseLeave() {
   isExpanded.value = false
   emit('update:expanded', false)
+}
+
+// Tapping a link on mobile dismisses the drawer before navigating.
+function onNavClick() {
+  emit('close-mobile-nav')
 }
 
 function isActive(path: string) {
@@ -36,7 +49,10 @@ function isCourseActive() {
 <template>
   <div
     class="kg-sidebar"
-    :class="{ 'kg-sidebar--expanded': isExpanded }"
+    :class="{
+      'kg-sidebar--expanded': isExpanded,
+      'kg-sidebar--mobile-open': mobileOpen,
+    }"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
   >
@@ -47,7 +63,7 @@ function isCourseActive() {
         </div>
       </div>
 
-      <ul class="kg-sidebar__nav">
+      <ul class="kg-sidebar__nav" @click="onNavClick">
         <li>
           <NuxtLink :to="getLocalePath('/')" :class="{ active: isActive('/') }">
             <img src="/icons/sidebar_homelogo.svg" alt="" class="kg-icon" />
@@ -266,7 +282,42 @@ img.kg-icon {
 
 @media (max-width: 768px) {
   .kg-sidebar {
+    // Mobile drawer: hidden off-canvas by default, slides in when the topbar
+    // hamburger toggles it. Fixed width shows the full navigation (with
+    // labels), unlike the desktop collapsed 72px rail. Sits below the topbar
+    // (which keeps the hamburger clickable) but above the page + scrim.
+    width: 264px;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 1006;
+
+    &--expanded {
+      // Hover expansion is irrelevant on touch; keep the fixed width.
+      width: 264px;
+    }
+
+    &--mobile-open {
+      transform: translateX(0);
+    }
+  }
+
+  // Clear the fixed (64px) topbar so the drawer content starts below it.
+  .kg-sidebar__content {
+    padding-top: 72px;
+  }
+
+  // The topbar already shows the brand; skip the drawer logo on phones.
+  .kg-sidebar__header {
     display: none;
+  }
+
+  // Always show labels in the mobile drawer.
+  .kg-sidebar__content .kg-label {
+    opacity: 1;
+    max-width: 160px;
+    margin-left: 0.75rem;
   }
 }
 </style>

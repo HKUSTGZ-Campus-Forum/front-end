@@ -31,7 +31,8 @@
       "dark": "深色"
     },
     "show": "显示",
-    "hide": "隐藏"
+    "hide": "隐藏",
+    "menu": "菜单"
   },
   "actions": {
     "login": "登录",
