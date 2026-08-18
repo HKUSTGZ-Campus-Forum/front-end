@@ -1679,8 +1679,7 @@
       "empty": "暂时还没有帖子，来发第一篇吧。",
       "sort": {
         "latest": "最新",
-        "hot": "最热",
-        "oldest": "最早"
+        "hot": "最热"
       },
       "errors": {
         "loadFailed": "获取文章列表失败",

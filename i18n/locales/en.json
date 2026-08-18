@@ -1679,8 +1679,7 @@
       "empty": "No posts yet. Be the first to start the conversation.",
       "sort": {
         "latest": "Latest",
-        "hot": "Hot",
-        "oldest": "Oldest"
+        "hot": "Hot"
       },
       "errors": {
         "loadFailed": "Failed to load the post list.",

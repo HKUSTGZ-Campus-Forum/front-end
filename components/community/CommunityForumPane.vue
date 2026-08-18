@@ -26,12 +26,10 @@ const showPagination = computed(() => {
 const sortOptions = computed(() => [
   { value: "latest", label: t("forum.list.sort.latest") },
   { value: "hot", label: t("forum.list.sort.hot") },
-  { value: "oldest", label: t("forum.list.sort.oldest") },
 ]);
 
 const sortMapping = {
   latest: { sort_by: "created_at", sort_order: "desc" },
-  oldest: { sort_by: "created_at", sort_order: "asc" },
   hot: { sort_by: "reaction_count", sort_order: "desc" },
 };
 
