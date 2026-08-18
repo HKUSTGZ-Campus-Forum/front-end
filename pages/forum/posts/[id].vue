@@ -468,11 +468,12 @@ onMounted(() => { fetchPostData(); });
     </template>
 
     <ConfirmModal
-      v-if="showConfirmModal"
+      :show="showConfirmModal"
       :title="t('forum.detail.deleteConfirmTitle')"
       :message="t('forum.detail.deleteConfirmMessage')"
       @confirm="handleDeleteConfirm"
       @cancel="showConfirmModal = false"
+      @close="showConfirmModal = false"
     />
     <SuccessModal
       v-if="showSuccessModal"
