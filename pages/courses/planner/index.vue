@@ -273,11 +273,12 @@ function getSemesterName(sem: SemesterInfo) {
 
   &__semester-table-row {
     display: grid;
-    grid-template-columns: 128px repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: 96px repeat(3, minmax(0, 1fr));
+    gap: 8px;
     align-items: stretch;
     padding: 14px 0;
-    min-width: 640px;
+    // Narrower minimum so phones scroll less while the columns stay readable.
+    min-width: 420px;
 
     & + & {
       border-top: 1px solid var(--border-secondary);
@@ -358,8 +359,28 @@ function getSemesterName(sem: SemesterInfo) {
       width: 100%;
     }
 
+    // Keep the three summary stats on a single row on phones instead of
+    // stacking them vertically (each full-width row wasted a lot of height).
     &__stats {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    &__stat {
+      min-height: 60px;
+      padding: 10px 8px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+
+      span {
+        font-size: 0.72rem;
+        white-space: nowrap;
+      }
+
+      strong {
+        font-size: 1rem;
+      }
     }
   }
 }
