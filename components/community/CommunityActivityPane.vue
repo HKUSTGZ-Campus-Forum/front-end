@@ -306,6 +306,7 @@ onMounted(() => {
   padding: 28px 36px 24px;
   text-decoration: none;
   color: inherit;
+  overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   box-shadow: var(--shadow-large);
 
@@ -340,6 +341,8 @@ onMounted(() => {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .community-activity-pane__post-excerpt {
@@ -347,6 +350,8 @@ onMounted(() => {
   font-size: 1rem;
   line-height: 1.7;
   color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .community-activity-pane__post-footer {
