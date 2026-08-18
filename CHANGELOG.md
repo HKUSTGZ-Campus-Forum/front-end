@@ -15,6 +15,9 @@
 - **发布页深色模式背景残留**：`/forum/postMessage` 页面卡片的硬编码浅色背景/边框/标题/返回链接颜色改为主题 token（`--surface-primary` / `--border-primary` / `--card-shadow` / `--text-primary` / `--interactive-primary`），darkmode 下不再显示白底
 - **帖子详情页右上角按钮渲染错误**：分享/复制/删除小图标按钮被全局 `button { min-height: 44px }` 规则撑高变形，重置 `min-height: 0`；`ForumUiIcon` 手写 SVG 统一替换为 lucide 图标（`lucide:eye` / `lucide:share` / `lucide:check` / `lucide:trash-2`），与全站图标方案一致
 - **顶栏主题切换按钮状态不同步**：SSR 服务端无法读取 localStorage，客户端 persistedstate 插件在 hydration 前把 store 恢复为 `deep-dark`，与 SSR 渲染的 light 初始状态不一致 → Vue 生产环境 hydration class mismatch（只检查不修复），页面背景（FOUC 脚本）已是 dark 但按钮停在 SSR 的 light 态、点击无变化。修复：`themeStore` 初始恒为默认主题、`persist: false`（持久化改由 `setTheme`/`initializeTheme` 手动读写 localStorage，与 FOUC 同一键 `theme`），`theme.client` 插件延迟到 `app:suspense:resolve`（异步布局/页面 hydrate 完成后）再 `initializeTheme()` 恢复，干净触发响应式重渲染
+- **论坛排序移除"最早"**：`/forum` 社区页"论坛"与"动态/活动"两个标签页的帖子排序删除"最早"选项（社区页两个 panel 一致），并清理对应的 i18n key
+- **课程卡片/评论页"返回课程列表"跳转修复**：`/courses` 现为重定向入口（跳至 `/courses/planner`），课程开课信息页与评论页的返回链接改为指向 `/courses/explore`，并携带 `course_type`/`semester`/`stage`/`q` 参数还原探索页筛选状态，不再误跳至规划器
+- **排课长课程名/ID 换行显示**：计划器侧边栏课程卡片与课表中原本 `nowrap + ellipsis` 截断的课程名称、课程 ID、section/教室/教师/时间等文本改为允许换行（`overflow-wrap` + `word-break`），悬浮展开时完整可见
 
 ## [0.2.1] - 2026-08-17
 

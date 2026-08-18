@@ -163,7 +163,8 @@ function creditColorVar(credit: number): string {
     font-weight: 700;
     font-size: 0.8rem;
     color: var(--text-primary);
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   &__credits {
@@ -184,9 +185,9 @@ function creditColorVar(credit: number): string {
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   &__actions {

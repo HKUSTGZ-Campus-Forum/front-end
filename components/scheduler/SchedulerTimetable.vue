@@ -577,25 +577,25 @@ function onCellClick(day: number, period: number) {
     &-code {
       font-weight: 500; /* original: font-medium */
       font-size: 0.875rem; /* original: text-sm */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     &-code-section {
       font-weight: 500;
       font-size: 0.875rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     &-title {
       font-size: 0.75rem; /* original: text-xs */
       margin-bottom: 4px; /* original: mb-1 */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     &-detail {
@@ -604,14 +604,12 @@ function onCellClick(day: number, period: number) {
       gap: 8px; /* original: gap-2 */
       opacity: 0.7; /* original: opacity-70 */
       font-size: 0.75rem; /* original: text-xs */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
 
       > span {
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
     }
 
