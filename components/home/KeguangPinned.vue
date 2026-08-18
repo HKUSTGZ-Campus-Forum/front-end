@@ -248,7 +248,7 @@ const handleMenuLogout = async () => {
   z-index: 0;
 
   &:hover {
-    transform: translateY(4px);
+    transform: translateY(2px);
     border-color: var(--border-primary);
     background: var(--surface-secondary);
     z-index: 50;
