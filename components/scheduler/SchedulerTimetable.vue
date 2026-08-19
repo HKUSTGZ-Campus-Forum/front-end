@@ -5,6 +5,8 @@ import { useI18n } from 'vue-i18n'
 import type { CartCourse } from '~/utils/scheduler'
 import {
   TIME_SLOTS,
+  canInlineSection,
+  formatInlineSectionLabel,
   getCourseTimetableColors,
   getHeight,
   getTopOffset,
@@ -95,9 +97,42 @@ const timetableGridStyle = computed(() => ({
   backgroundPosition: '0 0',
 }))
 
-// Wide columns inline the section label next to the course code (original:
-// colWidth > 150). Narrow columns show it as its own icon row instead.
-const wideSection = computed(() => dayColWidth.value > 150)
+// Wide columns inline the section label next to the course code; otherwise it
+// drops to its own icon row. Whether there is actually room depends on the
+// block's own code + section string widths, not just the column width, so we
+// measure the rendered text against the card's content budget per block.
+let measureCtx: CanvasRenderingContext2D | null = null
+let measureFont = ''
+
+// Resolve the font the block text is drawn with: the family is inherited from
+// the timetable container while the size (0.875rem) and weight (500) come from
+// the scoped `__block-code`/`__block-code-section` rules. Reading the computed
+// family guarantees matching metrics instead of a guessed font stack.
+function resolveMeasureFont(): string {
+  const family = typeof document !== 'undefined'
+    ? getComputedStyle(document.querySelector('.timetable') ?? document.body).fontFamily
+    : 'system-ui, sans-serif'
+  return `500 0.875rem ${family}`
+}
+
+// Canvas-measured text width under the exact font the card uses. Fallbacks
+// keep SSR and the pre-mount first pass deterministic.
+function measureText(text: string): number {
+  if (typeof document === 'undefined') return text.length * 7
+  if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d')
+  if (!measureFont && measureCtx) measureFont = resolveMeasureFont()
+  if (measureCtx) {
+    if (measureFont) measureCtx.font = measureFont
+    return measureCtx.measureText(text).width
+  }
+  return text.length * 7
+}
+
+// Whether a block may show its section inline next to the code on one line.
+function isSectionInline(block: LectureBlock): boolean {
+  const label = formatInlineSectionLabel(block.sectionName, block.sectionId)
+  return canInlineSection(dayColWidth.value, block.courseCode, label, measureText)
+}
 
 // Nine labels aligned to the nine horizontal grid lines (8 rows + bottom edge).
 const timeLabels = computed(() => [
@@ -368,7 +403,7 @@ function onCellClick(day: number, period: number) {
         <div class="timetable__block-top">
           <span class="timetable__block-code" :style="{ color: block.textColor }">{{ block.courseCode }}</span>
           <span
-            v-if="displayOptions.section && wideSection"
+            v-if="displayOptions.section && isSectionInline(block)"
             class="timetable__block-code-section"
             :style="{ color: block.accentColor }"
           >
@@ -386,7 +421,7 @@ function onCellClick(day: number, period: number) {
 
         <!-- Section as its own row on narrow columns (original) -->
         <div
-          v-if="displayOptions.section && !wideSection"
+          v-if="displayOptions.section && !isSectionInline(block)"
           class="timetable__block-detail"
           :style="{ color: block.textColor }"
         >
