@@ -77,8 +77,11 @@ const selectedOffering = computed(() => (
   offerings.value.find((offering) => offering.offering_tag === semesterTag.value) || null
 ));
 const reviewPageTo = computed(() => getLocalePath({
-  path: `/courses/${overviewCourseCode.value}/reviews/${semesterTag.value}`,
-  query: listBackQuery.value,
+  path: `/courses/${overviewCourseCode.value}/reviews`,
+  query: {
+    ...listBackQuery.value,
+    offering: semesterTag.value,
+  },
 }));
 const discussionCreateTo = computed(() => getLocalePath({
   path: "/forum/postMessage",
