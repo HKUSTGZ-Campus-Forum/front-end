@@ -1756,7 +1756,26 @@
       "pageTitle": "Create Post - UniKorn",
       "metaDescription": "Create a new post, add tags, and upload attachments.",
       "title": "Create post",
-      "backToCourse": "Back to course page"
+      "backToCourse": "Back to course page",
+      "backToActivity": "Back to club activities",
+      "tags": {
+        "label": "Tags",
+        "placeholder": "Type a tag, then press Enter or select Add",
+        "add": "Add",
+        "common": "Common tags",
+        "suggestions": "Tag suggestions",
+        "searching": "Searching tags…",
+        "hint": "Up to {count} tags, each no longer than {length} characters",
+        "lockedHint": "Locked tags come from the current posting entry and cannot be removed",
+        "locked": "Locked",
+        "remove": "Remove tag {tag}",
+        "errors": {
+          "tooLong": "Tags cannot be longer than {length} characters",
+          "tooMany": "You can add at most {count} tags",
+          "duplicate": "This tag has already been added",
+          "locked": "This source tag is locked and cannot be removed"
+        }
+      }
     },
     "postCard": {
       "reactions": "Reactions",

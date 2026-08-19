@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from '#app'
+import { AMWC_RESULTS_URL } from '~/utils/externalLinks'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -123,10 +124,10 @@ function isCourseActive() {
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink :to="getLocalePath('/contest')" :class="{ active: isActive('/contest') }">
+          <a :href="AMWC_RESULTS_URL" target="_blank" rel="noopener noreferrer">
             <img src="/icons/sidebar_trophy.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.contest') }}</span>
-          </NuxtLink>
+          </a>
         </li>
       </ul>
     </div>

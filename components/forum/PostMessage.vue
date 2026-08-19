@@ -37,32 +37,85 @@
 
       <!-- 帖子标签 -->
       <div class="form-group">
-        <label for="postTagInput">标签</label>
+        <label for="postTagInput">{{ t("forum.create.tags.label") }}</label>
         <div class="tags-container">
           <div class="tag-input-row">
-            <input
-              id="postTagInput"
-              v-model="tagInput"
-              type="text"
-              placeholder="输入标签后按回车或点击添加"
-              maxlength="50"
-              @keydown="handleTagKeydown"
-              @blur="clearTagError"
-            />
+            <div class="tag-input-shell">
+              <input
+                id="postTagInput"
+                v-model="tagInput"
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="postTagSuggestions"
+                :aria-expanded="showTagSearchPanel"
+                :aria-activedescendant="activeTagSuggestionId"
+                :placeholder="t('forum.create.tags.placeholder')"
+                :maxlength="MAX_TAG_LENGTH"
+                @focus="handleTagInputFocus"
+                @keydown="handleTagKeydown"
+                @blur="handleTagInputBlur"
+              />
+
+              <div
+                v-if="showTagSearchPanel"
+                id="postTagSuggestions"
+                class="tag-suggestions"
+                role="listbox"
+                :aria-label="t('forum.create.tags.suggestions')"
+              >
+                <div v-if="isTagSearchLoading" class="tag-suggestions__status">
+                  {{ t("forum.create.tags.searching") }}
+                </div>
+                <button
+                  v-for="(suggestion, index) in tagSearchSuggestions"
+                  :id="getTagSuggestionId(index)"
+                  :key="suggestion"
+                  type="button"
+                  role="option"
+                  tabindex="-1"
+                  class="tag-suggestions__option"
+                  :class="{ 'tag-suggestions__option--active': index === activeTagSuggestionIndex }"
+                  :aria-selected="index === activeTagSuggestionIndex"
+                  @mouseenter="activeTagSuggestionIndex = index"
+                  @mousedown.prevent
+                  @click="selectTagSuggestion(suggestion)"
+                >
+                  <span># {{ suggestion }}</span>
+                </button>
+              </div>
+            </div>
             <button
               type="button"
               class="tag-add-btn"
               :disabled="tags.length >= MAX_TAG_COUNT"
               @click="addTag"
             >
-              添加
+              {{ t("forum.create.tags.add") }}
             </button>
           </div>
+
+          <div
+            v-if="commonTagRecommendations.length > 0 && !normalizedTagQuery"
+            class="common-tags"
+          >
+            <span class="common-tags__label">{{ t("forum.create.tags.common") }}</span>
+            <button
+              v-for="tag in commonTagRecommendations"
+              :key="tag"
+              type="button"
+              class="common-tags__button"
+              @click="selectTagSuggestion(tag)"
+            >
+              # {{ tag }}
+            </button>
+          </div>
+
           <span class="tag-hint">
-            最多 {{ MAX_TAG_COUNT }} 个标签，每个不超过 {{ MAX_TAG_LENGTH }} 个字符
+            {{ t("forum.create.tags.hint", { count: MAX_TAG_COUNT, length: MAX_TAG_LENGTH }) }}
           </span>
           <span v-if="hasLockedTags" class="tag-hint">
-            带锁的标签来自课程页面，不能删除
+            {{ t("forum.create.tags.lockedHint") }}
           </span>
           <span v-if="errors.tags" class="error-text">{{ errors.tags }}</span>
 
@@ -73,12 +126,14 @@
               :class="['tag', { 'tag--locked': isLockedTag(tag) }]"
             >
               {{ tag }}
-              <span v-if="isLockedTag(tag)" class="tag-lock">锁定</span>
+              <span v-if="isLockedTag(tag)" class="tag-lock">
+                {{ t("forum.create.tags.locked") }}
+              </span>
               <button
                 v-if="!isLockedTag(tag)"
                 type="button"
                 class="tag-remove"
-                :aria-label="`删除标签 ${tag}`"
+                :aria-label="t('forum.create.tags.remove', { tag })"
                 @click="removeTag(index)"
               >
                 ×
@@ -181,8 +236,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "#imports";
 import { useApi } from "~/composables/useApi";
 import { useCustomFileUpload } from "~/composables/useFileUpload";
 import FileUpload from "~/components/FileUpload.vue";
@@ -190,14 +246,26 @@ import IdentitySelector from "~/components/identity/IdentitySelector.vue";
 import type { FileRecord } from "~/types/file";
 import type { UserIdentity } from "~/types/identity";
 import { MAX_POST_FILE_BYTES, isPostImageFile } from "~/utils/postFileKinds";
+import {
+  COMMON_POST_TAGS,
+  MAX_POST_TAG_COUNT,
+  MAX_POST_TAG_LENGTH,
+  dedupePostTags,
+  getPostTagKey,
+  mergePostTagRecommendations,
+  normalizePostTag,
+} from "~/utils/postTags";
 
 const { deleteFile } = useCustomFileUpload();
-const { fetchWithAuth, getApiUrl } = useApi();
+const { fetchPublic, fetchWithAuth, getApiUrl } = useApi();
+const { t } = useI18n();
 const router = useRouter();
-const MAX_TAG_COUNT = 5;
-const MAX_TAG_LENGTH = 50;
+const MAX_TAG_COUNT = MAX_POST_TAG_COUNT;
+const MAX_TAG_LENGTH = MAX_POST_TAG_LENGTH;
 const MAX_POST_IMAGES = 5;
 const MAX_OTHER_ATTACHMENTS = 30;
+const TAG_SEARCH_DEBOUNCE_MS = 280;
+const MAX_TAG_SEARCH_SUGGESTIONS = 8;
 
 const props = withDefaults(defineProps<{
   initialTags?: string[]
@@ -228,29 +296,48 @@ const errors = ref({
 const errorMessage = ref("");
 const successMessage = ref("");
 const isLoading = ref(false);
-const normalizeTag = (tag: string) => tag.trim().replace(/\s+/g, " ");
-const normalizeTagKey = (tag: string) => normalizeTag(tag).toLocaleLowerCase();
-const dedupeTags = (rawTags: string[]) => {
-  const out: string[] = [];
-  const seen = new Set<string>();
-
-  for (const rawTag of rawTags) {
-    const normalized = normalizeTag(rawTag);
-    if (!normalized) continue;
-    const key = normalizeTagKey(normalized);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(normalized);
-  }
-
-  return out;
-};
-const defaultTags = computed(() => dedupeTags([...(props.lockedTags || []), ...(props.initialTags || [])]));
+const defaultTags = computed(() => dedupePostTags([...(props.lockedTags || []), ...(props.initialTags || [])]));
 const tags = ref<string[]>([...defaultTags.value]);
 const normalizedLockedTags = computed(() => new Set(
-  (props.lockedTags || []).map((tag) => normalizeTagKey(tag))
+  (props.lockedTags || []).map((tag) => getPostTagKey(tag))
 ));
 const hasLockedTags = computed(() => normalizedLockedTags.value.size > 0);
+const isTagInputFocused = ref(false);
+const isTagSearchLoading = ref(false);
+const remoteTagSuggestions = ref<string[]>([]);
+const activeTagSuggestionIndex = ref(-1);
+let tagSearchTimer: ReturnType<typeof setTimeout> | null = null;
+let tagSearchRequestSequence = 0;
+let useGlobalTagSearchFallback = false;
+const getTagSuggestionId = (index: number) => `postTagSuggestion-${index}`;
+
+const commonTagRecommendations = computed(() => mergePostTagRecommendations({
+  commonTags: COMMON_POST_TAGS,
+  selectedTags: tags.value,
+  lockedTags: props.lockedTags,
+  maxTagCount: MAX_TAG_COUNT,
+}));
+
+const tagSearchSuggestions = computed(() => mergePostTagRecommendations({
+  commonTags: [],
+  remoteTags: remoteTagSuggestions.value,
+  selectedTags: tags.value,
+  lockedTags: props.lockedTags,
+  maxTagCount: MAX_TAG_COUNT,
+  maxSuggestions: MAX_TAG_SEARCH_SUGGESTIONS,
+}));
+
+const normalizedTagQuery = computed(() => normalizePostTag(tagInput.value));
+const showTagSearchPanel = computed(() => (
+  isTagInputFocused.value
+  && normalizedTagQuery.value.length >= 1
+  && (isTagSearchLoading.value || tagSearchSuggestions.value.length > 0)
+));
+const activeTagSuggestionId = computed(() => (
+  showTagSearchPanel.value && activeTagSuggestionIndex.value >= 0
+    ? getTagSuggestionId(activeTagSuggestionIndex.value)
+    : undefined
+));
 
 
 // 验证标题
@@ -284,57 +371,211 @@ const clearTagError = () => {
   }
 };
 
+const handleTagInputFocus = () => {
+  isTagInputFocused.value = true;
+};
+
+const handleTagInputBlur = () => {
+  isTagInputFocused.value = false;
+  activeTagSuggestionIndex.value = -1;
+  clearTagError();
+};
+
 const handleTagKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Enter" || event.key === ",") {
+  if (event.isComposing || event.key === "Process" || event.keyCode === 229) {
+    return;
+  }
+
+  if (event.key === "ArrowDown" && showTagSearchPanel.value && tagSearchSuggestions.value.length > 0) {
+    event.preventDefault();
+    activeTagSuggestionIndex.value = (
+      activeTagSuggestionIndex.value + 1
+    ) % tagSearchSuggestions.value.length;
+    return;
+  }
+
+  if (event.key === "ArrowUp" && showTagSearchPanel.value && tagSearchSuggestions.value.length > 0) {
+    event.preventDefault();
+    activeTagSuggestionIndex.value = activeTagSuggestionIndex.value <= 0
+      ? tagSearchSuggestions.value.length - 1
+      : activeTagSuggestionIndex.value - 1;
+    return;
+  }
+
+  if (event.key === "Escape" && showTagSearchPanel.value) {
+    event.preventDefault();
+    activeTagSuggestionIndex.value = -1;
+    (event.currentTarget as HTMLInputElement | null)?.blur();
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    const highlightedSuggestion = tagSearchSuggestions.value[activeTagSuggestionIndex.value];
+    if (showTagSearchPanel.value && highlightedSuggestion) {
+      selectTagSuggestion(highlightedSuggestion);
+      return;
+    }
+    addTag();
+    return;
+  }
+
+  if (event.key === ",") {
     event.preventDefault();
     addTag();
   }
 };
 
-const isLockedTag = (tag: string) => normalizedLockedTags.value.has(normalizeTagKey(tag));
+const isLockedTag = (tag: string) => normalizedLockedTags.value.has(getPostTagKey(tag));
 
-const addTag = () => {
-  const tag = normalizeTag(tagInput.value);
-
+const tryAddTag = (rawTag: string) => {
+  const tag = normalizePostTag(rawTag);
   if (!tag) {
-    tagInput.value = "";
     clearTagError();
     return false;
   }
 
   if (tag.length > MAX_TAG_LENGTH) {
-    errors.value.tags = `标签长度不能超过 ${MAX_TAG_LENGTH} 个字符`;
+    errors.value.tags = t("forum.create.tags.errors.tooLong", { length: MAX_TAG_LENGTH });
     return false;
   }
 
   if (tags.value.length >= MAX_TAG_COUNT) {
-    errors.value.tags = `最多只能添加 ${MAX_TAG_COUNT} 个标签`;
+    errors.value.tags = t("forum.create.tags.errors.tooMany", { count: MAX_TAG_COUNT });
     return false;
   }
 
   const duplicate = tags.value.some(
-    (existingTag) => existingTag.toLocaleLowerCase() === tag.toLocaleLowerCase()
+    (existingTag) => getPostTagKey(existingTag) === getPostTagKey(tag)
   );
   if (duplicate) {
-    errors.value.tags = "该标签已添加";
+    errors.value.tags = t("forum.create.tags.errors.duplicate");
     return false;
   }
 
   tags.value.push(tag);
-  tagInput.value = "";
   clearTagError();
   return true;
+};
+
+const addTag = () => {
+  const added = tryAddTag(tagInput.value);
+  if (added || !normalizePostTag(tagInput.value)) {
+    tagInput.value = "";
+  }
+  return added;
+};
+
+const selectTagSuggestion = (tag: string) => {
+  if (!tryAddTag(tag)) return;
+
+  tagInput.value = "";
+  remoteTagSuggestions.value = [];
+  activeTagSuggestionIndex.value = -1;
 };
 
 // 删除标签
 const removeTag = (index: number) => {
   if (isLockedTag(tags.value[index])) {
-    errors.value.tags = "来源标签已锁定，不能删除";
+    errors.value.tags = t("forum.create.tags.errors.locked");
     return;
   }
   tags.value.splice(index, 1);
   clearTagError();
 };
+
+const applyRemoteTagSuggestions = (rawSuggestions: unknown) => {
+  const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
+  remoteTagSuggestions.value = suggestions
+    .map((suggestion: unknown) => {
+      if (!suggestion || typeof suggestion !== "object" || !("name" in suggestion)) return "";
+      return typeof suggestion.name === "string" ? suggestion.name : "";
+    })
+    .filter((tag: string) => Boolean(tag));
+  activeTagSuggestionIndex.value = remoteTagSuggestions.value.length > 0 ? 0 : -1;
+};
+
+const fetchTagSuggestions = async (query: string, requestSequence: number) => {
+  try {
+    if (!useGlobalTagSearchFallback) {
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          limit: MAX_TAG_SEARCH_SUGGESTIONS.toString(),
+        });
+        const tagResponse = await fetchPublic(
+          getApiUrl(`/api/search/tags?${params}`)
+        );
+        if (requestSequence !== tagSearchRequestSequence) return;
+
+        if (tagResponse.ok) {
+          const tagData = await tagResponse.json();
+          if (requestSequence !== tagSearchRequestSequence) return;
+          applyRemoteTagSuggestions(tagData?.results);
+          return;
+        }
+      } catch {
+        // Fall through to the global-search compatibility path below.
+      }
+
+      if (requestSequence !== tagSearchRequestSequence) return;
+      // The dedicated endpoint currently fails for some system tags such as
+      // `club`. Remember the failure for this page session to avoid repeatedly
+      // issuing a known-bad request while keeping tag entry fully usable.
+      useGlobalTagSearchFallback = true;
+    }
+
+    // Global search requires two characters and returns all result groups; use
+    // it only as a compatibility fallback and retain its tag group alone.
+    if (query.length < 2) return;
+    const globalResponse = await fetchPublic(
+      getApiUrl(`/api/search/global?q=${encodeURIComponent(query)}`)
+    );
+    if (!globalResponse.ok) return;
+
+    const globalData = await globalResponse.json();
+    if (requestSequence !== tagSearchRequestSequence) return;
+    applyRemoteTagSuggestions(globalData?.results?.tags);
+  } catch {
+    if (requestSequence === tagSearchRequestSequence) {
+      remoteTagSuggestions.value = [];
+      activeTagSuggestionIndex.value = -1;
+    }
+  } finally {
+    if (requestSequence === tagSearchRequestSequence) {
+      isTagSearchLoading.value = false;
+    }
+  }
+};
+
+watch(tagInput, (rawQuery) => {
+  if (tagSearchTimer) {
+    clearTimeout(tagSearchTimer);
+    tagSearchTimer = null;
+  }
+
+  tagSearchRequestSequence += 1;
+  const requestSequence = tagSearchRequestSequence;
+  const query = normalizePostTag(rawQuery);
+  remoteTagSuggestions.value = [];
+  activeTagSuggestionIndex.value = -1;
+
+  if (!query || (useGlobalTagSearchFallback && query.length < 2)) {
+    isTagSearchLoading.value = false;
+    return;
+  }
+
+  isTagSearchLoading.value = true;
+  tagSearchTimer = setTimeout(() => {
+    tagSearchTimer = null;
+    void fetchTagSuggestions(query, requestSequence);
+  }, TAG_SEARCH_DEBOUNCE_MS);
+});
+
+onBeforeUnmount(() => {
+  tagSearchRequestSequence += 1;
+  if (tagSearchTimer) clearTimeout(tagSearchTimer);
+});
 
 // 图片上传相关
 const handleImageUploadSuccess = (file: FileRecord) => {
@@ -720,6 +961,86 @@ const emit = defineEmits(["post-success"]);
     @media (max-width: 480px) {
       flex-direction: column;
       gap: 0.625rem;
+    }
+  }
+
+  .tag-input-shell {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+
+    @media (max-width: 480px) {
+      width: 100%;
+    }
+  }
+
+  .tag-suggestions {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    left: 0;
+    max-height: 15rem;
+    overflow-y: auto;
+    padding: 0.35rem;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    box-shadow: var(--shadow-large);
+  }
+
+  .tag-suggestions__status {
+    padding: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .tag-suggestions__option {
+    display: flex;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &--active {
+      background: var(--interactive-secondary);
+      color: var(--text-primary);
+    }
+  }
+
+  .common-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .common-tags__label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .common-tags__button {
+    padding: 0.35rem 0.7rem;
+    background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
+    color: var(--text-primary);
+    border: 1px solid color-mix(in srgb, var(--interactive-primary) 28%, transparent);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      background: color-mix(in srgb, var(--interactive-primary) 18%, transparent);
+      border-color: var(--border-focus);
     }
   }
 

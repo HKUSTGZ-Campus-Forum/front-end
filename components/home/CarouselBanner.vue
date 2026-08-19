@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { AMWC_RESULTS_URL } from "~/utils/externalLinks";
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -78,7 +79,7 @@ const slides = computed<BannerSlide[]>(() => [
   {
     image: "/image/banner/AMWC-1.jpg",
     alt: t("homePage.carousel.slides.contestAlt"),
-    href: localePath("/contest"),
+    href: AMWC_RESULTS_URL,
   },
   {
     image: "/image/banner/welcome_cn_2.jpg",
