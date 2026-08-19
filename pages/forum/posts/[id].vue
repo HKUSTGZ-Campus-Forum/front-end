@@ -303,7 +303,7 @@ onMounted(() => { fetchPostData(); });
             <div class="kg-article__actions">
               <span class="kg-meta-item">{{ formatDate(postData.publishDate) }}</span>
               <span class="kg-meta-item">
-                <ForumUiIcon name="eye" class="kg-meta-icon" />
+                <Icon name="lucide:eye" class="kg-meta-icon" aria-hidden="true" />
                 {{ postData.views_count }}
               </span>
               <button
@@ -311,11 +311,11 @@ onMounted(() => { fetchPostData(); });
                 @click="sharePost"
                 :title="shareSuccess ? t('forum.detail.copied') : t('forum.detail.share')"
               >
-                <ForumUiIcon :name="shareSuccess ? 'check' : 'share'" class="kg-meta-icon" />
+                <Icon :name="shareSuccess ? 'lucide:check' : 'lucide:share'" class="kg-meta-icon" aria-hidden="true" />
                 <span v-if="shareSuccess">{{ t("forum.detail.copied") }}</span>
               </button>
               <button v-if="canDeletePost" class="kg-icon-btn kg-icon-btn--danger" @click="showDeleteConfirm">
-                <ForumUiIcon name="delete" class="kg-meta-icon" />
+                <Icon name="lucide:trash-2" class="kg-meta-icon" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -468,11 +468,12 @@ onMounted(() => { fetchPostData(); });
     </template>
 
     <ConfirmModal
-      v-if="showConfirmModal"
+      :show="showConfirmModal"
       :title="t('forum.detail.deleteConfirmTitle')"
       :message="t('forum.detail.deleteConfirmMessage')"
       @confirm="handleDeleteConfirm"
       @cancel="showConfirmModal = false"
+      @close="showConfirmModal = false"
     />
     <SuccessModal
       v-if="showSuccessModal"
@@ -592,6 +593,9 @@ onMounted(() => { fetchPostData(); });
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
+  /* Reset the global touch-friendly button rule (min-height: 44px,
+     padding: 0.75rem 1rem) that would inflate the small icon button. */
+  min-height: 0;
   border: 1.5px solid var(--border-primary);
   border-radius: 10px;
   background: transparent;

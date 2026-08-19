@@ -26,12 +26,10 @@ const showPagination = computed(() => {
 const sortOptions = computed(() => [
   { value: "latest", label: t("forum.list.sort.latest") },
   { value: "hot", label: t("forum.list.sort.hot") },
-  { value: "oldest", label: t("forum.list.sort.oldest") },
 ]);
 
 const sortMapping = {
   latest: { sort_by: "created_at", sort_order: "desc" },
-  oldest: { sort_by: "created_at", sort_order: "asc" },
   hot: { sort_by: "reaction_count", sort_order: "desc" },
 };
 
@@ -332,6 +330,7 @@ onMounted(() => {
   border-radius: 16px;
   padding: 20px 24px 16px;
   text-decoration: none;
+  overflow: hidden;
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
   box-shadow: var(--card-shadow);
 
@@ -348,6 +347,8 @@ onMounted(() => {
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .community-forum-pane__post-excerpt {
@@ -355,6 +356,8 @@ onMounted(() => {
   color: var(--text-secondary);
   font-size: 0.875rem;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .community-forum-pane__post-tags {

@@ -1020,8 +1020,28 @@ function toggleBan(day: number, period: number) {
 
 @media (max-width: 520px) {
   .dashboard {
+    // Keep the three summary cards on a single row even on small phones,
+    // and keep their labels from wrapping/overflowing in the narrow columns.
     &__summary {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    &__summary-item {
+      padding: 8px 6px;
+      text-align: center;
+
+      span {
+        font-size: 0.68rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+
+      strong {
+        font-size: 0.98rem;
+      }
     }
   }
 }

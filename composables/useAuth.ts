@@ -58,7 +58,24 @@ async function authFetch(url: string, options: RequestInit = {}) {
   return fetch(url, {
     ...options,
     headers,
+    credentials: "include",
   });
+}
+
+function applyAuthPayload(data: {
+  access_token: string;
+  refresh_token: string;
+  user: User;
+}) {
+  accessToken.value = data.access_token;
+  refreshToken.value = data.refresh_token;
+  user.value = data.user;
+
+  safeLocalStorage("set", "auth_token", data.access_token);
+  safeLocalStorage("set", "refresh_token", data.refresh_token);
+  if (data.user) {
+    safeLocalStorage("set", "user_info", JSON.stringify(data.user));
+  }
 }
 
 function safeLocalStorage(
@@ -144,11 +161,22 @@ async function logout() {
   error.value = null;
 
   try {
+    let oidcLogoutUrl: string | null = null;
     if (accessToken.value) {
       console.log("📤 Sending logout request to server...");
-      await authFetch(resolveAuthApiUrl("/api/auth/logout"), {
+      const response = await authFetch(resolveAuthApiUrl("/api/auth/logout"), {
         method: "POST",
-      }).catch(console.error);
+      }).catch((logoutError) => {
+        console.error(logoutError);
+        return null;
+      });
+      if (response?.ok) {
+        const payload = await response.json().catch(() => ({}));
+        oidcLogoutUrl =
+          typeof payload.oidc_logout_url === "string"
+            ? payload.oidc_logout_url
+            : null;
+      }
     }
 
     console.log("🧹 Clearing auth state and localStorage...");
@@ -161,6 +189,10 @@ async function logout() {
     safeLocalStorage("remove", "user_info");
 
     console.log("✅ Logout complete, redirecting to home");
+    if (oidcLogoutUrl && typeof window !== "undefined") {
+      window.location.assign(oidcLogoutUrl);
+      return true;
+    }
     const isEnglishRoute =
       typeof window !== "undefined" && window.location.pathname.startsWith("/en");
     navigateTo(isEnglishRoute ? "/en" : "/");
@@ -349,6 +381,7 @@ async function login(username: string, password: string) {
     const response = await fetch(resolveAuthApiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ username, password }),
     });
 
@@ -376,16 +409,8 @@ async function login(username: string, password: string) {
       dataKeys: Object.keys(data),
     });
 
-    accessToken.value = data.access_token;
-    refreshToken.value = data.refresh_token;
-    user.value = data.user;
-
     console.log("💾 Storing tokens in localStorage...");
-    safeLocalStorage("set", "auth_token", data.access_token);
-    safeLocalStorage("set", "refresh_token", data.refresh_token);
-    if (data.user) {
-      safeLocalStorage("set", "user_info", JSON.stringify(data.user));
-    }
+    applyAuthPayload(data);
 
     console.log("✅ Tokens stored. Current state:", {
       accessTokenSet: !!accessToken.value,
@@ -398,6 +423,56 @@ async function login(username: string, password: string) {
     console.error("Login error:", err);
     error.value =
       err instanceof Error ? err.message : "Login failed, please try again";
+    throw err;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function getOidcStatus(): Promise<{ enabled: boolean; provider: string }> {
+  const response = await fetch(resolveAuthApiUrl("/api/auth/oidc/status"), {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to load SSO status (${response.status})`);
+  }
+  return response.json();
+}
+
+function getOidcLoginUrl(returnTo: string, locale: string): string {
+  const endpoint = resolveAuthApiUrl("/api/auth/oidc/login");
+  const query = new URLSearchParams({
+    return_to: returnTo,
+    locale: locale === "en" ? "en" : "zh",
+  });
+  return `${endpoint}?${query.toString()}`;
+}
+
+async function exchangeOidcCode(code: string) {
+  loading.value = true;
+  error.value = null;
+  try {
+    const response = await fetch(resolveAuthApiUrl("/api/auth/oidc/exchange"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ code }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.code || "invalid_login_ticket");
+    }
+    applyAuthPayload(payload);
+    return payload as {
+      user: User;
+      return_to: string;
+    };
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "SSO login failed";
     throw err;
   } finally {
     loading.value = false;
@@ -664,6 +739,9 @@ export function useAuth() {
     isLoggedIn,
     authInitialized,
     login,
+    getOidcStatus,
+    getOidcLoginUrl,
+    exchangeOidcCode,
     logout,
     register,
     verifyEmail,

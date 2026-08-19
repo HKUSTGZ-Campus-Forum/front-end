@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSearch } from '~/composables/useSearch'
 import { useDebounceFn } from '@vueuse/core'
@@ -41,6 +41,7 @@ const isDropdownOpen = ref(false)
 const searchInput = ref<HTMLInputElement>()
 const dropdownRef = ref<HTMLElement>()
 const inputValue = ref(props.modelValue)
+const previewPosts = computed(() => searchResults.value.posts.slice(0, 2))
 
 // Debounced search function (300ms delay)
 const debouncedSearch = useDebounceFn(async (query: string) => {
@@ -253,7 +254,7 @@ const stripHtml = (html: string) => {
           </div>
           <div class="results-list">
             <div
-              v-for="post in searchResults.posts"
+              v-for="post in previewPosts"
               :key="post.id"
               class="result-item post-item"
               @click="selectItem('post', post)"

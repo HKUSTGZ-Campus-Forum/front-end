@@ -31,7 +31,8 @@
       "dark": "Dark"
     },
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "menu": "Menu"
   },
   "actions": {
     "login": "Login",
@@ -1034,8 +1035,27 @@
       "forgotPassword": "Forgot password?",
       "submit": "Login",
       "submitting": "Logging in...",
+      "localAccountDivider": "Or use a UniKorn account",
       "noAccount": "Don’t have an account yet?",
       "registerNow": "Create one",
+      "sso": {
+        "submit": "Sign in with school account",
+        "checking": "Checking school SSO",
+        "redirecting": "Opening the school sign-in page",
+        "unavailable": "School SSO is not ready",
+        "hint": "Use HKUST(GZ) single sign-on. Your first sign-in securely links or creates a UniKorn account.",
+        "unavailableHint": "The school is configuring UniKorn’s SSO access. You can still sign in with a UniKorn password below.",
+        "errors": {
+          "access_denied": "You cancelled school authorization and were not signed in to UniKorn.",
+          "authorization_failed": "School SSO could not complete. Please try again later.",
+          "invalid_response": "The identity returned by the school could not be verified. Please contact an administrator.",
+          "institutional_email_required": "Your school account did not provide an eligible HKUST(GZ) email. Please contact school IT.",
+          "account_conflict": "This school email belongs to an unverified UniKorn account. Verify that account or contact an administrator.",
+          "account_unavailable": "The linked UniKorn account is currently unavailable. Please contact an administrator.",
+          "not_configured": "School SSO setup is not complete. Please use a UniKorn password for now.",
+          "invalid_login_ticket": "This SSO sign-in has expired or was already used. Please sign in again."
+        }
+      },
       "errors": {
         "required": "Please enter both username and password.",
         "invalid": "Incorrect username or password. Please try again."
@@ -1236,9 +1256,10 @@
     "overview": "Course overview",
     "overviewEmpty": "No course description yet.",
     "reviewsEyebrow": "Course reviews",
-    "reviewsTitle": "See reviews for this offering",
+    "reviewsTitle": "See all reviews for this course",
     "reviewsEntry": "Open course reviews",
-    "reviewsCopy": "Ratings and reviews for {offering} are here.",
+    "reviewsCopy": "Browse ratings and reviews from every term, with the term shown on each review.",
+    "reviewMetaDescription": "Read student reviews, ratings, and learning experiences for {course} across all terms.",
     "discussionEyebrow": "Course discussion",
     "discussionTitle": "Recent discussion",
     "discussionEmpty": "No discussion yet. Be the first to post.",
@@ -1303,8 +1324,10 @@
       "openInMap": "View in graph"
     },
     "offeringMissing": "This offering does not exist for the selected course.",
-    "pageIntro": "This page shows reviews for {courseCode} in {offering}.",
+    "allOfferings": "All terms",
+    "pageIntro": "This page collects reviews for {courseCode} across all terms, with the term shown on each review. New reviews will be published for {offering}.",
     "writeReview": "Write a review",
+    "writeReviewFor": "Review {offering}",
     "reviewListTitle": "Course reviews ({count})",
     "publishReviewFor": "Review {offering}",
     "fixedTags": "Fixed tags",
@@ -1318,7 +1341,9 @@
     "uploadDragText": "Click or drag images here to upload",
     "loginHint": "Please log in before posting a review.",
     "reviewLoading": "Loading reviews...",
-    "reviewEmpty": "There are no course reviews for this offering yet. Be the first to share your experience.",
+    "reviewEmpty": "There are no reviews for this course yet. Be the first to share your experience.",
+    "loadMoreReviews": "Load more reviews",
+    "ratingOutOfFive": "Rated {rating} out of 5",
     "reviewDetail": "View details",
     "reviewPublishSuccess": "Your review has been published.",
     "reviewPublishFailed": "Failed to publish review",
@@ -1679,8 +1704,7 @@
       "empty": "No posts yet. Be the first to start the conversation.",
       "sort": {
         "latest": "Latest",
-        "hot": "Hot",
-        "oldest": "Oldest"
+        "hot": "Hot"
       },
       "errors": {
         "loadFailed": "Failed to load the post list.",

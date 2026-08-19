@@ -10,7 +10,31 @@
 
 ## [Unreleased]
 
-（暂无未发布内容）
+### Added
+
+- **HKUST(GZ) 学校 SSO 登录入口**：登录页新增双语 OIDC 登录、配置中/跳转中/失败状态和移动端适配；回调使用一次性登录票据承接，不在 URL 中暴露 UniKorn JWT。
+
+### Changed
+
+- **统一登出**：学校 SSO 会话退出本地账号后继续跳转学校统一登出端点；普通 UniKorn 账号保持原有退出流程。
+
+### Fixed
+
+- **课程评价跨学期汇总**：课程评价入口改为课程级页面，默认展示所有历史学期的评价并在每条评价上标注所属学期；写评价仍绑定当前开课学期，旧的按学期评价 URL 自动跳转到新入口，长列表支持分页加载
+- **全局搜索帖子预览过长**：顶栏搜索下拉中的帖子结果最多展示 2 条，避免帖子卡片把用户与课程结果推到首屏之外；完整帖子结果继续在搜索页分页查看
+- **发布页深色模式背景残留**：`/forum/postMessage` 页面卡片的硬编码浅色背景/边框/标题/返回链接颜色改为主题 token（`--surface-primary` / `--border-primary` / `--card-shadow` / `--text-primary` / `--interactive-primary`），darkmode 下不再显示白底
+- **帖子详情页右上角按钮渲染错误**：分享/复制/删除小图标按钮被全局 `button { min-height: 44px }` 规则撑高变形，重置 `min-height: 0`；`ForumUiIcon` 手写 SVG 统一替换为 lucide 图标（`lucide:eye` / `lucide:share` / `lucide:check` / `lucide:trash-2`），与全站图标方案一致
+- **顶栏主题切换按钮状态不同步**：SSR 服务端无法读取 localStorage，客户端 persistedstate 插件在 hydration 前把 store 恢复为 `deep-dark`，与 SSR 渲染的 light 初始状态不一致 → Vue 生产环境 hydration class mismatch（只检查不修复），页面背景（FOUC 脚本）已是 dark 但按钮停在 SSR 的 light 态、点击无变化。修复：`themeStore` 初始恒为默认主题、`persist: false`（持久化改由 `setTheme`/`initializeTheme` 手动读写 localStorage，与 FOUC 同一键 `theme`），`theme.client` 插件延迟到 `app:suspense:resolve`（异步布局/页面 hydrate 完成后）再 `initializeTheme()` 恢复，干净触发响应式重渲染
+- **论坛排序移除"最早"**：`/forum` 社区页"论坛"与"动态/活动"两个标签页的帖子排序删除"最早"选项（社区页两个 panel 一致），并清理对应的 i18n key
+- **课程卡片/评论页"返回课程列表"跳转修复**：`/courses` 现为重定向入口（跳至 `/courses/planner`），课程开课信息页与评论页的返回链接改为指向 `/courses/explore`，并携带 `course_type`/`semester`/`stage`/`q` 参数还原探索页筛选状态，不再误跳至规划器
+- **排课长课程名/ID 换行显示**：计划器侧边栏课程卡片与课表中原本 `nowrap + ellipsis` 截断的课程名称、课程 ID、section/教室/教师/时间等文本改为允许换行（`overflow-wrap` + `word-break`），悬浮展开时完整可见
+- **移动端顶栏与侧边栏布局修复**：手机宽度下顶栏不再被内容挤出，侧边栏由原 `display:none` 改为可打开的滑入式抽屉（顶栏新增汉堡按钮唤起，遮罩点击关闭、点击导航项自动收起）；顶栏搜索框在手机端收起为搜索图标按钮（点击跳搜索页）、语言按钮收起为 globe 图标、主题切换仅保留图标，所有移动端图标尺寸统一缩小；`topbar_logo` 为 4:1 超宽 SVG 会撑爆顶栏，移动端限定其显示宽度防止右侧控件溢出
+- **`/forum` 帖子列表横向溢出修复**：帖子卡片的长标题/摘要仅设 `white-space` 换行而未做断词，长文本（URL/英文长词）被撑成 580~607px 宽，把 `body` 滚动宽度顶到 632px，页面出现横向滚动后顶栏右侧图标（主题/语言/头像）被挤出屏幕。给 `CommunityForumPane` 与 `CommunityActivityPane` 的标题/摘要加 `overflow-wrap: anywhere` + `word-break: break-word` 消除溢出，并给卡片加 `overflow: hidden` 兜底
+- **排课统计卡移动端压缩**：计划器顶部"已选课程 / 方案数量 / 总学分"三个统计卡在 `<520px` 由单列改回一行三列，手机上不再占三行
+- **通用页脚移动端优化**：微信二维码在 `≤1100px`（平板与手机）隐藏（仅桌面宽屏保留）；手机端脚注由纵向单列堆叠改为紧凑布局，品牌信息与链接区并排/流式换行排列，整体高度从约 540px 降至约 290px；修复合区段在平板宽度下对齐不一致的问题（联系区在整行宽度下标题/邮箱/badges 由右左分错改为统一左对齐）；小屏内容区左右 padding 加大以对齐页面主体内容
+- **排课工作台移动端优化**（`/courses/planner/<semester>`）：课表 day 列在小屏最小宽从 52px 提至 90px、改为容器内横向滚动拖动查看（大屏仍填满不滚动），课程信息不再被压进极窄列；顶部"已选课程 / 可行方案 / 总学分"统计卡在窄屏保持一行三列并细化窄列（标签不换行、居中、控边距）
+- **排课选择页移动端优化**（`/courses/planner`）：顶部"可用学期 / 可用班别 / 最新学期"三个统计卡在手机端由单列堆叠改回一行三列，高度从约 228px 降至约 65px；学期表格横向滚动距离缩短（行 min-width 640→520px、年份列 128→96px），仍可在小屏拖动查看
+- **帖子详情页删除按钮无效修复**：`/forum/posts/[id]` 的确认弹窗错误地用 `v-if` 控制组件渲染而未绑定 `:show` prop，而 `ConfirmModal` 内部以 `show` 控制弹窗遮罩显示（默认 `false`），导致点击删除后确认框从不弹出、看起来"删除没有效"。改为与评论删除一致的 `:show` + `@close` 用法，确认弹窗恢复正常
 
 ## [0.2.1] - 2026-08-17
 

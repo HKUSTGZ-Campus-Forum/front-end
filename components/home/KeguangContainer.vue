@@ -1,14 +1,40 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// Desktop: the sidebar auto-expands on hover (72px ⇄ 200px). Mobile: the
+// sidebar becomes a slide-in drawer toggled by the topbar hamburger.
 const sidebarExpanded = ref(false)
+const mobileNavOpen = ref(false)
+
+function openMobileNav() {
+  mobileNavOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+function closeMobileNav() {
+  mobileNavOpen.value = false
+  document.body.style.overflow = ''
+}
+
+function toggleMobileNav() {
+  if (mobileNavOpen.value) closeMobileNav()
+  else openMobileNav()
+}
 </script>
 
 <template>
   <div class="kg-layout">
-    <HomeKeguangSidebar @update:expanded="sidebarExpanded = $event" />
+    <HomeKeguangSidebar
+      @update:expanded="sidebarExpanded = $event"
+      :mobile-open="mobileNavOpen"
+      @close-mobile-nav="closeMobileNav"
+    />
 
-    <HomeKeguangPinned :sidebar-expanded="sidebarExpanded" />
+    <HomeKeguangPinned
+      :sidebar-expanded="sidebarExpanded"
+      :mobile-nav-open="mobileNavOpen"
+      @toggle-mobile-nav="toggleMobileNav"
+    />
 
     <div
       class="kg-layout__main"
@@ -19,6 +45,15 @@ const sidebarExpanded = ref(false)
       </div>
       <CommonFooter />
     </div>
+
+    <!-- Mobile drawer scrim: tap to dismiss the sidebar -->
+    <ClientOnly>
+      <div
+        v-if="mobileNavOpen"
+        class="kg-layout__scrim"
+        @click="closeMobileNav"
+      ></div>
+    </ClientOnly>
 
     <ClientOnly>
       <PwaInstallGuide />
@@ -51,6 +86,14 @@ const sidebarExpanded = ref(false)
   flex: 1;
 }
 
+.kg-layout__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1005;
+  background: var(--modal-backdrop);
+  touch-action: none;
+}
+
 @media (max-width: 768px) {
   .kg-layout__main {
     margin-left: 0;
@@ -60,6 +103,10 @@ const sidebarExpanded = ref(false)
     &--expanded {
       margin-left: 0;
     }
+  }
+
+  .kg-layout__scrim {
+    z-index: 1005;
   }
 }
 </style>

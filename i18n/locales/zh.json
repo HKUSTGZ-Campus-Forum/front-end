@@ -31,7 +31,8 @@
       "dark": "深色"
     },
     "show": "显示",
-    "hide": "隐藏"
+    "hide": "隐藏",
+    "menu": "菜单"
   },
   "actions": {
     "login": "登录",
@@ -1034,8 +1035,27 @@
       "forgotPassword": "忘记密码?",
       "submit": "登录",
       "submitting": "登录中...",
+      "localAccountDivider": "或使用 UniKorn 账号",
       "noAccount": "还没有账号？",
       "registerNow": "立即注册",
+      "sso": {
+        "submit": "使用学校账号登录",
+        "checking": "正在检查学校 SSO",
+        "redirecting": "正在前往学校登录页",
+        "unavailable": "学校 SSO 尚未开通",
+        "hint": "使用 HKUST(GZ) 统一身份认证，首次登录会安全关联或创建 UniKorn 账号。",
+        "unavailableHint": "学校正在配置 UniKorn 的 SSO 权限，当前仍可使用下方账号密码登录。",
+        "errors": {
+          "access_denied": "您取消了学校账号授权，尚未登录 UniKorn。",
+          "authorization_failed": "学校 SSO 登录未完成，请稍后重试。",
+          "invalid_response": "学校返回的身份信息无法验证，请联系管理员。",
+          "institutional_email_required": "学校账号没有返回可用的 HKUST(GZ) 邮箱，请联系学校 IT。",
+          "account_conflict": "该校内邮箱已用于一个尚未验证的 UniKorn 账号，请先完成邮箱验证或联系管理员。",
+          "account_unavailable": "关联的 UniKorn 账号当前不可用，请联系管理员。",
+          "not_configured": "学校 SSO 尚未完成配置，请暂时使用账号密码登录。",
+          "invalid_login_ticket": "本次 SSO 登录已过期或已使用，请重新登录。"
+        }
+      },
       "errors": {
         "required": "请输入用户名和密码",
         "invalid": "用户名或密码错误，请重试"
@@ -1236,9 +1256,10 @@
     "overview": "课程简介",
     "overviewEmpty": "暂无课程描述",
     "reviewsEyebrow": "课程评价",
-    "reviewsTitle": "查看这个学期的课程评价",
+    "reviewsTitle": "查看这门课的全部评价",
     "reviewsEntry": "进入课程评价",
-    "reviewsCopy": "{offering} 的评价和打分都在这里。",
+    "reviewsCopy": "汇总所有学期的评价和打分，每条评价都会标注学期。",
+    "reviewMetaDescription": "查看 {course} 所有学期的学生评价、评分与学习体验。",
     "discussionEyebrow": "课程讨论区",
     "discussionTitle": "最近讨论",
     "discussionEmpty": "还没有讨论，来发第一条吧。",
@@ -1303,8 +1324,10 @@
       "openInMap": "在图谱中查看"
     },
     "offeringMissing": "当前学期不存在或未开设这门课",
-    "pageIntro": "这里展示的是 {offering} 学期 {courseCode} 的课程评价",
+    "allOfferings": "全部学期",
+    "pageIntro": "这里汇总 {courseCode} 所有学期的课程评价，每条评价均标注所属学期。新评价将发布到 {offering}。",
     "writeReview": "写评价",
+    "writeReviewFor": "评价 {offering}",
     "reviewListTitle": "课程评价 ({count})",
     "publishReviewFor": "发表 {offering} 的课程评价",
     "fixedTags": "固定标签",
@@ -1318,7 +1341,9 @@
     "uploadDragText": "点击或拖拽图片到此处上传",
     "loginHint": "请先登录后发表评价",
     "reviewLoading": "加载评价...",
-    "reviewEmpty": "这个开课学期还没有课程评价，欢迎成为第一个分享体验的人。",
+    "reviewEmpty": "这门课还没有课程评价，欢迎成为第一个分享体验的人。",
+    "loadMoreReviews": "加载更多评价",
+    "ratingOutOfFive": "评分 {rating}/5",
     "reviewDetail": "查看详情",
     "reviewPublishSuccess": "评价发布成功！",
     "reviewPublishFailed": "发布失败",
@@ -1679,8 +1704,7 @@
       "empty": "暂时还没有帖子，来发第一篇吧。",
       "sort": {
         "latest": "最新",
-        "hot": "最热",
-        "oldest": "最早"
+        "hot": "最热"
       },
       "errors": {
         "loadFailed": "获取文章列表失败",

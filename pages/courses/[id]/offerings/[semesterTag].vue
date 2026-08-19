@@ -68,7 +68,7 @@ const courseId = computed(() => resolvedCourseId.value || courseIdentifier.value
 const overviewCourseCode = computed(() => compactCourseCode(courseDetail.value.code || courseIdentifier.value));
 const semesterTag = computed(() => String(route.params.semesterTag || ""));
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>));
-const listBackTo = computed(() => getLocalePath({ path: "/courses", query: listBackQuery.value }));
+const listBackTo = computed(() => getLocalePath({ path: "/courses/explore", query: listBackQuery.value }));
 const courseOverviewTo = computed(() => getLocalePath({
   path: `/courses/${overviewCourseCode.value}`,
   query: listBackQuery.value,
@@ -77,8 +77,11 @@ const selectedOffering = computed(() => (
   offerings.value.find((offering) => offering.offering_tag === semesterTag.value) || null
 ));
 const reviewPageTo = computed(() => getLocalePath({
-  path: `/courses/${overviewCourseCode.value}/reviews/${semesterTag.value}`,
-  query: listBackQuery.value,
+  path: `/courses/${overviewCourseCode.value}/reviews`,
+  query: {
+    ...listBackQuery.value,
+    offering: semesterTag.value,
+  },
 }));
 const discussionCreateTo = computed(() => getLocalePath({
   path: "/forum/postMessage",
