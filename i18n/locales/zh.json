@@ -2053,6 +2053,7 @@
     "filterTipActive": "[已开启]",
     "filterTipInactive": "[已关闭]",
     "filterTipDescription": "在编辑模式下，点击课表可屏蔽或恢复特定时段；被屏蔽的班别不会出现在可行方案中。",
+    "clearAll": "清除所有屏蔽时段",
     "display": "显示",
     "loginHint": "登录后可保存你的课程选择",
     "guestHint": "登录后可跨设备保存购物车；未登录时仍可临时使用排课功能。",

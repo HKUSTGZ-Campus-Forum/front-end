@@ -466,6 +466,10 @@ function handleToggleLayer(code: string, layer: number, enabled: boolean) {
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
+
+function clearBans() {
+  bannedPeriods.value = Array.from({ length: 7 }, () => Array(8).fill(false))
+}
 </script>
 
 <template>
@@ -582,6 +586,7 @@ function toggleBan(day: number, period: number) {
           @toggle-layer="handleToggleLayer"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
+          @clear-bans="clearBans"
           @update:display-option="(key, value) => displayOptions[key] = value"
         />
       </div>

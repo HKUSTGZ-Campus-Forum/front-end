@@ -27,6 +27,10 @@
   // bundle capsules, side-panel tabs). Dark mode needs a brighter tone than
   // --interactive-active for sufficient contrast on dark tinted surfaces.
   --interactive-active-text: #1278c4;
+  // Text color on solid interactive/primary backgrounds (e.g. the clear-all
+  // button hover, the primary cart button). These backgrounds are blue in both
+  // themes, so white stays the legible inverse in dark mode too.
+  --text-on-interactive: #ffffff;
   --interactive-disabled: #b3d4f0;
 
   // Scheduler side-panel bundle capsules & tabs (mirrors the original planner
@@ -213,6 +217,7 @@
   --interactive-hover: #4db6ff;
   --interactive-active: #1a8fe0;
   --interactive-active-text: #6cc5ff;
+  --text-on-interactive: #ffffff;
   --interactive-disabled: #33507a;
   // Primary buttons use a deeper blue in dark mode so large blue buttons
   // don't glare on the dark background; hover brightens back toward the brand.

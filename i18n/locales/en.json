@@ -2053,6 +2053,7 @@
     "filterTipActive": "[Active]",
     "filterTipInactive": "[Inactive]",
     "filterTipDescription": "In edit mode, click the timetable to block or unblock specific time periods. Blocked sections are filtered out of the search results.",
+    "clearAll": "Clear all blocked periods",
     "display": "Display",
     "loginHint": "Log in to save your course selections",
     "guestHint": "Log in to save your cart across devices. You can still explore schedules as a guest.",
