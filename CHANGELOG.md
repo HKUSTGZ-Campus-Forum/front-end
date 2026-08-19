@@ -10,6 +10,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- **HKUST(GZ) 学校 SSO 登录入口**：登录页新增双语 OIDC 登录、配置中/跳转中/失败状态和移动端适配；回调使用一次性登录票据承接，不在 URL 中暴露 UniKorn JWT。
+
+### Changed
+
+- **统一登出**：学校 SSO 会话退出本地账号后继续跳转学校统一登出端点；普通 UniKorn 账号保持原有退出流程。
+
 ### Fixed
 
 - **发布页深色模式背景残留**：`/forum/postMessage` 页面卡片的硬编码浅色背景/边框/标题/返回链接颜色改为主题 token（`--surface-primary` / `--border-primary` / `--card-shadow` / `--text-primary` / `--interactive-primary`），darkmode 下不再显示白底

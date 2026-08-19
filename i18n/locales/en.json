@@ -1035,8 +1035,27 @@
       "forgotPassword": "Forgot password?",
       "submit": "Login",
       "submitting": "Logging in...",
+      "localAccountDivider": "Or use a UniKorn account",
       "noAccount": "Don’t have an account yet?",
       "registerNow": "Create one",
+      "sso": {
+        "submit": "Sign in with school account",
+        "checking": "Checking school SSO",
+        "redirecting": "Opening the school sign-in page",
+        "unavailable": "School SSO is not ready",
+        "hint": "Use HKUST(GZ) single sign-on. Your first sign-in securely links or creates a UniKorn account.",
+        "unavailableHint": "The school is configuring UniKorn’s SSO access. You can still sign in with a UniKorn password below.",
+        "errors": {
+          "access_denied": "You cancelled school authorization and were not signed in to UniKorn.",
+          "authorization_failed": "School SSO could not complete. Please try again later.",
+          "invalid_response": "The identity returned by the school could not be verified. Please contact an administrator.",
+          "institutional_email_required": "Your school account did not provide an eligible HKUST(GZ) email. Please contact school IT.",
+          "account_conflict": "This school email belongs to an unverified UniKorn account. Verify that account or contact an administrator.",
+          "account_unavailable": "The linked UniKorn account is currently unavailable. Please contact an administrator.",
+          "not_configured": "School SSO setup is not complete. Please use a UniKorn password for now.",
+          "invalid_login_ticket": "This SSO sign-in has expired or was already used. Please sign in again."
+        }
+      },
       "errors": {
         "required": "Please enter both username and password.",
         "invalid": "Incorrect username or password. Please try again."

@@ -65,6 +65,15 @@
 - **理由**：消除部分写入状态、保证可回滚（切换回旧 symlink）、部署身份可校验。
 - **相关文档**：`deploy/README.md`、`.github/workflows/deploy.yml`
 
+## ADR-007：学校 SSO 使用后端 OIDC + 一次性前端登录票据
+
+- **日期**：2026-08
+- **状态**：已采纳（等待学校凭据联调）
+- **背景**：HKUST(GZ) SSO 使用 OAuth 2.0 Authorization Code Flow 与 OIDC。现有前端把 UniKorn JWT 保存在浏览器中，但学校的 client secret、授权码交换和 ID Token 校验必须留在可信后端，同时回调 URL 不能携带本地 access/refresh token。
+- **决策**：后端使用 Authlib、PKCE S256、state/nonce 和 Discovery 元数据完成学校认证；以 `(issuer, sub)` 作为外部身份主键，只自动关联已验证的校内邮箱；回调生成两分钟、单次消费的数据库票据，前端通过 `/api/auth/oidc/exchange` 换取现有 UniKorn JWT；统一登出使用 HttpOnly ID Token cookie 生成学校 end-session URL。
+- **理由**：client secret 与学校 Token 不进入前端，避免 JWT 出现在查询字符串；稳定 subject 不依赖可能变化或回收的邮箱；一次性票据兼容现有认证状态而无需重写全站 API。
+- **相关文档**：`back-end/docs/campus-sso.md`、`back-end/migrations/versions/20260819_campus_oidc.py`
+
 ---
 
 *模板（新决策追加时使用）：*

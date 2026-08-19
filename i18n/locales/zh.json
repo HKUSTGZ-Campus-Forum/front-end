@@ -1035,8 +1035,27 @@
       "forgotPassword": "忘记密码?",
       "submit": "登录",
       "submitting": "登录中...",
+      "localAccountDivider": "或使用 UniKorn 账号",
       "noAccount": "还没有账号？",
       "registerNow": "立即注册",
+      "sso": {
+        "submit": "使用学校账号登录",
+        "checking": "正在检查学校 SSO",
+        "redirecting": "正在前往学校登录页",
+        "unavailable": "学校 SSO 尚未开通",
+        "hint": "使用 HKUST(GZ) 统一身份认证，首次登录会安全关联或创建 UniKorn 账号。",
+        "unavailableHint": "学校正在配置 UniKorn 的 SSO 权限，当前仍可使用下方账号密码登录。",
+        "errors": {
+          "access_denied": "您取消了学校账号授权，尚未登录 UniKorn。",
+          "authorization_failed": "学校 SSO 登录未完成，请稍后重试。",
+          "invalid_response": "学校返回的身份信息无法验证，请联系管理员。",
+          "institutional_email_required": "学校账号没有返回可用的 HKUST(GZ) 邮箱，请联系学校 IT。",
+          "account_conflict": "该校内邮箱已用于一个尚未验证的 UniKorn 账号，请先完成邮箱验证或联系管理员。",
+          "account_unavailable": "关联的 UniKorn 账号当前不可用，请联系管理员。",
+          "not_configured": "学校 SSO 尚未完成配置，请暂时使用账号密码登录。",
+          "invalid_login_ticket": "本次 SSO 登录已过期或已使用，请重新登录。"
+        }
+      },
       "errors": {
         "required": "请输入用户名和密码",
         "invalid": "用户名或密码错误，请重试"
