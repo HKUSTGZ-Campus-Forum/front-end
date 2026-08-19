@@ -74,6 +74,15 @@
 - **理由**：client secret 与学校 Token 不进入前端，避免 JWT 出现在查询字符串；稳定 subject 不依赖可能变化或回收的邮箱；一次性票据兼容现有认证状态而无需重写全站 API。
 - **相关文档**：`back-end/docs/campus-sso.md`、`back-end/migrations/versions/20260819_campus_oidc.py`
 
+## ADR-008：课程评价按课程聚合，按开课学期归属
+
+- **日期**：2026-08
+- **状态**：已采纳
+- **背景**：评价页此前以学期作为浏览粒度，从某学期开课页进入后只显示该学期评价，导致历史评价存在但用户误以为课程没有评价。
+- **决策**：课程评价浏览入口采用 `/courses/<course>/reviews` 的课程级路径，默认聚合该 canonical course 的全部评价；每条评价继续通过后端 `CoursePostOfferingTarget` 关联具体 `CourseOffering` 并显示学期。写评价仍要求确定开课学期，旧 `/reviews/<semesterTag>` 地址保留兼容跳转。
+- **理由**：课程评价的主要用途是帮助选课，历史体验需要集中发现；学期仍是评价的重要上下文，但不应成为默认的信息隔离边界。使用结构化 offering target 查询也避免把论坛标签当作课程开课事实。
+- **相关文档**：`PRODUCT.md`、`pages/courses/[id]/reviews/index.vue`、后端 `app/routes/course.py`
+
 ---
 
 *模板（新决策追加时使用）：*

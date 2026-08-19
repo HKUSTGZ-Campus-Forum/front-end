@@ -20,6 +20,8 @@
 
 ### Fixed
 
+- **课程评价跨学期汇总**：课程评价入口改为课程级页面，默认展示所有历史学期的评价并在每条评价上标注所属学期；写评价仍绑定当前开课学期，旧的按学期评价 URL 自动跳转到新入口，长列表支持分页加载
+- **全局搜索帖子预览过长**：顶栏搜索下拉中的帖子结果最多展示 2 条，避免帖子卡片把用户与课程结果推到首屏之外；完整帖子结果继续在搜索页分页查看
 - **发布页深色模式背景残留**：`/forum/postMessage` 页面卡片的硬编码浅色背景/边框/标题/返回链接颜色改为主题 token（`--surface-primary` / `--border-primary` / `--card-shadow` / `--text-primary` / `--interactive-primary`），darkmode 下不再显示白底
 - **帖子详情页右上角按钮渲染错误**：分享/复制/删除小图标按钮被全局 `button { min-height: 44px }` 规则撑高变形，重置 `min-height: 0`；`ForumUiIcon` 手写 SVG 统一替换为 lucide 图标（`lucide:eye` / `lucide:share` / `lucide:check` / `lucide:trash-2`），与全站图标方案一致
 - **顶栏主题切换按钮状态不同步**：SSR 服务端无法读取 localStorage，客户端 persistedstate 插件在 hydration 前把 store 恢复为 `deep-dark`，与 SSR 渲染的 light 初始状态不一致 → Vue 生产环境 hydration class mismatch（只检查不修复），页面背景（FOUC 脚本）已是 dark 但按钮停在 SSR 的 light 态、点击无变化。修复：`themeStore` 初始恒为默认主题、`persist: false`（持久化改由 `setTheme`/`initializeTheme` 手动读写 localStorage，与 FOUC 同一键 `theme`），`theme.client` 插件延迟到 `app:suspense:resolve`（异步布局/页面 hydrate 完成后）再 `initializeTheme()` 恢复，干净触发响应式重渲染
