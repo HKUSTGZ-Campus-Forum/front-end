@@ -1756,7 +1756,26 @@
       "pageTitle": "发布帖子 - UniKorn 科广汇",
       "metaDescription": "发布新帖子、添加标签和上传附件。",
       "title": "发布帖子",
-      "backToCourse": "返回课程页面"
+      "backToCourse": "返回课程页面",
+      "backToActivity": "返回社团活动",
+      "tags": {
+        "label": "标签",
+        "placeholder": "输入标签后按回车或点击添加",
+        "add": "添加",
+        "common": "常用标签",
+        "suggestions": "标签建议",
+        "searching": "正在搜索标签……",
+        "hint": "最多 {count} 个标签，每个不超过 {length} 个字符",
+        "lockedHint": "带锁的标签来自当前发帖入口，不能删除",
+        "locked": "锁定",
+        "remove": "删除标签 {tag}",
+        "errors": {
+          "tooLong": "标签长度不能超过 {length} 个字符",
+          "tooMany": "最多只能添加 {count} 个标签",
+          "duplicate": "该标签已添加",
+          "locked": "来源标签已锁定，不能删除"
+        }
+      }
     },
     "postCard": {
       "reactions": "点赞",

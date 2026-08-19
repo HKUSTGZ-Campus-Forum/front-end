@@ -18,6 +18,12 @@ const lockedTags = computed(() => {
   return [];
 });
 const returnTo = computed(() => getSingleQueryValue(route.query.returnTo) || null);
+const source = computed(() => getSingleQueryValue(route.query.source));
+const backLabel = computed(() => {
+  if (source.value === "activity") return t("forum.create.backToActivity");
+  if (returnTo.value) return t("forum.create.backToCourse");
+  return t("forum.detail.backToForum");
+});
 
 useHead(() => ({
   title: t("forum.create.pageTitle"),
@@ -37,7 +43,7 @@ const handlePostSuccess = (postId) => {
     <div class="kg-back-bar">
       <NuxtLink :to="returnTo || localePath('/forum')" class="kg-back-link">
         <ForumUiIcon name="back" class="kg-back-link__icon" />
-        <span>{{ returnTo ? t("forum.create.backToCourse") : t("forum.detail.backToForum") }}</span>
+        <span>{{ backLabel }}</span>
       </NuxtLink>
     </div>
     <div class="kg-card">

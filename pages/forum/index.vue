@@ -10,6 +10,18 @@ const { t } = useI18n();
 const localePath = useLocalePath();
 const { isLoggedIn } = useAuth();
 const { activeSection, switchSection } = useCommunitySection();
+const activityReturnTo = computed(() => localePath({
+  path: "/forum",
+  query: { section: "activity" },
+}));
+const activityCreateTo = computed(() => localePath({
+  path: "/forum/postMessage",
+  query: {
+    lockedTag: "club",
+    returnTo: activityReturnTo.value,
+    source: "activity",
+  },
+}));
 
 useHead(() => ({
   title: `${t("community.title")} - ${t("common.appName")}`,
@@ -33,7 +45,7 @@ useHead(() => ({
       </NuxtLink>
       <NuxtLink
         v-else-if="activeSection === 'activity'"
-        :to="localePath('/forum/postMessage')"
+        :to="activityCreateTo"
         class="kg-btn-primary"
       >
         {{ t("community.activity.cta") }}
