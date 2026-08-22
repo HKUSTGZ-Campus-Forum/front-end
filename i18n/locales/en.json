@@ -2278,6 +2278,7 @@
       "notFound": "This plan is private, deleted, or the link is invalid.",
       "notFoundTitle": "Plan not found",
       "sharedBy": "Shared by {name}",
+      "backToPlanner": "Back to planner",
       "backToShared": "Back to shared plans"
     },
     "days": {

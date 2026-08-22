@@ -2278,6 +2278,7 @@
       "notFound": "该方案为私密状态、已被删除，或分享链接无效。",
       "notFoundTitle": "未找到方案",
       "sharedBy": "由 {name} 分享",
+      "backToPlanner": "返回排课助手",
       "backToShared": "返回共享方案"
     },
     "days": {

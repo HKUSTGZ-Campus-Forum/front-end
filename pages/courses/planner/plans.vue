@@ -10,6 +10,7 @@ const router = useRouter()
 const route = useRoute()
 const { isLoggedIn, authInitialized } = useAuth()
 const { getMyPlans, updatePlan, deletePlan, applyPlan } = useScheduler()
+const { plannerTo } = useSchedulerPlanNavigation()
 
 const plans = ref<SchedulerSavedPlan[]>([])
 const selectedId = ref('')
@@ -133,18 +134,15 @@ async function saveMetadata(value: {
 
 <template>
   <main class="plans-page">
+    <SchedulerPlanNavigation active="mine" />
+
     <CourseToolsHeader :mode="'planner'" :title="t('scheduler.savedPlans.mineTitle')" :subtitle="t('scheduler.savedPlans.mineSubtitle')">
       <template #actions>
-        <NuxtLink class="plans-page__primary" :to="getLocalePath('/courses/planner')">
+        <NuxtLink class="plans-page__primary" :to="plannerTo">
           <Icon name="lucide:plus" aria-hidden="true" />{{ t('scheduler.savedPlans.new') }}
         </NuxtLink>
       </template>
     </CourseToolsHeader>
-
-    <nav class="plans-page__tabs" :aria-label="t('scheduler.savedPlans.navigation')">
-      <NuxtLink class="active" :to="getLocalePath('/courses/planner/plans')">{{ t('scheduler.savedPlans.mine') }}</NuxtLink>
-      <NuxtLink :to="getLocalePath('/courses/planner/shared')">{{ t('scheduler.savedPlans.shared') }}</NuxtLink>
-    </nav>
 
     <div v-if="message" class="plans-page__notice" role="status">{{ message }}</div>
     <div v-if="error" class="plans-page__notice plans-page__notice--error" role="alert">{{ error }}</div>
@@ -197,7 +195,7 @@ async function saveMetadata(value: {
         <Icon name="lucide:calendar-plus-2" aria-hidden="true" />
         <h2>{{ t('scheduler.savedPlans.emptyMineTitle') }}</h2>
         <p>{{ t('scheduler.savedPlans.emptyMineDescription') }}</p>
-        <NuxtLink class="plans-page__primary" :to="getLocalePath('/courses/planner')">{{ t('scheduler.savedPlans.startPlanning') }}</NuxtLink>
+        <NuxtLink class="plans-page__primary" :to="plannerTo">{{ t('scheduler.savedPlans.startPlanning') }}</NuxtLink>
       </section>
     </template>
 
@@ -218,9 +216,6 @@ async function saveMetadata(value: {
 <style scoped lang="scss">
 .plans-page { margin: 0 auto; max-width: 1240px; padding: 24px 20px 64px; width: 100%; }
 .plans-page__primary { align-items: center; background: var(--btn-primary-bg); border-radius: 999px; color: var(--text-inverse); display: inline-flex; font-size: .86rem; font-weight: 700; gap: 7px; min-height: 40px; padding: 0 16px; text-decoration: none; }
-.plans-page__tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.plans-page__tabs a { background: var(--surface-primary); border: 1px solid var(--border-secondary); border-radius: 999px; color: var(--text-secondary); font-size: .84rem; font-weight: 700; padding: 9px 15px; text-decoration: none; }
-.plans-page__tabs a.active { border-color: var(--interactive-primary); color: var(--interactive-active); }
 .plans-page__notice { background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary)); border: 1px solid color-mix(in srgb, var(--semantic-success) 25%, var(--border-secondary)); border-radius: 11px; color: var(--text-primary); font-size: .84rem; margin-bottom: 12px; padding: 10px 13px; }
 .plans-page__notice--error { background: color-mix(in srgb, var(--semantic-error) 9%, var(--surface-primary)); border-color: color-mix(in srgb, var(--semantic-error) 22%, var(--border-secondary)); }
 .plans-page__toolbar { align-items: flex-end; display: flex; justify-content: space-between; margin-bottom: 14px; }
