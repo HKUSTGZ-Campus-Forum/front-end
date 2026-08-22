@@ -19,6 +19,8 @@ const props = defineProps<{
   filterMode: boolean
   displayOptions: { name: boolean; section: boolean; location: boolean; instructor: boolean; duration: boolean }
   maxDayNum: number
+  previewSection: { code: string; bundleId: number; layer: number } | null
+  previewSectionEnabled: boolean
 }>()
 
 const emit = defineEmits<{
@@ -187,6 +189,49 @@ const lectureBlocks = computed(() => {
     }
   }
   return blocks
+})
+
+// Time-slot preview overlay: when the user hovers a bundle capsule in the side
+// panel and the preview toggle is on, draw a dashed outline around every times
+// lot that bundle occupies in the timetable, so they can eyeball conflicts
+// before switching. Mirrors the lecture-block geometry (header/top inset).
+// Each rect is inset 3px from its grid column like a real card, sits just
+// above the lecture blocks, and is pointer-transparent so it never intercepts.
+interface PreviewRect {
+  key: string
+  day: number
+  top: number
+  left: number
+  width: number
+  height: number
+}
+const previewRects = computed<PreviewRect[]>(() => {
+  if (!props.previewSectionEnabled || !props.previewSection) return []
+  const selection = props.previewSection
+  const course = props.courseList.find(c => c.course_code === selection.code)
+  const bundle = course?.layers[selection.layer]?.find(b => b.id === selection.bundleId)
+  if (!bundle) return []
+
+  const rects: PreviewRect[] = []
+  for (const section of bundle.sections) {
+    for (const lecture of section.lectures) {
+      // Inflate a few px beyond the card bounds (cards sit at +3 inset) so the
+      // dashed outline surrounds rather than overlapping the card: the top row
+      // nudges up, the right edge widens past the card's right gap. The width
+      // is capped so it never pokes past the table's right edge (which would
+      // clip or add a scrollbar to the overflow-x table).
+      const left = timeColWidth + (lecture.day - 1) * dayColWidth.value
+      rects.push({
+        key: `${selection.code}-${selection.bundleId}-${lecture.day}-${lecture.start_time}-${lecture.end_time}`,
+        day: lecture.day,
+        top: headerHeight + getTopOffset(lecture.start_time) * rowHeight.value,
+        left,
+        width: Math.min(dayColWidth.value + 2, timetableContentWidth.value - left),
+        height: getHeight(lecture.start_time, lecture.end_time) * rowHeight.value + 4,
+      })
+    }
+  }
+  return rects
 })
 
 // Hover expansion: measure the natural content height and grow the block.
@@ -460,6 +505,19 @@ function onCellClick(day: number, period: number) {
         :style="getFadeStyle(block)"
       />
     </div>
+
+    <!-- Time-slot preview overlay: dashed outline around a hovered bundle -->
+    <div
+      v-for="rect in previewRects"
+      :key="rect.key"
+      class="timetable__preview"
+      :style="{
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+      }"
+    />
   </div>
 </template>
 
@@ -581,6 +639,18 @@ function onCellClick(day: number, period: number) {
     &--banned:hover &-icon--unban {
       opacity: 0.9;
     }
+  }
+
+  &__preview {
+    position: absolute;
+    // Above the lecture blocks (10) and their hover-expanded state (25), below
+    // the interactive ban cells (30), and transparent to clicks. Uses a neutral
+    // gray that flips with the theme (near-white in dark mode, near-black in
+    // light) so it stays readable over any course card; no interior fill.
+    z-index: 20;
+    pointer-events: none;
+    border: 2px dashed color-mix(in srgb, var(--text-primary) 80%, transparent);
+    border-radius: 6px;
   }
 
   &__block {

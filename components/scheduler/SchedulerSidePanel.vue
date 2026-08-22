@@ -16,6 +16,7 @@ const props = defineProps<{
   semesterId: string
   filterMode: boolean
   mutationsDisabled: boolean
+  previewSectionEnabled: boolean
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +27,9 @@ const emit = defineEmits<{
   (e: 'toggle-filter'): void
   (e: 'clear-bans'): void
   (e: 'update:display-option', key: DisplayOption, value: boolean): void
+  (e: 'preview-bundle', code: string, layer: number, bundleId: number): void
+  (e: 'clear-preview'): void
+  (e: 'update:preview-section-enabled', value: boolean): void
 }>()
 
 const activeTab = ref<'main' | 'klms'>('main')
@@ -107,6 +111,8 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
+        @preview-bundle="(...args) => emit('preview-bundle', ...args)"
+        @clear-preview="emit('clear-preview')"
       />
       <div v-if="filteredCourses.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>
@@ -199,6 +205,17 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
           @change="updateDisplayOption(key, $event)"
         >
         <span>{{ t(`scheduler.display${key.charAt(0).toUpperCase()}${key.slice(1)}`) }}</span>
+      </label>
+      <label
+        class="side-panel__menu-item side-panel__menu-item--preview"
+        :class="{ active: previewSectionEnabled }"
+      >
+        <input
+          type="checkbox"
+          :checked="previewSectionEnabled"
+          @change="emit('update:preview-section-enabled', $event.target.checked)"
+        >
+        <span>{{ t('scheduler.previewSectionTimeSlots') }}</span>
       </label>
     </div>
   </div>
@@ -333,6 +350,14 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 
     input {
       accent-color: var(--interactive-primary);
+    }
+
+    // The preview toggle is its own setting, visually separated from the grid
+    // of fine-grained display toggles above it.
+    &--preview {
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-secondary);
     }
   }
 
