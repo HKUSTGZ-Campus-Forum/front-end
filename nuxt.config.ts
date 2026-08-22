@@ -127,6 +127,12 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    "/register": { redirect: "/login" },
+    "/forgot-password": { redirect: "/login" },
+    "/reset-password": { redirect: "/login" },
+    "/en/register": { redirect: "/en/login" },
+    "/en/forgot-password": { redirect: "/en/login" },
+    "/en/reset-password": { redirect: "/en/login" },
     "/admin": { ssr: false, prerender: false },
     "/admin/**": { ssr: false, prerender: false },
     "/en/admin": { ssr: false, prerender: false },
@@ -139,7 +145,7 @@ export default defineNuxtConfig({
   ],
   nitro: {
     // 匹配 /api 后会把剩余路径拼到 target 上；target 必须带上 /api，
-    // 否则 /api/auth/login 会变成上游 /auth/login 导致 404。
+    // 否则 /api/auth/oidc/status 会变成上游 /auth/oidc/status 导致 404。
     devProxy: {
       "/api": {
         target: `${apiBaseUrl}/api`,

@@ -104,7 +104,6 @@
           </p>
           <ul class="benefits-list">
             <li>修改用户名</li>
-            <li>找回密码</li>
             <li>接收重要通知</li>
           </ul>
           
@@ -164,111 +163,6 @@
             添加邮箱
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Password Change Section -->
-    <div class="settings-section">
-      <h2 class="section-title">修改密码</h2>
-      <div class="password-card">
-        <form @submit.prevent="changePassword" class="password-form">
-          <div class="form-group">
-            <label for="currentPassword">当前密码</label>
-            <div class="password-field">
-              <input
-                id="currentPassword"
-                v-model="currentPassword"
-                :type="showCurrentPassword ? 'text' : 'password'"
-                placeholder="请输入当前密码"
-                required
-                :disabled="isChangingPassword"
-                class="password-input"
-              />
-              <button
-                type="button"
-                class="toggle-password"
-                @click="showCurrentPassword = !showCurrentPassword"
-              >
-                {{ showCurrentPassword ? "隐藏" : "显示" }}
-              </button>
-            </div>
-            <span v-if="passwordErrors.current" class="error-text">{{ passwordErrors.current }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="newPassword">新密码</label>
-            <div class="password-field">
-              <input
-                id="newPassword"
-                v-model="newPassword"
-                :type="showNewPassword ? 'text' : 'password'"
-                placeholder="请输入新密码（至少6位）"
-                required
-                :disabled="isChangingPassword"
-                class="password-input"
-                @input="validateNewPassword"
-              />
-              <button
-                type="button"
-                class="toggle-password"
-                @click="showNewPassword = !showNewPassword"
-              >
-                {{ showNewPassword ? "隐藏" : "显示" }}
-              </button>
-            </div>
-            <div class="password-strength">
-              <div class="strength-bar">
-                <div 
-                  class="strength-fill" 
-                  :class="passwordStrength.level"
-                  :style="{ width: passwordStrength.percentage + '%' }"
-                ></div>
-              </div>
-              <span class="strength-text">{{ passwordStrength.text }}</span>
-            </div>
-            <span v-if="passwordErrors.new" class="error-text">{{ passwordErrors.new }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">确认新密码</label>
-            <div class="password-field">
-              <input
-                id="confirmPassword"
-                v-model="confirmPassword"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="请再次输入新密码"
-                required
-                :disabled="isChangingPassword"
-                class="password-input"
-                @blur="validateConfirmPassword"
-              />
-              <button
-                type="button"
-                class="toggle-password"
-                @click="showConfirmPassword = !showConfirmPassword"
-              >
-                {{ showConfirmPassword ? "隐藏" : "显示" }}
-              </button>
-            </div>
-            <span v-if="passwordErrors.confirm" class="error-text">{{ passwordErrors.confirm }}</span>
-          </div>
-
-          <div v-if="passwordChangeError" class="error-message">
-            {{ passwordChangeError }}
-          </div>
-
-          <div v-if="passwordChangeSuccess" class="success-message">
-            {{ passwordChangeSuccess }}
-          </div>
-
-          <button 
-            type="submit" 
-            class="change-password-btn"
-            :disabled="isChangingPassword || !isPasswordFormValid"
-          >
-            {{ isChangingPassword ? '修改中...' : '修改密码' }}
-          </button>
-        </form>
       </div>
     </div>
 
@@ -385,7 +279,7 @@
           :user-email="user?.email || newEmail"
           :username="user?.username"
           @verification-success="handleEmailVerificationSuccess"
-          @back-to-register="closeEmailVerification"
+          @close="closeEmailVerification"
         />
       </div>
     </div>
@@ -411,22 +305,6 @@ const emailError = ref('')
 const emailSuccess = ref('')
 const showChangeEmailForm = ref(false)
 
-// Password change state
-const currentPassword = ref('')
-const newPassword = ref('')
-const confirmPassword = ref('')
-const showCurrentPassword = ref(false)
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
-const isChangingPassword = ref(false)
-const passwordChangeError = ref('')
-const passwordChangeSuccess = ref('')
-const passwordErrors = ref({
-  current: '',
-  new: '',
-  confirm: ''
-})
-
 // OAuth apps state
 const connectedApps = ref([])
 const isLoadingApps = ref(false)
@@ -449,76 +327,6 @@ const isValidNewEmail = computed(() => {
   const emailParts = emailLower.split('@')
   return emailParts.length === 2 && hkustDomains.includes(emailParts[1])
 })
-
-// Password strength calculation
-const passwordStrength = computed(() => {
-  const password = newPassword.value
-  if (!password) return { level: '', percentage: 0, text: '' }
-  
-  let score = 0
-  let feedback = []
-  
-  // Length check
-  if (password.length >= 8) score += 2
-  else if (password.length >= 6) score += 1
-  else feedback.push('至少6位')
-  
-  // Character variety
-  if (/[a-z]/.test(password)) score += 1
-  if (/[A-Z]/.test(password)) score += 1
-  if (/[0-9]/.test(password)) score += 1
-  if (/[^a-zA-Z0-9]/.test(password)) score += 1
-  
-  const levels = [
-    { min: 0, max: 2, level: 'weak', text: '弱', percentage: 25 },
-    { min: 3, max: 4, level: 'medium', text: '中等', percentage: 50 },
-    { min: 5, max: 5, level: 'good', text: '良好', percentage: 75 },
-    { min: 6, max: 10, level: 'strong', text: '强', percentage: 100 }
-  ]
-  
-  const level = levels.find(l => score >= l.min && score <= l.max) || levels[0]
-  return level
-})
-
-// Form validation
-const isPasswordFormValid = computed(() => {
-  return currentPassword.value &&
-         newPassword.value &&
-         confirmPassword.value &&
-         newPassword.value === confirmPassword.value &&
-         newPassword.value.length >= 6 &&
-         !passwordErrors.value.current &&
-         !passwordErrors.value.new &&
-         !passwordErrors.value.confirm
-})
-
-// Password validation functions
-const validateNewPassword = () => {
-  if (!newPassword.value) {
-    passwordErrors.value.new = '请输入新密码'
-  } else if (newPassword.value.length < 6) {
-    passwordErrors.value.new = '密码至少需要6个字符'
-  } else if (newPassword.value === currentPassword.value) {
-    passwordErrors.value.new = '新密码不能与当前密码相同'
-  } else {
-    passwordErrors.value.new = ''
-  }
-  
-  // Re-validate confirm password when new password changes
-  if (confirmPassword.value) {
-    validateConfirmPassword()
-  }
-}
-
-const validateConfirmPassword = () => {
-  if (!confirmPassword.value) {
-    passwordErrors.value.confirm = '请确认新密码'
-  } else if (newPassword.value !== confirmPassword.value) {
-    passwordErrors.value.confirm = '两次输入的密码不一致'
-  } else {
-    passwordErrors.value.confirm = ''
-  }
-}
 
 // Add email functionality
 const addEmail = async () => {
@@ -672,60 +480,6 @@ const startCooldown = () => {
       cooldownTimer = null
     }
   }, 1000)
-}
-
-// Change password functionality
-const changePassword = async () => {
-  // Validate all fields
-  validateNewPassword()
-  validateConfirmPassword()
-  
-  if (!isPasswordFormValid.value) return
-  
-  isChangingPassword.value = true
-  passwordChangeError.value = ''
-  passwordChangeSuccess.value = ''
-  
-  try {
-    const response = await fetchWithAuth('/api/auth/change-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        current_password: currentPassword.value,
-        new_password: newPassword.value
-      })
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      if (data.msg?.includes('Current password is incorrect')) {
-        passwordErrors.value.current = '当前密码错误'
-      } else {
-        passwordChangeError.value = data.msg || '修改密码失败'
-      }
-      return
-    }
-
-    // Success
-    passwordChangeSuccess.value = '密码修改成功'
-    
-    // Clear form
-    currentPassword.value = ''
-    newPassword.value = ''
-    confirmPassword.value = ''
-    Object.keys(passwordErrors.value).forEach(key => {
-      passwordErrors.value[key as keyof typeof passwordErrors.value] = ''
-    })
-    
-  } catch (err) {
-    console.error('Change password error:', err)
-    passwordChangeError.value = err instanceof Error ? err.message : '修改密码失败，请重试'
-  } finally {
-    isChangingPassword.value = false
-  }
 }
 
 // Email verification success handler
@@ -1056,7 +810,7 @@ onUnmounted(() => {
     font-size: 0.95rem;
   }
   
-  .email-input, .password-input {
+  .email-input {
     width: 100%;
     padding: 0.875rem;
     border: 1px solid var(--border-primary, #e0e0e0);
@@ -1090,84 +844,6 @@ onUnmounted(() => {
   }
 }
 
-.password-field {
-  position: relative;
-  
-  .password-input {
-    padding-right: 90px;
-    
-    @media (min-width: 480px) {
-      padding-right: 80px;
-    }
-  }
-  
-  .toggle-password {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--text-secondary, #666);
-    cursor: pointer;
-    padding: 0.5rem;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    font-size: 0.85rem;
-    
-    @media (min-width: 480px) {
-      right: 8px;
-      padding: 0.25rem;
-      min-height: auto;
-      font-size: 0.8rem;
-    }
-    
-    &:hover {
-      color: var(--text-primary, #333);
-    }
-  }
-}
-
-.password-strength {
-  margin-top: 0.5rem;
-  
-  .strength-bar {
-    width: 100%;
-    height: 4px;
-    background: var(--surface-secondary);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 0.25rem;
-    
-    .strength-fill {
-      height: 100%;
-      transition: all 0.3s ease;
-      
-      &.weak {
-        background: var(--semantic-error);
-      }
-      
-      &.medium {
-        background: var(--semantic-warning);
-      }
-      
-      &.good {
-        background: var(--semantic-info);
-      }
-      
-      &.strong {
-        background: var(--semantic-success);
-      }
-    }
-  }
-  
-  .strength-text {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
-}
-
 .email-hint {
   margin-top: 0.5rem;
   font-size: 0.8rem;
@@ -1191,7 +867,7 @@ onUnmounted(() => {
 }
 
 // Button Styles
-.verify-btn, .add-email-btn, .change-password-btn {
+.verify-btn, .add-email-btn {
   padding: 0.875rem 1.5rem;
   background: var(--btn-primary-bg);
   color: var(--text-inverse);

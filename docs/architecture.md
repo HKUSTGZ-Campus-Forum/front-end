@@ -68,7 +68,7 @@
 ## ADR-007：学校 SSO 使用后端 OIDC + 一次性前端登录票据
 
 - **日期**：2026-08
-- **状态**：已采纳（等待学校凭据联调）
+- **状态**：已采纳
 - **背景**：HKUST(GZ) SSO 使用 OAuth 2.0 Authorization Code Flow 与 OIDC。现有前端把 UniKorn JWT 保存在浏览器中，但学校的 client secret、授权码交换和 ID Token 校验必须留在可信后端，同时回调 URL 不能携带本地 access/refresh token。
 - **决策**：后端使用 Authlib、PKCE S256、state/nonce 和 Discovery 元数据完成学校认证；以 `(issuer, sub)` 作为外部身份主键，只自动关联已验证的校内邮箱；回调生成两分钟、单次消费的数据库票据，前端通过 `/api/auth/oidc/exchange` 换取现有 UniKorn JWT；统一登出使用 HttpOnly ID Token cookie 生成学校 end-session URL。
 - **理由**：client secret 与学校 Token 不进入前端，避免 JWT 出现在查询字符串；稳定 subject 不依赖可能变化或回收的邮箱；一次性票据兼容现有认证状态而无需重写全站 API。
@@ -82,6 +82,15 @@
 - **决策**：课程评价浏览入口采用 `/courses/<course>/reviews` 的课程级路径，默认聚合该 canonical course 的全部评价；每条评价继续通过后端 `CoursePostOfferingTarget` 关联具体 `CourseOffering` 并显示学期。写评价仍要求确定开课学期，旧 `/reviews/<semesterTag>` 地址保留兼容跳转。
 - **理由**：课程评价的主要用途是帮助选课，历史体验需要集中发现；学期仍是评价的重要上下文，但不应成为默认的信息隔离边界。使用结构化 offering target 查询也避免把论坛标签当作课程开课事实。
 - **相关文档**：`PRODUCT.md`、`pages/courses/[id]/reviews/index.vue`、后端 `app/routes/course.py`
+
+## ADR-009：用户认证仅保留学校 SSO
+
+- **日期**：2026-08
+- **状态**：已采纳
+- **背景**：学校 OIDC 已在正式域名完成联调。继续提供 UniKorn 帐密登录、自助注册与密码恢复会形成重复身份入口，并保留不必要的密码处理与攻击面。
+- **决策**：登录页只展示 HKUST(GZ) SSO；旧注册、忘记密码与重置密码 URL 跳转到登录页；后端旧帐密认证端点统一返回 `410 sso_only`。保留已有用户与外部身份关联数据，不删除密码字段；JWT 刷新/登出继续承载站内会话，邮箱验证仅用于已登录用户维护联系邮箱。
+- **理由**：所有登录身份统一由学校认证，减少凭据泄露、弱密码、撞库和账号重复风险；保留数据结构和现有会话机制可避免破坏用户内容与 OIDC 账号关联，并为安全回滚留下空间。
+- **相关文档**：`pages/login/index.vue`、`composables/useAuth.ts`、后端 `app/routes/auth.py`、`back-end/docs/campus-sso.md`
 
 ---
 
