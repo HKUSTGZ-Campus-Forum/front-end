@@ -121,7 +121,7 @@ front-end/
 ## 核心板块
 
 - **课程板块**（`/courses`）：课程宇宙图谱、课程探索、规划器（排课助手）、学术地图、课程详情与评论
-- **排课助手**（`/schedule` → `/courses/planner`）：由原 `CoursePlan.search` 迁移而来，支持课程筛选、课表求解、冲突检测、收藏夹
+- **排课助手**（`/schedule` → `/courses/planner`）：由原 `CoursePlan.search` 迁移而来，支持课程筛选、课表求解、冲突检测、收藏夹，以及方案保存、分享、复制与重新应用
 - **论坛**（`/forum`）：帖子、评论、表情回应、标签
 - **管理后台**（`/admin`）：反馈审核、身份核验、内容管理（SSR 关闭）
 - **学校认证**（`/login`）：仅支持 HKUST(GZ) SSO；由 SSO 新建的账号首次登录需在 `/onboarding` 确认公开用户名，可选设置头像
@@ -135,6 +135,7 @@ front-end/
 | `CLAUDE.md` | 前端开发笔记：主题、认证、上传、导航系统、易错点 |
 | `docs/production-environment.md` | 当前环境、学校正式服拓扑和发布边界 |
 | `docs/architecture.md` | 架构决策记录（ADR） |
+| `docs/plans/2026-08-22-scheduler-saved-plans-design.md` | 排课方案保存、分享与应用的产品及技术设计 |
 | `docs/THEME_SYSTEM.md` | 主题系统设计 |
 | `docs/i18n-guidelines.md` | 国际化规范 |
 | `docs/i18n-execution-plan.md` | 国际化执行计划 |
