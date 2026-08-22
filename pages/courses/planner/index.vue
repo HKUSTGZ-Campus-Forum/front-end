@@ -11,6 +11,10 @@ const { t, locale } = useI18n()
 const { getLocalePath } = useAppLocale()
 const { getSemesters } = useScheduler()
 
+useHead(() => ({
+  title: t('scheduler.metaTitle'),
+}))
+
 const semesters = ref<SemesterInfo[]>([])
 const loading = ref(true)
 const loadError = ref(false)
