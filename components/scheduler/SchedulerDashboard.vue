@@ -673,11 +673,17 @@ async function startNewPlan() {
             {{ activeSavedPlan?.is_owner ? t('scheduler.savedPlans.saveChanges') : t('scheduler.savedPlans.save') }}
             <span v-if="savedPlanDirty" class="dashboard__dirty" :title="t('scheduler.savedPlans.unsavedChanges')"></span>
           </button>
-          <NuxtLink class="dashboard__action" :to="getLocalePath('/courses/planner/plans')">
+          <NuxtLink
+            class="dashboard__action"
+            :to="getLocalePath({ path: '/courses/planner/plans', query: { fromSemester: props.semesterId } })"
+          >
             <Icon name="lucide:folders" aria-hidden="true" />
             {{ t('scheduler.savedPlans.mine') }}
           </NuxtLink>
-          <NuxtLink class="dashboard__action" :to="getLocalePath('/courses/planner/shared')">
+          <NuxtLink
+            class="dashboard__action"
+            :to="getLocalePath({ path: '/courses/planner/shared', query: { fromSemester: props.semesterId } })"
+          >
             <Icon name="lucide:users" aria-hidden="true" />
             {{ t('scheduler.savedPlans.shared') }}
           </NuxtLink>
