@@ -6,6 +6,7 @@
 ## 当前产品与技术边界
 
 - Nuxt 3 SSR、Vue 3、TypeScript、SCSS、Pinia、Vue I18n。
+- 当前正式产品是 `https://unikorn.hkust-gz.edu.cn`，发布到 `unikorn-school` 学校服务器；旧 `unikorn.axfff.com` production workflow 不是当前正式发布路径。环境细节见 `docs/production-environment.md`。
 - 默认中文，英文路径使用 `/en/*`；新增界面必须同时提供 `zh` / `en` 文案。
 - 当前支持 `keguang-blue` 与 `deep-dark` 两套主题。组件只能使用
   `assets/css/variables.scss` 中的主题 token，不要硬编码界面颜色。
