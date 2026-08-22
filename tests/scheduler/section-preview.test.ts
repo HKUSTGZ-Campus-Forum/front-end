@@ -30,7 +30,7 @@ describe('scheduler hover section time-slot preview', () => {
     // right edge capped so it can never poke past the table's right boundary.
     expect(timetable).toContain('Inflate a few px beyond the card bounds')
     expect(timetable).toContain('width: `${rect.width}px`')
-    expect(timetable).toContain('Math.min(dayColWidth.value + 4')
+    expect(timetable).toContain('Math.min(dayColWidth.value + 2')
     expect(timetable).toContain('timetableContentWidth.value - left')
   })
 
