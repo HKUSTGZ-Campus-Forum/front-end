@@ -9,6 +9,7 @@ const { getLocalePath } = useAppLocale()
 const router = useRouter()
 const { isLoggedIn } = useAuth()
 const { getSharedPlans, getSemesters, applyPlan, clonePlan } = useScheduler()
+const { toPlanPage } = useSchedulerPlanNavigation()
 
 const plans = ref<SchedulerSavedPlan[]>([])
 const semesters = ref<SemesterInfo[]>([])
@@ -94,10 +95,7 @@ async function copyPlan(plan: SchedulerSavedPlan) {
   try {
     const copyName = t('scheduler.savedPlans.copyName', { name: plan.name }).slice(0, 80).trim()
     const copy = await clonePlan(plan.public_id, copyName)
-    await router.push(getLocalePath({
-      path: '/courses/planner/plans',
-      query: { plan: copy.public_id },
-    }))
+    await router.push(toPlanPage('/courses/planner/plans', { plan: copy.public_id }))
   } catch {
     error.value = t('scheduler.savedPlans.copyFailed')
   }
@@ -106,12 +104,9 @@ async function copyPlan(plan: SchedulerSavedPlan) {
 
 <template>
   <main class="shared-plans">
-    <CourseToolsHeader mode="planner" :title="t('scheduler.savedPlans.sharedTitle')" :subtitle="t('scheduler.savedPlans.sharedSubtitle')" />
+    <SchedulerPlanNavigation active="shared" />
 
-    <nav class="shared-plans__tabs" :aria-label="t('scheduler.savedPlans.navigation')">
-      <NuxtLink :to="getLocalePath('/courses/planner/plans')">{{ t('scheduler.savedPlans.mine') }}</NuxtLink>
-      <NuxtLink class="active" :to="getLocalePath('/courses/planner/shared')">{{ t('scheduler.savedPlans.shared') }}</NuxtLink>
-    </nav>
+    <CourseToolsHeader mode="planner" :title="t('scheduler.savedPlans.sharedTitle')" :subtitle="t('scheduler.savedPlans.sharedSubtitle')" />
 
     <section class="shared-plans__filters">
       <label>
@@ -143,7 +138,7 @@ async function copyPlan(plan: SchedulerSavedPlan) {
           @select="selectedId = plan.public_id"
         >
           <template #actions>
-            <NuxtLink :to="getLocalePath(`/courses/planner/shared/${plan.public_id}`)">{{ t('common.details') }}</NuxtLink>
+            <NuxtLink :to="toPlanPage(`/courses/planner/shared/${plan.public_id}`)">{{ t('common.details') }}</NuxtLink>
             <button type="button" @click="usePlan(plan)">{{ t('scheduler.savedPlans.use') }}</button>
             <button v-if="!plan.is_owner" type="button" @click="copyPlan(plan)">{{ t('scheduler.savedPlans.copy') }}</button>
           </template>
@@ -167,9 +162,6 @@ async function copyPlan(plan: SchedulerSavedPlan) {
 
 <style scoped lang="scss">
 .shared-plans { margin: 0 auto; max-width: 1240px; padding: 24px 20px 64px; width: 100%; }
-.shared-plans__tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.shared-plans__tabs a { background: var(--surface-primary); border: 1px solid var(--border-secondary); border-radius: 999px; color: var(--text-secondary); font-size: .84rem; font-weight: 700; padding: 9px 15px; text-decoration: none; }
-.shared-plans__tabs a.active { border-color: var(--interactive-primary); color: var(--interactive-active); }
 .shared-plans__filters { align-items: end; background: var(--surface-primary); border: 1px solid var(--border-secondary); border-radius: 14px; display: grid; gap: 12px; grid-template-columns: minmax(180px, 240px) minmax(240px, 1fr); margin-bottom: 14px; padding: 14px; }
 .shared-plans__filters label { color: var(--text-secondary); display: grid; font-size: .75rem; gap: 6px; }
 .shared-plans__filters select,

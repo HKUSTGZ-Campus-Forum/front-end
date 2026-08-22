@@ -6,6 +6,7 @@ import {
   buildSchedulerPlanWriteInput,
   schedulerPlanContentFingerprint,
 } from '../../utils/schedulerPlans'
+import { normalizeSchedulerPlanOrigin } from '../../utils/schedulerPlanNavigation'
 
 const courses: CartCourse[] = [
   {
@@ -77,5 +78,13 @@ describe('saved scheduler plans', () => {
     expect(left).toBe(right)
     bannedPeriods[2][4] = true
     expect(schedulerPlanContentFingerprint({ courses, selections, bannedPeriods })).not.toBe(left)
+  })
+
+  it('accepts only a valid semester id as saved-plan return context', () => {
+    expect(normalizeSchedulerPlanOrigin('2610')).toBe('2610')
+    expect(normalizeSchedulerPlanOrigin(['2630', 'ignored'])).toBe('2630')
+    expect(normalizeSchedulerPlanOrigin('/courses/planner/2610')).toBe('')
+    expect(normalizeSchedulerPlanOrigin('26100')).toBe('')
+    expect(normalizeSchedulerPlanOrigin(undefined)).toBe('')
   })
 })

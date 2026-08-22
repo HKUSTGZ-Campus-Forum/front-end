@@ -9,6 +9,7 @@ const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
 const { isLoggedIn } = useAuth()
 const { getPlan, applyPlan, clonePlan } = useScheduler()
+const { sharedTo, toPlanPage } = useSchedulerPlanNavigation()
 
 const plan = ref<SchedulerSavedPlan | null>(null)
 const loading = ref(true)
@@ -58,10 +59,7 @@ async function copyCurrentPlan() {
   try {
     const copyName = t('scheduler.savedPlans.copyName', { name: plan.value.name }).slice(0, 80).trim()
     const copy = await clonePlan(plan.value.public_id, copyName)
-    await router.push(getLocalePath({
-      path: '/courses/planner/plans',
-      query: { plan: copy.public_id },
-    }))
+    await router.push(toPlanPage('/courses/planner/plans', { plan: copy.public_id }))
   } catch {
     error.value = t('scheduler.savedPlans.copyFailed')
   } finally {
@@ -72,7 +70,7 @@ async function copyCurrentPlan() {
 
 <template>
   <main class="shared-detail">
-    <NuxtLink class="shared-detail__back" :to="getLocalePath('/courses/planner/shared')">
+    <NuxtLink class="shared-detail__back" :to="sharedTo">
       <Icon name="lucide:arrow-left" aria-hidden="true" />{{ t('scheduler.savedPlans.backToShared') }}
     </NuxtLink>
 
