@@ -1381,10 +1381,11 @@
       "ocga": "OCGA",
       "ocgaCopy": "Calculated after grades are uploaded; visible only to you",
       "mcga": "MCGA · {major}",
-      "mcgaCopy": "Calculated after grades are uploaded; visible only to you",
+      "mcgaCopy": "Estimated from courses allocated to current program requirements; graduation review prevails",
       "mcgaNeedsTarget": "Choose a target major before calculating Major CGA",
       "selectTarget": "Choose target",
-      "notUploaded": "Not uploaded"
+      "notUploaded": "Not uploaded",
+      "notAvailable": "No eligible courses"
     },
     "import": {
       "title": "Import Completed/In-Progress Courses",
@@ -1546,9 +1547,9 @@
       "overviewTitle": "Reading the matrix",
       "overviewCopy": "Click any requirement row to inspect its full course pool; click a top metric card for prerequisite or grade details.",
       "gradesTitle": "OCGA / MCGA",
-      "gradesCopy": "Grades stay inside your private Degree Progress and are calculated only after upload.",
+      "gradesCopy": "Grades stay inside your private Degree Progress; MCGA remains a program-based estimate until graduation review.",
       "ocgaRule": "Overall CGA: credit-weighted average of all grade-point courses.",
-      "mcgaRule": "Major CGA: credit-weighted estimate from courses counted toward the active major.",
+      "mcgaRule": "Major CGA: credit-weighted across the fundamental, major-required, and major-elective courses currently allocated to your requirements. Multiple majors use a deduplicated union; surplus electives use the eligible allocation with the higher estimated MCGA. Common Core, Options, non-grade-point results, and failed courses are excluded.",
       "gradePrivacy": "Grades are not shown publicly and can be deleted anytime. Without uploaded grades, these cards show Not uploaded.",
       "prerequisitesTitle": "Prerequisite blockers",
       "prerequisitesCopy": "{blocked} target courses have prerequisite blockers.",

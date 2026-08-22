@@ -18,11 +18,17 @@ const inProgressCredits = computed(() => {
 const blockedCount = computed(() => props.summary?.prerequisite_metrics?.blocked_count ?? 0)
 const ocga = computed(() => props.summary?.grade_metrics?.ocga ?? null)
 const mcga = computed(() => props.summary?.grade_metrics?.mcga ?? null)
-const mcgaMajor = computed(() => props.activeMajor || mcga.value?.program_code || props.summary?.profile.target_majors[0] || '-')
+const mcgaMajor = computed(() => {
+  const programCodes = mcga.value?.program_codes?.filter(Boolean) || []
+  if (programCodes.length) return programCodes.join(' + ')
+  return mcga.value?.program_code || props.summary?.profile.target_majors[0] || '-'
+})
 const hasTargetProfile = computed(() => Boolean(props.summary?.profile.cohort && props.summary?.profile.target_majors.length))
 const formatGradeMetric = (metric: typeof ocga.value) => {
   if (!metric || metric.status !== 'available' || metric.value === null) {
-    return t('academicMap.metrics.notUploaded')
+    return t(metric?.status === 'not_available'
+      ? 'academicMap.metrics.notAvailable'
+      : 'academicMap.metrics.notUploaded')
   }
   return metric.value.toFixed(2)
 }

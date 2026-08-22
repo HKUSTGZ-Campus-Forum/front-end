@@ -47,11 +47,14 @@ export interface AcademicProgramSummary {
 }
 
 export interface AcademicGradeMetric {
-  status: 'available' | 'not_uploaded'
+  status: 'available' | 'not_uploaded' | 'not_available'
   value: number | null
   included_courses: number
   excluded_courses: number
   program_code?: string | null
+  program_codes?: string[]
+  counted_course_codes?: string[]
+  is_estimate?: boolean
 }
 
 export interface AcademicPrerequisiteBlocker {
@@ -78,6 +81,7 @@ export type AcademicRequirementCellStatus = 'now' | 'done' | 'need' | 'choice' |
 export interface AcademicRequirementProgress {
   satisfied: boolean
   counted_courses: number
+  counted_course_codes?: string[]
   required_courses?: number | null
   counted_credits: number
   required_credits?: number | null
