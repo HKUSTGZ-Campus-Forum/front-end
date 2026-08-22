@@ -1034,7 +1034,6 @@
         "unavailable": "School SSO is temporarily unavailable",
         "hint": "Use HKUST(GZ) single sign-on. Your first sign-in securely links or creates a UniKorn account.",
         "unavailableHint": "UniKorn cannot reach the school identity service right now. Please retry later or contact an administrator.",
-        "onlyHint": "Password sign-in, self-registration, and password recovery are disabled. UniKorn never collects your school password on this page.",
         "retry": "Check SSO again",
         "errors": {
           "access_denied": "You cancelled school authorization and were not signed in to UniKorn.",

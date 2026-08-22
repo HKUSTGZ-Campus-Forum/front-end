@@ -111,7 +111,13 @@ const resolvedAvatarUrl = computed(() => {
 
 const normalizeAvatarUrl = (url?: string | null): string | null => {
   if (!url) return null
-  return url.trim().replace(/^http:\/\//i, 'https://')
+  const normalized = url.trim().replace(/^http:\/\//i, 'https://')
+
+  // Older cached user data may still contain a signed OSS URL. Never render
+  // storage URLs in the browser; refresh the database-derived UniKorn URL.
+  if (normalized.includes('.aliyuncs.com/')) return null
+
+  return normalized
 }
 
 const initializeAvatarUrl = () => {
@@ -217,6 +223,9 @@ const updateRetryUrl = () => {
 }
 
 const handleImageError = async () => {
+  // Hide the failed image immediately so users see initials while recovery
+  // happens in the background instead of a browser broken-image glyph.
+  imageError.value = true
   const canRefresh = !!resolvedUserId.value && refreshAttempts.value < MAX_REFRESH_ATTEMPTS
 
   if (canRefresh) {
@@ -311,6 +320,15 @@ const handleClick = () => {
 
 onMounted(() => {
   initializeAvatarUrl()
+
+  if (resolvedAvatarUrl.value && !currentAvatarUrl.value && resolvedUserId.value) {
+    void refreshAvatarUrl().then((newUrl) => {
+      if (newUrl) {
+        currentAvatarUrl.value = newUrl
+        imageError.value = false
+      }
+    })
+  }
 
   if (props.enableAutoRefresh) {
     refreshInterval = setInterval(proactiveRefresh, 30 * 60 * 1000)

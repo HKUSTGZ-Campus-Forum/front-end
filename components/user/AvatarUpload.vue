@@ -193,13 +193,14 @@ const uploadAvatar = async (file: File) => {
     });
 
     if (uploadResult?.id) {
-      await updateUserProfile({
+      const updatedUser = await updateUserProfile({
         profile_picture_file_id: uploadResult.id
       });
 
-      currentAvatarUrl.value = uploadResult.url;
+      const avatarUrl = updatedUser?.profile_picture_url || `/api/files/avatar/${uploadResult.id}`;
+      currentAvatarUrl.value = avatarUrl;
       showSuccess.value = true;
-      emit('avatar-updated', uploadResult.url);
+      emit('avatar-updated', avatarUrl);
 
       setTimeout(() => {
         showSuccess.value = false;
@@ -243,9 +244,7 @@ const removeAvatar = async () => {
 };
 
 onMounted(() => {
-  if (user.value?.profile_picture_file_id) {
-    currentAvatarUrl.value = user.value.profile_picture_url;
-  }
+  currentAvatarUrl.value = user.value?.profile_picture_url || '';
 });
 </script>
 
