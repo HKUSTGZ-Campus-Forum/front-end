@@ -4,6 +4,9 @@ import {
   type CourseDetail,
   type SchedulerPopularityHistoryResponse,
   type SchedulerPopularityResponse,
+  type SchedulerPlanWriteInput,
+  type SchedulerSavedPlan,
+  type SchedulerSharedPlanResponse,
   type SchedulerSubject,
   type SearchResponse,
   type SemesterInfo,
@@ -11,6 +14,24 @@ import {
 
 export function useScheduler() {
   const { fetchPublic, fetchWithAuth } = useApi()
+  const { accessToken } = useAuth()
+
+  async function schedulerPlanResponse<T>(response: Response, fallback: string): Promise<T> {
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}))
+      const error = new Error(payload.error || fallback) as Error & { code?: string; status?: number }
+      error.code = payload.code
+      error.status = response.status
+      throw error
+    }
+    return response.json()
+  }
+
+  function fetchReadablePlan(path: string, options: RequestInit = {}) {
+    return accessToken.value
+      ? fetchWithAuth(path, options)
+      : fetchPublic(path, options)
+  }
 
   async function getSemesters(): Promise<SemesterInfo[]> {
     const resp = await fetchPublic('/api/scheduler/semesters')
@@ -70,6 +91,83 @@ export function useScheduler() {
       method: 'DELETE',
     })
     if (!resp.ok) throw new Error('Failed to remove from cart')
+  }
+
+  async function clearCart(semester: string): Promise<number> {
+    const resp = await fetchWithAuth(`/api/scheduler/cart/${semester}`, { method: 'DELETE' })
+    const payload = await schedulerPlanResponse<{ removed_courses: number }>(resp, 'Failed to clear cart')
+    return payload.removed_courses
+  }
+
+  async function createPlan(payload: SchedulerPlanWriteInput): Promise<SchedulerSavedPlan> {
+    const resp = await fetchWithAuth('/api/scheduler/plans', { method: 'POST', body: payload as any })
+    return schedulerPlanResponse(resp, 'Failed to save plan')
+  }
+
+  async function getMyPlans(semesterId = ''): Promise<SchedulerSavedPlan[]> {
+    const params = new URLSearchParams()
+    if (semesterId) params.set('semester_id', semesterId)
+    const suffix = params.size ? `?${params}` : ''
+    const resp = await fetchWithAuth(`/api/scheduler/plans/mine${suffix}`, { cache: 'no-store' })
+    const payload = await schedulerPlanResponse<{ plans: SchedulerSavedPlan[] }>(resp, 'Failed to load plans')
+    return payload.plans
+  }
+
+  async function getSharedPlans(options: {
+    semesterId?: string
+    courseCode?: string
+    page?: number
+    pageSize?: number
+  } = {}): Promise<SchedulerSharedPlanResponse> {
+    const params = new URLSearchParams({
+      page: String(options.page || 1),
+      page_size: String(options.pageSize || 12),
+    })
+    if (options.semesterId) params.set('semester_id', options.semesterId)
+    if (options.courseCode) params.set('course_code', options.courseCode)
+    const resp = await fetchReadablePlan(`/api/scheduler/plans/shared?${params}`)
+    return schedulerPlanResponse(resp, 'Failed to load shared plans')
+  }
+
+  async function getPlan(publicId: string): Promise<SchedulerSavedPlan> {
+    const resp = await fetchReadablePlan(`/api/scheduler/plans/${encodeURIComponent(publicId)}`, {
+      cache: 'no-store',
+    })
+    return schedulerPlanResponse(resp, 'Failed to load plan')
+  }
+
+  async function updatePlan(
+    publicId: string,
+    payload: Partial<SchedulerPlanWriteInput> & { version: number },
+  ): Promise<SchedulerSavedPlan> {
+    const resp = await fetchWithAuth(`/api/scheduler/plans/${encodeURIComponent(publicId)}`, {
+      method: 'PATCH',
+      body: payload as any,
+    })
+    return schedulerPlanResponse(resp, 'Failed to update plan')
+  }
+
+  async function deletePlan(publicId: string): Promise<void> {
+    const resp = await fetchWithAuth(`/api/scheduler/plans/${encodeURIComponent(publicId)}`, {
+      method: 'DELETE',
+    })
+    if (!resp.ok) await schedulerPlanResponse(resp, 'Failed to delete plan')
+  }
+
+  async function clonePlan(publicId: string, name?: string): Promise<SchedulerSavedPlan> {
+    const resp = await fetchWithAuth(`/api/scheduler/plans/${encodeURIComponent(publicId)}/clone`, {
+      method: 'POST',
+      body: name ? { name } as any : {} as any,
+    })
+    return schedulerPlanResponse(resp, 'Failed to copy plan')
+  }
+
+  async function applyPlan(publicId: string): Promise<SchedulerSavedPlan> {
+    const resp = await fetchWithAuth(`/api/scheduler/plans/${encodeURIComponent(publicId)}/apply`, {
+      method: 'POST',
+    })
+    const payload = await schedulerPlanResponse<{ plan: SchedulerSavedPlan }>(resp, 'Failed to apply plan')
+    return payload.plan
   }
 
   async function toggleCourse(semester: string, courseCode: string, enabled: boolean): Promise<void> {
@@ -166,11 +264,20 @@ export function useScheduler() {
     searchCourses,
     getCourseDetail,
     getCart,
+    clearCart,
     addToCart,
     removeFromCart,
     toggleCourse,
     toggleBundle,
     toggleLayer,
+    createPlan,
+    getMyPlans,
+    getSharedPlans,
+    getPlan,
+    updatePlan,
+    deletePlan,
+    clonePlan,
+    applyPlan,
     getPopularity,
     getPopularityHistory,
     getMapComponents,

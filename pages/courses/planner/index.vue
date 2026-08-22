@@ -88,13 +88,21 @@ function getSemesterName(sem: SemesterInfo) {
       :title="t('scheduler.title')"
     >
       <template #actions>
-        <NuxtLink
-          v-if="latestSemester"
-          :to="getLocalePath(`/courses/planner/${latestSemester.id}`)"
-          class="scheduler-home__primary"
-        >
-          {{ t('scheduler.openLatest') }}
-        </NuxtLink>
+        <div class="scheduler-home__actions">
+          <NuxtLink :to="getLocalePath('/courses/planner/plans')" class="scheduler-home__secondary">
+            {{ t('scheduler.savedPlans.mine') }}
+          </NuxtLink>
+          <NuxtLink :to="getLocalePath('/courses/planner/shared')" class="scheduler-home__secondary">
+            {{ t('scheduler.savedPlans.shared') }}
+          </NuxtLink>
+          <NuxtLink
+            v-if="latestSemester"
+            :to="getLocalePath(`/courses/planner/${latestSemester.id}`)"
+            class="scheduler-home__primary"
+          >
+            {{ t('scheduler.openLatest') }}
+          </NuxtLink>
+        </div>
       </template>
     </CourseToolsHeader>
 
@@ -174,6 +182,27 @@ function getSemesterName(sem: SemesterInfo) {
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 20px 64px;
+
+  &__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__secondary {
+    align-items: center;
+    background: var(--surface-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    color: var(--interactive-active);
+    display: inline-flex;
+    font-size: 0.84rem;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 0 14px;
+    text-decoration: none;
+  }
 
   &__primary {
     flex-shrink: 0;
