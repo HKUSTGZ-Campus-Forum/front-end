@@ -119,6 +119,14 @@ onMounted(() => {
     // Malformed payload; keep the defaults.
   }
 
+  // Restore the hover-preview toggle; on by default otherwise.
+  try {
+    const savedPreview = localStorage.getItem(PREVIEW_SECTION_ENABLED_STORAGE_KEY)
+    if (savedPreview === 'false') previewSectionEnabled.value = false
+  } catch {
+    // Storage unavailable; keep the default (on).
+  }
+
   // Restore the per-semester banned periods. The shape check guards against
   // malformed or foreign payloads; a failed parse keeps the empty grid.
   try {
@@ -175,6 +183,11 @@ const displayOptions = ref({
   instructor: false,
   duration: false,
 })
+// Which bundle the side panel is currently hovering, so the timetable can
+// outline its time slots. `null` when nothing is hovered (or preview is off).
+const previewSection = ref<{ code: string; layer: number; bundleId: number } | null>(null)
+// User toggle for the hover time-slot preview; on by default.
+const previewSectionEnabled = ref(true)
 
 // Persisted state. The current plan index is remembered per semester (plan
 // lists are semester-specific); banned periods follow the same per-semester
@@ -183,6 +196,7 @@ const displayOptions = ref({
 const PLAN_INDEX_STORAGE_PREFIX = 'scheduler.plan-index.'
 const BANNED_PERIODS_STORAGE_PREFIX = 'scheduler.banned-periods.'
 const DISPLAY_OPTIONS_STORAGE_KEY = 'scheduler.display-options'
+const PREVIEW_SECTION_ENABLED_STORAGE_KEY = 'scheduler.preview-section-enabled'
 // Holds a restored plan index until the plan list is solved (plans load
 // asynchronously after mount); the planList watcher applies it when ready.
 const pendingPlanIndex = ref<number | null>(null)
@@ -231,6 +245,16 @@ watch(displayOptions, (options) => {
     // Storage unavailable; keep the in-memory options for this session.
   }
 }, { deep: true })
+
+watch(previewSectionEnabled, (enabled) => {
+  try {
+    localStorage.setItem(PREVIEW_SECTION_ENABLED_STORAGE_KEY, String(enabled))
+  } catch {
+    // Storage unavailable; keep the in-memory preference for this session.
+  }
+  // Nothing should stay highlighted once preview is switched off.
+  if (!enabled) previewSection.value = null
+})
 
 watch(canShowPopularityHistory, (authorized) => {
   if (!authorized) closePopularityHistory()
@@ -466,6 +490,20 @@ function handleToggleLayer(code: string, layer: number, enabled: boolean) {
 function toggleBan(day: number, period: number) {
   bannedPeriods.value[day][period] = !bannedPeriods.value[day][period]
 }
+
+function clearBans() {
+  bannedPeriods.value = Array.from({ length: 7 }, () => Array(8).fill(false))
+}
+
+function onPreviewBundle(code: string, layer: number, bundleId: number) {
+  if (previewSectionEnabled.value) {
+    previewSection.value = { code, layer, bundleId }
+  }
+}
+
+function onClearPreview() {
+  previewSection.value = null
+}
 </script>
 
 <template>
@@ -542,6 +580,8 @@ function toggleBan(day: number, period: number) {
             :filter-mode="filterMode"
             :display-options="displayOptions"
             :max-day-num="maxDayNum"
+            :preview-section="previewSection"
+            :preview-section-enabled="previewSectionEnabled"
             @toggle-ban="toggleBan"
           />
           <SchedulerBottomPanel
@@ -577,12 +617,17 @@ function toggleBan(day: number, period: number) {
           :semester-id="semesterId"
           :filter-mode="filterMode"
           :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
+          :preview-section-enabled="previewSectionEnabled"
           @toggle-course="handleToggleCourse"
           @toggle-bundle="handleToggleBundle"
           @toggle-layer="handleToggleLayer"
           @open-cart="showCartPanel = true"
           @toggle-filter="filterMode = !filterMode"
+          @clear-bans="clearBans"
           @update:display-option="(key, value) => displayOptions[key] = value"
+          @preview-bundle="onPreviewBundle"
+          @clear-preview="onClearPreview"
+          @update:preview-section-enabled="(value) => previewSectionEnabled = value"
         />
       </div>
 

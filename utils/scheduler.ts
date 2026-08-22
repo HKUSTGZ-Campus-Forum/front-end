@@ -716,3 +716,47 @@ export function getCourseTimetableColors(index: number, isDark: boolean = false)
 export function getCourseColor(index: number, isDark: boolean = false): string {
   return getCourseTimetableColors(index, isDark).background
 }
+
+// --- Timetable block: inline section label layout ---
+
+// These mirror the actual CSS in a timetable block card:
+//  - the card's width is inset from its day column: `width: dayColWidth - 4`
+//  - the card has `padding: 6px 10px`, so 10px of horizontal padding per side
+//  - the top row is a flex row with `gap: 2px` between code and section label
+export const TIMETABLE_CARD_INSET = 4
+export const TIMETABLE_CARD_PADDING = 10
+export const TIMETABLE_TOP_ROW_GAP = 2
+
+/**
+ * The inline label appended after a timetable block's course code, e.g.
+ * `\u00a0· LEC-03 (12345)`. This must match the template's
+ * `&nbsp;· {{ sectionName }} ({{ sectionId }})` characters and spacing exactly
+ * so width measurements are meaningful.
+ */
+export function formatInlineSectionLabel(sectionName: string, sectionId: string): string {
+  return `\u00a0· ${sectionName} (${sectionId})`
+}
+
+/**
+ * Decide whether a timetable block may place its section label inline next to
+ * the course code on the same line. The block's horizontal content budget is
+ * derived from the day-column width minus the card inset and horizontal
+ * padding, and is compared against the combined rendered width of the code,
+ * the row gap and the section label.
+ *
+ * `measure` returns the rendered pixel width of a text string under the exact
+ * font the block uses; it is injected so this predicate stays a pure function
+ * and is trivially unit-testable.
+ */
+export function canInlineSection(
+  dayColumnWidth: number,
+  code: string,
+  sectionLabel: string,
+  measure: (text: string) => number,
+): boolean {
+  const contentWidth =
+    dayColumnWidth - TIMETABLE_CARD_INSET - TIMETABLE_CARD_PADDING * 2
+  const combinedWidth =
+    measure(code) + TIMETABLE_TOP_ROW_GAP + measure(sectionLabel)
+  return combinedWidth <= contentWidth
+}

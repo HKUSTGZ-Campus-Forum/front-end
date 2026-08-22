@@ -21,6 +21,8 @@ const emit = defineEmits<{
   (e: 'toggle-course', code: string, currentEnabled: boolean): void
   (e: 'toggle-bundle', code: string, bundleId: number, layer: number, currentEnabled: boolean): void
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
+  (e: 'preview-bundle', code: string, layer: number, bundleId: number): void
+  (e: 'clear-preview'): void
 }>()
 
 function getBundleLabel(bundle: BundleData): string {
@@ -79,6 +81,8 @@ function creditColorVar(credit: number): string {
             type="button"
             :disabled="mutationsDisabled"
             @click="emit('toggle-bundle', course.course_code, bundle.id, Number(layer), bundle.enabled)"
+            @mouseenter="emit('preview-bundle', course.course_code, Number(layer), bundle.id)"
+            @mouseleave="emit('clear-preview')"
           >
             {{ getBundleLabel(bundle) }}
           </button>

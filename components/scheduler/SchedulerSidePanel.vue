@@ -16,6 +16,7 @@ const props = defineProps<{
   semesterId: string
   filterMode: boolean
   mutationsDisabled: boolean
+  previewSectionEnabled: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,7 +25,11 @@ const emit = defineEmits<{
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'open-cart'): void
   (e: 'toggle-filter'): void
+  (e: 'clear-bans'): void
   (e: 'update:display-option', key: DisplayOption, value: boolean): void
+  (e: 'preview-bundle', code: string, layer: number, bundleId: number): void
+  (e: 'clear-preview'): void
+  (e: 'update:preview-section-enabled', value: boolean): void
 }>()
 
 const activeTab = ref<'main' | 'klms'>('main')
@@ -106,6 +111,8 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
+        @preview-bundle="(...args) => emit('preview-bundle', ...args)"
+        @clear-preview="emit('clear-preview')"
       />
       <div v-if="filteredCourses.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>
@@ -134,12 +141,29 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
           <span class="side-panel__action-label">{{ t('scheduler.filter') }}</span>
         </button>
         <Transition name="tip">
-          <div v-if="showFilterTip" class="side-panel__tip" role="tooltip">
+          <div
+            v-if="showFilterTip"
+            class="side-panel__tip"
+            :class="{ 'side-panel__tip--active': filterMode }"
+            role="tooltip"
+          >
             <div class="side-panel__tip-title">
               {{ t('scheduler.filterTipTitle') }}
-              <span class="side-panel__tip-state">{{ filterMode ? t('scheduler.filterTipActive') : t('scheduler.filterTipInactive') }}</span>
+              <span
+                class="side-panel__tip-state"
+                :class="{ 'side-panel__tip-state--inactive': !filterMode }"
+              >{{ filterMode ? t('scheduler.filterTipActive') : t('scheduler.filterTipInactive') }}</span>
             </div>
             <p>{{ t('scheduler.filterTipDescription') }}</p>
+            <button
+              type="button"
+              class="side-panel__clear-all"
+              :disabled="mutationsDisabled"
+              @click="emit('clear-bans')"
+            >
+              <span class="side-panel__clear-all-icon" aria-hidden="true"><Icon name="lucide:eraser" /></span>
+              <span>{{ t('scheduler.clearAll') }}</span>
+            </button>
           </div>
         </Transition>
       </div>
@@ -181,6 +205,17 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
           @change="updateDisplayOption(key, $event)"
         >
         <span>{{ t(`scheduler.display${key.charAt(0).toUpperCase()}${key.slice(1)}`) }}</span>
+      </label>
+      <label
+        class="side-panel__menu-item side-panel__menu-item--preview"
+        :class="{ active: previewSectionEnabled }"
+      >
+        <input
+          type="checkbox"
+          :checked="previewSectionEnabled"
+          @change="emit('update:preview-section-enabled', $event.target.checked)"
+        >
+        <span>{{ t('scheduler.previewSectionTimeSlots') }}</span>
       </label>
     </div>
   </div>
@@ -316,6 +351,14 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     input {
       accent-color: var(--interactive-primary);
     }
+
+    // The preview toggle is its own setting, visually separated from the grid
+    // of fine-grained display toggles above it.
+    &--preview {
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-secondary);
+    }
   }
 
   &__tip {
@@ -325,14 +368,21 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     z-index: 30;
     width: 244px;
     padding: 10px 12px;
-    border: 1px solid var(--border-secondary);
+    border: 2px solid var(--border-secondary);
     border-radius: 12px;
     background: var(--surface-primary);
     box-shadow: var(--shadow-medium);
     color: var(--text-secondary);
     font-size: 0.76rem;
     line-height: 1.5;
-    pointer-events: none;
+    // The tooltip hosts an interactive clear-all button, so the card itself
+    // must capture pointer events; it floats in empty panel space above the
+    // button, so hovering it never blocks an unrelated control.
+    pointer-events: auto;
+
+    &--active {
+      border-color: var(--interactive-primary);
+    }
   }
 
   &__tip-title {
@@ -345,6 +395,46 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
   &__tip-state {
     color: var(--interactive-active-text);
     font-weight: 700;
+
+    &--inactive {
+      color: var(--text-secondary);
+    }
+  }
+
+  &__clear-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 5px 10px;
+    min-height: 0;
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+    background: var(--surface-secondary);
+    color: var(--interactive-active-text);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: var(--interactive-primary);
+      border-color: var(--interactive-primary);
+      // White on the solid blue interactive background in both themes.
+      color: var(--text-on-interactive);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &-icon {
+      display: inline-flex;
+      line-height: 1;
+      font-size: 14px;
+    }
   }
 
   &__empty {
@@ -376,7 +466,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     border: 0;
     border-radius: 999px;
     background: var(--btn-primary-bg);
-    color: var(--text-inverse);
+    color: var(--text-on-interactive);
     cursor: pointer;
     font-size: 0.84rem;
     font-weight: 700;
@@ -399,6 +489,18 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     position: relative;
     min-width: 0;
     display: flex;
+
+    // Transparent hover bridge across the 8px gap between the button and its
+    // tooltip so moving the pointer up to the tooltip's clear-all button does
+    // not leave the wrap (which would otherwise close the tip before the click).
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -8px;
+      height: 8px;
+    }
   }
 
   &__action {
@@ -434,7 +536,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     &--primary {
       border-color: var(--interactive-primary);
       background: var(--btn-primary-bg);
-      color: var(--text-inverse);
+      color: var(--text-on-interactive);
 
       &:hover {
         background: var(--btn-primary-bg-hover);
