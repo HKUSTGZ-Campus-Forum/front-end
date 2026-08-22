@@ -373,62 +373,6 @@ async function updateUserProfile(userData: Partial<User>) {
   }
 }
 
-async function login(username: string, password: string) {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await fetch(resolveAuthApiUrl("/api/auth/login"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = "Login failed";
-      try {
-        const errorData = await response.json();
-        errorMessage =
-          errorData.message ||
-          errorData.error ||
-          errorData.msg ||
-          `Login failed (${response.status})`;
-      } catch {
-        const errorText = await response.text();
-        errorMessage = `Login failed (${response.status}): ${errorText.substring(0, 100)}`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    console.log("🔑 Login response data:", {
-      hasAccessToken: !!data.access_token,
-      hasRefreshToken: !!data.refresh_token,
-      hasUser: !!data.user,
-      dataKeys: Object.keys(data),
-    });
-
-    console.log("💾 Storing tokens in localStorage...");
-    applyAuthPayload(data);
-
-    console.log("✅ Tokens stored. Current state:", {
-      accessTokenSet: !!accessToken.value,
-      refreshTokenSet: !!refreshToken.value,
-      userSet: !!user.value,
-    });
-
-    return user.value;
-  } catch (err) {
-    console.error("Login error:", err);
-    error.value =
-      err instanceof Error ? err.message : "Login failed, please try again";
-    throw err;
-  } finally {
-    loading.value = false;
-  }
-}
-
 async function getOidcStatus(): Promise<{ enabled: boolean; provider: string }> {
   const response = await fetch(resolveAuthApiUrl("/api/auth/oidc/status"), {
     credentials: "include",
@@ -473,75 +417,6 @@ async function exchangeOidcCode(code: string) {
     };
   } catch (err) {
     error.value = err instanceof Error ? err.message : "SSO login failed";
-    throw err;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function register(username: string, email: string, password: string) {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    console.log("开始注册请求，发送数据:", { username, email: email || undefined });
-
-    const response = await fetch(resolveAuthApiUrl("/api/auth/register"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        password,
-        email,
-      }),
-    });
-
-    console.log("收到响应状态:", response.status);
-
-    if (!response.ok) {
-      let errorMessage = "register_failed";
-      try {
-        const errorData = await response.json();
-        console.error("服务器错误详情:", errorData);
-
-        if (errorData.msg === "Username already exists") {
-          errorMessage = "username_taken";
-        } else if (errorData.msg === "Email already registered") {
-          errorMessage = "email_taken";
-        } else if (errorData.msg === "Username is required") {
-          errorMessage = "username_required";
-        } else if (errorData.msg === "Password is required") {
-          errorMessage = "password_required";
-        } else if (errorData.msg === "Invalid email format") {
-          errorMessage = errorData.msg;
-        } else {
-          errorMessage =
-            errorData.msg ||
-            errorData.error ||
-            `server_error_${response.status}`;
-        }
-      } catch {
-        const errorText = await response.text();
-        console.error("服务器返回非JSON错误:", errorText);
-        errorMessage = `server_error_${response.status}: ${errorText.substring(0, 100)}`;
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    console.log("注册成功，服务器响应:", data);
-
-    return {
-      success: true,
-      data,
-      userId: data.user_id,
-      emailSent: data.email_sent,
-      emailError: data.email_error,
-    };
-  } catch (err) {
-    console.error("注册过程中发生错误:", err);
-    error.value = err instanceof Error ? err.message : "注册失败，请稍后再试";
     throw err;
   } finally {
     loading.value = false;
@@ -610,95 +485,6 @@ async function resendVerification(userId: number) {
   }
 }
 
-async function forgotPassword(email: string) {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await fetch(resolveAuthApiUrl("/api/auth/forgot-password"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.msg || "发送重置邮件失败");
-    }
-
-    return { success: true, message: data.msg };
-  } catch (err) {
-    console.error("忘记密码错误:", err);
-    error.value = err instanceof Error ? err.message : "发送重置邮件失败";
-    throw err;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function resetPassword(token: string, newPassword: string) {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await fetch(resolveAuthApiUrl("/api/auth/reset-password"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        password: newPassword,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.msg || "密码重置失败");
-    }
-
-    return { success: true, message: data.msg };
-  } catch (err) {
-    console.error("密码重置错误:", err);
-    error.value = err instanceof Error ? err.message : "密码重置失败";
-    throw err;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function changePassword(currentPassword: string, newPassword: string) {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await authFetch(
-      resolveAuthApiUrl("/api/auth/change-password"),
-      {
-        method: "POST",
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.msg || "密码修改失败");
-    }
-
-    return { success: true, message: data.msg };
-  } catch (err) {
-    console.error("密码修改错误:", err);
-    error.value = err instanceof Error ? err.message : "密码修改失败";
-    throw err;
-  } finally {
-    loading.value = false;
-  }
-}
-
 async function refreshUser() {
   if (!process.client || !accessToken.value || !user.value) return;
 
@@ -738,17 +524,12 @@ export function useAuth() {
     error,
     isLoggedIn,
     authInitialized,
-    login,
     getOidcStatus,
     getOidcLoginUrl,
     exchangeOidcCode,
     logout,
-    register,
     verifyEmail,
     resendVerification,
-    forgotPassword,
-    resetPassword,
-    changePassword,
     refreshUser,
     init,
     updateUserProfile,

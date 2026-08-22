@@ -1025,26 +1025,17 @@
   },
   "auth": {
     "login": {
-      "title": "Welcome back",
-      "subtitle": "Sign in to UniKorn",
-      "usernameLabel": "Username or email",
-      "usernamePlaceholder": "Enter your username or email",
-      "passwordLabel": "Password",
-      "passwordPlaceholder": "Enter your password",
-      "rememberMe": "Remember me",
-      "forgotPassword": "Forgot password?",
-      "submit": "Login",
-      "submitting": "Logging in...",
-      "localAccountDivider": "Or use a UniKorn account",
-      "noAccount": "Don’t have an account yet?",
-      "registerNow": "Create one",
+      "title": "Sign in with your school account",
+      "subtitle": "UniKorn now uses HKUST(GZ) single sign-on",
       "sso": {
         "submit": "Sign in with school account",
         "checking": "Checking school SSO",
         "redirecting": "Opening the school sign-in page",
-        "unavailable": "School SSO is not ready",
+        "unavailable": "School SSO is temporarily unavailable",
         "hint": "Use HKUST(GZ) single sign-on. Your first sign-in securely links or creates a UniKorn account.",
-        "unavailableHint": "The school is configuring UniKorn’s SSO access. You can still sign in with a UniKorn password below.",
+        "unavailableHint": "UniKorn cannot reach the school identity service right now. Please retry later or contact an administrator.",
+        "onlyHint": "Password sign-in, self-registration, and password recovery are disabled. UniKorn never collects your school password on this page.",
+        "retry": "Check SSO again",
         "errors": {
           "access_denied": "You cancelled school authorization and were not signed in to UniKorn.",
           "authorization_failed": "School SSO could not complete. Please try again later.",
@@ -1052,80 +1043,32 @@
           "institutional_email_required": "Your school account did not provide an eligible HKUST(GZ) email. Please contact school IT.",
           "account_conflict": "This school email belongs to an unverified UniKorn account. Verify that account or contact an administrator.",
           "account_unavailable": "The linked UniKorn account is currently unavailable. Please contact an administrator.",
-          "not_configured": "School SSO setup is not complete. Please use a UniKorn password for now.",
+          "not_configured": "School SSO setup is not complete. Please contact an administrator.",
           "invalid_login_ticket": "This SSO sign-in has expired or was already used. Please sign in again."
         }
-      },
-      "errors": {
-        "required": "Please enter both username and password.",
-        "invalid": "Incorrect username or password. Please try again."
       }
     },
-    "register": {
-      "title": "Join us",
-      "subtitle": "Create your UniKorn account",
-      "hasAccount": "Already have an account?",
-      "loginNow": "Log in now",
-      "username": "Username",
-      "usernamePlaceholder": "Choose a username",
-      "email": "Email",
-      "emailPlaceholder": "Enter your HKUST-GZ email",
-      "emailHintTitle": "Only HKUST-GZ email domains are allowed:",
-      "password": "Password",
-      "passwordPlaceholder": "Create a password",
-      "confirmPassword": "Confirm password",
-      "confirmPasswordPlaceholder": "Enter your password again",
-      "submit": "Register",
-      "submitting": "Creating account...",
-      "verificationNotice": "We will send a verification code to your email after registration. Please make sure the address is correct.",
-      "verificationWarningTitle": "Important:",
-      "verificationWarningBody": "If you cannot find the verification email, please check your spam or junk folders.",
-      "success": "Email verification succeeded. Your account is now ready to use.",
+    "emailVerification": {
+      "title": "Verify your email",
+      "sentPrefix": "We sent a verification email to",
+      "description": "Enter the six-digit code from the email to verify this address.",
+      "spamHint": "If you do not see the email, check your spam folder.",
+      "codeLabel": "Verification code",
+      "codePlaceholder": "Enter the six-digit code",
+      "expiryHint": "The code expires in 10 minutes",
+      "submit": "Verify email",
+      "resend": "Resend code",
+      "resendCountdown": "Resend in {seconds}s",
+      "close": "Close",
+      "success": "Email verified. Updating your account…",
+      "resent": "A new verification code has been sent.",
       "errors": {
-        "usernameRequired": "Please enter a username.",
-        "usernameMin": "Username must be at least 2 characters.",
-        "usernameMax": "Username must be at most 50 characters.",
-        "usernameForbidden": "Username cannot include reserved special symbols. Please use letters, numbers, underscores, or standard characters.",
-        "usernameTaken": "This username is already in use.",
-        "emailRequired": "Please enter your email address.",
-        "emailInvalid": "Please enter a valid email address.",
-        "emailDomain": "Only HKUST-GZ email addresses are allowed. The domain must be connect.hkust-gz.edu.cn or hkust-gz.edu.cn.",
-        "emailTaken": "This email has already been registered.",
-        "passwordRequired": "Please enter a password.",
-        "passwordMin": "Password must be at least 6 characters.",
-        "confirmRequired": "Please confirm your password.",
-        "confirmMismatch": "The two passwords do not match.",
-        "registerFailed": "Registration failed. Please try again later."
+        "invalidCode": "Enter the six-digit verification code",
+        "verifyFailed": "Verification failed",
+        "verifyRetry": "Verification failed. Please try again.",
+        "resendFailed": "Could not resend the code",
+        "resendRetry": "Could not resend the code. Please try again."
       }
-    },
-    "forgotPassword": {
-      "title": "Forgot password",
-      "subtitle": "Enter your email and we will send you a password reset link.",
-      "emailLabel": "Email address",
-      "emailPlaceholder": "Enter your HKUST-GZ email",
-      "emailHint": "Please use the HKUST-GZ email address linked to your account.",
-      "sendLink": "Send reset link",
-      "sentTitle": "Reset link sent",
-      "sentDescription": "We have sent a password reset link to {email}.",
-      "nextSteps": "What to do next",
-      "stepOne": "Check your inbox, including the spam folder.",
-      "stepTwo": "Open the reset link from the email.",
-      "stepThree": "Set a new password.",
-      "noMail": "Didn’t receive the email?",
-      "resendAvailableIn": "Resend available in {seconds}s",
-      "backToLogin": "Back to login",
-      "goToRegister": "Don’t have an account? Register now",
-      "errors": {
-        "emailInvalid": "Please enter a valid HKUST-GZ email address.",
-        "sendFailed": "Failed to send the reset email. Please try again.",
-        "resendFailed": "Failed to resend the email. Please try again."
-      },
-      "success": {
-        "resent": "The reset link has been sent again. Please check your inbox."
-      }
-    },
-    "resetPassword": {
-      "pageTitle": "Reset password"
     }
   },
   "profileRedirect": {

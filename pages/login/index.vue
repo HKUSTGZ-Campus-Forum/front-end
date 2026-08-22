@@ -1,29 +1,31 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useAuth } from "~/composables/useAuth";
 import { oidcErrorTranslationKey, safeOidcReturnTo } from "~/utils/oidc";
 
 definePageMeta({ layout: "keguang-auth" });
 
-const { login, getOidcStatus, getOidcLoginUrl, exchangeOidcCode } = useAuth();
+const { getOidcStatus, getOidcLoginUrl, exchangeOidcCode } = useAuth();
 const { t, locale } = useI18n();
 const { getLocalePath } = useAppLocale();
-const username = ref("");
-const password = ref("");
-const showPassword = ref(false);
-const rememberMe = ref(false);
+const router = useRouter();
+const route = useRoute();
+
 const errorMessage = ref("");
-const isLoading = ref(false);
 const isOidcLoading = ref(false);
 const isOidcStatusLoading = ref(true);
 const isOidcEnabled = ref(false);
 
-const router = useRouter();
-const route = useRoute();
+useHead(() => ({
+  title: `${t("auth.login.title")} - ${t("common.appName")}`,
+  htmlAttrs: {
+    lang: locale.value === "en" ? "en" : "zh-CN",
+  },
+}));
 
-function oidcErrorCopy(code) {
+function oidcErrorCopy(code: string) {
   return t(oidcErrorTranslationKey(code));
 }
 
@@ -42,6 +44,7 @@ async function loadOidcStatus() {
 function startOidcLogin() {
   if (!isOidcEnabled.value || isOidcLoading.value) return;
   isOidcLoading.value = true;
+  errorMessage.value = "";
   const returnTo = safeOidcReturnTo(route.query.redirect, getLocalePath("/"));
   window.location.assign(getOidcLoginUrl(returnTo, locale.value));
 }
@@ -65,8 +68,9 @@ async function handleOidcCallback() {
     const result = await exchangeOidcCode(code);
     await router.replace(safeOidcReturnTo(result.return_to, getLocalePath("/")));
   } catch (error) {
-    const code = error instanceof Error ? error.message : "authorization_failed";
-    errorMessage.value = oidcErrorCopy(code);
+    const errorCode =
+      error instanceof Error ? error.message : "authorization_failed";
+    errorMessage.value = oidcErrorCopy(errorCode);
     const nextQuery = { ...route.query };
     delete nextQuery.oidc_code;
     delete nextQuery.oidc_error;
@@ -79,41 +83,60 @@ async function handleOidcCallback() {
 onMounted(async () => {
   await Promise.all([loadOidcStatus(), handleOidcCallback()]);
 });
-
-async function handleLogin() {
-  if (!username.value || !password.value) {
-    errorMessage.value = t("auth.login.errors.required");
-    return;
-  }
-
-  try {
-    isLoading.value = true;
-    errorMessage.value = "";
-    const user = await login(username.value, password.value, rememberMe.value);
-    if (user?.isFirstLogin) {
-      router.push(getLocalePath("/setting/theme"));
-    } else {
-      const redirectPath =
-        typeof route.query.redirect === "string"
-          ? route.query.redirect
-          : getLocalePath("/");
-      router.push(redirectPath);
-    }
-  } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : t("auth.login.errors.invalid");
-  } finally {
-    isLoading.value = false;
-  }
-}
 </script>
 
 <template>
-  <div class="kg-login-card">
-    <h1 class="kg-login-title">{{ t("auth.login.title") }}</h1>
+  <main class="kg-login-card" aria-labelledby="login-title">
+    <div class="kg-login-emblem" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M3 10h18" />
+        <path d="M5 10v8" />
+        <path d="M9 10v8" />
+        <path d="M15 10v8" />
+        <path d="M19 10v8" />
+        <path d="M3 18h18" />
+        <path d="m12 3 9 5H3z" />
+      </svg>
+    </div>
+
+    <h1 id="login-title" class="kg-login-title">
+      {{ t("auth.login.title") }}
+    </h1>
     <p class="kg-login-subtitle">{{ t("auth.login.subtitle") }}</p>
 
-    <section class="kg-sso-section" :aria-busy="isOidcStatusLoading || isOidcLoading">
+    <div
+      v-if="errorMessage"
+      class="kg-login-message kg-login-message--error"
+      role="alert"
+      aria-live="polite"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v5" />
+        <path d="M12 17h.01" />
+      </svg>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <section
+      class="kg-sso-section"
+      :aria-busy="isOidcStatusLoading || isOidcLoading"
+    >
       <button
         type="button"
         class="kg-sso-btn"
@@ -121,13 +144,13 @@ async function handleLogin() {
         @click="startOidcLogin"
       >
         <span
-          v-if="isOidcLoading"
-          class="kg-sso-icon kg-sso-icon--loading"
+          v-if="isOidcStatusLoading || isOidcLoading"
+          class="kg-sso-spinner"
           aria-hidden="true"
         />
         <svg
           v-else
-          class="kg-sso-icon"
+          class="kg-sso-btn-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -136,13 +159,9 @@ async function handleLogin() {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M3 10h18" />
-          <path d="M5 10v8" />
-          <path d="M9 10v8" />
-          <path d="M15 10v8" />
-          <path d="M19 10v8" />
-          <path d="M3 18h18" />
-          <path d="m12 3 9 5H3z" />
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+          <path d="m10 17 5-5-5-5" />
+          <path d="M15 12H3" />
         </svg>
         <span>
           {{
@@ -156,6 +175,7 @@ async function handleLogin() {
           }}
         </span>
       </button>
+
       <p class="kg-sso-hint">
         {{
           isOidcEnabled
@@ -163,137 +183,128 @@ async function handleLogin() {
             : t("auth.login.sso.unavailableHint")
         }}
       </p>
+
+      <button
+        v-if="!isOidcStatusLoading && !isOidcEnabled"
+        type="button"
+        class="kg-sso-retry"
+        @click="loadOidcStatus"
+      >
+        {{ t("auth.login.sso.retry") }}
+      </button>
     </section>
 
-    <div class="kg-login-divider" role="separator">
-      <span>{{ t("auth.login.localAccountDivider") }}</span>
+    <div class="kg-sso-policy">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+      <span>{{ t("auth.login.sso.onlyHint") }}</span>
     </div>
-
-    <form class="kg-form" @submit.prevent="handleLogin">
-      <div class="kg-form-group">
-        <label for="username">{{ t("auth.login.usernameLabel") }}</label>
-        <input
-          id="username"
-          v-model="username"
-          class="kg-input"
-          type="text"
-          :placeholder="t('auth.login.usernamePlaceholder')"
-          autocomplete="username"
-          :disabled="isLoading || isOidcLoading"
-          required
-        />
-      </div>
-
-      <div class="kg-form-group">
-        <label for="password">{{ t("auth.login.passwordLabel") }}</label>
-        <div class="kg-password-field">
-          <input
-            id="password"
-            v-model="password"
-            class="kg-input"
-            :type="showPassword ? 'text' : 'password'"
-            :placeholder="t('auth.login.passwordPlaceholder')"
-            autocomplete="current-password"
-            :disabled="isLoading || isOidcLoading"
-            required
-          />
-          <button
-            type="button"
-            class="kg-toggle-pwd"
-            :aria-label="showPassword ? t('common.hide') : t('common.show')"
-            :disabled="isLoading || isOidcLoading"
-            @click="showPassword = !showPassword"
-          >
-            {{ showPassword ? t("common.hide") : t("common.show") }}
-          </button>
-        </div>
-      </div>
-
-      <div class="kg-form-options">
-        <label class="kg-checkbox-label">
-          <input type="checkbox" v-model="rememberMe" />
-          {{ t("auth.login.rememberMe") }}
-        </label>
-        <NuxtLink :to="getLocalePath('/forgot-password')" class="kg-forgot-link">{{ t("auth.login.forgotPassword") }}</NuxtLink>
-      </div>
-
-      <div v-if="errorMessage" class="kg-error-msg" role="alert" aria-live="polite">
-        <svg
-          class="kg-error-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 8v5" />
-          <path d="M12 17h.01" />
-        </svg>
-        <span>{{ errorMessage }}</span>
-      </div>
-
-      <button type="submit" class="kg-submit-btn" :disabled="isLoading || isOidcLoading">
-        {{ isLoading ? t("auth.login.submitting") : t("auth.login.submit") }}
-      </button>
-    </form>
-
-    <div class="kg-form-footer">
-      {{ t("auth.login.noAccount") }}
-      <NuxtLink :to="getLocalePath('/register')" class="kg-link">{{ t("auth.login.registerNow") }}</NuxtLink>
-    </div>
-  </div>
+  </main>
 </template>
 
 <style lang="scss" scoped>
 .kg-login-card {
-  width: 100%;
-  max-width: 420px;
+  width: min(100%, 440px);
+  padding: 40px 36px 34px;
   background: var(--bg-secondary);
   border: 1.5px solid var(--border-primary);
   border-radius: 16px;
   box-shadow: var(--shadow-large);
-  padding: 40px 36px;
+  color: var(--text-primary);
+}
+
+.kg-login-emblem {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 18px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
+  color: var(--interactive-primary);
+
+  svg {
+    width: 27px;
+    height: 27px;
+  }
 }
 
 .kg-login-title {
+  margin: 0;
+  color: var(--text-primary);
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--text-primary);
-  margin: 0 0 6px;
+  line-height: 1.25;
   text-align: center;
+  text-wrap: balance;
 }
 
 .kg-login-subtitle {
-  font-size: 0.9rem;
+  max-width: 38ch;
+  margin: 8px auto 26px;
   color: var(--text-secondary);
-  margin: 0 0 28px;
+  font-size: 0.92rem;
+  line-height: 1.55;
   text-align: center;
+  text-wrap: pretty;
+}
+
+.kg-login-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 18px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    flex: 0 0 auto;
+  }
+}
+
+.kg-login-message--error {
+  background: var(--error-background);
+  border: 1px solid color-mix(in srgb, var(--error-color) 30%, transparent);
+  color: var(--error-color);
 }
 
 .kg-sso-section {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  align-items: center;
 }
 
 .kg-sso-btn {
-  width: 100%;
-  min-height: 48px;
-  padding: 11px 16px;
-  border: none;
-  border-radius: 12px;
-  background: var(--btn-primary-bg);
-  color: var(--text-inverse);
-  font: inherit;
-  font-weight: 750;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--btn-primary-bg);
+  color: var(--text-inverse);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 750;
   transition: background var(--transition-fast), transform var(--transition-fast);
 
   &:hover:not(:disabled) {
@@ -312,13 +323,14 @@ async function handleLogin() {
   }
 }
 
-.kg-sso-icon {
+.kg-sso-btn-icon,
+.kg-sso-spinner {
   width: 19px;
   height: 19px;
   flex: 0 0 auto;
 }
 
-.kg-sso-icon--loading {
+.kg-sso-spinner {
   border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
   border-top-color: currentColor;
   border-radius: 50%;
@@ -326,180 +338,76 @@ async function handleLogin() {
 }
 
 .kg-sso-hint {
-  margin: 0;
+  max-width: 43ch;
+  margin: 11px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.kg-sso-retry {
+  min-height: 42px;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--interactive-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 650;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--interactive-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+.kg-sso-policy {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-secondary);
   color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.5;
-  text-align: center;
-}
 
-.kg-login-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 24px 0;
-  color: var(--text-secondary);
-  font-size: 0.78rem;
-
-  &::before,
-  &::after {
-    content: "";
-    height: 1px;
-    flex: 1;
-    background: var(--border-secondary);
+  svg {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    flex: 0 0 auto;
+    color: var(--interactive-primary);
   }
-}
-
-.kg-form { display: flex; flex-direction: column; gap: 18px; }
-
-.kg-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  label { font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); }
-}
-
-.kg-input {
-  padding: 11px 14px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 12px;
-  background: var(--surface-primary);
-  color: var(--text-primary);
-  font-size: 0.93rem;
-  font-family: inherit;
-  outline: none;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-  &:focus {
-    border-color: var(--interactive-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 18%, transparent);
-  }
-  &:disabled { cursor: not-allowed; opacity: 0.68; }
-  &::placeholder { color: var(--text-muted); }
-}
-
-.kg-password-field {
-  position: relative;
-  .kg-input { padding-right: 60px; }
-}
-
-.kg-toggle-pwd {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  cursor: pointer;
-  padding: 4px;
-  &:hover { color: var(--interactive-primary); }
-  &:focus-visible { outline: 2px solid var(--interactive-primary); border-radius: 4px; }
-}
-
-.kg-form-options {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.kg-checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  input { accent-color: var(--interactive-primary); }
-}
-
-.kg-forgot-link {
-  font-size: 0.875rem;
-  color: var(--interactive-primary);
-  text-decoration: none;
-  &:hover { text-decoration: underline; }
-}
-
-.kg-error-msg {
-  padding: 10px 14px;
-  background: var(--error-background);
-  border: 1px solid color-mix(in srgb, var(--error-color) 30%, transparent);
-  border-radius: 10px;
-  color: var(--error-color);
-  font-size: 0.875rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-
-  svg { flex: 0 0 auto; margin-top: 1px; }
-}
-
-.kg-error-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.kg-submit-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--surface-primary);
-  color: var(--interactive-active-text);
-  border: 1.5px solid var(--interactive-primary);
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-  &:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
-  }
-  &:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--interactive-primary) 24%, transparent);
-    outline-offset: 2px;
-  }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
-
-.kg-form-footer {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.kg-link {
-  color: var(--interactive-primary);
-  text-decoration: none;
-  font-weight: 600;
-  &:hover { text-decoration: underline; }
 }
 
 @keyframes kg-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 479px) {
   .kg-login-card {
-    padding: 30px 22px;
+    padding: 32px 22px 28px;
   }
 
-  .kg-form-options {
-    gap: 12px;
-  }
-
-  .kg-checkbox-label,
-  .kg-forgot-link {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
+  .kg-sso-btn {
+    min-height: 52px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kg-sso-btn,
-  .kg-submit-btn {
+  .kg-sso-btn {
     transition: none;
   }
 
@@ -507,7 +415,7 @@ async function handleLogin() {
     transform: none;
   }
 
-  .kg-sso-icon--loading {
+  .kg-sso-spinner {
     animation-duration: 1.6s;
   }
 }

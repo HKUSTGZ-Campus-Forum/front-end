@@ -40,7 +40,7 @@
 - **Frontend**: Nuxt 3, Vue.js 3, TypeScript, SCSS
 - **Backend**: Flask, PostgreSQL, SQLAlchemy ORM
 - **Storage**: Alibaba Cloud OSS (Object Storage Service)
-- **Authentication**: JWT tokens with refresh mechanism
+- **Authentication**: HKUST(GZ) OIDC SSO with UniKorn JWT access/refresh sessions
 - **State Management**: Pinia
 
 ## Authentication & API Calls
@@ -174,10 +174,10 @@ const handleSubmit = async () => {
 ## Component Structure
 
 ### Authentication Components
-- `composables/useAuth.ts`: Core authentication logic
+- `composables/useAuth.ts`: School OIDC sign-in, ticket exchange, JWT refresh, and sign-out
 - `composables/useApi.ts`: API calls with auto token refresh
-- `pages/login/index.vue`: Login page
-- `components/setting/Login.vue`: Login form component
+- `pages/login/index.vue`: SSO-only login page
+- `components/setting/AccountSettings.vue`: Verified email management (no password authentication)
 
 ### Forum Components
 - `pages/forum/index.vue`: Forum post listing

@@ -1,16 +1,16 @@
 <template>
   <div class="email-verification">
     <div class="verification-header">
-      <h2 class="verification-title">邮箱验证</h2>
+      <h2 class="verification-title">{{ t('auth.emailVerification.title') }}</h2>
       <p class="verification-subtitle">
-        我们已向 <strong>{{ userEmail }}</strong> 发送了验证邮件
+        {{ t('auth.emailVerification.sentPrefix') }} <strong>{{ userEmail }}</strong>
       </p>
       <p class="verification-description">
-        请查收邮件并输入6位验证码完成注册
+        {{ t('auth.emailVerification.description') }}
       </p>
       <div class="trash-mail-notice">
         <span class="notice-icon">📬</span>
-        <p>如果没有收到邮件，请检查您的 <strong>垃圾邮件箱</strong></p>
+        <p>{{ t('auth.emailVerification.spamHint') }}</p>
       </div>
     </div>
 
@@ -24,12 +24,12 @@
 
     <form @submit.prevent="handleVerification" class="verification-form">
       <div class="code-input-group">
-        <label for="verification-code">验证码</label>
+        <label for="verification-code">{{ t('auth.emailVerification.codeLabel') }}</label>
         <input
           id="verification-code"
           v-model="verificationCode"
           type="text"
-          placeholder="请输入6位验证码"
+          :placeholder="t('auth.emailVerification.codePlaceholder')"
           maxlength="6"
           pattern="[0-9]{6}"
           required
@@ -37,7 +37,7 @@
           class="code-input"
           @input="formatCode"
         />
-        <div class="code-hint">验证码有效期为10分钟</div>
+        <div class="code-hint">{{ t('auth.emailVerification.expiryHint') }}</div>
       </div>
 
       <button 
@@ -45,7 +45,7 @@
         class="verify-button" 
         :disabled="loading || verificationCode.length !== 6"
       >
-        <span v-if="!loading">验证邮箱</span>
+        <span v-if="!loading">{{ t('auth.emailVerification.submit') }}</span>
         <span v-else class="loading-spinner">⟳</span>
       </button>
     </form>
@@ -56,12 +56,12 @@
         class="resend-button"
         :disabled="loading || resendCooldown > 0"
       >
-        <span v-if="resendCooldown === 0">重新发送验证码</span>
-        <span v-else>{{ resendCooldown }}秒后可重新发送</span>
+        <span v-if="resendCooldown === 0">{{ t('auth.emailVerification.resend') }}</span>
+        <span v-else>{{ t('auth.emailVerification.resendCountdown', { seconds: resendCooldown }) }}</span>
       </button>
 
-      <button @click="goBackToRegister" class="back-button">
-        返回注册页面
+      <button @click="closeVerification" class="back-button">
+        {{ t('auth.emailVerification.close') }}
       </button>
     </div>
   </div>
@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useApi } from '~/composables/useApi'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   userId: number
@@ -78,9 +78,8 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['verification-success', 'back-to-register'])
-
-const { fetchWithAuth } = useApi()
+const emit = defineEmits(['verification-success', 'close'])
+const { t } = useI18n()
 
 // Reactive state
 const verificationCode = ref('')
@@ -101,7 +100,7 @@ function formatCode(event: Event) {
 // Handle email verification
 async function handleVerification() {
   if (!verificationCode.value || verificationCode.value.length !== 6) {
-    error.value = '请输入6位验证码'
+    error.value = t('auth.emailVerification.errors.invalidCode')
     return
   }
 
@@ -124,10 +123,10 @@ async function handleVerification() {
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.msg || '验证失败')
+      throw new Error(data.msg || t('auth.emailVerification.errors.verifyFailed'))
     }
 
-    successMessage.value = '邮箱验证成功！正在跳转...'
+    successMessage.value = t('auth.emailVerification.success')
     
     // Emit success event after a brief delay
     setTimeout(() => {
@@ -140,7 +139,7 @@ async function handleVerification() {
 
   } catch (err) {
     console.error('Email verification error:', err)
-    error.value = err instanceof Error ? err.message : '验证失败，请重试'
+    error.value = err instanceof Error ? err.message : t('auth.emailVerification.errors.verifyRetry')
   } finally {
     loading.value = false
   }
@@ -168,17 +167,17 @@ async function resendCode() {
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.msg || '重发失败')
+      throw new Error(data.msg || t('auth.emailVerification.errors.resendFailed'))
     }
 
-    successMessage.value = '验证码已重新发送，请查收邮件'
+    successMessage.value = t('auth.emailVerification.resent')
     
     // Start cooldown
     startCooldown()
     
   } catch (err) {
     console.error('Resend verification error:', err)
-    error.value = err instanceof Error ? err.message : '重发失败，请重试'
+    error.value = err instanceof Error ? err.message : t('auth.emailVerification.errors.resendRetry')
   } finally {
     loading.value = false
   }
@@ -197,9 +196,8 @@ function startCooldown() {
   }, 1000)
 }
 
-// Go back to register page
-function goBackToRegister() {
-  emit('back-to-register')
+function closeVerification() {
+  emit('close')
 }
 
 // Cleanup timer on unmount
