@@ -133,6 +133,7 @@ front-end/
 | `CHANGELOG.md` | 正式版本变更日志 |
 | `AGENTS.md` | Agent 工作流规范（代码规范、提交规范、文档要求） |
 | `CLAUDE.md` | 前端开发笔记：主题、认证、上传、导航系统、易错点 |
+| `docs/production-environment.md` | 当前环境、学校正式服拓扑和发布边界 |
 | `docs/architecture.md` | 架构决策记录（ADR） |
 | `docs/THEME_SYSTEM.md` | 主题系统设计 |
 | `docs/i18n-guidelines.md` | 国际化规范 |
@@ -165,9 +166,10 @@ front-end/
 
 ## 部署
 
-- 开发环境：push 到 `main` 自动部署（`.github/workflows/deploy.yml`）
-- 生产环境：push 到 `production` 自动部署（`.github/workflows/deploy-frontend-prod.yml`）
-- 采用不可变发布目录 + 原子切换 + PM2 进程管理，详见 `deploy/README.md`
+- 开发环境：push 到 `main` 后由 `.github/workflows/deploy.yml` 自动部署到 `https://dev.unikorn.axfff.com`
+- 当前正式环境：`https://unikorn.hkust-gz.edu.cn`；前端与后端以精确 commit SHA 在学校服务器上联合构建，通过后端仓库 `deploy/school/deploy-release.sh` 原子发布
+- `.github/workflows/deploy-frontend-prod.yml` 和 `production` 分支仍面向迁移前的 `unikorn.axfff.com` 旧栈，不是当前正式发布路径
+- 学校正式环境、服务拓扑和发布验收见 `docs/production-environment.md`；本仓库 `deploy/README.md` 仅说明 axfff 栈的前端原子发布机制
 - CI（`.github/workflows/frontend-ci.yml`）：PR 时执行 i18n 检查、测试、构建与镜像构建
 
 ## 常见问题

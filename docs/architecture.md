@@ -34,13 +34,13 @@
 - **理由**：组件按目录前缀自动命名；破坏该约定会静默破坏导航系统。同类问题通过"优先级 + 兜底"策略（如头像三级回退）解决，而非替换既有行为。
 - **相关文档**：`CLAUDE.md`
 
-## ADR-004：排课助手迁移为并行迁移，旧站保持只读可用
+## ADR-004：排课助手迁移为并行迁移，独立 CoursePlan 保持可用
 
 - **日期**：2026-06
-- **状态**：已采纳（实施中）
+- **状态**：已采纳（已完成）
 - **背景**：原独立项目 `CoursePlan.search`（Next.js）需要并入主站"课程"板块；但旧站用户、购物车、数据不可破坏，且需要回滚路径。
 - **决策**：
-  - 主站新入口 `/schedule`（重定向到 `/courses/planner`）；旧站 `scheduler.unikorn.axfff.com` 保持独立可用；
+  - 主站入口 `/schedule` 重定向到 `/courses/planner`；独立 CoursePlan 继续由 `scheduler.unikorn.hkust-gz.edu.cn` 提供服务；
   - 只迁移两个核心界面（课表 dashboard、地图 map），不迁移旧账号与历史购物车；
   - 公共课程数据通过只读快照导入（事务性、可重入），绝不回写旧库；
   - 游客购物车存浏览器本地，登录用户购物车通过主站 JWT 接口持久化。
@@ -59,9 +59,9 @@
 ## ADR-006：部署采用不可变发布目录 + 原子符号链接切换
 
 - **日期**：2026-06
-- **状态**：已采纳
+- **状态**：已采纳（axfff 开发/旧栈）
 - **背景**：早期直接覆盖部署存在"半发布"窗口与回滚困难。
-- **决策**：每次构建上传到唯一 `.incoming/<git-sha>-<run>-<attempt>` 目录，校验完整文件清单后加锁（no-follow、close-on-exec）串行切换，将目录移入 `releases/` 并原子切换 `current` 符号链接；PM2 始终从 `current/.output/server/index.mjs` 启动；仅当所有进程报告预期 Git SHA 且 `/health` 探测通过才判定部署成功。
+- **决策**：`dev.unikorn.axfff.com` 及迁移前旧 axfff production 的前端 workflow 将每次构建上传到唯一 `.incoming/<git-sha>-<run>-<attempt>` 目录，校验完整文件清单后加锁串行切换，将目录移入 `releases/` 并原子切换 `current` 符号链接；PM2 从 `current/.output/server/index.mjs` 启动；仅当所有进程报告预期 Git SHA 且 `/health` 探测通过才判定部署成功。学校正式服使用 ADR-011 的联合 release，不使用该旧 production workflow。
 - **理由**：消除部分写入状态、保证可回滚（切换回旧 symlink）、部署身份可校验。
 - **相关文档**：`deploy/README.md`、`.github/workflows/deploy.yml`
 
@@ -100,6 +100,15 @@
 - **决策**：后端在 `users.onboarding_completed_at` 持久化完成状态，并在自己的用户响应中给出 `onboarding_required`。只有 SSO 自动创建的新账号初始为未完成；迁移前既有账号及首次关联的既有已验证账号直接视为完成。前端在 SSO exchange 后及全局路由守卫中将未完成用户送往本地化的 `/onboarding`，要求确认 2–50 字符公开用户名，头像保持可选；`POST /api/users/me/onboarding` 以幂等方式完成状态。规则和隐私页面在守卫期间保持可访问，站内返回地址经过白名单式校验以避免开放重定向和循环。
 - **理由**：把学校身份与公开社区身份明确分层，同时保证引导跨刷新、跨设备一致；对既有用户做完成态回填可避免上线后全量拦截。头像可选可以降低首次进入门槛，用户名强制确认则能阻止临时 SSO 名称意外公开。
 - **相关文档**：`pages/onboarding.vue`、`middleware/onboarding.global.ts`、`utils/onboarding.ts`、后端 `CAMPUS_SSO.md` 与 `migrations/versions/20260822_sso_onboarding.py`
+
+## ADR-011：学校正式服采用前后端联合不可变 release
+
+- **日期**：2026-08
+- **状态**：已采纳
+- **背景**：正式产品已迁移到学校域名和学校服务器；前端、后端、数据库迁移、Nginx 与同机 CoursePlan 需要在一个受控发布边界内验证，旧 axfff `production` workflow 无法代表该拓扑。
+- **决策**：正式产品固定为 `https://unikorn.hkust-gz.edu.cn`。在 `unikorn-school` 上使用后端仓库 `deploy/school/deploy-release.sh`，以干净 checkout 和前后端完整 SHA 构建 `/srv/unikorn/releases/<release-id>`，执行已验证备份和 Alembic 后原子切换 `current`，并以 systemd 管理 Nuxt、Flask 和独立 Redis。Nginx 仅在模板变化时通过 `activate-nginx.sh` 更新；每次发布都必须验证 SSO 和 `courseplan.service`。旧 `unikorn.axfff.com` production workflow 只属于迁移前旧栈，不是当前正式发布路径。
+- **理由**：精确记录前后端版本、消除半发布状态、把数据库迁移和应用切换纳入同一保护流程，同时保持 CoursePlan 的目录、服务和端口隔离。
+- **相关文档**：`docs/production-environment.md`、后端 `deploy/school/README.md`
 
 ---
 

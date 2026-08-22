@@ -1,5 +1,10 @@
 # Atomic frontend releases
 
+> Scope: this directory documents the `dev.unikorn.axfff.com` frontend workflow
+> and the migration-era axfff production workflow. The active production site is
+> `https://unikorn.hkust-gz.edu.cn` and is released jointly with the backend via
+> `deploy/school/deploy-release.sh`; see `../docs/production-environment.md`.
+
 The development and production deployment workflows upload each Nuxt build to a unique
 `.incoming/<git-sha>-<run-id>-<attempt>` directory. `atomic-release.sh` verifies
 the complete file manifest, serializes cutovers with a no-follow, close-on-exec

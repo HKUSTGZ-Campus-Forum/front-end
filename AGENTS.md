@@ -25,6 +25,7 @@
 - 包管理器：npm（仓库同时维护 `package-lock.json` 与 `pnpm-lock.yaml`；新增依赖时两者保持一致）
 - 要求 Node.js 版本与 CI 一致（见 `.github/workflows/frontend-ci.yml`，当前为 Node 22）
 - 本地开发 API：默认 `http://localhost:8000`（由 `nuxt.config.ts` 中 `NUXT_PUBLIC_API_BASE_URL` 控制；后端未启动时可通过 `.env` 指向 `https://dev.unikorn.axfff.com`）
+- 当前正式产品是 `https://unikorn.hkust-gz.edu.cn`，由学校服务器上的前后端联合 release 发布。仓库内面向 `unikorn.axfff.com` 的旧 `production` workflow 不是当前正式发布路径；环境细节见 `docs/production-environment.md`。
 
 ### 2.2 常用命令
 
