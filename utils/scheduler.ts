@@ -85,6 +85,60 @@ export interface SemesterInfo {
   section_count: number
 }
 
+export type SchedulerPlanVisibility = 'private' | 'unlisted' | 'public'
+export type SchedulerPlanAvailability = 'current' | 'updated' | 'unavailable'
+
+export interface SchedulerPlanAuthor {
+  id: number
+  username: string
+  avatar_url: string | null
+}
+
+export interface SchedulerSavedPlan {
+  public_id: string
+  semester_id: string
+  name: string
+  description: string
+  visibility: SchedulerPlanVisibility
+  version: number
+  availability: SchedulerPlanAvailability
+  course_codes: string[]
+  course_count: number
+  total_credits: number
+  author: SchedulerPlanAuthor
+  is_owner: boolean
+  can_copy: boolean
+  created_at: string
+  updated_at: string
+  published_at: string | null
+  courses: CartCourse[]
+  selections: PlanSelection[]
+  banned_periods?: boolean[][]
+}
+
+export interface SchedulerPlanCourseInput {
+  course_code: string
+  selections: Array<{ bundle_id: number; layer: number }>
+}
+
+export interface SchedulerPlanWriteInput {
+  name: string
+  description: string
+  semester_id: string
+  visibility: SchedulerPlanVisibility
+  courses: SchedulerPlanCourseInput[]
+  banned_periods: boolean[][]
+  version?: number
+}
+
+export interface SchedulerSharedPlanResponse {
+  plans: SchedulerSavedPlan[]
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+}
+
 export interface SchedulerPopularityCounts {
   looking_count: number
   scheduling_count: number

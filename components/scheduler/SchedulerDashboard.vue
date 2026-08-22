@@ -17,6 +17,11 @@ import {
   createLatestSettlementTracker,
   getSchedulerCartMutationFailureKind,
 } from '~/utils/schedulerAsync'
+import type { SchedulerSavedPlan, SchedulerPlanVisibility } from '~/utils/scheduler'
+import {
+  buildSchedulerPlanWriteInput,
+  schedulerPlanContentFingerprint,
+} from '~/utils/schedulerPlans'
 
 const props = defineProps<{
   semesterId: string
@@ -32,7 +37,16 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
-const { getPopularity, getPopularityHistory } = useScheduler()
+const route = useRoute()
+const router = useRouter()
+const {
+  getPopularity,
+  getPopularityHistory,
+  getPlan,
+  createPlan,
+  updatePlan,
+  clearCart,
+} = useScheduler()
 const loggedIn = toRef(props, 'isLoggedIn')
 const cart = useSchedulerCart(
   props.semesterId,
@@ -176,6 +190,12 @@ const toggleIntents = createBooleanIntentTracker()
 const cartActionSettlements = createLatestSettlementTracker()
 const cartError = ref<'ambiguous' | 'failed' | 'unverified' | ''>('')
 const historyAccessError = ref('')
+const activeSavedPlan = ref<SchedulerSavedPlan | null>(null)
+const savedPlanBaseline = ref('')
+const showPlanDialog = ref(false)
+const planSubmitting = ref(false)
+const planActionError = ref('')
+const planActionMessage = ref('')
 const displayOptions = ref({
   name: true,
   section: true,
@@ -293,6 +313,23 @@ const currentPlan = computed(() => {
   const plan = planList.value[viewIndex.value - 1]
   return plan || []
 })
+
+const currentPlanFingerprint = computed(() => schedulerPlanContentFingerprint({
+  courses: courseList.value,
+  selections: currentPlan.value,
+  bannedPeriods: bannedPeriods.value,
+}))
+const savedPlanDirty = computed(() => Boolean(
+  activeSavedPlan.value?.is_owner
+  && savedPlanBaseline.value
+  && currentPlanFingerprint.value !== savedPlanBaseline.value,
+))
+const canSaveCurrentPlan = computed(() => (
+  props.isLoggedIn
+  && solverResult.value.status === 'ok'
+  && currentPlan.value.length > 0
+  && !cart.requiresReload.value
+))
 
 const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
 
@@ -504,6 +541,104 @@ function onPreviewBundle(code: string, layer: number, bundleId: number) {
 function onClearPreview() {
   previewSection.value = null
 }
+
+function fingerprintSavedPlan(plan: SchedulerSavedPlan): string {
+  return schedulerPlanContentFingerprint({
+    courses: plan.courses || [],
+    selections: plan.selections || [],
+    bannedPeriods: plan.banned_periods || Array.from({ length: 7 }, () => Array(8).fill(false)),
+  })
+}
+
+async function loadActiveSavedPlan() {
+  const publicId = typeof route.query.plan === 'string' ? route.query.plan : ''
+  if (!publicId) return
+  try {
+    const plan = await getPlan(publicId)
+    activeSavedPlan.value = plan
+    savedPlanBaseline.value = fingerprintSavedPlan(plan)
+  } catch {
+    activeSavedPlan.value = null
+    savedPlanBaseline.value = ''
+  }
+}
+
+onMounted(() => void loadActiveSavedPlan())
+
+function openSaveDialog() {
+  planActionMessage.value = ''
+  planActionError.value = ''
+  if (!props.isLoggedIn) {
+    showGuestHint.value = true
+    return
+  }
+  if (!canSaveCurrentPlan.value) {
+    planActionError.value = t('scheduler.savedPlans.noSavablePlan')
+    return
+  }
+  showPlanDialog.value = true
+}
+
+async function saveCurrentPlan(metadata: {
+  name: string
+  description: string
+  visibility: SchedulerPlanVisibility
+  saveAsNew: boolean
+}) {
+  planSubmitting.value = true
+  planActionError.value = ''
+  try {
+    const shouldUpdate = Boolean(activeSavedPlan.value?.is_owner && !metadata.saveAsNew)
+    const input = buildSchedulerPlanWriteInput({
+      ...metadata,
+      semesterId: props.semesterId,
+      courses: courseList.value,
+      selections: currentPlan.value,
+      bannedPeriods: bannedPeriods.value,
+      version: shouldUpdate ? activeSavedPlan.value!.version : undefined,
+    })
+    const saved = shouldUpdate
+      ? await updatePlan(activeSavedPlan.value!.public_id, input as typeof input & { version: number })
+      : await createPlan(input)
+    activeSavedPlan.value = saved
+    savedPlanBaseline.value = fingerprintSavedPlan(saved)
+    showPlanDialog.value = false
+    planActionMessage.value = shouldUpdate
+      ? t('scheduler.savedPlans.updatedMessage')
+      : t('scheduler.savedPlans.savedMessage')
+    await router.replace({ query: { ...route.query, plan: saved.public_id } })
+  } catch (error) {
+    const code = (error as Error & { code?: string }).code
+    planActionError.value = code === 'version_conflict'
+      ? t('scheduler.savedPlans.versionConflict')
+      : (error instanceof Error ? error.message : t('scheduler.savedPlans.saveFailed'))
+  } finally {
+    planSubmitting.value = false
+  }
+}
+
+async function startNewPlan() {
+  if (!window.confirm(t('scheduler.savedPlans.newConfirm'))) return
+  planActionError.value = ''
+  planActionMessage.value = ''
+  try {
+    if (props.isLoggedIn) {
+      await clearCart(props.semesterId)
+      await cart.reloadAuthoritative()
+    } else {
+      courseList.value = []
+    }
+    clearBans()
+    activeSavedPlan.value = null
+    savedPlanBaseline.value = ''
+    const nextQuery = { ...route.query }
+    delete nextQuery.plan
+    await router.replace({ query: nextQuery })
+    planActionMessage.value = t('scheduler.savedPlans.newReady')
+  } catch {
+    planActionError.value = t('scheduler.savedPlans.newFailed')
+  }
+}
 </script>
 
 <template>
@@ -522,7 +657,32 @@ function onClearPreview() {
         </div>
         <p>{{ t('scheduler.workspaceSubtitle') }}</p>
       </div>
-      <div class="dashboard__summary" aria-label="planner summary">
+      <div class="dashboard__header-side">
+        <nav class="dashboard__plan-actions" :aria-label="t('scheduler.savedPlans.navigation')">
+          <button type="button" class="dashboard__action" @click="startNewPlan">
+            <Icon name="lucide:file-plus-2" aria-hidden="true" />
+            {{ t('scheduler.savedPlans.new') }}
+          </button>
+          <button
+            type="button"
+            class="dashboard__action dashboard__action--primary"
+            :disabled="isLoggedIn && !canSaveCurrentPlan"
+            @click="openSaveDialog"
+          >
+            <Icon :name="savedPlanDirty ? 'lucide:save' : 'lucide:bookmark-plus'" aria-hidden="true" />
+            {{ activeSavedPlan?.is_owner ? t('scheduler.savedPlans.saveChanges') : t('scheduler.savedPlans.save') }}
+            <span v-if="savedPlanDirty" class="dashboard__dirty" :title="t('scheduler.savedPlans.unsavedChanges')"></span>
+          </button>
+          <NuxtLink class="dashboard__action" :to="getLocalePath('/courses/planner/plans')">
+            <Icon name="lucide:folders" aria-hidden="true" />
+            {{ t('scheduler.savedPlans.mine') }}
+          </NuxtLink>
+          <NuxtLink class="dashboard__action" :to="getLocalePath('/courses/planner/shared')">
+            <Icon name="lucide:users" aria-hidden="true" />
+            {{ t('scheduler.savedPlans.shared') }}
+          </NuxtLink>
+        </nav>
+        <div class="dashboard__summary" aria-label="planner summary">
         <div class="dashboard__summary-item">
           <span>{{ t('scheduler.selectedCourses') }}</span>
           <strong>{{ enabledCourses.length }}</strong>
@@ -535,8 +695,19 @@ function onClearPreview() {
           <span>{{ t('scheduler.totalCredits') }}</span>
           <strong>{{ totalCredits }}</strong>
         </div>
+        </div>
       </div>
     </header>
+
+    <div v-if="planActionMessage" class="dashboard__notice dashboard__notice--success" role="status">
+      <span>{{ planActionMessage }}</span>
+      <button type="button" :aria-label="t('scheduler.close')" @click="planActionMessage = ''">&times;</button>
+    </div>
+
+    <div v-if="planActionError && !showPlanDialog" class="dashboard__notice dashboard__notice--error" role="alert">
+      <span>{{ planActionError }}</span>
+      <button type="button" :aria-label="t('scheduler.close')" @click="planActionError = ''">&times;</button>
+    </div>
 
     <div v-if="!isLoggedIn && showGuestHint && !planMessage" class="dashboard__notice dashboard__notice--warning">
       <span>{{ t('scheduler.guestHint') }}</span>
@@ -661,6 +832,18 @@ function onClearPreview() {
       @close="closePopularityHistory"
       @access-lost="handlePopularityHistoryAccessLost"
     />
+
+    <SchedulerPlanDialog
+      :visible="showPlanDialog"
+      :initial-name="activeSavedPlan?.name || ''"
+      :initial-description="activeSavedPlan?.description || ''"
+      :initial-visibility="activeSavedPlan?.visibility || 'private'"
+      :allow-update="Boolean(activeSavedPlan?.is_owner)"
+      :submitting="planSubmitting"
+      :error="planActionError"
+      @close="showPlanDialog = false"
+      @save="saveCurrentPlan"
+    />
   </div>
 </template>
 
@@ -684,6 +867,65 @@ function onClearPreview() {
     align-items: center;
     justify-content: space-between;
     gap: 24px;
+  }
+
+  &__header-side {
+    align-items: flex-end;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  &__plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    justify-content: flex-end;
+  }
+
+  &__action {
+    align-items: center;
+    background: var(--surface-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 11px;
+    position: relative;
+    text-decoration: none;
+    transition: background 0.16s, border-color 0.16s, color 0.16s;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--interactive-primary) 34%, var(--border-secondary));
+      color: var(--interactive-active);
+    }
+
+    &:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    &--primary {
+      background: var(--btn-primary-bg);
+      border-color: transparent;
+      color: var(--text-inverse);
+    }
+  }
+
+  &__dirty {
+    background: var(--semantic-warning);
+    border: 2px solid var(--btn-primary-bg);
+    border-radius: 50%;
+    height: 8px;
+    position: absolute;
+    right: -1px;
+    top: -1px;
+    width: 8px;
   }
 
   &__heading {
@@ -792,6 +1034,11 @@ function onClearPreview() {
       background: color-mix(in srgb, var(--semantic-warning) 14%, var(--surface-primary));
       border-color: color-mix(in srgb, var(--semantic-warning) 24%, var(--border-secondary));
       color: var(--text-primary);
+    }
+
+    &--success {
+      background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary));
+      border-color: color-mix(in srgb, var(--semantic-success) 24%, var(--border-secondary));
     }
 
     button {
@@ -1007,6 +1254,9 @@ function onClearPreview() {
       flex-direction: column;
     }
 
+    &__header-side { align-items: stretch; }
+    &__plan-actions { justify-content: flex-start; }
+
     &__resize-handle {
       display: none;
     }
@@ -1042,6 +1292,14 @@ function onClearPreview() {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
     }
+
+    &__plan-actions {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    &__action { flex: 0 0 auto; }
 
     &__summary-item {
       padding: 9px 10px;
