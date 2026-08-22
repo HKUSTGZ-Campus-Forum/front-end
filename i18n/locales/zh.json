@@ -1034,7 +1034,6 @@
         "unavailable": "学校 SSO 暂时不可用",
         "hint": "使用 HKUST(GZ) 统一身份认证，首次登录会安全关联或创建 UniKorn 账号。",
         "unavailableHint": "暂时无法连接学校统一身份认证，请稍后重试或联系管理员。",
-        "onlyHint": "账号密码登录、自助注册和密码找回均已停用，UniKorn 不会在此页面收集您的学校密码。",
         "retry": "重新检查 SSO",
         "errors": {
           "access_denied": "您取消了学校账号授权，尚未登录 UniKorn。",
