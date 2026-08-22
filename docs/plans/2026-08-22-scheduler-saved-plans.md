@@ -8,5 +8,5 @@
 - [x] Add My plans, shared gallery, and shared detail surfaces.
 - [x] Add bilingual copy, responsive/dark/accessibility states, and scheduler tests.
 - [x] Run full frontend/backend checks and inspect real UI at desktop and mobile sizes.
-- [ ] Deploy both main SHAs to shared dev and verify changed routes.
-- [ ] Release the exact clean SHAs to school production and complete the health matrix.
+- [x] Deploy both main SHAs to shared dev and verify changed routes.
+- [x] Release the exact clean SHAs to school production and complete the health matrix.
