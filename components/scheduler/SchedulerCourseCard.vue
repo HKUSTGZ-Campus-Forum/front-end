@@ -2,10 +2,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type {
-  BundleData,
   CartCourse,
   IndexedSchedulerCoursePopularity,
 } from '~/utils/scheduler'
+import { getSchedulerBundleLabel } from '~/utils/scheduler'
 
 const props = defineProps<{
   course: CartCourse
@@ -24,10 +24,6 @@ const emit = defineEmits<{
   (e: 'preview-bundle', code: string, layer: number, bundleId: number): void
   (e: 'clear-preview'): void
 }>()
-
-function getBundleLabel(bundle: BundleData): string {
-  return bundle.sections.map(s => s.section_type + s.name.replace(/\D/g, '')).join('/')
-}
 
 function isBundleSelected(layer: number, bundleId: number): boolean {
   return props.currentSelection?.[layer] === bundleId
@@ -84,7 +80,7 @@ function creditColorVar(credit: number): string {
             @mouseenter="emit('preview-bundle', course.course_code, Number(layer), bundle.id)"
             @mouseleave="emit('clear-preview')"
           >
-            {{ getBundleLabel(bundle) }}
+            {{ getSchedulerBundleLabel(bundle) }}
           </button>
         </div>
         <div class="course-card__layer-actions">
