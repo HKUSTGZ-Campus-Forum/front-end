@@ -7,12 +7,12 @@
 
 ---
 
-## ADR-001：主题系统采用"单一主题 + CSS 自定义属性"
+## ADR-001：主题系统采用"统一 token + 多主题配置"
 
 - **日期**：2025-04
 - **状态**：已采纳
 - **背景**：早期组件大量硬编码颜色，导致主题切换与视觉统一困难。
-- **决策**：以"科广蓝"（keguang-blue）为唯一主题，通过 CSS 自定义属性（`var(--surface-primary)`、`var(--text-primary)`、`var(--border-primary)`、`var(--shadow-small)` 等）定义颜色；未来新增主题仅替换颜色变量，布局保持一致。所有新组件禁止硬编码颜色。
+- **决策**：通过 CSS 自定义属性（`var(--surface-primary)`、`var(--text-primary)`、`var(--border-primary)`、`var(--shadow-small)` 等）定义颜色；当前提供 `keguang-blue` 与 `deep-dark`，主题只替换 token，布局保持一致。所有新组件禁止硬编码界面颜色。
 - **理由**：低侵入地实现全站视觉一致；为后续暗色/浅色变体预留扩展点；避免引入重型主题框架。
 - **相关文档**：`docs/THEME_SYSTEM.md`、`assets/css/variables.scss`
 
@@ -25,12 +25,12 @@
 - **理由**：统一令牌刷新逻辑、减少 401 事故、便于注入基址（同源 `/api` 或绝对 URL）。
 - **相关文档**：`CLAUDE.md`、`composables/useApi.ts`
 
-## ADR-003：导航组件沿用 Nuxt 自动导入命名约定（`HomePinned`/`HomeSidebar`）
+## ADR-003：导航组件沿用 Nuxt 自动导入命名约定
 
 - **日期**：2024-12
 - **状态**：已采纳
 - **背景**：将顶部导航与侧边栏迁移到 `components/home/` 后，若在模板中使用文件原名（`<Pinned>`）会导致导航栏消失；曾尝试"修正"命名导致回归。
-- **决策**：严格遵守 Nuxt 自动导入规则 —— `components/home/Pinned.vue` 在模板中写作 `<HomePinned>`、`Sidebar.vue` 写作 `<HomeSidebar>`；不得把模板引用改成与文件名一致。
+- **决策**：严格遵守 Nuxt 自动导入规则 —— 当前 `components/home/KeguangPinned.vue` 在模板中写作 `<HomeKeguangPinned>`、`KeguangSidebar.vue` 写作 `<HomeKeguangSidebar>`；不得省略目录前缀。
 - **理由**：组件按目录前缀自动命名；破坏该约定会静默破坏导航系统。同类问题通过"优先级 + 兜底"策略（如头像三级回退）解决，而非替换既有行为。
 - **相关文档**：`CLAUDE.md`
 
@@ -72,7 +72,7 @@
 - **背景**：HKUST(GZ) SSO 使用 OAuth 2.0 Authorization Code Flow 与 OIDC。现有前端把 UniKorn JWT 保存在浏览器中，但学校的 client secret、授权码交换和 ID Token 校验必须留在可信后端，同时回调 URL 不能携带本地 access/refresh token。
 - **决策**：后端使用 Authlib、PKCE S256、state/nonce 和 Discovery 元数据完成学校认证；以 `(issuer, sub)` 作为外部身份主键，只自动关联已验证的校内邮箱；回调生成两分钟、单次消费的数据库票据，前端通过 `/api/auth/oidc/exchange` 换取现有 UniKorn JWT；统一登出使用 HttpOnly ID Token cookie 生成学校 end-session URL。
 - **理由**：client secret 与学校 Token 不进入前端，避免 JWT 出现在查询字符串；稳定 subject 不依赖可能变化或回收的邮箱；一次性票据兼容现有认证状态而无需重写全站 API。
-- **相关文档**：`back-end/docs/campus-sso.md`、`back-end/migrations/versions/20260819_campus_oidc.py`
+- **相关文档**：后端 `CAMPUS_SSO.md`、`migrations/versions/20260819_campus_oidc.py`
 
 ## ADR-008：课程评价按课程聚合，按开课学期归属
 
@@ -90,7 +90,16 @@
 - **背景**：学校 OIDC 已在正式域名完成联调。继续提供 UniKorn 帐密登录、自助注册与密码恢复会形成重复身份入口，并保留不必要的密码处理与攻击面。
 - **决策**：登录页只展示 HKUST(GZ) SSO；旧注册、忘记密码与重置密码 URL 跳转到登录页；后端旧帐密认证端点统一返回 `410 sso_only`。保留已有用户与外部身份关联数据，不删除密码字段；JWT 刷新/登出继续承载站内会话，邮箱验证仅用于已登录用户维护联系邮箱。
 - **理由**：所有登录身份统一由学校认证，减少凭据泄露、弱密码、撞库和账号重复风险；保留数据结构和现有会话机制可避免破坏用户内容与 OIDC 账号关联，并为安全回滚留下空间。
-- **相关文档**：`pages/login/index.vue`、`composables/useAuth.ts`、后端 `app/routes/auth.py`、`back-end/docs/campus-sso.md`
+- **相关文档**：`pages/login/index.vue`、`composables/useAuth.ts`、后端 `app/routes/auth.py` 与 `CAMPUS_SSO.md`
+
+## ADR-010：由 SSO 新建的账号必须完成一次公开资料确认
+
+- **日期**：2026-08
+- **状态**：已采纳
+- **背景**：学校 OIDC 能稳定提供身份 subject 和校内邮箱，但这些字段不等于用户希望公开展示的社区身份。直接把 SSO 派生的临时用户名投入帖子、评论和个人主页，会造成难以理解的公开名字；同时仅用前端 localStorage 判断“首次登录”可被刷新、换设备或清缓存绕过。
+- **决策**：后端在 `users.onboarding_completed_at` 持久化完成状态，并在自己的用户响应中给出 `onboarding_required`。只有 SSO 自动创建的新账号初始为未完成；迁移前既有账号及首次关联的既有已验证账号直接视为完成。前端在 SSO exchange 后及全局路由守卫中将未完成用户送往本地化的 `/onboarding`，要求确认 2–50 字符公开用户名，头像保持可选；`POST /api/users/me/onboarding` 以幂等方式完成状态。规则和隐私页面在守卫期间保持可访问，站内返回地址经过白名单式校验以避免开放重定向和循环。
+- **理由**：把学校身份与公开社区身份明确分层，同时保证引导跨刷新、跨设备一致；对既有用户做完成态回填可避免上线后全量拦截。头像可选可以降低首次进入门槛，用户名强制确认则能阻止临时 SSO 名称意外公开。
+- **相关文档**：`pages/onboarding.vue`、`middleware/onboarding.global.ts`、`utils/onboarding.ts`、后端 `CAMPUS_SSO.md` 与 `migrations/versions/20260822_sso_onboarding.py`
 
 ---
 

@@ -102,7 +102,7 @@ Agent 提交前至少要本地通过 `npm run i18n:check`、`npm test` 与 `npm 
 - **主题变量**：所有新组件必须使用 CSS 自定义属性（`var(--surface-primary)`、`var(--text-primary)`、`var(--border-primary)`、`var(--shadow-small)` 等），**禁止硬编码颜色**。详见 `docs/THEME_SYSTEM.md` 与 `CLAUDE.md`。
 - **国际化**：UI 文案一律进 `i18n/locales/{zh,en}.json`，使用语义化 key（如 `courses.*`、`scheduler.*`）；禁止硬编码界面字符串；用户生成内容保留原文。详见 `docs/i18n-guidelines.md`。
 - **API 调用**：一律走 `useApi()` 的 `fetchWithAuth` / `fetchPublic`，**禁止直接 `fetch()`** 调用后端（401/令牌刷新问题）。例外：认证端点（`useAuth.ts`）、无需认证的公开端点、OSS 直传等。
-- **组件命名**：Nuxt 自动导入按目录前缀命名（`components/home/Pinned.vue` → `<HomePinned>`）。**不要**把模板引用改成与文件名一致，这会破坏导航等系统。修改布局/导航后必须回归测试导航栏。
+- **组件命名**：Nuxt 自动导入按目录前缀命名（`components/home/KeguangPinned.vue` → `<HomeKeguangPinned>`）。**不要**省略目录前缀，这会破坏导航等系统。修改布局/导航后必须回归测试导航栏。
 - **渐进增强**：新功能优先叠加在既有系统之上（分层优先、props 兜底、降级策略），而不是替换既有行为。
 - **类型**：使用 TypeScript，新增 DTO/工具函数提供类型定义；`definePageMeta({ layout: 'keguang' })` 用于页面布局。
 - **测试**：纯逻辑（求解器、购物车、坐标计算、适配器等）写在 `utils/*.ts` 并配 `tests/**` 单测；Vue 组件保持薄交互层。
@@ -183,12 +183,12 @@ front-end/
 ## 7. 常见坑（源自 CLAUDE.md 沉淀）
 
 1. **401 错误**：检查是否用了 `fetchWithAuth`/`fetchPublic` 而非直接 `fetch`。
-2. **导航栏消失**：检查组件引用命名（`<HomePinned>` 而非 `<Pinned>`），勿改自动导入命名。
-3. **图片不显示**：检查 OSS 签名 URL 生成、CORS、URL 过期（`UserAvatar` 已内置自动刷新）。
+2. **导航栏消失**：检查组件引用命名（`<HomeKeguangPinned>` / `<HomeKeguangSidebar>`），勿省略 Nuxt 自动导入的目录前缀。
+3. **头像不显示**：浏览器只应使用后端返回的 UniKorn 同源头像 URL；`UserAvatar` 会拒绝旧缓存中的 OSS 地址，并按 user id 刷新。
 4. **图标缺失**：Font Awesome 不可靠时使用 Unicode fallback（✏️ ✓ ✕ 📷 👤）。
 5. **i18n 漏翻**：新增页面先补 `zh.json`/`en.json` key，跑 `npm run i18n:check`。
 6. **颜色硬编码**：新样式必须用主题 CSS 变量。
 
 ---
 
-*Last updated: 2026-08-14*
+*Last updated: 2026-08-22*

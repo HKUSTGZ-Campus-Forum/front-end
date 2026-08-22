@@ -66,7 +66,15 @@ async function handleOidcCallback() {
   errorMessage.value = "";
   try {
     const result = await exchangeOidcCode(code);
-    await router.replace(safeOidcReturnTo(result.return_to, getLocalePath("/")));
+    const returnTo = safeOidcReturnTo(result.return_to, getLocalePath("/"));
+    if (result.user.onboarding_required) {
+      await router.replace({
+        path: getLocalePath("/onboarding"),
+        query: { redirect: returnTo },
+      });
+    } else {
+      await router.replace(returnTo);
+    }
   } catch (error) {
     const errorCode =
       error instanceof Error ? error.message : "authorization_failed";

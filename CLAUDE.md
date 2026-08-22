@@ -1,540 +1,112 @@
-# Frontend Development Notes
-
-## Instruction Priority
-在 `front-end` 目录内工作时，除遵守本文件外，也需要同时遵守仓库根目录的 `AGENTS.md`。如果两者有冲突，优先遵守更具体的前端目录规则；如果不冲突，则两者同时生效。
-
-## Project Overview
-**UniKorn Campus Forum** - A modern campus forum application built with Nuxt 3/Vue.js frontend and Flask backend.
-
-## 🎨 Theme System (Latest Update - August 2026)
-**CRITICAL**: The project uses a CSS-custom-property theme system with **two themes**: `keguang-blue` (light, default) and `deep-dark` (dark). Themes change only colors — layout must not depend on theme identity. **ALL new components must use CSS custom properties instead of hardcoded colors.**
-
-### Dark Mode Essentials
-- Dark theme id: `deep-dark`; registered in `utils/themes.ts` (`category: 'dark'`)
-- `themeStore.applyTheme()` sets CSS variables on `<html>`, `color-scheme`, and the `data-theme` attribute
-- FOUC prevention: inline script in `app.vue` reads `localStorage['theme']` and sets `data-theme` before first paint; the dark variables also exist in `assets/css/variables.scss` under `:root[data-theme='deep-dark']`
-- **Keep `utils/themes.ts` and the SCSS dark block in sync** when changing dark colors
-- Auto dark mode (follows system) is available in ThemeSettings (`/setting/theme`)
-
-### Quick Theme Development Rules
-```scss
-/* ✅ ALWAYS DO - Use theme variables */
-.component {
-  background: var(--surface-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  box-shadow: var(--shadow-small);
-}
-
-/* ❌ NEVER DO - Hardcoded colors */
-.bad-component {
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid #cccccc;
-}
-```
-
-**🧪 Testing**: Test new components with both `keguang-blue` and `deep-dark` themes. Theme switching only changes colors — layout must not depend on theme identity.
-
-### Tech Stack
-- **Frontend**: Nuxt 3, Vue.js 3, TypeScript, SCSS
-- **Backend**: Flask, PostgreSQL, SQLAlchemy ORM
-- **Storage**: Alibaba Cloud OSS (Object Storage Service)
-- **Authentication**: HKUST(GZ) OIDC SSO with UniKorn JWT access/refresh sessions
-- **State Management**: Pinia
-
-## Authentication & API Calls
-
-### Always Use fetchWithAuth for API Calls
-**Important**: All API calls to backend endpoints should use `fetchWithAuth` instead of direct `fetch()` to handle JWT token refresh automatically.
-
-```typescript
-// ✅ Correct - Use fetchWithAuth
-import { useApi } from '~/composables/useApi'
-const { fetchWithAuth } = useApi()
-
-const response = await fetchWithAuth('/api/posts/123')
-
-// ❌ Incorrect - Direct fetch (will cause 401 errors)
-const response = await fetch('https://dev.unikorn.axfff.com/api/posts/123')
-```
-
-### Exception Cases (Direct fetch is acceptable)
-1. **Authentication endpoints** (`useAuth.ts`) - to avoid circular dependencies
-2. **Public endpoints** that don't require authentication
-3. **External services** (like OSS direct uploads via signed URLs)
-
-### File Upload Pattern
-Files uploaded to OSS use XMLHttpRequest with signed URLs (correct):
-```typescript
-// ✅ Direct upload to OSS using signed URL
-xhr.open('PUT', signed_url)
-xhr.send(file)
-
-// ✅ But get the signed URL via fetchWithAuth
-const response = await fetchWithAuth('/api/files/upload', { ... })
-```
-
-### Common Token Issues
-- **401 Unauthorized**: Usually means direct fetch is being used instead of fetchWithAuth
-- **Token expired**: fetchWithAuth automatically handles refresh, direct fetch doesn't
-
-## File Upload & Image Display System
-
-### Architecture Overview
-1. **Frontend**: Requests signed URL from backend
-2. **Backend**: Generates OSS signed URL with STS tokens
-3. **Frontend**: Uploads directly to OSS using signed URL
-4. **Backend**: Receives callback from OSS when upload completes
-5. **Frontend**: Polls backend for file status
-6. **Display**: Uses signed URLs for viewing images
-
-### Key Files & Functions
-
-#### Backend (Flask)
-- `app/services/file_service.py`: OSS integration, signed URL generation
-- `app/models/file.py`: File model with URL property for signed viewing URLs
-- `app/models/post.py`: Post model with files relationship
-
-#### Frontend (Nuxt/Vue)
-- `composables/useFileUpload.ts`: File upload logic
-- `components/FileUpload.vue`: Reusable upload component
-- `pages/forum/posts/[id].vue`: Post detail with image gallery
-
-### File Upload Flow
-```typescript
-// 1. Get signed URL
-const response = await fetchWithAuth('/api/files/upload', {
-  method: 'POST',
-  body: JSON.stringify({
-    filename: file.name,
-    file_type: 'post_image',
-    entity_type: 'post',
-    entity_id: postId,
-    content_type: file.type
-  })
-})
-
-// 2. Upload to OSS
-xhr.open('PUT', signed_url)
-xhr.setRequestHeader('Content-Type', file.type)
-xhr.send(file)
-
-// 3. Poll for completion
-const fileRecord = await pollFileStatus(file_id)
-```
-
-## Critical Bug Fixes Applied
-
-### 1. Vue Lifecycle Issue in PostMessage Component
-**Problem**: Creating `useApi()` instance inside function caused auth state reset
-**Solution**: Move to component setup phase
-```typescript
-// ❌ Wrong - inside function
-const handleSubmit = async () => {
-  const { fetchWithAuth } = useApi(); // Creates new instance!
-}
-
-// ✅ Correct - in setup
-const { fetchWithAuth } = useApi(); // Once in setup
-const handleSubmit = async () => {
-  // Use existing instance
-}
-```
-
-### 2. OSS Authentication Issues
-**Problem**: Missing imports and wrong auth type
-**Solution**: 
-- Added `import base64` 
-- Changed from `Auth` to `StsAuth` for STS tokens
-- Fixed callback parameter encoding
-
-### 3. Image Display Issues
-**Problem**: Images not showing in post detail
-**Solution**:
-- Added file relationships to posts
-- Implemented signed URLs for private bucket access
-- Fixed Vue template null checking with `.filter()`
-
-### 4. Image Sizing & Cropping
-**Problem**: Images cropped with fixed height
-**Solution**: Changed to responsive sizing with `object-fit: contain`
-```css
-.post-image {
-  height: auto;
-  max-height: 400px;
-  object-fit: contain; // Shows full image
-  
-  @media (max-width: 768px) {
-    max-height: 300px;
-  }
-}
-```
-
-## Component Structure
-
-### Authentication Components
-- `composables/useAuth.ts`: School OIDC sign-in, ticket exchange, JWT refresh, and sign-out
-- `composables/useApi.ts`: API calls with auto token refresh
-- `pages/login/index.vue`: SSO-only login page
-- `components/setting/AccountSettings.vue`: Verified email management (no password authentication)
-
-### Forum Components
-- `pages/forum/index.vue`: Forum post listing
-- `pages/forum/posts/[id].vue`: Post detail view
-- `components/forum/Post.vue`: Post card component
-- `components/forum/PostMessage.vue`: Create/edit post form
-- `components/forum/Comment.vue`: Individual comment
-- `components/forum/CommentList.vue`: Comment thread
-- `components/forum/CommentForm.vue`: Comment creation form
-
-### File Upload Components
-- `components/FileUpload.vue`: Reusable file upload component
-- `composables/useFileUpload.ts`: Upload logic and state management
-
-## Important Code Patterns
-
-### Proper Error Handling
-```typescript
-try {
-  const response = await fetchWithAuth(url, options);
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Request failed: ${response.status}`);
-  }
-  return await response.json();
-} catch (error) {
-  console.error('Operation failed:', error);
-  throw error;
-}
-```
-
-### Image File Detection
-```typescript
-const isImageFile = (file) => {
-  if (!file) return false;
-  
-  // Check by MIME type first (more reliable)
-  if (file.mime_type && file.mime_type.startsWith('image/')) {
-    return true;
-  }
-  
-  // Fallback to filename extension
-  if (file.original_filename) {
-    return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(file.original_filename);
-  }
-  
-  return false;
-}
-```
-
-### Responsive Image Gallery
-```vue
-<div v-if="postData?.files?.length > 0" class="post-images">
-  <div class="image-gallery">
-    <div 
-      v-for="file in postData.files.filter(f => f && isImageFile(f))" 
-      :key="file.id"
-      class="image-item"
-    >
-      <img 
-        :src="file.url" 
-        :alt="file.original_filename || 'Image'"
-        class="post-image"
-        @click="openImageModal(file)"
-      />
-    </div>
-  </div>
-</div>
-```
-
-## Environment & Configuration
-
-### Development URLs
-- **Frontend**: Local development server
-- **Backend API**: https://dev.unikorn.axfff.com/api
-- **OSS Storage**: Alibaba Cloud OSS with STS authentication
-
-### Key Dependencies
-- **Nuxt 3**: Framework
-- **@nuxt/ui**: UI components
-- **Pinia**: State management
-- **vue-i18n**: Internationalization
-
-## Critical Navigation System Architecture
-
-### **Navigation Component Structure** ⚠️ **IMPORTANT**
-The navigation system uses an **auto-import naming convention** that must be respected:
-
-```
-/components/home/
-├── HomeContainer.vue          # Main layout wrapper
-├── Pinned.vue                 # Top navigation bar
-└── Sidebar.vue                # Left sidebar navigation
-```
-
-**CRITICAL**: In templates, these are referenced as:
-- `Pinned.vue` → `<HomePinned>` component
-- `Sidebar.vue` → `<HomeSidebar>` component
-
-**❌ NEVER change component references to match file names** - this breaks the navigation system:
-```vue
-<!-- ❌ WRONG - breaks navigation -->
-<Pinned :sidebarFolded="fold.updates" />
-<Sidebar :folded="fold.updates" />
-
-<!-- ✅ CORRECT - works with auto-import -->
-<HomePinned :sidebarFolded="fold.updates" />
-<HomeSidebar :folded="fold.updates" />
-```
-
-### **Avatar System Integration Story**
-
-#### **The Challenge**: Top Navigation Avatar Fix
-The user reported that while posts and comments correctly showed real user avatars, the top navigation bar was still showing a hardcoded default avatar instead of the user's actual profile picture.
-
-#### **Critical Mistakes and Learning**
-1. **First Attempt** - Direct replacement of hardcoded props with real user data:
-   - ❌ **Result**: Navigation bars completely disappeared
-   - 🎓 **Lesson**: Component props serve as essential fallbacks
-
-2. **Second Attempt** - "Fixed" component naming from `<HomePinned>` to `<Pinned>`:
-   - ❌ **Result**: Navigation bars disappeared again
-   - 🎓 **Lesson**: Nuxt auto-import naming convention must be respected
-
-3. **Third Attempt** - Removed hardcoded props entirely:
-   - ❌ **Result**: Broke backward compatibility
-   - 🎓 **Lesson**: Existing architecture dependencies must be preserved
-
-#### **Successful Solution**: Priority-Based Avatar System
-```vue
-<!-- 3-tier priority system in Pinned.vue -->
-<!-- Priority 1: Real authenticated user avatar -->
-<div v-if="isLoggedIn && user?.profile_picture_url" class="user-avatar">
-  <img :src="user.profile_picture_url" :alt="user.username" />
-</div>
-<!-- Priority 2: Fallback to component props -->
-<div v-else-if="props.userAvatar" class="user-avatar">
-  <img :src="props.userAvatar" :alt="props.username" />
-</div>
-<!-- Priority 3: Default fallback icon -->
-<span v-else class="user-icon-fallback">👤</span>
-```
-
-**✅ Key Success Factors**:
-- **Preserved original component naming** (`HomePinned`/`HomeSidebar`)
-- **Maintained prop compatibility** for existing usage
-- **Implemented graceful degradation** with 3-tier priority system
-- **Added real user data access** via `useAuth` composable
-
-## Icon System Solutions
-
-### **Font Awesome Loading Issues**
-When Font Awesome icons don't load or show up, use Unicode fallbacks:
-
-```vue
-<!-- ❌ Problematic Font Awesome -->
-<i class="fas fa-edit"></i>
-
-<!-- ✅ Unicode fallback solution -->
-<span class="icon-fallback">✏️</span>
-```
-
-**Available Unicode Icons**:
-- ✏️ Edit/Pencil
-- ✓ Save/Check
-- ✕ Cancel/Close  
-- 📷 Camera
-- ⟳ Loading spinner (with CSS animation)
-- 👤 User/Person
-
-**CSS for fallbacks**:
-```scss
-.icon-fallback {
-  font-size: 1rem;
-  display: inline-block;
-  
-  &.spinning {
-    animation: spin 1s linear infinite;
-  }
-}
-```
-
-## Avatar URL Expiration Fix (December 2024)
-
-### **Problem**: Signed URL Expiration
-Avatar images would fail to load after approximately 1 hour because the Alibaba Cloud OSS signed URLs expire, causing broken avatar displays across the application.
-
-### **Solution**: Smart Avatar Refresh System
-Implemented a comprehensive avatar URL refresh mechanism with the following features:
-
-#### **1. Enhanced UserAvatar Component**
-- **Smart Error Detection**: Recognizes OSS signed URL patterns and expiration timestamps
-- **Automatic URL Refresh**: Fetches fresh URLs from backend when expiration is detected
-- **Retry Logic**: Implements exponential backoff for transient failures
-- **Visual Feedback**: Shows refresh indicator during retry attempts
-- **Proactive Refresh**: Checks for near-expiring URLs every 45 minutes
-
-**Key Props**:
-```vue
-<UserAvatar 
-  :avatar-url="user.profile_picture_url"
-  :user-id="user.id"
-  :username="user.username"
-  :enable-auto-refresh="true"  // Enable smart refresh (default: true)
-  @avatar-refreshed="handleAvatarUpdate"
-/>
-```
-
-#### **2. Updated useUser Composable**
-- **Cache Expiration**: Automatically invalidates cached user data after 1 hour
-- **OSS URL Validation**: Detects expired OSS URLs and triggers refresh
-- **Smart Fallbacks**: Uses cached data as fallback when refresh fails
-- **New Methods**: `refreshUserById()`, `getFreshAvatarUrl()`, `clearExpiredCache()`
-
-#### **3. Refresh Logic Flow**
-```
-1. Image load fails → Check if OSS signed URL
-2. Parse URL expiration timestamp
-3. If expired/near expiry → Fetch fresh user data from backend
-4. Update avatar URL and clear cache
-5. If still fails → Show initials placeholder
-```
-
-#### **4. Performance Optimizations**
-- **Proactive Refresh**: Refreshes URLs 5-10 minutes before expiration
-- **Rate Limiting**: Maximum 3 retries per avatar, 2 refresh attempts
-- **Cache Management**: Automatic cleanup of expired cache entries
-- **Exponential Backoff**: 1s, 2s, 4s retry intervals
-
-### **Technical Implementation Details**
-
-**OSS URL Detection**:
-```typescript
-const isOSSSignedUrl = (url: string): boolean => {
-  return url.includes('aliyuncs.com') && 
-         (url.includes('Expires=') || url.includes('x-oss-expires'));
-};
-```
-
-**Expiration Parsing**:
-```typescript
-const getUrlExpiration = (url: string): Date | null => {
-  const urlObj = new URL(url);
-  const expires = urlObj.searchParams.get('Expires') || urlObj.searchParams.get('x-oss-expires');
-  return expires ? new Date(parseInt(expires) * 1000) : null;
-};
-```
-
-**Smart Cache Management**:
-```typescript
-// Cache includes timestamp for expiration checking
-interface PublicUserData {
-  username: string;
-  profile_picture_url?: string;
-  role_name?: string;
-  cached_at?: number; // Added for expiration tracking
-}
-```
-
-### **User Experience Improvements**
-- **Seamless Recovery**: Users don't see broken avatars, just smooth refresh
-- **Visual Feedback**: Small spinner indicates refresh in progress
-- **Graceful Degradation**: Falls back to colored initials if all else fails
-- **No User Action Required**: Everything happens automatically
-
-### **Backward Compatibility**
-- All existing UserAvatar usage continues to work unchanged
-- Auto-refresh is enabled by default but can be disabled
-- Existing props and events remain the same
-- No breaking changes to component API
-
-### **Future Enhancements**
-- **Background Refresh**: Refresh URLs in background without affecting display
-- **Bulk Refresh**: Refresh multiple avatar URLs simultaneously
-- **URL Prefetching**: Pre-generate fresh URLs before current ones expire
-- **Analytics**: Track avatar refresh success rates
-
-## Commands
-- **Dev**: `npm run dev`
-- **Build**: `npm run build`
-- **Type Check**: `npm run typecheck` (if available)
-- **Lint**: `npm run lint` (if available)
-
-## Debugging Tips
-
-### Common Issues
-1. **401 Errors**: Check if using `fetchWithAuth` vs direct `fetch`
-2. **Images Not Loading**: Check OSS signed URL generation and CORS
-3. **Vue Warnings**: Usually related to accessing undefined properties, use optional chaining
-4. **File Upload Fails**: Check STS token configuration and OSS permissions
-5. **Navigation Disappears**: Check component naming (`HomePinned` not `Pinned`)
-6. **Icons Missing**: Use Unicode fallbacks instead of Font Awesome
-
-### Component Development Rules
-⚠️ **CRITICAL RULES** for component modifications:
-
-1. **Never change navigation component references** in templates
-2. **Always test navigation system** after any layout changes
-3. **Implement fallbacks** for user data (auth state can be inconsistent)
-4. **Use priority systems** instead of replacing existing functionality
-5. **Test both authenticated and guest states**
-
-### Useful Console Commands
-```javascript
-// Check auth state
-localStorage.getItem('auth_token')
-localStorage.getItem('refresh_token')
-localStorage.getItem('user_info')
-
-// Clear auth state for testing
-localStorage.removeItem('auth_token')
-localStorage.removeItem('refresh_token')
-localStorage.removeItem('user_info')
-
-// Check component mounting
-console.log('Navigation components loaded:', !!document.querySelector('.top-nav'))
-```
-
-### API Testing
+# UniKorn 前端开发记忆
+
+本文只记录当前代码仍然成立、下一位开发者容易踩错的约定。历史变更请查
+`CHANGELOG.md`，架构取舍请查 `docs/architecture.md`，工作流以 `AGENTS.md` 为准。
+
+## 当前产品与技术边界
+
+- Nuxt 3 SSR、Vue 3、TypeScript、SCSS、Pinia、Vue I18n。
+- 默认中文，英文路径使用 `/en/*`；新增界面必须同时提供 `zh` / `en` 文案。
+- 当前支持 `keguang-blue` 与 `deep-dark` 两套主题。组件只能使用
+  `assets/css/variables.scss` 中的主题 token，不要硬编码界面颜色。
+- 产品视觉是稳定、理性、低学习成本的“科广蓝校园工具风”；主站页面优先复用
+  `keguang` 布局、白/深色表面卡片、轻量阴影和既有响应式断点。
+
+## 认证：SSO-only
+
+- HKUST(GZ) OIDC SSO 是唯一的终端用户登录方式。不要恢复密码登录、自助注册、
+  忘记密码、重置密码或修改密码入口。
+- `/login` 只负责读取 OIDC 状态、跳转学校 SSO，以及用一次性 `oidc_code` 调用
+  `/api/auth/oidc/exchange` 换取 UniKorn access/refresh token。
+- `useAuth.ts` 是认证端点的集中实现；它有意直接调用认证接口，避免与
+  `useApi()` 的自动刷新形成循环依赖。
+- 旧认证 URL 会跳回登录页；后端旧帐密端点返回 `410 sso_only`。
+
+### 首次 SSO 登录资料确认
+
+- 仅“由 SSO 新建”的账号拥有 `onboarding_required: true`。迁移前已有用户，以及
+  首次关联到既有已验证账号的用户，都视为已完成，不能被误拦截。
+- SSO exchange 后，登录页把未完成用户送到本地化的 `/onboarding` 或
+  `/en/onboarding`。`middleware/onboarding.global.ts` 会持续守卫，防止用户靠刷新或
+  直接输入 URL 绕过。
+- 引导页要求确认 2–50 字符公开用户名，头像可选；学校邮箱只做遮罩后的已验证
+  身份提示。提交调用 `POST /api/users/me/onboarding`。
+- 完成接口是幂等的。前端必须保存接口返回的完整用户对象，让 localStorage 中的
+  `onboarding_required` 立即变为 `false`。
+- `redirect` 必须经过 `safePostOnboardingReturnTo()`，只允许站内路径，并避免回到
+  login/onboarding 形成循环。
+- 未完成用户仍可访问 `/help/rules` 与 `/help/privacy`（含英文路径）；不要让全局
+  守卫拦截引导页上的规则和隐私链接。
+
+## API 调用
+
+- 普通受保护接口：`useApi().fetchWithAuth()`，统一处理 access token 和刷新。
+- 普通公开接口：`useApi().fetchPublic()`；需要完整 URL 时用 `getApiUrl()`。
+- 不要在业务组件里随意写裸 `fetch()`。认证流程是明确例外，集中在
+  `composables/useAuth.ts`。
+- 开发服务器的 `/api` 由 `nuxt.config.ts` 转发。团队联调通常复制 `.env.example`
+  并连接 `https://dev.unikorn.axfff.com`；不要在功能代码中写死环境地址。
+
+## 文件上传与头像显示
+
+- 上传仍由 `useCustomFileUpload()` 处理：先向后端申请签名 URL，再用 XHR 直传
+  OSS，最后轮询文件状态。申请 URL 和轮询必须走 `fetchWithAuth()`。
+- 浏览器展示头像时不能直接使用 OSS 地址。后端返回同源、稳定的 UniKorn 头像
+  URL；`components/user/UserAvatar.vue` 会丢弃旧缓存中的 `aliyuncs.com` URL，并从
+  `/api/users/public/:id` 刷新数据库派生的同源地址。
+- 新头像场景优先复用 `<UserAvatar>`，并始终提供 username 与 user id，让首字母
+  占位和刷新兜底可用。
+
+## 布局与组件命名
+
+- 主站布局：`layouts/keguang.vue` → `<HomeKeguangContainer>`。
+- 当前导航组件是 `components/home/KeguangPinned.vue` 与
+  `components/home/KeguangSidebar.vue`；Nuxt 自动导入名分别为
+  `<HomeKeguangPinned>` 与 `<HomeKeguangSidebar>`。
+- 不要照搬旧文档中的 `<HomePinned>` / `<HomeSidebar>`；这些文件名已经不存在。
+- 登录和首次资料确认使用 `layouts/keguang-auth.vue`，保持轻量顶栏和居中的认证
+  卡片体验。
+
+## 国际化、可访问性与移动端
+
+- UI 文案进入 `i18n/locales/zh.json` 与 `en.json`，使用相同语义 key；不要在组件
+  模板中硬编码中英文。
+- 表单必须有可见 label、键盘焦点、错误提示关联、loading/disabled 状态；图标若
+  只是装饰应加 `aria-hidden="true"`。
+- 每个页面同时验收桌面和手机视口。窄屏重点检查长英文、邮箱、课程 ID、按钮和
+  卡片是否横向溢出。
+
+## 主题
+
+- 主题状态在 `store/themeStore.ts`，持久化键为 `theme`。
+- SSR 首屏固定以 `keguang-blue` hydrate；`app.vue` 的首屏脚本先防 FOUC，
+  `plugins/theme.client.ts` 在 `app:suspense:resolve` 后恢复 Pinia 状态。
+- 不要把 persisted-state 提前到 hydration 前，否则会重现深色页面与主题按钮状态
+  不一致的问题。
+- 常用 token：`--background-primary`、`--surface-primary`、
+  `--surface-secondary`、`--text-primary`、`--text-secondary`、
+  `--border-primary`、`--interactive-primary`、`--semantic-*`、`--shadow-*`。
+
+## 验证命令
+
 ```bash
-# Test file upload endpoint
-curl -X POST https://dev.unikorn.axfff.com/api/files/upload \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type": "application/json" \
-  -d '{"filename": "test.jpg", "file_type": "post_image"}'
+npm run i18n:check
+npm test
+npm run build
 ```
 
-## Security Considerations
-- All file uploads go through signed URLs
-- JWT tokens auto-refresh before expiration
-- No secrets or keys committed to repository
-- Private OSS bucket with controlled access
+涉及 UI 时还要在 `localhost:3000` 实际检查中文/英文、桌面/手机以及深色主题；完成
+后关闭本地 dev server。构建中已知的 `CommonMarkdownEditor` 重复自动导入 warning
+与本次认证流程无关，但任何新增 error 都必须处理。
 
-## Performance Optimizations
-- Images lazy load with proper sizing
-- Token refresh happens proactively before expiration
-- File upload with progress tracking
-- Responsive image gallery with CSS Grid
+## 高频检查清单
 
-## Lessons Learned for Future Development
+1. 认证入口是否仍然只有学校 SSO。
+2. 新 SSO 用户是否被持久化引导，既有用户是否不会被误拦截。
+3. API 是否走正确的 `useApi` / `useAuth` 层。
+4. 头像展示是否保持同源、无 OSS 签名 URL 泄露。
+5. 文案是否中英文齐全，颜色是否全部来自主题 token。
+6. `HomeKeguang*` 自动导入名是否保持正确。
+7. 桌面、手机、浅色、深色是否完成回归。
 
-### **Critical Success Patterns**
-1. **Incremental Enhancement**: Add new functionality while preserving existing behavior
-2. **Priority-Based Systems**: Layer new features on top of existing systems rather than replacing them
-3. **Fallback Strategies**: Always provide graceful degradation when data is unavailable
-4. **Component Contract Respect**: Don't change how components are referenced without understanding the import system
-5. **State-Aware Development**: Account for different authentication states in UI logic
-
-### **Avoid These Mistakes**
-1. **Direct Prop Replacement**: Don't replace working props with computed data without fallbacks
-2. **Component Naming Changes**: Don't "fix" component names that seem wrong without testing
-3. **Dependency Assumptions**: Don't assume external libraries (Font Awesome) are reliably loaded
-4. **Single-State Testing**: Don't only test in one authentication state
-5. **Architecture Changes Without Understanding**: Don't modify component relationships without understanding the full system
-
----
-
-*Last Updated: December 2024*
-*Key Contributors: Claude Code AI Assistant*
-*Critical Issues Resolved: Navigation system stability, avatar integration, icon fallbacks*
+*Last reconciled with `origin/main`: 2026-08-22*

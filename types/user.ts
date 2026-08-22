@@ -7,7 +7,8 @@ export interface User {
   profile_picture_file_id?: number | null;
   role_id?: number;
   role_name?: string;
-  is_first_login?: boolean;
+  onboarding_required?: boolean;
+  onboarding_completed_at?: string | null;
   email_verified?: boolean;
   phone_verified?: boolean;
   created_at?: string;
@@ -15,4 +16,4 @@ export interface User {
   last_active_at?: string;
   is_deleted?: boolean;
   deleted_at?: string | null;
-} 
+}

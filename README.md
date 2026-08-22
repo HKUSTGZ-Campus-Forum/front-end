@@ -104,6 +104,7 @@ front-end/
 │   ├── courses/            # 课程：探索、规划器、学术地图、课程详情
 │   ├── schedule/           # 排课助手入口（重定向到 /courses/planner）
 │   ├── forum/              # 论坛
+│   ├── onboarding.vue      # 首次 SSO 登录公开资料确认
 │   └── admin/              # 管理后台（SSR 关闭）
 ├── plugins/                # iconify / theme / pwa 客户端插件
 ├── public/                 # 静态资源、PWA manifest
@@ -123,6 +124,7 @@ front-end/
 - **排课助手**（`/schedule` → `/courses/planner`）：由原 `CoursePlan.search` 迁移而来，支持课程筛选、课表求解、冲突检测、收藏夹
 - **论坛**（`/forum`）：帖子、评论、表情回应、标签
 - **管理后台**（`/admin`）：反馈审核、身份核验、内容管理（SSR 关闭）
+- **学校认证**（`/login`）：仅支持 HKUST(GZ) SSO；由 SSO 新建的账号首次登录需在 `/onboarding` 确认公开用户名，可选设置头像
 
 ## 文档索引
 
@@ -150,7 +152,7 @@ front-end/
 
 ## 主题
 
-项目采用**单一主题（科广蓝）** + CSS 自定义变量体系：
+项目采用**科广蓝 / 深邃黑双主题** + CSS 自定义变量体系：
 
 - 新组件必须使用主题变量（`var(--surface-primary)`、`var(--text-primary)` 等），**禁止硬编码颜色**
 - 详见 `docs/THEME_SYSTEM.md`
@@ -171,8 +173,8 @@ front-end/
 ## 常见问题
 
 1. **401 错误**：确认 API 调用使用 `useApi()` 的 `fetchWithAuth`/`fetchPublic`，而非直接 `fetch`
-2. **导航栏消失**：检查组件引用命名（如 `<HomePinned>` 而非 `<Pinned>`），Nuxt 自动导入命名约定不可破坏
-3. **图片不显示**：检查 OSS 签名 URL、CORS 与 URL 过期（`UserAvatar` 已内置自动刷新）
+2. **导航栏消失**：检查组件引用命名（如 `<HomeKeguangPinned>` / `<HomeKeguangSidebar>`），Nuxt 自动导入目录前缀不可省略
+3. **头像不显示**：确认接口返回 UniKorn 同源头像 URL；浏览器不应直接加载 OSS 签名地址，`UserAvatar` 会按 user id 刷新
 4. **图标缺失**：Font Awesome 不可靠时使用 Unicode fallback
 5. **i18n 漏翻**：新页面先补 `zh.json`/`en.json` key，再跑 `npm run i18n:check`
 6. **颜色硬编码**：新样式必须使用主题 CSS 变量
