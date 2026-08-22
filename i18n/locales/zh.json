@@ -1381,10 +1381,11 @@
       "ocga": "OCGA",
       "ocgaCopy": "上传成绩后计算；仅自己可见",
       "mcga": "MCGA · {major}",
-      "mcgaCopy": "上传成绩后计算；仅自己可见",
+      "mcgaCopy": "按当前培养方案实际计入课程估算；毕业审核结果为准",
       "mcgaNeedsTarget": "先选择目标专业后再计算 Major CGA",
       "selectTarget": "待选择",
-      "notUploaded": "未上传"
+      "notUploaded": "未上传",
+      "notAvailable": "暂无可计算课程"
     },
     "import": {
       "title": "导入已修/在修课程",
@@ -1546,9 +1547,9 @@
       "overviewTitle": "怎么看这张矩阵",
       "overviewCopy": "点击任意要求行可以查看完整课程列表；点击顶部先修或成绩卡片可以看对应解释。",
       "gradesTitle": "OCGA / MCGA",
-      "gradesCopy": "成绩只用于你的私密学业进度，上传后才会计算。",
+      "gradesCopy": "成绩只用于你的私密学业进度；MCGA 在毕业审核前为培养方案估算值。",
       "ocgaRule": "Overall CGA：所有计 grade point 的课程按学分加权平均。",
-      "mcgaRule": "Major CGA：按当前专业要求中计入的课程估算，并按学分加权平均。",
+      "mcgaRule": "Major CGA：从基础课、专业必修和专业选修中选取当前实际用于满足要求的课程；多专业取并集、同一课程只计一次，再按学分加权。超过选修要求时采用可使估算 MCGA 更高的有效组合。通识课、Option、无绩点成绩和未通过课程不计入。",
       "gradePrivacy": "成绩默认不公开展示，也可以随时删除；没有上传成绩时显示未上传。",
       "prerequisitesTitle": "先修卡点",
       "prerequisitesCopy": "{blocked} 门目标课有先修卡点。",

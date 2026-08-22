@@ -18,6 +18,11 @@ const ocga = computed(() => props.summary?.grade_metrics?.ocga ?? null)
 const mcga = computed(() => props.summary?.grade_metrics?.mcga ?? null)
 const prerequisites = computed(() => props.summary?.prerequisite_metrics ?? null)
 const blockers = computed(() => prerequisites.value?.blockers || [])
+const mcgaMajor = computed(() => {
+  const programCodes = mcga.value?.program_codes?.filter(Boolean) || []
+  if (programCodes.length) return programCodes.join(' + ')
+  return mcga.value?.program_code || props.summary?.profile.target_majors[0] || '-'
+})
 
 const rowTitle = computed(() => {
   if (!props.selectedRow) return ''
@@ -34,7 +39,9 @@ const panelMode = computed(() => {
 
 const formatGradeMetric = (metric: AcademicGradeMetric | null) => {
   if (!metric || metric.status !== 'available' || metric.value === null) {
-    return t('academicMap.metrics.notUploaded')
+    return t(metric?.status === 'not_available'
+      ? 'academicMap.metrics.notAvailable'
+      : 'academicMap.metrics.notUploaded')
   }
   return metric.value.toFixed(2)
 }
@@ -60,7 +67,7 @@ const cellTitle = (cell: AcademicRequirementCell) => cell.title || t('academicMa
           <small>{{ t('academicMap.detail.ocgaRule') }}</small>
         </div>
         <div class="am-grade-row">
-          <span>{{ t('academicMap.metrics.mcga', { major: mcga?.program_code || summary?.profile.target_majors[0] || '-' }) }}</span>
+          <span>{{ t('academicMap.metrics.mcga', { major: mcgaMajor }) }}</span>
           <strong>{{ formatGradeMetric(mcga) }}</strong>
           <small>{{ t('academicMap.detail.mcgaRule') }}</small>
         </div>
