@@ -1,14 +1,7 @@
 // composables/useAuth.ts
 import { ref, computed } from "vue";
 import { selectApiBaseUrl } from "../utils/apiBaseUrl";
-
-interface User {
-  id: string;
-  username: string;
-  isFirstLogin: boolean;
-  profile_picture_url?: string;
-  // 其他用户信息
-}
+import type { User } from "~/types/user";
 
 /**
  * 全应用共享一份认证状态。
@@ -144,7 +137,6 @@ async function fetchUserProfile(authToken: string) {
     user.value = {
       id: userData.id || userId,
       username: userData.username || user.value?.username || "",
-      isFirstLogin: userData.isFirstLogin || false,
       ...userData,
     };
   } catch (err) {
@@ -304,7 +296,6 @@ function init() {
             user.value = {
               id: payload.sub || payload.id,
               username: payload.username || "",
-              isFirstLogin: false,
             };
             console.log("🔑 Parsed user from token:", user.value.username);
           }
@@ -355,7 +346,7 @@ async function updateUserProfile(userData: Partial<User>) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage =
-        errorData.message || `更新用户资料失败(${response.status})`;
+        errorData.message || errorData.msg || `更新用户资料失败(${response.status})`;
       throw new Error(errorMessage);
     }
 
@@ -417,6 +408,38 @@ async function exchangeOidcCode(code: string) {
     };
   } catch (err) {
     error.value = err instanceof Error ? err.message : "SSO login failed";
+    throw err;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function completeOnboarding(username: string): Promise<User> {
+  if (!process.client || !accessToken.value || !user.value) {
+    throw new Error("authentication_required");
+  }
+
+  loading.value = true;
+  error.value = null;
+  try {
+    const response = await authFetch(
+      resolveAuthApiUrl("/api/users/me/onboarding"),
+      {
+        method: "POST",
+        body: JSON.stringify({ username }),
+      },
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.code || "save_failed");
+    }
+
+    const updatedUser = payload.user as User;
+    user.value = { ...user.value, ...updatedUser };
+    safeLocalStorage("set", "user_info", JSON.stringify(user.value));
+    return user.value as User;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "save_failed";
     throw err;
   } finally {
     loading.value = false;
@@ -527,6 +550,7 @@ export function useAuth() {
     getOidcStatus,
     getOidcLoginUrl,
     exchangeOidcCode,
+    completeOnboarding,
     logout,
     verifyEmail,
     resendVerification,
