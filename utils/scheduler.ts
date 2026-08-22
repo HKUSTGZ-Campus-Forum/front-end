@@ -48,6 +48,14 @@ export interface BundleData {
   sections: SchedulerSection[]
 }
 
+/** Keep the official section name intact so alternatives such as LA2A/LA2B
+ * remain distinguishable in the scheduler side panel. */
+export function getSchedulerBundleLabel(bundle: BundleData): string {
+  return bundle.sections
+    .map(section => section.name.trim() || `${section.section_type}${section.bundle}`)
+    .join('/')
+}
+
 export interface CartCourse {
   course_code: string
   course_title: string
