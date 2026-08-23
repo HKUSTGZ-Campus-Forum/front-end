@@ -39,6 +39,8 @@ const displayOptions = {
         :filter-mode="false"
         :display-options="displayOptions"
         :max-day-num="maxDayNum"
+        :popularity-by-course="{}"
+        :show-popularity="false"
         :preview-section="null"
         :preview-section-enabled="false"
       />

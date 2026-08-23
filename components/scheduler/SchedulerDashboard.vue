@@ -757,6 +757,8 @@ async function startNewPlan() {
             :filter-mode="filterMode"
             :display-options="displayOptions"
             :max-day-num="maxDayNum"
+            :popularity-by-course="popularity.popularityByCourse.value"
+            :show-popularity="popularity.canShowPopularity.value"
             :preview-section="previewSection"
             :preview-section-enabled="previewSectionEnabled"
             @toggle-ban="toggleBan"
