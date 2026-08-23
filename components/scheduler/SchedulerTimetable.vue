@@ -2,13 +2,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CartCourse } from '~/utils/scheduler'
+import type {
+  CartCourse,
+  SchedulerPopularityByCourse,
+  SchedulerPopularityCounts,
+} from '~/utils/scheduler'
 import {
   TIME_SLOTS,
   canInlineSectionWidths,
   formatInlineSectionLabel,
   getCourseTimetableColors,
   getHeight,
+  getSchedulerCoursePopularity,
   getTopOffset,
 } from '~/utils/scheduler'
 
@@ -19,6 +24,8 @@ const props = defineProps<{
   filterMode: boolean
   displayOptions: { name: boolean; section: boolean; location: boolean; instructor: boolean; duration: boolean }
   maxDayNum: number
+  popularityByCourse: SchedulerPopularityByCourse
+  showPopularity: boolean
   previewSection: { code: string; bundleId: number; layer: number } | null
   previewSectionEnabled: boolean
 }>()
@@ -164,6 +171,7 @@ interface LectureBlock {
   accentColor: string
   isMain: boolean
   credit: number
+  popularity?: SchedulerPopularityCounts
   key: string
 }
 
@@ -177,6 +185,10 @@ const lectureBlocks = computed(() => {
     const bundle = bundles.find(b => b.id === selection.bundleId)
     if (!bundle) continue
     const colors = getCourseTimetableColors(selection.courseIndex, isDarkTheme.value)
+    const coursePopularity = getSchedulerCoursePopularity(
+      props.popularityByCourse,
+      course.course_code,
+    )
     for (const section of bundle.sections) {
       for (const lecture of section.lectures) {
         blocks.push({
@@ -190,6 +202,7 @@ const lectureBlocks = computed(() => {
           accentColor: colors.accent,
           isMain: section.is_main,
           credit: course.credit,
+          popularity: coursePopularity,
           key: `${course.course_code}-${section.section_id}-${lecture.day}-${lecture.start_time}-${section.is_main ? 'main' : 'sub'}`,
         })
       }
@@ -470,6 +483,12 @@ function onCellClick(day: number, period: number) {
           </span>
         </div>
 
+        <SchedulerPopularitySummary
+          v-if="showPopularity && block.popularity"
+          class="timetable__block-popularity"
+          :counts="block.popularity"
+        />
+
         <div
           v-if="displayOptions.name"
           class="timetable__block-title"
@@ -731,6 +750,16 @@ function onCellClick(day: number, period: number) {
       line-height: 1.4;
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+
+    &-popularity {
+      align-self: flex-start;
+      margin: 0 0 2px;
+
+      :deep(.popularity-summary__metric) {
+        min-height: 18px;
+        padding: 1px 5px;
+      }
     }
 
     &-detail {

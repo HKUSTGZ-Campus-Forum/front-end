@@ -24,24 +24,35 @@ describe('scheduler popularity UI contract', () => {
     const handlerStart = dashboard.indexOf('async function handleCartAction')
     const handlerEnd = dashboard.indexOf('function toggleBan', handlerStart)
     const handler = dashboard.slice(handlerStart, handlerEnd)
+    const timetableStart = dashboard.indexOf('<SchedulerTimetable')
+    const timetableEnd = dashboard.indexOf('/>', timetableStart)
+    const timetable = dashboard.slice(timetableStart, timetableEnd)
 
     expect(handler.indexOf('await action()')).toBeLessThan(handler.indexOf('await popularity.refresh()'))
-    expect(dashboard).toContain(':show-popularity="popularity.canShowPopularity.value"')
-    expect(dashboard).toContain(':popularity-by-course="popularity.popularityByCourse.value"')
+    expect(timetable).toContain(':show-popularity="popularity.canShowPopularity.value"')
+    expect(timetable).toContain(':popularity-by-course="popularity.popularityByCourse.value"')
   })
 
-  it('keeps section identifiers on lecture blocks and shows course-level counts in cards only', () => {
+  it('shows privacy-protected course-level counts in course cards and timetable blocks', () => {
     const timetable = source('../../components/scheduler/SchedulerTimetable.vue')
     const courseCard = source('../../components/scheduler/SchedulerCourseCard.vue')
+    const planPreview = source('../../components/scheduler/SchedulerPlanPreview.vue')
 
     expect(timetable).toContain('sectionId: section.section_id')
     expect(timetable).not.toContain('SchedulerPopularityBadge')
-    expect(timetable).not.toContain('block.popularity')
+    expect(timetable).toContain('getSchedulerCoursePopularity(')
+    expect(timetable).toContain('popularity: coursePopularity')
+    expect(timetable).toContain('SchedulerPopularitySummary')
+    expect(timetable).toContain('showPopularity && block.popularity')
+    expect(timetable).toContain(':counts="block.popularity"')
+    expect(timetable).not.toContain('coursePopularity?.sections')
     expect(courseCard).toContain('v-if="course.enabled" class="course-card__bundles"')
     expect(courseCard).toContain('SchedulerPopularitySummary')
     expect(courseCard).toContain(':counts="popularity"')
     expect(courseCard).not.toContain('popularity.sections[section.section_id]')
     expect(courseCard).not.toContain('v-for="section in bundle.sections"')
+    expect(planPreview).toContain(':popularity-by-course="{}"')
+    expect(planPreview).toContain(':show-popularity="false"')
   })
 
   it('shows only the privacy-protected cart count with a branded accessible tooltip', () => {
