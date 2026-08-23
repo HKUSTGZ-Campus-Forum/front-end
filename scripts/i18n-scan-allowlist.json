@@ -22,7 +22,6 @@
     "components/admin/AdminDonutChart.client.vue",
     "components/scheduler/SchedulerBottomPanel.vue",
     "components/scheduler/SchedulerMap.vue",
-    "components/scheduler/SchedulerPopularityBadge.vue",
     "components/scheduler/SchedulerTimetable.vue",
     "components/setting/AccountSettings.vue",
     "components/setting/ThemeSettings.vue",

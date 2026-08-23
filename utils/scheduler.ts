@@ -155,8 +155,8 @@ export interface SchedulerSharedPlanResponse {
 }
 
 export interface SchedulerPopularityCounts {
-  cart_count: number
-  saved_plan_count: number
+  cart_count: number | null
+  cart_count_suppressed: boolean
 }
 
 export interface SchedulerCoursePopularity extends SchedulerPopularityCounts {
@@ -308,7 +308,7 @@ export function indexSchedulerPopularity(
     indexed[schedulerCourseKey(course.course_code)] = {
       course_code: course.course_code,
       cart_count: course.cart_count,
-      saved_plan_count: course.saved_plan_count,
+      cart_count_suppressed: course.cart_count_suppressed,
     }
   }
 

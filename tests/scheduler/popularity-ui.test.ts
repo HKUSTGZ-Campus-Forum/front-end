@@ -44,19 +44,23 @@ describe('scheduler popularity UI contract', () => {
     expect(courseCard).not.toContain('v-for="section in bundle.sections"')
   })
 
-  it('labels cart and saved-plan counts instead of presenting an ambiguous ratio', () => {
+  it('shows only the privacy-protected cart count with a branded accessible tooltip', () => {
     const summary = source('../../components/scheduler/SchedulerPopularitySummary.vue')
     const zh = source('../../i18n/locales/zh.json')
 
     expect(summary).toContain("t('scheduler.popularityCartLabel')")
-    expect(summary).toContain("t('scheduler.popularitySavedPlansLabel')")
     expect(summary).toContain('counts.cart_count')
-    expect(summary).toContain('counts.saved_plan_count')
-    expect(summary).not.toContain('counts.looking_count')
-    expect(summary).not.toContain('counts.scheduling_count')
-    expect(summary).not.toContain('</span>/<span>')
+    expect(summary).toContain('counts.cart_count_suppressed')
+    expect(summary).toContain("t('scheduler.popularityFew')")
+    expect(summary).toContain('role="tooltip"')
+    expect(summary).toContain('<Teleport to="body">')
+    expect(summary).toContain('@keydown.escape.stop="close"')
+    expect(summary).not.toContain(':title=')
+    expect(summary).not.toContain('saved_plan_count')
     expect(zh).toContain('"popularityCartLabel": "购物车"')
-    expect(zh).toContain('"popularitySavedPlansLabel": "方案中"')
+    expect(zh).toContain('"popularityFew": "少量"')
+    expect(zh).toContain('少于 5 人时显示')
+    expect(zh).not.toContain('"popularitySavedPlansLabel"')
   })
 
   it('keeps the popularity payload anonymous', () => {

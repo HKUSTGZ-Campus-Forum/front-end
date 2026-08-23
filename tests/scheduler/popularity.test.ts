@@ -30,8 +30,8 @@ class FakeVisibility implements SchedulerVisibilitySource {
 
 function popularityResponse(
   courseCode = 'AIAA1001',
-  cart = 2,
-  savedPlans = 3,
+  cart: number | null = 5,
+  suppressed = false,
 ): SchedulerPopularityResponse {
   return {
     semester_id: '2540',
@@ -39,7 +39,7 @@ function popularityResponse(
     courses: [{
       course_code: courseCode,
       cart_count: cart,
-      saved_plan_count: savedPlans,
+      cart_count_suppressed: suppressed,
     }],
   }
 }
@@ -59,23 +59,23 @@ afterEach(() => {
 })
 
 describe('scheduler popularity', () => {
-  it('indexes the two distinct user counts by normalized course code', () => {
+  it('indexes privacy-protected cart counts by normalized course code', () => {
     const indexed = indexSchedulerPopularity({
       semester_id: '2540',
       generated_at: '2026-08-07T12:00:00Z',
       courses: [
-        popularityResponse('AIAA1001', 1, 2).courses[0],
-        popularityResponse('DSAA1001', 8, 13).courses[0],
+        popularityResponse('AIAA1001', null, true).courses[0],
+        popularityResponse('DSAA1001', 8).courses[0],
       ],
     })
 
     expect(getSchedulerCoursePopularity(indexed, 'AIAA 1001')).toMatchObject({
-      cart_count: 1,
-      saved_plan_count: 2,
+      cart_count: null,
+      cart_count_suppressed: true,
     })
     expect(getSchedulerCoursePopularity(indexed, 'dsaa1001')).toMatchObject({
       cart_count: 8,
-      saved_plan_count: 13,
+      cart_count_suppressed: false,
     })
   })
 
