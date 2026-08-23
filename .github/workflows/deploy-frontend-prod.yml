@@ -1,9 +1,6 @@
 name: Deploy Nuxt SSR to Production
 
 on:
-  push:
-    branches:
-      - production
   workflow_dispatch:
 
 permissions:

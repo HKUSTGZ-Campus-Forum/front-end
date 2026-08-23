@@ -26,6 +26,7 @@
 - 要求 Node.js 版本与 CI 一致（见 `.github/workflows/frontend-ci.yml`，当前为 Node 22）
 - 本地开发 API：默认 `http://localhost:8000`（由 `nuxt.config.ts` 中 `NUXT_PUBLIC_API_BASE_URL` 控制；后端未启动时可通过 `.env` 指向 `https://dev.unikorn.axfff.com`）
 - 当前正式产品是 `https://unikorn.hkust-gz.edu.cn`，由学校服务器上的前后端联合 release 发布。仓库内面向 `unikorn.axfff.com` 的旧 `production` workflow 不是当前正式发布路径；环境细节见 `docs/production-environment.md`。
+- 学校正式服只由后端仓库 `school-production` 发布控制分支上的双 SHA manifest 触发；本仓库 `main` 只自动部署共享 dev。前端 agent 不得创建独立正式部署分支，也不得把旧 `production` workflow 当作学校正式发布。
 
 ### 2.2 常用命令
 

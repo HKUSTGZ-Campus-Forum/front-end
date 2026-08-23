@@ -125,6 +125,15 @@
 - **决策**：课程卡片的当前热度只统计把课程加入对应学期购物车的已验证校内账号，并按规范化邮箱去重。已保存方案不参与任何可见性下的热度统计；人数为 1–4 时，后端不返回精确值，前端统一显示“少量”。统计仅表示排课意向，不代表正式选课。
 - **实现**：`GET /api/scheduler/popularity/<semester>` 对小样本返回 `cart_count: null` 与 `cart_count_suppressed: true`，避免仅在前端遮盖精确值；课程卡片使用站内浮层解释统计口径，并支持鼠标、键盘、触屏和深色主题。
 
+## ADR-013：学校正式服由单一双 SHA 发布控制分支触发
+
+- **日期**：2026-08
+- **状态**：已采纳
+- **背景**：前后端分仓后，如果两个仓库各自用正式分支触发部署，会产生版本错配和重复发布；学校主机又位于内网，不适合暴露 SSH 给 GitHub 托管 runner。`main` 已承担共享 dev 自动部署，也不能同时等同于正式发布批准。
+- **决策**：后端仓库建立只允许修改 release manifest 的 `school-production` 控制分支。manifest 成对记录前后端 `main` 的完整 SHA；GitHub 托管 runner 对这对候选重新执行测试和生产构建并发布固定验证状态，学校服务器上的 root-owned systemd 控制器通过出站连接轮询该状态，验证成功后调用可信安装版联合 release 脚本。控制器只允许版本向前移动，自动阻止未经用户明确批准的 migration 与产品数据变更，并在发布期间协调 SISN 同步定时器。旧 axfff `production` workflows 仅保留手工 dispatch。
+- **理由**：一次 manifest 更新明确表达一对可审计版本，避免分仓竞态；学校侧轮询不需要开放入站管理端口；GitHub 验证与主机端独立校验共同限制错误或未批准的发布，同时复用 ADR-011 的备份、迁移、原子切换和健康检查能力。
+- **相关文档**：后端 `.github/workflows/validate-school-production-release.yml`、`deploy/school/README.md`、`deploy/school/school-production-controller.py`
+
 ---
 
 *模板（新决策追加时使用）：*
