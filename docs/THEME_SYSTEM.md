@@ -406,7 +406,6 @@ groups:
 - Search keyword highlight (`SearchDropdown.vue`): `mark` `#fef3c7` / `#92400e`
 - White toggle knobs (`KeguangPinned.vue`, contest admin): white knob on both themes (`--text-inverse` is near-black in dark, unusable)
 - White diagonal-stripe texture on banned timetable cells (`SchedulerTimetable.vue`)
-- Compact badge white text + translucent black on map/colored backgrounds (`SchedulerPopularityBadge.vue`)
 
 **Dynamic per-content colors** — theme tokens cannot express them:
 - Avatar placeholder pastel palette (`UserAvatar.vue`), hashed by username
@@ -546,5 +545,5 @@ color: var(--text-muted);
 
 ---
 
-*Last Updated: August 2026*  
-*Version: 3.1*  
+*Last Updated: August 2026*
+*Version: 3.1*
