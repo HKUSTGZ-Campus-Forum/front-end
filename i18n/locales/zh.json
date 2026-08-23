@@ -907,7 +907,11 @@
       "nextSlide": "下一张",
       "slideLabel": "第 {index} 张",
       "slides": {
-        "contestAlt": "百块奖金大赛横幅",
+        "schedulerAlt": "打开 UniKorn 排课助手",
+        "schedulerEyebrow": "UniKorn 课程工具",
+        "schedulerTitle": "轻松排出理想课表",
+        "schedulerDescription": "比较班别、避开冲突，快速找到适合你的课程组合。",
+        "schedulerCta": "进入排课",
         "welcomeZhAlt": "UniKorn 中文欢迎横幅",
         "welcomeEnAlt": "UniKorn 英文欢迎横幅"
       }

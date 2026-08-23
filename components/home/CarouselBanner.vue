@@ -12,7 +12,29 @@
         >
           <div class="slide-inner">
             <NuxtLink
-              v-if="slide.href && !isExternalHref(slide.href)"
+              v-if="slide.variant === 'scheduler'"
+              :to="slide.href"
+              class="slide-link slide-link--scheduler"
+              :aria-label="slide.alt"
+            >
+              <img
+                :src="slide.image"
+                alt=""
+                aria-hidden="true"
+                class="slide-img"
+              />
+              <span class="scheduler-poster__copy" aria-hidden="true">
+                <span class="scheduler-poster__eyebrow">{{ slide.eyebrow }}</span>
+                <strong class="scheduler-poster__title">{{ slide.title }}</strong>
+                <span class="scheduler-poster__description">{{ slide.description }}</span>
+                <span class="scheduler-poster__cta">
+                  {{ slide.cta }}
+                  <span aria-hidden="true">→</span>
+                </span>
+              </span>
+            </NuxtLink>
+            <NuxtLink
+              v-else-if="slide.href && !isExternalHref(slide.href)"
               :to="slide.href"
               class="slide-link"
             >
@@ -64,7 +86,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { AMWC_RESULTS_URL } from "~/utils/externalLinks";
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -72,14 +93,24 @@ const localePath = useLocalePath();
 type BannerSlide = {
   image: string
   alt: string
-  href?: string
+  href: string
+  variant?: "scheduler"
+  eyebrow?: string
+  title?: string
+  description?: string
+  cta?: string
 }
 
 const slides = computed<BannerSlide[]>(() => [
   {
-    image: "/image/banner/AMWC-1.jpg",
-    alt: t("homePage.carousel.slides.contestAlt"),
-    href: AMWC_RESULTS_URL,
+    image: "/image/banner/scheduler-planner-hero.webp",
+    alt: t("homePage.carousel.slides.schedulerAlt"),
+    href: localePath("/courses/planner"),
+    variant: "scheduler",
+    eyebrow: t("homePage.carousel.slides.schedulerEyebrow"),
+    title: t("homePage.carousel.slides.schedulerTitle"),
+    description: t("homePage.carousel.slides.schedulerDescription"),
+    cta: t("homePage.carousel.slides.schedulerCta"),
   },
   {
     image: "/image/banner/welcome_cn_2.jpg",
@@ -175,6 +206,25 @@ onUnmounted(() => clearInterval(timer));
   cursor: pointer;
   color: inherit;
   text-decoration: none;
+
+  &:focus-visible {
+    outline: 3px solid var(--text-on-interactive);
+    outline-offset: -4px;
+  }
+
+  &--scheduler {
+    isolation: isolate;
+    overflow: hidden;
+    position: relative;
+
+    .slide-img {
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &:hover .slide-img {
+      transform: scale(1.012);
+    }
+  }
 }
 
 .slide-img {
@@ -182,6 +232,103 @@ onUnmounted(() => clearInterval(timer));
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.scheduler-poster__copy {
+  box-sizing: border-box;
+  color: var(--text-on-interactive);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(5px, 0.75vw, 10px);
+  height: 100%;
+  justify-content: center;
+  left: 0;
+  line-height: 1.2;
+  padding: clamp(16px, 3vw, 34px) clamp(42px, 5vw, 58px);
+  position: absolute;
+  top: 0;
+  width: 54%;
+  z-index: 1;
+}
+
+.scheduler-poster__eyebrow {
+  color: color-mix(in srgb, var(--interactive-primary) 52%, var(--text-on-interactive));
+  font-size: clamp(0.58rem, 0.9vw, 0.76rem);
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scheduler-poster__title {
+  font-size: clamp(1.28rem, 2.8vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  text-shadow: var(--shadow-medium);
+}
+
+.scheduler-poster__description {
+  color: var(--overlay-text-secondary);
+  font-size: clamp(0.68rem, 1.05vw, 0.9rem);
+  line-height: 1.45;
+  max-width: 360px;
+}
+
+.scheduler-poster__cta {
+  align-items: center;
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--text-on-interactive) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-on-interactive) 70%, transparent);
+  border-radius: 999px;
+  box-shadow: var(--shadow-medium);
+  color: var(--scheduler-chip-text-active);
+  display: inline-flex;
+  font-size: clamp(0.62rem, 0.95vw, 0.78rem);
+  font-weight: 800;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 5px 11px;
+  width: fit-content;
+}
+
+@media (max-width: 900px) {
+  .scheduler-poster__copy {
+    gap: 5px;
+    width: 58%;
+  }
+
+  .scheduler-poster__description {
+    display: none;
+  }
+
+  .scheduler-poster__title {
+    font-size: clamp(1rem, 3.4vw, 1.3rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .scheduler-poster__copy {
+    gap: 4px;
+    padding: 6px 4px 10px 40px;
+    width: 64%;
+  }
+
+  .scheduler-poster__eyebrow {
+    display: none;
+  }
+
+  .scheduler-poster__title {
+    font-size: clamp(0.78rem, 4.1vw, 0.98rem);
+    line-height: 1.05;
+  }
+
+  .scheduler-poster__cta {
+    box-shadow: none;
+    font-size: 0.58rem;
+    gap: 3px;
+    margin-top: 0;
+    padding: 3px 7px;
+  }
 }
 
 .arrow {
