@@ -30,22 +30,16 @@ class FakeVisibility implements SchedulerVisibilitySource {
 
 function popularityResponse(
   courseCode = 'AIAA1001',
-  sectionId = 'L01',
-  looking = 2,
-  scheduling = 3,
+  cart = 2,
+  savedPlans = 3,
 ): SchedulerPopularityResponse {
   return {
     semester_id: '2540',
     generated_at: '2026-08-07T12:00:00Z',
     courses: [{
       course_code: courseCode,
-      looking_count: looking,
-      scheduling_count: scheduling,
-      sections: [{
-        section_id: sectionId,
-        looking_count: looking,
-        scheduling_count: scheduling,
-      }],
+      cart_count: cart,
+      saved_plan_count: savedPlans,
     }],
   }
 }
@@ -65,23 +59,23 @@ afterEach(() => {
 })
 
 describe('scheduler popularity', () => {
-  it('keeps repeated section identifiers isolated by course', () => {
+  it('indexes the two distinct user counts by normalized course code', () => {
     const indexed = indexSchedulerPopularity({
       semester_id: '2540',
       generated_at: '2026-08-07T12:00:00Z',
       courses: [
-        popularityResponse('AIAA1001', 'L01', 1, 2).courses[0],
-        popularityResponse('DSAA1001', 'L01', 8, 13).courses[0],
+        popularityResponse('AIAA1001', 1, 2).courses[0],
+        popularityResponse('DSAA1001', 8, 13).courses[0],
       ],
     })
 
-    expect(getSchedulerCoursePopularity(indexed, 'AIAA 1001')?.sections.L01).toEqual({
-      looking_count: 1,
-      scheduling_count: 2,
+    expect(getSchedulerCoursePopularity(indexed, 'AIAA 1001')).toMatchObject({
+      cart_count: 1,
+      saved_plan_count: 2,
     })
-    expect(getSchedulerCoursePopularity(indexed, 'dsaa1001')?.sections.L01).toEqual({
-      looking_count: 8,
-      scheduling_count: 13,
+    expect(getSchedulerCoursePopularity(indexed, 'dsaa1001')).toMatchObject({
+      cart_count: 8,
+      saved_plan_count: 13,
     })
   })
 

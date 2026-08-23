@@ -12,8 +12,8 @@ const props = withDefaults(defineProps<{
 
 const { t } = useI18n()
 const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
-  looking: props.counts.looking_count,
-  scheduling: props.counts.scheduling_count,
+  cart: props.counts.cart_count,
+  savedPlans: props.counts.saved_plan_count,
 }))
 </script>
 
@@ -24,15 +24,15 @@ const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
     :aria-label="accessibleLabel"
     :title="t('scheduler.popularityExplanation')"
   >
-    <span class="popularity-badge__looking">
+    <span class="popularity-badge__cart">
       {{ compact
-        ? t('scheduler.popularityLookingShort', { count: counts.looking_count })
-        : t('scheduler.popularityLooking', { count: counts.looking_count }) }}
+        ? t('scheduler.popularityCartCompact', { count: counts.cart_count })
+        : t('scheduler.popularityCart', { count: counts.cart_count }) }}
     </span>
-    <span class="popularity-badge__planning">
+    <span class="popularity-badge__plans">
       {{ compact
-        ? t('scheduler.popularityPlanningShort', { count: counts.scheduling_count })
-        : t('scheduler.popularityPlanning', { count: counts.scheduling_count }) }}
+        ? t('scheduler.popularitySavedPlansCompact', { count: counts.saved_plan_count })
+        : t('scheduler.popularitySavedPlans', { count: counts.saved_plan_count }) }}
     </span>
   </span>
 </template>
@@ -59,11 +59,11 @@ const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
     white-space: nowrap;
   }
 
-  &__looking {
+  &__cart {
     color: var(--text-secondary);
   }
 
-  &__planning {
+  &__plans {
     border-color: color-mix(in srgb, var(--semantic-success) 28%, var(--border-secondary)) !important;
     background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary)) !important;
     color: color-mix(in srgb, var(--semantic-success) 78%, var(--text-primary));
