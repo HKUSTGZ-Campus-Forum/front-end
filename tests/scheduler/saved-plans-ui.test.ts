@@ -27,6 +27,16 @@ describe('saved scheduler plan UI contracts', () => {
     expect(read('pages/courses/planner/shared/index.vue')).toContain('@media (max-width: 600px)')
   })
 
+  it('keeps the desktop planner workspace inside the viewport after adding plan actions', () => {
+    const dashboard = read('components/scheduler/SchedulerDashboard.vue')
+    const desktopStyles = dashboard.split('@media (max-width: 1024px)')[0]
+
+    expect(desktopStyles).toContain('height: calc(100dvh - 64px);')
+    expect(desktopStyles).toContain('min-height: 486px;')
+    expect(desktopStyles).not.toContain('min-height: 760px;')
+    expect(desktopStyles).not.toContain('min-height: 620px;')
+  })
+
   it('provides an accessible route back to the originating planner workspace', () => {
     const navigation = read('components/scheduler/SchedulerPlanNavigation.vue')
     const origin = read('composables/useSchedulerPlanNavigation.ts')

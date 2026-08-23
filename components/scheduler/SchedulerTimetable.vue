@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import type { CartCourse } from '~/utils/scheduler'
 import {
   TIME_SLOTS,
-  canInlineSection,
+  canInlineSectionWidths,
   formatInlineSectionLabel,
   getCourseTimetableColors,
   getHeight,
@@ -48,6 +48,9 @@ onMounted(() => {
   if (containerRef.value) {
     resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
+        // Responsive typography changes at 768px, so discard measured widths
+        // whenever the timetable resizes instead of reusing stale metrics.
+        inlineWidthCache.clear()
         containerWidth.value = entry.contentRect.width
         containerHeight.value = entry.contentRect.height
       }
@@ -100,40 +103,44 @@ const timetableGridStyle = computed(() => ({
 }))
 
 // Wide columns inline the section label next to the course code; otherwise it
-// drops to its own icon row. Whether there is actually room depends on the
-// block's own code + section string widths, not just the column width, so we
-// measure the rendered text against the card's content budget per block.
-let measureCtx: CanvasRenderingContext2D | null = null
-let measureFont = ''
+// drops to its own icon row. Hidden DOM probes carry the exact same scoped CSS
+// as the visible text, avoiding Safari's Canvas font parsing/fallback metrics.
+const codeMeasureRef = ref<HTMLElement | null>(null)
+const sectionMeasureRef = ref<HTMLElement | null>(null)
+const inlineMeasureReady = ref(false)
+const inlineWidthCache = new Map<string, { code: number; section: number }>()
 
-// Resolve the font the block text is drawn with: the family is inherited from
-// the timetable container while the size (0.875rem) and weight (500) come from
-// the scoped `__block-code`/`__block-code-section` rules. Reading the computed
-// family guarantees matching metrics instead of a guessed font stack.
-function resolveMeasureFont(): string {
-  const family = typeof document !== 'undefined'
-    ? getComputedStyle(document.querySelector('.timetable') ?? document.body).fontFamily
-    : 'system-ui, sans-serif'
-  return `500 0.875rem ${family}`
-}
+onMounted(() => {
+  void nextTick(() => {
+    inlineMeasureReady.value = Boolean(codeMeasureRef.value && sectionMeasureRef.value)
+  })
+})
 
-// Canvas-measured text width under the exact font the card uses. Fallbacks
-// keep SSR and the pre-mount first pass deterministic.
-function measureText(text: string): number {
-  if (typeof document === 'undefined') return text.length * 7
-  if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d')
-  if (!measureFont && measureCtx) measureFont = resolveMeasureFont()
-  if (measureCtx) {
-    if (measureFont) measureCtx.font = measureFont
-    return measureCtx.measureText(text).width
+function measureInlineText(code: string, section: string) {
+  const cacheKey = `${code}\u0000${section}`
+  const cached = inlineWidthCache.get(cacheKey)
+  if (cached) return cached
+
+  const codeEl = codeMeasureRef.value
+  const sectionEl = sectionMeasureRef.value
+  if (!inlineMeasureReady.value || !codeEl || !sectionEl) return null
+
+  codeEl.textContent = code
+  sectionEl.textContent = section
+  const widths = {
+    code: codeEl.getBoundingClientRect().width,
+    section: sectionEl.getBoundingClientRect().width,
   }
-  return text.length * 7
+  inlineWidthCache.set(cacheKey, widths)
+  return widths
 }
 
 // Whether a block may show its section inline next to the code on one line.
 function isSectionInline(block: LectureBlock): boolean {
   const label = formatInlineSectionLabel(block.sectionName, block.sectionId)
-  return canInlineSection(dayColWidth.value, block.courseCode, label, measureText)
+  const widths = measureInlineText(block.courseCode, label)
+  if (!widths) return false
+  return canInlineSectionWidths(dayColWidth.value, widths.code, widths.section)
 }
 
 // Nine labels aligned to the nine horizontal grid lines (8 rows + bottom edge).
@@ -363,6 +370,13 @@ function onCellClick(day: number, period: number) {
 
 <template>
   <div ref="containerRef" class="timetable">
+    <!-- Real DOM text probes keep inline-section width checks aligned with the
+         browser's rendered font metrics. They are inert and outside layout. -->
+    <div class="timetable__inline-measure" aria-hidden="true">
+      <span ref="codeMeasureRef" class="timetable__block-code" />
+      <span ref="sectionMeasureRef" class="timetable__block-code-section" />
+    </div>
+
     <!-- Grid lines layer: inset to the day-column area only -->
     <div class="timetable__grid" :style="timetableGridStyle" />
 
@@ -697,16 +711,18 @@ function onCellClick(day: number, period: number) {
       font-weight: 500; /* original: font-medium */
       font-size: 0.875rem; /* original: text-sm */
       line-height: 1.3;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
     &-code-section {
       font-weight: 500;
       font-size: 0.875rem;
       line-height: 1.3;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     &-title {
@@ -738,6 +754,19 @@ function onCellClick(day: number, period: number) {
       line-height: 1;
       margin-top: 1px; /* visual alignment with text-xs rows */
     }
+  }
+
+  &__inline-measure {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    width: max-content;
+    visibility: hidden;
+    pointer-events: none;
+    white-space: nowrap;
   }
 }
 
