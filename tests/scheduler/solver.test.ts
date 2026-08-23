@@ -3,13 +3,19 @@ import {
   SCHEDULER_PLAN_LIMIT,
   SCHEDULER_SEARCH_NODE_LIMIT,
   getMaxDayNum,
+  schedulerLecturesOverlap,
   solvePlans,
   type CartCourse,
   type SchedulerLecture,
 } from '../../utils/scheduler'
 
-function lecture(day: number, start_time: number, end_time: number): SchedulerLecture {
-  return { day, start_time, end_time, room: 'R', instructor: 'I' }
+function lecture(
+  day: number,
+  start_time: number,
+  end_time: number,
+  date_ranges?: SchedulerLecture['date_ranges'],
+): SchedulerLecture {
+  return { day, start_time, end_time, room: 'R', instructor: 'I', date_ranges }
 }
 
 function course(
@@ -99,6 +105,41 @@ describe('solvePlans', () => {
     ], noBans())
 
     expect(result.status).toBe('no-solution')
+  })
+
+  it('allows the same weekly time when teaching date ranges are disjoint', () => {
+    const result = solvePlans([
+      course('AIAA1001', { 0: [{ id: 1, lectures: [lecture(1, 1330, 1450, [
+        { start_date: '2026-09-07', end_date: '2026-09-13' },
+      ])] }] }),
+      course('DSAA1001', { 0: [{ id: 1, lectures: [lecture(1, 1330, 1450, [
+        { start_date: '2026-09-14', end_date: '2026-12-07' },
+      ])] }] }),
+    ], noBans())
+
+    expect(result.status).toBe('ok')
+  })
+
+  it('treats inclusive teaching dates that touch as conflicting', () => {
+    const left = lecture(1, 1330, 1450, [
+      { start_date: '2026-09-07', end_date: '2026-09-13' },
+    ])
+    const right = lecture(1, 1330, 1450, [
+      { start_date: '2026-09-13', end_date: '2026-10-01' },
+    ])
+
+    expect(schedulerLecturesOverlap(left, right)).toBe(true)
+  })
+
+  it('keeps missing or invalid teaching dates conservative', () => {
+    const dated = lecture(1, 1330, 1450, [
+      { start_date: '2026-09-14', end_date: '2026-12-07' },
+    ])
+
+    expect(schedulerLecturesOverlap(lecture(1, 1330, 1450), dated)).toBe(true)
+    expect(schedulerLecturesOverlap(lecture(1, 1330, 1450, [
+      { start_date: 'not-a-date', end_date: '2026-09-13' },
+    ]), dated)).toBe(true)
   })
 
   it('expands the timetable to seven columns only for weekend lectures', () => {

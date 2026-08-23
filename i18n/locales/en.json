@@ -796,6 +796,11 @@
         "validationFailed": "File validation failed.",
         "missingFileId": "Upload failed: no file ID was returned.",
         "uploadFailed": "Upload failed. Please try again.",
+        "signingFailed": "Could not prepare the upload. Please try again shortly.",
+        "storageNetwork": "Could not connect to file storage. Check your network and try again.",
+        "storageRejected": "File storage rejected the upload. Please try again shortly.",
+        "statusFailed": "The image was sent, but its upload status could not be confirmed. Please try again shortly.",
+        "statusTimeout": "The image was sent, but upload confirmation timed out. Please try again shortly.",
         "removeFailed": "Failed to remove avatar. Please try again."
       }
     }

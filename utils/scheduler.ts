@@ -6,6 +6,13 @@ export interface SchedulerLecture {
   end_time: number
   room: string
   instructor: string
+  date_ranges?: SchedulerMeetingDateRange[]
+}
+
+export interface SchedulerMeetingDateRange {
+  start_date: string
+  end_date: string
+  facility_id?: string | null
 }
 
 export interface SchedulerMapPoint {
@@ -594,6 +601,54 @@ function overlapsBanned(lectures: SchedulerLecture[], bannedPeriods: boolean[][]
   })
 }
 
+function normalizedMeetingDateRanges(
+  lecture: SchedulerLecture,
+): Array<{ start: string; end: string }> | null {
+  if (!Array.isArray(lecture.date_ranges) || lecture.date_ranges.length === 0) return null
+  const ranges: Array<{ start: string; end: string }> = []
+  for (const range of lecture.date_ranges) {
+    const start = range?.start_date
+    const end = range?.end_date
+    const startTimestamp = typeof start === 'string' ? Date.parse(`${start}T00:00:00Z`) : Number.NaN
+    const endTimestamp = typeof end === 'string' ? Date.parse(`${end}T00:00:00Z`) : Number.NaN
+    if (
+      typeof start !== 'string'
+      || typeof end !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}$/.test(start)
+      || !/^\d{4}-\d{2}-\d{2}$/.test(end)
+      || Number.isNaN(startTimestamp)
+      || Number.isNaN(endTimestamp)
+      || new Date(startTimestamp).toISOString().slice(0, 10) !== start
+      || new Date(endTimestamp).toISOString().slice(0, 10) !== end
+      || start > end
+    ) {
+      return null
+    }
+    ranges.push({ start, end })
+  }
+  return ranges
+}
+
+export function schedulerLecturesOverlap(
+  left: SchedulerLecture,
+  right: SchedulerLecture,
+): boolean {
+  if (
+    left.day !== right.day
+    || left.start_time >= right.end_time
+    || left.end_time <= right.start_time
+  ) {
+    return false
+  }
+
+  const leftRanges = normalizedMeetingDateRanges(left)
+  const rightRanges = normalizedMeetingDateRanges(right)
+  if (leftRanges === null || rightRanges === null) return true
+  return leftRanges.some(leftRange => rightRanges.some(
+    rightRange => leftRange.start <= rightRange.end && rightRange.start <= leftRange.end,
+  ))
+}
+
 export function solvePlans(
   courseList: CartCourse[],
   bannedPeriods: boolean[][],
@@ -644,16 +699,14 @@ export function solvePlans(
   }
 
   const plans: PlanSelection[][] = []
-  const bucket = new Map<number, { start: number; end: number }[]>()
+  const bucket = new Map<number, SchedulerLecture[]>()
   const selected: PlanSelection[] = []
   let searchNodes = 0
   let truncationReason: SolverTruncationReason | null = null
 
   function canPlace(lectures: SchedulerLecture[]) {
     return lectures.every(lecture =>
-      !(bucket.get(lecture.day) || []).some(slot =>
-        lecture.start_time < slot.end && lecture.end_time > slot.start,
-      ),
+      !(bucket.get(lecture.day) || []).some(slot => schedulerLecturesOverlap(lecture, slot)),
     )
   }
 
@@ -676,7 +729,7 @@ export function solvePlans(
       if (!canPlace(bundle.lectures)) continue
       for (const lecture of bundle.lectures) {
         if (!bucket.has(lecture.day)) bucket.set(lecture.day, [])
-        bucket.get(lecture.day)!.push({ start: lecture.start_time, end: lecture.end_time })
+        bucket.get(lecture.day)!.push(lecture)
       }
       selected.push(bundle.selection)
       const shouldStop = search(index + 1)

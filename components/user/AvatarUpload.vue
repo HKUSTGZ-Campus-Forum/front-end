@@ -95,6 +95,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '~/composables/useAuth';
 import { useCustomFileUpload } from '~/composables/useFileUpload';
+import { getAvatarUploadErrorKey } from '~/utils/fileUploadError';
 
 interface Props {
   userId?: number;
@@ -209,9 +210,8 @@ const uploadAvatar = async (file: File) => {
       throw new Error(t('avatar.upload.errors.missingFileId'));
     }
   } catch (error) {
-    console.error('Avatar upload error:', error);
     hasError.value = true;
-    errorMessage.value = error instanceof Error ? error.message : t('avatar.upload.errors.uploadFailed');
+    errorMessage.value = t(getAvatarUploadErrorKey(error));
   } finally {
     isUploading.value = false;
     uploadProgress.value = 0;

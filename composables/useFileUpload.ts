@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import type { UploadOptions, UploadUrlResponse, FileRecord, FileType } from '~/types/file'
 import { useApi } from './useApi'
 import { compressImage, COMPRESSION_PRESETS, type CompressionOptions, type CompressionResult } from '~/utils/imageCompression'
+import { FileUploadError } from '~/utils/fileUploadError'
 
 export const useCustomFileUpload = () => {
   const isUploading = ref(false)
@@ -56,10 +57,10 @@ export const useCustomFileUpload = () => {
       }
 
       if (maxUploadBytes != null && fileToUpload.size > maxUploadBytes) {
-        const err = new Error(`文件超过大小限制（最大 ${Math.round(maxUploadBytes / (1024 * 1024))}MB）`)
-        error.value = err
-        onError?.(err)
-        throw err
+        throw new FileUploadError(
+          'file_too_large',
+          `File exceeds the ${Math.round(maxUploadBytes / (1024 * 1024))} MB upload limit.`,
+        )
       }
 
       const effectiveContentType =
@@ -68,27 +69,37 @@ export const useCustomFileUpload = () => {
           : 'application/octet-stream'
 
       // Step 2: Get signed URL from backend
-      const response = await fetchWithAuth('/api/files/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          filename: fileToUpload.name,
-          file_type: fileType,
-          entity_type: entityType,
-          entity_id: entityId,
-          content_type: effectiveContentType,
-          file_size: fileToUpload.size
+      let response: Response
+      try {
+        response = await fetchWithAuth('/api/files/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filename: fileToUpload.name,
+            file_type: fileType,
+            entity_type: entityType,
+            entity_id: entityId,
+            content_type: effectiveContentType,
+            file_size: fileToUpload.size
+          })
         })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to get upload URL')
+      } catch (cause) {
+        throw new FileUploadError('signing_failed', 'Could not prepare the upload.', { cause })
       }
 
-      const uploadUrlData = await response.json() as UploadUrlResponse
+      if (!response.ok) {
+        throw new FileUploadError('signing_failed', 'Could not prepare the upload.')
+      }
+
+      const uploadUrlData = await response.json().catch((cause) => {
+        throw new FileUploadError('signing_failed', 'The upload service returned an invalid response.', { cause })
+      }) as UploadUrlResponse
       const { signed_url, file_id } = uploadUrlData
+      if (typeof signed_url !== 'string' || !Number.isInteger(file_id)) {
+        throw new FileUploadError('signing_failed', 'The upload service returned an invalid response.')
+      }
 
       // Fix Mixed Content issue: Force HTTPS for OSS uploads
       const httpsSignedUrl = signed_url.replace(/^http:\/\//, 'https://')
@@ -111,14 +122,20 @@ export const useCustomFileUpload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve()
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`))
+            reject(new FileUploadError('storage_rejected', 'The storage service rejected the upload.'))
           }
         }
-        xhr.onerror = () => reject(new Error('Network error during upload'))
+        xhr.onerror = () => reject(new FileUploadError(
+          'storage_network_error',
+          'Could not connect to the file storage service.',
+        ))
+        xhr.onabort = xhr.onerror
+        xhr.ontimeout = xhr.onerror
       })
 
       // Start the upload
       xhr.open('PUT', httpsSignedUrl)
+      xhr.timeout = 60_000
       xhr.setRequestHeader('Content-Type', effectiveContentType)
       xhr.send(fileToUpload)
 
@@ -131,10 +148,15 @@ export const useCustomFileUpload = () => {
       let attempts = 0
 
       const pollFileStatus = async (): Promise<FileRecord> => {
-        const response = await fetchWithAuth(`/api/files/${file_id}`)
+        let response: Response
+        try {
+          response = await fetchWithAuth(`/api/files/${file_id}`)
+        } catch (cause) {
+          throw new FileUploadError('status_failed', 'Could not confirm the uploaded file.', { cause })
+        }
         
         if (!response.ok) {
-          throw new Error('Failed to get file status')
+          throw new FileUploadError('status_failed', 'Could not confirm the uploaded file.')
         }
 
         const fileData = await response.json() as FileRecord
@@ -144,11 +166,11 @@ export const useCustomFileUpload = () => {
         }
 
         if (fileData.status === 'error') {
-          throw new Error('File upload failed')
+          throw new FileUploadError('upload_failed', 'The file upload failed.')
         }
 
         if (attempts >= maxAttempts) {
-          throw new Error('File upload status check timeout')
+          throw new FileUploadError('status_timeout', 'Timed out while confirming the uploaded file.')
         }
 
         attempts++
@@ -161,7 +183,9 @@ export const useCustomFileUpload = () => {
       return fileRecord
 
     } catch (err) {
-      const uploadError = err instanceof Error ? err : new Error('Unknown upload error')
+      const uploadError = err instanceof Error
+        ? err
+        : new FileUploadError('upload_failed', 'The file upload failed.')
       error.value = uploadError
       onError?.(uploadError)
       throw uploadError
@@ -195,4 +219,4 @@ export const useCustomFileUpload = () => {
     error,
     compressionInfo
   }
-} 
+}

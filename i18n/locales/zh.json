@@ -796,6 +796,11 @@
         "validationFailed": "文件验证失败",
         "missingFileId": "上传失败：未收到文件 ID",
         "uploadFailed": "上传失败，请重试",
+        "signingFailed": "无法准备上传，请稍后重试。",
+        "storageNetwork": "无法连接文件存储服务，请检查网络后重试。",
+        "storageRejected": "文件存储服务拒绝了上传，请稍后重试。",
+        "statusFailed": "图片已发送，但无法确认上传状态，请稍后重试。",
+        "statusTimeout": "图片已发送，但确认上传状态超时，请稍后重试。",
         "removeFailed": "移除头像失败，请重试"
       }
     }
