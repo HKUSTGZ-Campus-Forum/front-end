@@ -907,7 +907,11 @@
       "nextSlide": "Next slide",
       "slideLabel": "Slide {index}",
       "slides": {
-        "contestAlt": "AMWC banner",
+        "schedulerAlt": "Open the UniKorn scheduling assistant",
+        "schedulerEyebrow": "UniKorn course tools",
+        "schedulerTitle": "Build your timetable",
+        "schedulerDescription": "Compare sections, avoid conflicts, and find a schedule that fits.",
+        "schedulerCta": "Open planner",
         "welcomeZhAlt": "UniKorn welcome banner in Chinese",
         "welcomeEnAlt": "UniKorn welcome banner in English"
       }
