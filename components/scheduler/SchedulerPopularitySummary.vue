@@ -10,8 +10,8 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
-  looking: props.counts.looking_count,
-  scheduling: props.counts.scheduling_count,
+  cart: props.counts.cart_count,
+  savedPlans: props.counts.saved_plan_count,
 }))
 </script>
 
@@ -21,8 +21,14 @@ const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
     :aria-label="accessibleLabel"
     :title="t('scheduler.popularityExplanation')"
   >
-    <Icon name="lucide:flame" class="popularity-summary__icon" aria-hidden="true" />
-    <span class="popularity-summary__counts">{{ counts.looking_count }}/{{ counts.scheduling_count }}</span>
+    <span class="popularity-summary__metric">
+      <span class="popularity-summary__label">{{ t('scheduler.popularityCartLabel') }}</span>
+      <span class="popularity-summary__value">{{ counts.cart_count }}</span>
+    </span>
+    <span class="popularity-summary__metric popularity-summary__metric--plans">
+      <span class="popularity-summary__label">{{ t('scheduler.popularitySavedPlansLabel') }}</span>
+      <span class="popularity-summary__value">{{ counts.saved_plan_count }}</span>
+    </span>
   </span>
 </template>
 
@@ -30,22 +36,36 @@ const accessibleLabel = computed(() => t('scheduler.popularityAriaLabel', {
 .popularity-summary {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   color: var(--text-secondary);
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
 
-  &__icon {
-    flex-shrink: 0;
-    color: var(--semantic-warning);
-    font-size: 13px;
-    line-height: 1;
+  &__metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    min-height: 20px;
+    padding: 2px 6px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--surface-secondary);
+
+    &--plans {
+      border-color: color-mix(in srgb, var(--semantic-success) 28%, var(--border-secondary));
+      background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary));
+    }
   }
 
-  &__counts {
-    line-height: 1;
+  &__label {
+    color: var(--text-secondary);
+  }
+
+  &__value {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
   }
 }
 </style>

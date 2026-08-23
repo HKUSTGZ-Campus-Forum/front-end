@@ -39,8 +39,24 @@ describe('scheduler popularity UI contract', () => {
     expect(timetable).not.toContain('block.popularity')
     expect(courseCard).toContain('v-if="course.enabled" class="course-card__bundles"')
     expect(courseCard).toContain('SchedulerPopularitySummary')
+    expect(courseCard).toContain(':counts="popularity"')
     expect(courseCard).not.toContain('popularity.sections[section.section_id]')
     expect(courseCard).not.toContain('v-for="section in bundle.sections"')
+  })
+
+  it('labels cart and saved-plan counts instead of presenting an ambiguous ratio', () => {
+    const summary = source('../../components/scheduler/SchedulerPopularitySummary.vue')
+    const zh = source('../../i18n/locales/zh.json')
+
+    expect(summary).toContain("t('scheduler.popularityCartLabel')")
+    expect(summary).toContain("t('scheduler.popularitySavedPlansLabel')")
+    expect(summary).toContain('counts.cart_count')
+    expect(summary).toContain('counts.saved_plan_count')
+    expect(summary).not.toContain('counts.looking_count')
+    expect(summary).not.toContain('counts.scheduling_count')
+    expect(summary).not.toContain('</span>/<span>')
+    expect(zh).toContain('"popularityCartLabel": "购物车"')
+    expect(zh).toContain('"popularitySavedPlansLabel": "方案中"')
   })
 
   it('keeps the popularity payload anonymous', () => {

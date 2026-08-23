@@ -148,17 +148,12 @@ export interface SchedulerSharedPlanResponse {
 }
 
 export interface SchedulerPopularityCounts {
-  looking_count: number
-  scheduling_count: number
-}
-
-export interface SchedulerSectionPopularity extends SchedulerPopularityCounts {
-  section_id: string
+  cart_count: number
+  saved_plan_count: number
 }
 
 export interface SchedulerCoursePopularity extends SchedulerPopularityCounts {
   course_code: string
-  sections: SchedulerSectionPopularity[]
 }
 
 export interface SchedulerPopularityResponse {
@@ -167,9 +162,11 @@ export interface SchedulerPopularityResponse {
   courses: SchedulerCoursePopularity[]
 }
 
-export interface SchedulerPopularityHistoryPoint extends SchedulerPopularityCounts {
+export interface SchedulerPopularityHistoryPoint {
   sampled_at: string
   observed_at: string
+  looking_count: number
+  scheduling_count: number
 }
 
 export type SchedulerPopularityHistorySamplingState =
@@ -287,7 +284,6 @@ export function formatPopularityHistoryTooltipValue(
 
 export interface IndexedSchedulerCoursePopularity extends SchedulerPopularityCounts {
   course_code: string
-  sections: Record<string, SchedulerPopularityCounts>
 }
 
 export type SchedulerPopularityByCourse = Record<string, IndexedSchedulerCoursePopularity>
@@ -302,18 +298,10 @@ export function indexSchedulerPopularity(
   const indexed: SchedulerPopularityByCourse = {}
 
   for (const course of response.courses) {
-    const sections: Record<string, SchedulerPopularityCounts> = {}
-    for (const section of course.sections) {
-      sections[section.section_id] = {
-        looking_count: section.looking_count,
-        scheduling_count: section.scheduling_count,
-      }
-    }
     indexed[schedulerCourseKey(course.course_code)] = {
       course_code: course.course_code,
-      looking_count: course.looking_count,
-      scheduling_count: course.scheduling_count,
-      sections,
+      cart_count: course.cart_count,
+      saved_plan_count: course.saved_plan_count,
     }
   }
 
