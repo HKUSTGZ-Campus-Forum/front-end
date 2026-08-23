@@ -10,13 +10,13 @@ school-host runbook lives in the backend repository at
 |---|---|---|---|
 | Local frontend | `http://localhost:3000` | UI development | `npm run dev`; API defaults to local `http://localhost:8000` |
 | Shared development | `https://dev.unikorn.axfff.com` | Integrated testing | frontend and backend `main` GitHub Actions |
-| Active production | `https://unikorn.hkust-gz.edu.cn` | User-facing UniKorn | joint exact-SHA release on the school host |
+| Active production | `https://unikorn.hkust-gz.edu.cn` | User-facing UniKorn | backend `school-production` paired-SHA manifest |
 | Independent CoursePlan | `https://scheduler.unikorn.hkust-gz.edu.cn` | School scheduler | separate service on the same host |
 | Former axfff production | `https://unikorn.axfff.com` | Preserved migration-era stack | not the current production target |
 
-The frontend repository still contains a `production` branch workflow for the
-former axfff host. Do not run or describe that workflow as a release to the
-active school production environment.
+The frontend repository still contains a manually dispatched legacy workflow
+for the former axfff host. A push to its `production` branch no longer deploys.
+Do not run or describe that workflow as a release to active school production.
 
 ## Frontend production contract
 
@@ -44,24 +44,28 @@ active school production environment.
 ## Release and verification
 
 After local and shared-development verification, merge the reviewed frontend
-and backend changes to each repository's `main`. Prepare clean committed
-checkouts of the two exact full SHAs on the school host, then use the backend
-release controller:
+and backend changes to each repository's `main`. Record both exact full SHAs,
+then update the only mutable file on the backend repository's
+`school-production` control branch:
 
 ```bash
-sudo deploy/school/deploy-release.sh \
-  --backend-source /absolute/staging/back-end \
-  --frontend-source /absolute/staging/front-end \
+python tools/update_school_production_release.py \
   --backend-sha FULL_BACKEND_SHA \
-  --frontend-sha FULL_FRONTEND_SHA \
-  --activate
+  --frontend-sha FULL_FRONTEND_SHA
+git add deploy/school/school-production-release.json
+git commit -m "release: deploy paired school production SHAs"
+git push origin school-production
 ```
 
-The controller builds one immutable joint release, takes a verified database
-backup, applies Alembic, atomically switches `/srv/unikorn/current`, preserves
-`previous`, restarts both applications and checks the frontend SHA. Run
-`activate-nginx.sh` only when the reviewed Nginx templates changed or an
-explicit migration gate must be removed.
+The GitHub validation workflow checks that both commits come from their `main`
+branches and reruns backend/frontend tests and the production frontend build.
+The school-host timer deploys only the successful paired manifest, builds one
+immutable joint release, takes a verified database backup, applies Alembic,
+atomically switches `/srv/unikorn/current`, preserves `previous`, restarts both
+applications and checks the exact frontend SHA plus public health. Version
+downgrades and unapproved `migrations/` or `app/data/` changes are blocked. Run
+`activate-nginx.sh` only when reviewed Nginx templates changed or an explicit
+migration gate must be removed.
 
 At minimum verify:
 
@@ -80,4 +84,4 @@ Do not record a mutable "current production SHA" in this file. Inspect
 `/srv/unikorn/current/release.json`, `/health`, and both repositories' current
 `origin/main` whenever exact deployed versions matter.
 
-Last reconciled: 2026-08-22.
+Last reconciled: 2026-08-23.

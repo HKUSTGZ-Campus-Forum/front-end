@@ -3,6 +3,7 @@
 > Scope: this directory documents the `dev.unikorn.axfff.com` frontend workflow
 > and the migration-era axfff production workflow. The active production site is
 > `https://unikorn.hkust-gz.edu.cn` and is released jointly with the backend via
+> the backend repository's `school-production` paired-SHA manifest and trusted
 > `deploy/school/deploy-release.sh`; see `../docs/production-environment.md`.
 
 The development and production deployment workflows upload each Nuxt build to a unique
