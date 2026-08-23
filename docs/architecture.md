@@ -70,8 +70,8 @@
 - **日期**：2026-08
 - **状态**：已采纳
 - **背景**：HKUST(GZ) SSO 使用 OAuth 2.0 Authorization Code Flow 与 OIDC。现有前端把 UniKorn JWT 保存在浏览器中，但学校的 client secret、授权码交换和 ID Token 校验必须留在可信后端，同时回调 URL 不能携带本地 access/refresh token。
-- **决策**：后端使用 Authlib、PKCE S256、state/nonce 和 Discovery 元数据完成学校认证；以 `(issuer, sub)` 作为外部身份主键，只自动关联已验证的校内邮箱；回调生成两分钟、单次消费的数据库票据，前端通过 `/api/auth/oidc/exchange` 换取现有 UniKorn JWT；统一登出使用 HttpOnly ID Token cookie 生成学校 end-session URL。
-- **理由**：client secret 与学校 Token 不进入前端，避免 JWT 出现在查询字符串；稳定 subject 不依赖可能变化或回收的邮箱；一次性票据兼容现有认证状态而无需重写全站 API。
+- **决策**：后端使用 Authlib、PKCE S256、state/nonce 和 Discovery 元数据完成学校认证；以 `(issuer, sub)` 作为外部身份主键，只自动关联已验证的校内邮箱；回调生成两分钟、单次消费的数据库票据，前端通过 `/api/auth/oidc/exchange` 换取现有 UniKorn JWT。用户主动退出时撤销并清除 UniKorn 本地会话，始终返回对应语言的站内主页，不再把当前页面导航到学校 end-session URL；学校 SSO 会话保持有效，后续点击 SSO 登录可能直接完成认证。
+- **理由**：client secret 与学校 Token 不进入前端，避免 JWT 出现在查询字符串；稳定 subject 不依赖可能变化或回收的邮箱；一次性票据兼容现有认证状态而无需重写全站 API。退出统一留在站内可避免学校登出完成页无法回跳造成的体验分叉，同时保留学校统一认证带来的快捷再次登录。
 - **相关文档**：后端 `CAMPUS_SSO.md`、`migrations/versions/20260819_campus_oidc.py`
 
 ## ADR-008：课程评价按课程聚合，按开课学期归属

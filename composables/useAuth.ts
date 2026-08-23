@@ -153,22 +153,13 @@ async function logout() {
   error.value = null;
 
   try {
-    let oidcLogoutUrl: string | null = null;
     if (accessToken.value) {
       console.log("📤 Sending logout request to server...");
-      const response = await authFetch(resolveAuthApiUrl("/api/auth/logout"), {
+      await authFetch(resolveAuthApiUrl("/api/auth/logout"), {
         method: "POST",
       }).catch((logoutError) => {
         console.error(logoutError);
-        return null;
       });
-      if (response?.ok) {
-        const payload = await response.json().catch(() => ({}));
-        oidcLogoutUrl =
-          typeof payload.oidc_logout_url === "string"
-            ? payload.oidc_logout_url
-            : null;
-      }
     }
 
     console.log("🧹 Clearing auth state and localStorage...");
@@ -181,10 +172,6 @@ async function logout() {
     safeLocalStorage("remove", "user_info");
 
     console.log("✅ Logout complete, redirecting to home");
-    if (oidcLogoutUrl && typeof window !== "undefined") {
-      window.location.assign(oidcLogoutUrl);
-      return true;
-    }
     const isEnglishRoute =
       typeof window !== "undefined" && window.location.pathname.startsWith("/en");
     navigateTo(isEnglishRoute ? "/en" : "/");
