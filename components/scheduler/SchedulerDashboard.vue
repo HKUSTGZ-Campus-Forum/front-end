@@ -856,12 +856,11 @@ async function startNewPlan() {
 <style lang="scss" scoped>
 .dashboard {
   position: relative;
-  /* Fixed height bounds the planner so a long side-panel course list scrolls
-     inside its own panel instead of stretching the whole page. The dashboard
-     itself scrolls only when header + notices + body floor exceed this
-     height (short viewports); the page never grows. */
-  height: calc(100vh - 84px);
-  min-height: 760px;
+  /* Fill the workspace below the fixed 64px top bar. The timetable consumes
+     the remaining height after the header, so adding plan actions does not
+     push its pagination below the initial viewport. */
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1082,7 +1081,10 @@ async function startNewPlan() {
 
   &__body {
     flex: 1;
-    min-height: 620px;
+    /* 400px is the timetable's readable floor and 86px is the plan pager.
+       Above that floor, the timetable fluidly absorbs the remaining viewport
+       height; short viewports can still scroll the dashboard as a fallback. */
+    min-height: 486px;
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--side-panel-width, 400px);

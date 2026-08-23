@@ -857,9 +857,26 @@ export function canInlineSection(
   sectionLabel: string,
   measure: (text: string) => number,
 ): boolean {
+  return canInlineSectionWidths(
+    dayColumnWidth,
+    measure(code),
+    measure(sectionLabel),
+  )
+}
+
+/**
+ * Width-based form used by the timetable after measuring its real DOM text.
+ * Keeping the card-budget calculation here makes browser measurement and unit
+ * tests share the same boundary without relying on Canvas font parsing.
+ */
+export function canInlineSectionWidths(
+  dayColumnWidth: number,
+  codeWidth: number,
+  sectionWidth: number,
+): boolean {
   const contentWidth =
     dayColumnWidth - TIMETABLE_CARD_INSET - TIMETABLE_CARD_PADDING * 2
   const combinedWidth =
-    measure(code) + TIMETABLE_TOP_ROW_GAP + measure(sectionLabel)
+    codeWidth + TIMETABLE_TOP_ROW_GAP + sectionWidth
   return combinedWidth <= contentWidth
 }

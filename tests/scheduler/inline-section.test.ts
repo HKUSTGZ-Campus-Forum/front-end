@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import {
   TIMETABLE_CARD_INSET,
   TIMETABLE_CARD_PADDING,
   TIMETABLE_TOP_ROW_GAP,
   canInlineSection,
+  canInlineSectionWidths,
   formatInlineSectionLabel,
 } from '../../utils/scheduler'
 
@@ -51,5 +53,24 @@ describe('timetable block inline section layout', () => {
   it('always inlines on a very wide column even with long content', () => {
     const label = formatInlineSectionLabel('INTENSIVE-WORKSHOP', '88888123')
     expect(canInlineSection(400, 'MSE5027-A', label, measure)).toBe(true)
+  })
+
+  it('accepts real DOM widths without reinterpreting browser font metrics', () => {
+    expect(canInlineSectionWidths(200, 44.5, 118.25)).toBe(true)
+    expect(canInlineSectionWidths(180, 44.5, 118.25)).toBe(false)
+  })
+
+  it('measures with rendered DOM probes and protects the course code from wrapping', () => {
+    const timetable = readFileSync(
+      new URL('../../components/scheduler/SchedulerTimetable.vue', import.meta.url),
+      'utf8',
+    )
+
+    expect(timetable).toContain('ref="codeMeasureRef"')
+    expect(timetable).toContain('ref="sectionMeasureRef"')
+    expect(timetable).toContain('getBoundingClientRect().width')
+    expect(timetable).not.toContain("createElement('canvas')")
+    expect(timetable).toContain('flex: 0 0 auto;')
+    expect(timetable).toContain('white-space: nowrap;')
   })
 })
