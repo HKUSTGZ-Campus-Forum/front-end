@@ -15,7 +15,7 @@ interface ActionState {
 // the purpose of one-click selection, so only these common prefixes are shown.
 const COMMON_SUBJECT_ROWS = [
   ['UFUG', 'UCUG', 'DLED'],
-  ['AIAA', 'AMAT', 'DSAA', 'FTEC', 'MICS', 'ROAS', 'SMMG'],
+  ['AIAA', 'AMAT', 'DSAA', 'FTEC', 'MICS', 'MOES', 'ROAS', 'SMMG'],
 ]
 
 const props = defineProps<{
