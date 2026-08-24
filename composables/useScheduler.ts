@@ -11,6 +11,7 @@ import {
   type SearchResponse,
   type SemesterInfo,
 } from '~/utils/scheduler'
+import type { CourseUniverseGraphResponse } from '~/utils/courseUniverse'
 
 export function useScheduler() {
   const { fetchPublic, fetchWithAuth } = useApi()
@@ -258,6 +259,12 @@ export function useScheduler() {
     return resp.json()
   }
 
+  async function getRelationshipGraph(): Promise<CourseUniverseGraphResponse> {
+    const resp = await fetchPublic('/api/courses/relationships/graph')
+    if (!resp.ok) throw new Error('Relationship graph failed')
+    return resp.json()
+  }
+
   return {
     getSemesters,
     getSubjects,
@@ -283,5 +290,6 @@ export function useScheduler() {
     getMapComponents,
     getMapLines,
     getMapCourses,
+    getRelationshipGraph,
   }
 }

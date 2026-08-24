@@ -1166,6 +1166,11 @@
     "loading": "正在加载课程图谱...",
     "empty": "暂无课程图谱数据。",
     "selectCourse": "选择一门课程查看详情",
+    "source": {
+      "official": "学校课程目录",
+      "fallback": "历史图谱备用数据",
+      "summary": "{courses} 门课程 · {relationships} 条关系"
+    },
     "modes": {
       "universe": "图谱",
       "explore": "探索",
@@ -1288,7 +1293,13 @@
       "rules": {
         "preRequirement": "先修要求",
         "coRequirement": "共修要求",
-        "exclusion": "互斥课程"
+        "exclusion": "互斥课程",
+        "downstream": "后修课程"
+      },
+      "source": {
+        "official": "学校课程目录",
+        "fallback": "历史目录备用数据",
+        "version": "目录版本 {version}"
       },
       "academicStatusTitle": "我的学业状态",
       "academicStatus": {

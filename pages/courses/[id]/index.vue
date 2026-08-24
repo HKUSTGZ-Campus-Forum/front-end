@@ -3,7 +3,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { AcademicCourseRecord } from '~/types/academic-map'
-import type { CourseOverviewOffering, CourseOverviewPayload } from '~/types/course-overview'
+import type {
+  CourseOverviewOffering,
+  CourseOverviewPayload,
+  CourseRelationshipCourse,
+} from '~/types/course-overview'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import { buildCourseListBackQuery } from '~/utils/courseOffering'
 import {
@@ -57,7 +61,7 @@ const academicState = computed(() => getCourseOverviewAcademicState(academicReco
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>))
 const cameFromUniverse = computed(() => route.query.from === 'universe')
 const backTo = computed(() => cameFromUniverse.value
-  ? getLocalePath({ path: '/courses', query: { focus: course.value?.code || courseCode.value } })
+  ? getLocalePath({ path: '/courses/graph', query: { focus: course.value?.code || courseCode.value } })
   : getLocalePath({ path: '/courses/explore', query: listBackQuery.value }))
 const backLabel = computed(() => cameFromUniverse.value
   ? t('courses.overviewPage.backToUniverse')
@@ -86,14 +90,44 @@ const heroPlannerActionLabel = computed(() => {
     : t('courseUniverse.actions.addToPlannerCart')
 })
 
-const ruleRows = computed(() => [
-  { key: 'preRequirement', value: course.value?.pre_requirement },
-  { key: 'coRequirement', value: course.value?.co_requirement },
-  { key: 'exclusion', value: course.value?.exclusion },
-].filter(item => item.value))
+const relationshipKeyByType = {
+  prerequisite: 'preRequirement',
+  corequisite: 'coRequirement',
+  exclusion: 'exclusion',
+} as const
+const ruleRows = computed(() => {
+  const rows: Array<{
+    key: 'preRequirement' | 'coRequirement' | 'exclusion' | 'downstream'
+    value: string | null
+    courses: CourseRelationshipCourse[]
+  }> = (overview.value?.relationships?.requirements || [])
+    .filter(item => item.raw_text || item.courses.length)
+    .map(item => ({
+      key: relationshipKeyByType[item.relation_type],
+      value: item.raw_text,
+      courses: item.courses,
+    }))
+  const downstream = overview.value?.relationships?.downstream || []
+  if (downstream.length) {
+    rows.push({ key: 'downstream', value: null, courses: downstream })
+  }
+  return rows
+})
+const relationshipProvenance = computed(() => overview.value?.relationships?.provenance || null)
+const relationshipSourceLabel = computed(() => relationshipProvenance.value?.is_fallback
+  ? t('courses.overviewPage.source.fallback')
+  : t('courses.overviewPage.source.official'))
+const relationshipDisplayVersion = computed(() => (
+  relationshipProvenance.value?.source_version?.split(':')[0] || ''
+))
+
+const relationshipCourseTo = (relatedCourse: CourseRelationshipCourse) => getLocalePath({
+  path: `/courses/${relatedCourse.code}`,
+  query: { from: 'universe' },
+})
 
 const courseUniverseTo = computed(() => getLocalePath({
-  path: '/courses',
+  path: '/courses/graph',
   query: { focus: course.value?.code || courseCode.value },
 }))
 
@@ -362,6 +396,14 @@ useHead({
               <div>
                 <p class="kg-eyebrow">{{ t('courses.overviewPage.rulesEyebrow') }}</p>
                 <h2>{{ t('courses.overviewPage.rulesTitle') }}</h2>
+                <p v-if="relationshipProvenance" class="kg-rule-source">
+                  <span :class="['kg-rule-source__badge', { 'is-fallback': relationshipProvenance.is_fallback }]">
+                    {{ relationshipSourceLabel }}
+                  </span>
+                  <span v-if="relationshipDisplayVersion">
+                    {{ t('courses.overviewPage.source.version', { version: relationshipDisplayVersion }) }}
+                  </span>
+                </p>
               </div>
               <NuxtLink :to="courseUniverseTo" class="kg-btn kg-btn--ghost kg-btn--compact">
                 {{ t('courses.overviewPage.openInMap') }}
@@ -370,7 +412,20 @@ useHead({
             <div v-if="ruleRows.length" class="kg-rule-list">
               <div v-for="rule in ruleRows" :key="rule.key" class="kg-rule-row">
                 <span>{{ t(`courses.overviewPage.rules.${rule.key}`) }}</span>
-                <p>{{ rule.value }}</p>
+                <div class="kg-rule-row__content">
+                  <p v-if="rule.value">{{ rule.value }}</p>
+                  <div v-if="rule.courses.length" class="kg-related-courses">
+                    <NuxtLink
+                      v-for="relatedCourse in rule.courses"
+                      :key="relatedCourse.code"
+                      :to="relationshipCourseTo(relatedCourse)"
+                      class="kg-related-course"
+                      :title="relatedCourse.title"
+                    >
+                      {{ relatedCourse.display_code }}
+                    </NuxtLink>
+                  </div>
+                </div>
               </div>
             </div>
             <div v-else class="kg-empty-state">
@@ -892,6 +947,31 @@ useHead({
   gap: 12px;
 }
 
+.kg-rule-source {
+  align-items: center;
+  color: var(--text-tertiary);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  gap: 7px;
+  margin: 8px 0 0;
+}
+
+.kg-rule-source__badge {
+  background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--semantic-success) 30%, var(--border-primary));
+  border-radius: 999px;
+  color: var(--semantic-success);
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.kg-rule-source__badge.is-fallback {
+  background: color-mix(in srgb, var(--semantic-warning) 10%, var(--surface-primary));
+  border-color: color-mix(in srgb, var(--semantic-warning) 30%, var(--border-primary));
+  color: var(--semantic-warning);
+}
+
 .kg-rule-row {
   border-top: 1px solid var(--border-primary);
   padding-top: 12px;
@@ -914,6 +994,33 @@ useHead({
     font-size: 0.88rem;
     line-height: 1.65;
     margin: 0;
+  }
+}
+
+.kg-rule-row__content {
+  display: grid;
+  gap: 8px;
+}
+
+.kg-related-courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.kg-related-course {
+  background: color-mix(in srgb, var(--interactive-primary) 8%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--interactive-primary) 24%, var(--border-primary));
+  border-radius: 999px;
+  color: var(--interactive-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 9px;
+  text-decoration: none;
+
+  &:hover {
+    background: color-mix(in srgb, var(--interactive-primary) 14%, var(--surface-primary));
+    border-color: var(--interactive-primary);
   }
 }
 

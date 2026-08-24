@@ -25,6 +25,48 @@ export interface CourseOverviewOffering extends CourseOffering {
   instructors?: string[]
 }
 
+export type CourseRelationshipType = 'prerequisite' | 'corequisite' | 'exclusion'
+
+export interface CourseRelationshipCourse {
+  id: number
+  code: string
+  display_code: string
+  title: string
+}
+
+export interface CourseRelationshipRequirement {
+  relation_type: CourseRelationshipType
+  raw_text: string | null
+  normalized_text: string | null
+  requirement_kind: 'course' | 'non_course' | 'mixed' | 'empty'
+  expression: Record<string, unknown>
+  courses: CourseRelationshipCourse[]
+  course_codes: string[]
+  source: string
+  source_version: string | null
+  effective_from_semester_id: string | null
+  imported_at: string | null
+  is_fallback: boolean
+}
+
+export interface CourseRelationshipDownstream extends CourseRelationshipCourse {
+  requirement: string | null
+  source: string
+  source_version: string | null
+  is_fallback: boolean
+}
+
+export interface CourseRelationships {
+  requirements: CourseRelationshipRequirement[]
+  downstream: CourseRelationshipDownstream[]
+  provenance: {
+    source: string
+    source_version: string | null
+    imported_at: string | null
+    is_fallback: boolean
+  }
+}
+
 export interface CourseOverviewPayload {
   course: CourseOverviewCourse
   offerings: CourseOverviewOffering[]
@@ -32,8 +74,9 @@ export interface CourseOverviewPayload {
   requirement_hits: unknown[]
   prerequisite_summary: {
     missing: string[]
-    downstream: unknown[]
+    downstream: CourseRelationshipDownstream[]
   }
+  relationships: CourseRelationships
   links: {
     universe_focus?: string
   }

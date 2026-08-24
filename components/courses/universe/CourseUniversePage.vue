@@ -14,6 +14,8 @@ import {
   type CourseUniverseMapComponent,
   type CourseUniverseMapCourse,
   type CourseUniverseMapLine,
+  type CourseUniverseGraphMetadata,
+  type CourseUniverseGraphResponse,
   type CourseUniverseModeKey,
 } from '~/utils/courseUniverse'
 
@@ -25,7 +27,7 @@ const route = useRoute()
 const { t, locale } = useI18n()
 const { isLoggedIn } = useAuth()
 const { fetchPublic } = useApi()
-const { getMapComponents, getMapLines, getMapCourses, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
+const { getMapComponents, getMapLines, getMapCourses, getRelationshipGraph, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
 const { fetchSummary } = useAcademicMap()
 
 const components = ref<CourseUniverseMapComponent[]>([])
@@ -40,6 +42,7 @@ const errorMessage = ref('')
 const cartMessage = ref('')
 const cartNoticeTone = ref<'info' | 'success' | 'error'>('info')
 const cartUpdatingCodes = ref(new Set<string>())
+const graphMetadata = ref<CourseUniverseGraphMetadata | null>(null)
 
 const mode = computed(() => props.mode || 'universe')
 const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
@@ -76,17 +79,33 @@ async function loadUniverse() {
   try {
     loading.value = true
     errorMessage.value = ''
-    const [mapComponents, mapLines, mapCourses, semesterData, catalogCourses] = await Promise.all([
-      getMapComponents(),
-      getMapLines(),
-      getMapCourses(),
+    const [relationshipGraph, semesterData, catalogCourses] = await Promise.all([
+      getRelationshipGraph().catch(async () => {
+        const [fallbackComponents, fallbackLines, fallbackCourses] = await Promise.all([
+          getMapComponents(),
+          getMapLines(),
+          getMapCourses(),
+        ])
+        return {
+          components: fallbackComponents,
+          lines: fallbackLines,
+          courses: fallbackCourses,
+          metadata: {
+            source: 'legacy_scheduler_map',
+            is_fallback: true,
+            course_count: fallbackCourses.length,
+            relationship_count: fallbackLines.length,
+          },
+        } as CourseUniverseGraphResponse
+      }),
       getSemesters(),
       getCatalogCourses().catch(() => []),
     ])
 
-    components.value = mapComponents
-    lines.value = mapLines
-    courses.value = mergeCourseUniverseCatalogCourses(mapCourses, catalogCourses)
+    components.value = relationshipGraph.components
+    lines.value = relationshipGraph.lines
+    courses.value = mergeCourseUniverseCatalogCourses(relationshipGraph.courses, catalogCourses)
+    graphMetadata.value = relationshipGraph.metadata
     semesters.value = semesterData
     const focusedCourse = typeof route.query.focus === 'string' ? compactCourseCode(route.query.focus) : ''
     if (focusedCourse) selectedCourseCode.value = focusedCourse
@@ -186,6 +205,11 @@ onMounted(loadUniverse)
     </div>
 
     <template v-else>
+      <p v-if="graphMetadata" :class="['cu-page__source', { 'is-fallback': graphMetadata.is_fallback }]">
+        <span>{{ graphMetadata.is_fallback ? t('courseUniverse.source.fallback') : t('courseUniverse.source.official') }}</span>
+        <span aria-hidden="true">·</span>
+        <span>{{ t('courseUniverse.source.summary', { courses: graphMetadata.course_count, relationships: graphMetadata.relationship_count }) }}</span>
+      </p>
       <p v-if="cartMessage" :class="['cu-page__notice', `is-${cartNoticeTone}`]">
         {{ cartMessage }}
       </p>
@@ -242,6 +266,21 @@ onMounted(loadUniverse)
   font-weight: 700;
   margin: 0 0 10px;
   padding: 7px 12px;
+}
+
+.cu-page__source {
+  align-items: center;
+  color: var(--text-tertiary);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  font-weight: 650;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.cu-page__source.is-fallback {
+  color: var(--semantic-warning);
 }
 
 .cu-page__notice.is-success {

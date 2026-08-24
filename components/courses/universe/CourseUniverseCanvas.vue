@@ -91,9 +91,18 @@ const layoutComponents = computed(() => layoutCourseUniverseGraphComponents({
   visibleComponentIds: visibleComponentIds.value,
 }))
 const layoutComponentById = computed(() => new Map(layoutComponents.value.map(component => [component.id, component])))
+const layoutLines = computed(() => props.lines.map((line) => {
+  const start = layoutComponentById.value.get(line.start_id)
+  const end = layoutComponentById.value.get(line.end_id)
+  if (!start || !end) return line
+  return {
+    ...line,
+    x_coordinate: Math.round((start.x_coordinate + end.x_coordinate) / 2),
+  }
+}))
 const graph = computed(() => buildCourseUniverseGraph({
   components: layoutComponents.value,
-  lines: props.lines,
+  lines: layoutLines.value,
 }))
 const renderComponentById = computed(() => new Map(graph.value.components.map(component => [component.id, component])))
 

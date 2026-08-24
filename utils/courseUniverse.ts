@@ -34,6 +34,24 @@ export interface CourseUniverseMapCourse {
   title?: string | null
 }
 
+export interface CourseUniverseGraphMetadata {
+  source: string
+  source_version?: string | null
+  effective_from_semester_id?: string | null
+  imported_at?: string | null
+  is_fallback: boolean
+  course_count: number
+  relationship_count: number
+  fallback_relationship_count?: number
+}
+
+export interface CourseUniverseGraphResponse {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  courses: CourseUniverseMapCourse[]
+  metadata: CourseUniverseGraphMetadata
+}
+
 export interface CourseUniverseAcademicRecord {
   course_code: string
   status: AcademicCourseStatus
@@ -475,6 +493,37 @@ export function layoutCourseUniverseGraphComponents(input: {
     component.x_coordinate = anchorCourse.x_coordinate + COURSE_UNIVERSE_COURSE_WIDTH / 2
     component.y_coordinate = anchorCourse.y_coordinate + COURSE_UNIVERSE_COURSE_HEIGHT / 2
   })
+
+  const incomingIds = new Map<string, string[]>()
+  const outgoingIds = new Map<string, string[]>()
+  input.lines.forEach((line) => {
+    if (!visibleIds.has(line.start_id) || !visibleIds.has(line.end_id)) return
+    if (!incomingIds.has(line.end_id)) incomingIds.set(line.end_id, [])
+    if (!outgoingIds.has(line.start_id)) outgoingIds.set(line.start_id, [])
+    incomingIds.get(line.end_id)?.push(line.start_id)
+    outgoingIds.get(line.start_id)?.push(line.end_id)
+  })
+  for (let pass = 0; pass < 4; pass += 1) {
+    laidOut.forEach((component) => {
+      if (component.category === 0 || !component.id.startsWith('logic-') || !visibleIds.has(component.id)) return
+      const sources = (incomingIds.get(component.id) || [])
+        .map(id => laidOut.get(id))
+        .filter((item): item is CourseUniverseMapComponent => Boolean(item))
+      const targets = (outgoingIds.get(component.id) || [])
+        .map(id => laidOut.get(id))
+        .filter((item): item is CourseUniverseMapComponent => Boolean(item))
+      if (!sources.length && !targets.length) return
+      const average = (items: CourseUniverseMapComponent[], field: 'x_coordinate' | 'y_coordinate') => (
+        items.reduce((sum, item) => sum + item[field], 0) / items.length
+      )
+      const sourceX = sources.length ? average(sources, 'x_coordinate') : component.x_coordinate
+      const sourceY = sources.length ? average(sources, 'y_coordinate') : component.y_coordinate
+      const targetX = targets.length ? average(targets, 'x_coordinate') : sourceX
+      const targetY = targets.length ? average(targets, 'y_coordinate') : sourceY
+      component.x_coordinate = Math.round((sourceX + targetX) / 2)
+      component.y_coordinate = Math.round((sourceY + targetY) / 2)
+    })
+  }
 
   return input.components.map(component => laidOut.get(component.id) || component)
 }

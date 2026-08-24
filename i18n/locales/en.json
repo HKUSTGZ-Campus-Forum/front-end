@@ -1166,6 +1166,11 @@
     "loading": "Loading Course Map...",
     "empty": "No course map data yet.",
     "selectCourse": "Select a course to inspect it",
+    "source": {
+      "official": "Official course catalog",
+      "fallback": "Legacy graph fallback",
+      "summary": "{courses} courses · {relationships} relationships"
+    },
     "modes": {
       "universe": "Course Map",
       "explore": "Explore",
@@ -1288,7 +1293,13 @@
       "rules": {
         "preRequirement": "Prerequisites",
         "coRequirement": "Corequisites",
-        "exclusion": "Exclusions"
+        "exclusion": "Exclusions",
+        "downstream": "Follow-on courses"
+      },
+      "source": {
+        "official": "Official course catalog",
+        "fallback": "Legacy catalog fallback",
+        "version": "Catalog version {version}"
       },
       "academicStatusTitle": "My academic status",
       "academicStatus": {
