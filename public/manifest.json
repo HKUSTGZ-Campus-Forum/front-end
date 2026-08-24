@@ -12,7 +12,7 @@
   "categories": ["education", "social"],
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/favicon-white.ico",
       "sizes": "16x16 32x32 48x48",
       "type": "image/x-icon",
       "purpose": "any"

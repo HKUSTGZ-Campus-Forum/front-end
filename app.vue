@@ -22,7 +22,7 @@ onMounted(() => {
 useHead(() => ({
   title: t("common.appTitle"),
   meta: [{ name: "description", content: t("common.description") }],
-  link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+  link: [{ rel: "icon", type: "image/x-icon", href: "/favicon-white.ico" }],
   script: [
     {
       // Prevent FOUC: apply persisted theme before first paint.

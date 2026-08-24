@@ -104,7 +104,7 @@ export default defineNuxtConfig({
         {
           rel: "icon",
           type: "image/x-icon",
-          href: "/favicon.ico",
+          href: "/favicon-white.ico",
         },
         // PWA manifest
         {
