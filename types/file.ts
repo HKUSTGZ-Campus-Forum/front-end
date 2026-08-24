@@ -4,21 +4,23 @@ export interface UploadUrlResponse {
   signed_url: string;
   file_id: number;
   object_name: string;
-  public_url: string;
+  max_upload_bytes: number;
+  expiration_seconds: number;
 }
 
 export interface FileRecord {
   id: number;
-  user_id: number;
-  object_name: string;
+  user_id?: number;
+  object_name?: string;
   original_filename: string;
-  file_size: number;
-  mime_type: string;
+  file_size: number | null;
+  mime_type: string | null;
   status: 'pending' | 'uploaded' | 'error';
   file_type: FileType;
   entity_type?: string;
   entity_id?: number;
-  url: string;
+  url?: string;
+  view_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,4 +39,6 @@ export interface UploadOptions {
   enableCompression?: boolean;
   /** Custom compression options (uses preset based on fileType if not specified) */
   compressionOptions?: import('~/utils/imageCompression').CompressionOptions;
-} 
+  /** Abort an in-flight OSS PUT (for composer removal/cancel actions). */
+  signal?: AbortSignal;
+}

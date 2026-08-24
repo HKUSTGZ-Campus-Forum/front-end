@@ -16,6 +16,7 @@ import PostDocxPagesViewer from "~/components/forum/PostDocxPagesViewer.vue";
 import PostOfficeDocViewer from "~/components/forum/PostOfficeDocViewer.vue";
 import {
   isPostImageFile,
+  isVideoFile,
   isPdfFile,
   isDocxFile,
   isLegacyDocFile,
@@ -74,13 +75,24 @@ const canDeletePost = computed(() => {
   return Number(user.value.id) === Number(postData.value.user_id);
 });
 
+const inlineImageIds = computed(() => {
+  const ids = new Set();
+  const content = String(postData.value.content || '');
+  for (const match of content.matchAll(/\/api\/files\/view\/(\d+)/g)) ids.add(Number(match[1]));
+  return ids;
+});
+
 const postImages = computed(() => {
   if (!postData.value.files) return [];
-  return postData.value.files.filter((file) => file && isPostImageFile(file));
+  return postData.value.files.filter((file) => file && isPostImageFile(file) && !inlineImageIds.value.has(Number(getFileId(file))));
 });
 
 const postPdfFiles = computed(() =>
   (postData.value.files || []).filter((f) => f && isPdfFile(f))
+);
+
+const postVideoFiles = computed(() =>
+  (postData.value.files || []).filter((f) => f && isVideoFile(f))
 );
 
 const postDocxFiles = computed(() =>
@@ -327,7 +339,7 @@ onMounted(() => { fetchPostData(); });
           </div>
         </header>
 
-        <div class="kg-article__content" v-html="postData.content?.replace(/\n/g, '<br>')"></div>
+        <CommonMarkdownContent class="kg-article__content" :content="postData.content" />
 
         <div v-if="postImages.length" class="kg-article__images">
           <div
@@ -338,6 +350,19 @@ onMounted(() => { fetchPostData(); });
           >
             <img :src="filePublicUrl(file)" :alt="getGenericImageName(file, idx)" @error="handleImageError" @load="handleImageLoad" />
           </div>
+        </div>
+
+        <div v-if="postVideoFiles.length" class="kg-article__videos">
+          <h3 class="kg-article__files-heading">{{ t("forum.detail.fileSections.video") }}</h3>
+          <figure v-for="file in postVideoFiles" :key="'video-' + getFileId(file)" class="kg-video-card">
+            <video :src="filePublicUrl(file)" controls preload="metadata" playsinline>
+              {{ t("forum.detail.videoUnsupported") }}
+            </video>
+            <figcaption>
+              <span>{{ fileDisplayName(file) }}</span>
+              <span v-if="file.file_size" class="kg-download-meta">{{ formatFileSize(file.file_size) }}</span>
+            </figcaption>
+          </figure>
         </div>
 
         <div v-if="postPdfFiles.length" class="kg-article__file-previews">
@@ -482,12 +507,15 @@ onMounted(() => { fetchPostData(); });
     />
     <ErrorModal v-if="showErrorModal" :message="errorMsg" @close="showErrorModal = false" />
     <ImageModal
-      v-if="showImageModal"
-      :image="currentImage"
-      :images="postImages"
-      :current-index="currentImageIndex"
+      :show="showImageModal"
+      :image-url="filePublicUrl(currentImage)"
+      :image-alt="currentImage ? getGenericImageName(currentImage, currentImageIndex) : ''"
+      :filename="currentImage?.original_filename || ''"
+      :show-navigation="postImages.length > 1"
+      :has-previous="currentImageIndex > 0"
+      :has-next="currentImageIndex < postImages.length - 1"
       @close="closeImageModal"
-      @prev="showPreviousImage"
+      @previous="showPreviousImage"
       @next="showNextImage"
     />
   </div>
@@ -629,6 +657,38 @@ onMounted(() => { fetchPostData(); });
   color: var(--text-primary);
   margin: 20px 0;
   word-break: break-word;
+}
+
+.kg-article__videos {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.kg-video-card {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: #07111f;
+}
+
+.kg-video-card video {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  background: #000;
+}
+
+.kg-video-card figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  background: var(--surface-primary);
+  font-size: .84rem;
+  overflow-wrap: anywhere;
 }
 
 .kg-article__images {

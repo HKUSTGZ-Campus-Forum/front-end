@@ -1,21 +1,27 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { UploadOptions, UploadUrlResponse, FileRecord, FileType } from '~/types/file'
 import { useApi } from './useApi'
 import { compressImage, COMPRESSION_PRESETS, type CompressionOptions, type CompressionResult } from '~/utils/imageCompression'
 import { FileUploadError } from '~/utils/fileUploadError'
 
 export const useCustomFileUpload = () => {
-  const isUploading = ref(false)
+  const activeUploads = ref(0)
+  const isUploading = computed(() => activeUploads.value > 0)
   const uploadProgress = ref(0)
   const error = ref<Error | null>(null)
   const compressionInfo = ref<CompressionResult | null>(null)
   const { fetchWithAuth } = useApi()
 
+  const readApiError = async (response: Response, fallback: string) => {
+    const payload = await response.json().catch(() => null) as { error?: string; message?: string } | null
+    return payload?.message || payload?.error || fallback
+  }
+
   const uploadFile = async (options: UploadOptions) => {
-    const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onSuccess, onError, enableCompression, compressionOptions } = options
+    const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onSuccess, onError, enableCompression, compressionOptions, signal } = options
     
     try {
-      isUploading.value = true
+      activeUploads.value += 1
       error.value = null
       uploadProgress.value = 0
       compressionInfo.value = null
@@ -23,7 +29,8 @@ export const useCustomFileUpload = () => {
       // Step 1: Compress image if enabled and file is an image
       let fileToUpload = file
       const isImage = file.type.startsWith('image/')
-      const shouldCompress = enableCompression !== false && isImage // Default to true for images
+      const preservesAnimationOrVector = file.type === 'image/gif' || file.type === 'image/svg+xml'
+      const shouldCompress = enableCompression !== false && isImage && !preservesAnimationOrVector
 
       if (shouldCompress) {
         try {
@@ -40,6 +47,14 @@ export const useCustomFileUpload = () => {
               default:
                 compressionOpts = COMPRESSION_PRESETS.web
             }
+          }
+
+          // Forum images keep their original alpha-capable format. Converting
+          // every PNG/WebP to JPEG used to destroy transparency.
+          if (fileType === 'post_image' && file.type === 'image/png') {
+            compressionOpts = { ...compressionOpts, outputFormat: 'image/png' }
+          } else if (fileType === 'post_image' && file.type === 'image/webp') {
+            compressionOpts = { ...compressionOpts, outputFormat: 'image/webp' }
           }
 
           const compressionResult = await compressImage(file, compressionOpts)
@@ -90,7 +105,10 @@ export const useCustomFileUpload = () => {
       }
 
       if (!response.ok) {
-        throw new FileUploadError('signing_failed', 'Could not prepare the upload.')
+        throw new FileUploadError(
+          'signing_failed',
+          await readApiError(response, 'Could not prepare the upload.'),
+        )
       }
 
       const uploadUrlData = await response.json().catch((cause) => {
@@ -129,9 +147,12 @@ export const useCustomFileUpload = () => {
           'storage_network_error',
           'Could not connect to the file storage service.',
         ))
-        xhr.onabort = xhr.onerror
+        xhr.onabort = () => reject(new DOMException('Upload cancelled', 'AbortError'))
         xhr.ontimeout = xhr.onerror
       })
+
+      const abortUpload = () => xhr.abort()
+      signal?.addEventListener('abort', abortUpload, { once: true })
 
       // Start the upload
       xhr.open('PUT', httpsSignedUrl)
@@ -140,45 +161,28 @@ export const useCustomFileUpload = () => {
       xhr.send(fileToUpload)
 
       // Wait for upload to complete
-      await uploadPromise
-
-      // Step 3: Poll for file status (since we're using callback)
-      const pollInterval = 1000 // 1 second
-      const maxAttempts = 30 // 30 seconds timeout
-      let attempts = 0
-
-      const pollFileStatus = async (): Promise<FileRecord> => {
-        let response: Response
-        try {
-          response = await fetchWithAuth(`/api/files/${file_id}`)
-        } catch (cause) {
-          throw new FileUploadError('status_failed', 'Could not confirm the uploaded file.', { cause })
-        }
-        
-        if (!response.ok) {
-          throw new FileUploadError('status_failed', 'Could not confirm the uploaded file.')
-        }
-
-        const fileData = await response.json() as FileRecord
-
-        if (fileData.status === 'uploaded') {
-          return fileData
-        }
-
-        if (fileData.status === 'error') {
-          throw new FileUploadError('upload_failed', 'The file upload failed.')
-        }
-
-        if (attempts >= maxAttempts) {
-          throw new FileUploadError('status_timeout', 'Timed out while confirming the uploaded file.')
-        }
-
-        attempts++
-        await new Promise(resolve => setTimeout(resolve, pollInterval))
-        return pollFileStatus()
+      try {
+        await uploadPromise
+      } finally {
+        signal?.removeEventListener('abort', abortUpload)
       }
 
-      const fileRecord = await pollFileStatus()
+      // Step 3: Authenticated server-side verification against OSS metadata.
+      let completionResponse: Response
+      try {
+        completionResponse = await fetchWithAuth(`/api/files/${file_id}/complete`, {
+          method: 'POST'
+        })
+      } catch (cause) {
+        throw new FileUploadError('status_failed', 'Could not confirm the uploaded file.', { cause })
+      }
+      if (!completionResponse.ok) {
+        throw new FileUploadError(
+          'status_failed',
+          await readApiError(completionResponse, 'File upload verification failed'),
+        )
+      }
+      const fileRecord = await completionResponse.json() as FileRecord
       onSuccess?.(fileRecord)
       return fileRecord
 
@@ -190,7 +194,7 @@ export const useCustomFileUpload = () => {
       onError?.(uploadError)
       throw uploadError
     } finally {
-      isUploading.value = false
+      activeUploads.value = Math.max(0, activeUploads.value - 1)
     }
   }
 

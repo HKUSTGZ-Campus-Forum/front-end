@@ -1720,11 +1720,13 @@
       "deleteConfirmMessage": "Are you sure you want to delete this post? This action cannot be undone.",
       "deleteSuccessMessage": "The post was deleted successfully.",
       "fileSections": {
+        "video": "Video",
         "pdf": "PDF",
         "docx": "Word (.docx)",
         "doc": "Word (.doc)",
         "downloads": "Attachment downloads"
       },
+      "videoUnsupported": "This browser cannot play the video. Download it to view the file.",
       "fileFallbacks": {
         "attachment": "Attachment",
         "pdf": "PDF attachment",
@@ -1755,6 +1757,66 @@
       "title": "Create post",
       "backToCourse": "Back to course page",
       "backToActivity": "Back to club activities",
+      "fields": {
+        "title": "Post title",
+        "content": "Post body",
+        "tags": "Tags"
+      },
+      "placeholders": {
+        "title": "Summarize what you want to discuss",
+        "content": "Markdown is supported. Paste a screenshot or drop images, videos, and files directly into the editor.",
+        "tags": "Type a tag, then press Enter or comma"
+      },
+      "markdownHint": "Use headings, lists, quotes, code, tables, and live preview. Pasted images upload and insert into the post automatically.",
+      "tagHint": "Up to {count} tags, each no longer than {length} characters.",
+      "confirmDiscard": "Discard this draft? Uploaded files that have not been published will be deleted.",
+      "actions": {
+        "addTag": "Add tag",
+        "removeTag": "Remove tag {tag}",
+        "cancel": "Cancel",
+        "publish": "Publish post",
+        "publishing": "Publishing…"
+      },
+      "upload": {
+        "title": "Images, videos, and attachments",
+        "hint": "Paste or drop files for the fastest workflow, or use the buttons below. Images are inserted into the Markdown body; other files appear as post attachments.",
+        "addImages": "Choose images",
+        "addFiles": "Choose videos or files",
+        "limits": "Up to 5 images and 30 other attachments. Images and regular files may be up to 10 MB each; videos may be up to 100 MB each.",
+        "queue": "Attachment upload queue",
+        "retry": "Retry upload",
+        "remove": "Remove {name}",
+        "failed": "Upload failed",
+        "deleteFailed": "Could not delete the attachment. Please try again.",
+        "wait": "Wait for every attachment to finish uploading before publishing.",
+        "resolveErrors": "Some attachments failed to upload. Retry or remove them before publishing.",
+        "status": {
+          "queued": "Waiting to upload",
+          "uploading": "Uploading {progress}%",
+          "ready": "Upload complete"
+        }
+      },
+      "validation": {
+        "titleRequired": "Enter a post title.",
+        "titleMin": "The title must be at least 5 characters.",
+        "titleMax": "The title cannot exceed 100 characters.",
+        "contentRequired": "Enter the post body.",
+        "contentMin": "The post body must be at least 10 characters.",
+        "tagMax": "A tag cannot exceed {count} characters.",
+        "tagCount": "You can add up to {count} tags.",
+        "tagDuplicate": "That tag has already been added.",
+        "imageCount": "You can add up to {count} images.",
+        "attachmentCount": "You can add up to {count} other attachments.",
+        "fileSize": "“{name}” exceeds the {size} size limit."
+      },
+      "publish": {
+        "loginRequired": "Sign in before publishing a post.",
+        "forbidden": "You do not have permission to publish posts.",
+        "tooFrequent": "You are publishing too quickly. Please try again shortly.",
+        "serverError": "The server is temporarily unavailable. Please try again later.",
+        "failed": "The post could not be published. Check the content and try again.",
+        "invalidResponse": "The post was submitted, but the server did not return a valid post ID."
+      },
       "tags": {
         "label": "Tags",
         "placeholder": "Type a tag, then press Enter or select Add",

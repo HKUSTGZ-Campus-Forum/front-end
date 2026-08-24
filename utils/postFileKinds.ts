@@ -1,5 +1,6 @@
 /** Forum post attachments: size limit (must match backend `File.MAX_UPLOAD_BYTES`). */
 export const MAX_POST_FILE_BYTES = 10 * 1024 * 1024;
+export const MAX_POST_VIDEO_BYTES = 100 * 1024 * 1024;
 
 export function isPostImageFile(file: {
   mime_type?: string | null;
@@ -18,6 +19,15 @@ export function isPdfFile(file: {
   if (file.mime_type === "application/pdf") return true;
   const n = (file.original_filename || "").toLowerCase();
   return n.endsWith(".pdf");
+}
+
+export function isVideoFile(file: {
+  mime_type?: string | null;
+  original_filename?: string | null;
+}): boolean {
+  if (file.mime_type?.startsWith("video/")) return true;
+  const n = (file.original_filename || "").toLowerCase();
+  return /\.(mp4|webm|mov|m4v|ogv|ogg)$/i.test(n);
 }
 
 export function isDocxFile(file: {
@@ -50,6 +60,7 @@ export function isDownloadOnlyFile(file: {
 }): boolean {
   return (
     !isPostImageFile(file) &&
+    !isVideoFile(file) &&
     !isPdfFile(file) &&
     !isDocxFile(file) &&
     !isLegacyDocFile(file)

@@ -1720,11 +1720,13 @@
       "deleteConfirmMessage": "确定要删除这篇帖子吗？此操作无法撤销。",
       "deleteSuccessMessage": "帖子已成功删除",
       "fileSections": {
+        "video": "视频",
         "pdf": "PDF",
         "docx": "Word (.docx)",
         "doc": "Word (.doc)",
         "downloads": "附件下载"
       },
+      "videoUnsupported": "当前浏览器无法播放这个视频，请下载后查看。",
       "fileFallbacks": {
         "attachment": "附件",
         "pdf": "PDF 附件",
@@ -1755,6 +1757,66 @@
       "title": "发布帖子",
       "backToCourse": "返回课程页面",
       "backToActivity": "返回社团活动",
+      "fields": {
+        "title": "帖子标题",
+        "content": "帖子正文",
+        "tags": "标签"
+      },
+      "placeholders": {
+        "title": "用一句话概括你想讨论的内容",
+        "content": "支持 Markdown。你也可以直接粘贴截图，或把图片、视频和文件拖到编辑器中。",
+        "tags": "输入标签后按回车或逗号"
+      },
+      "markdownHint": "支持标题、列表、引用、代码、表格和实时预览；粘贴图片后会自动上传并插入正文。",
+      "tagHint": "最多 {count} 个标签，每个不超过 {length} 个字符。",
+      "confirmDiscard": "确定放弃当前草稿吗？已上传但未发布的附件会被删除。",
+      "actions": {
+        "addTag": "添加标签",
+        "removeTag": "删除标签 {tag}",
+        "cancel": "取消",
+        "publish": "发布帖子",
+        "publishing": "发布中…"
+      },
+      "upload": {
+        "title": "图片、视频与附件",
+        "hint": "直接粘贴或拖拽最省事，也可以使用下面的选择按钮。图片会插入 Markdown 正文，其他文件会作为帖子附件展示。",
+        "addImages": "选择图片",
+        "addFiles": "选择视频或文件",
+        "limits": "最多 5 张图片和 30 个其他附件；图片与普通文件每个不超过 10 MB，视频每个不超过 100 MB。",
+        "queue": "附件上传队列",
+        "retry": "重试上传",
+        "remove": "移除 {name}",
+        "failed": "上传失败",
+        "deleteFailed": "删除附件失败，请重试。",
+        "wait": "请等待所有附件上传完成后再发布。",
+        "resolveErrors": "有附件上传失败，请重试或移除后再发布。",
+        "status": {
+          "queued": "等待上传",
+          "uploading": "上传中 {progress}%",
+          "ready": "上传完成"
+        }
+      },
+      "validation": {
+        "titleRequired": "请输入帖子标题。",
+        "titleMin": "标题至少需要 5 个字符。",
+        "titleMax": "标题不能超过 100 个字符。",
+        "contentRequired": "请输入帖子正文。",
+        "contentMin": "正文至少需要 10 个字符。",
+        "tagMax": "标签不能超过 {count} 个字符。",
+        "tagCount": "最多只能添加 {count} 个标签。",
+        "tagDuplicate": "这个标签已经添加过了。",
+        "imageCount": "最多只能添加 {count} 张图片。",
+        "attachmentCount": "最多只能添加 {count} 个其他附件。",
+        "fileSize": "“{name}”超过 {size} 的大小限制。"
+      },
+      "publish": {
+        "loginRequired": "请先登录后再发布帖子。",
+        "forbidden": "你没有权限发布帖子。",
+        "tooFrequent": "发布过于频繁，请稍后再试。",
+        "serverError": "服务器暂时不可用，请稍后重试。",
+        "failed": "发布失败，请检查内容后重试。",
+        "invalidResponse": "帖子已提交，但服务器没有返回有效的帖子编号。"
+      },
       "tags": {
         "label": "标签",
         "placeholder": "输入标签后按回车或点击添加",

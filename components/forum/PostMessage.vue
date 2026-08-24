@@ -1,251 +1,8 @@
-<template>
-  <div class="post-message-component">
-    <div v-if="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
-
-    <form v-else @submit.prevent="handleSubmit" class="post-form">
-      <!-- 帖子标题 -->
-      <div class="form-group">
-        <label for="postTitle">标题</label>
-        <input
-          id="postTitle"
-          v-model="title"
-          type="text"
-          placeholder="请输入帖子标题"
-          required
-          @blur="validateTitle"
-        />
-        <span v-if="errors.title" class="error-text">{{ errors.title }}</span>
-      </div>
-
-      <!-- 帖子内容 -->
-      <div class="form-group">
-        <label for="postContent">内容</label>
-        <textarea
-          id="postContent"
-          v-model="content"
-          placeholder="请输入帖子内容"
-          rows="10"
-          required
-          @blur="validateContent"
-        ></textarea>
-        <span v-if="errors.content" class="error-text">{{
-          errors.content
-        }}</span>
-      </div>
-
-      <!-- 帖子标签 -->
-      <div class="form-group">
-        <label for="postTagInput">{{ t("forum.create.tags.label") }}</label>
-        <div class="tags-container">
-          <div class="tag-input-row">
-            <div class="tag-input-shell">
-              <input
-                id="postTagInput"
-                v-model="tagInput"
-                type="text"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-controls="postTagSuggestions"
-                :aria-expanded="showTagSearchPanel"
-                :aria-activedescendant="activeTagSuggestionId"
-                :placeholder="t('forum.create.tags.placeholder')"
-                :maxlength="MAX_TAG_LENGTH"
-                @focus="handleTagInputFocus"
-                @keydown="handleTagKeydown"
-                @blur="handleTagInputBlur"
-              />
-
-              <div
-                v-if="showTagSearchPanel"
-                id="postTagSuggestions"
-                class="tag-suggestions"
-                role="listbox"
-                :aria-label="t('forum.create.tags.suggestions')"
-              >
-                <div v-if="isTagSearchLoading" class="tag-suggestions__status">
-                  {{ t("forum.create.tags.searching") }}
-                </div>
-                <button
-                  v-for="(suggestion, index) in tagSearchSuggestions"
-                  :id="getTagSuggestionId(index)"
-                  :key="suggestion"
-                  type="button"
-                  role="option"
-                  tabindex="-1"
-                  class="tag-suggestions__option"
-                  :class="{ 'tag-suggestions__option--active': index === activeTagSuggestionIndex }"
-                  :aria-selected="index === activeTagSuggestionIndex"
-                  @mouseenter="activeTagSuggestionIndex = index"
-                  @mousedown.prevent
-                  @click="selectTagSuggestion(suggestion)"
-                >
-                  <span># {{ suggestion }}</span>
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              class="tag-add-btn"
-              :disabled="tags.length >= MAX_TAG_COUNT"
-              @click="addTag"
-            >
-              {{ t("forum.create.tags.add") }}
-            </button>
-          </div>
-
-          <div
-            v-if="commonTagRecommendations.length > 0 && !normalizedTagQuery"
-            class="common-tags"
-          >
-            <span class="common-tags__label">{{ t("forum.create.tags.common") }}</span>
-            <button
-              v-for="tag in commonTagRecommendations"
-              :key="tag"
-              type="button"
-              class="common-tags__button"
-              @click="selectTagSuggestion(tag)"
-            >
-              # {{ tag }}
-            </button>
-          </div>
-
-          <span class="tag-hint">
-            {{ t("forum.create.tags.hint", { count: MAX_TAG_COUNT, length: MAX_TAG_LENGTH }) }}
-          </span>
-          <span v-if="hasLockedTags" class="tag-hint">
-            {{ t("forum.create.tags.lockedHint") }}
-          </span>
-          <span v-if="errors.tags" class="error-text">{{ errors.tags }}</span>
-
-          <div v-if="tags.length > 0" class="tags-list">
-            <span
-              v-for="(tag, index) in tags"
-              :key="`${tag}-${index}`"
-              :class="['tag', { 'tag--locked': isLockedTag(tag) }]"
-            >
-              {{ tag }}
-              <span v-if="isLockedTag(tag)" class="tag-lock">
-                {{ t("forum.create.tags.locked") }}
-              </span>
-              <button
-                v-if="!isLockedTag(tag)"
-                type="button"
-                class="tag-remove"
-                :aria-label="t('forum.create.tags.remove', { tag })"
-                @click="removeTag(index)"
-              >
-                ×
-              </button>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 身份选择 -->
-      <div class="form-group">
-        <IdentitySelector 
-          v-model="selectedIdentityId"
-          size="md"
-          :show-label="true"
-          @change="handleIdentityChange"
-        />
-      </div>
-
-      <!-- 上传图片 -->
-      <div class="form-group">
-        <label>图片附件</label>
-        <FileUpload
-          file-type="post_image"
-          accept="image/*"
-          :max-size="MAX_POST_FILE_BYTES"
-          show-preview
-          allow-delete
-          drag-text="点击或拖拽图片到此处上传"
-          @upload-success="handleImageUploadSuccess"
-          @upload-error="handleImageUploadError"
-          @delete-success="handleImageDeleteSuccess"
-          @delete-error="handleImageDeleteError"
-        />
-        <span class="upload-hint">最多 5 张图片，每张不超过 10MB</span>
-        
-        <!-- 已上传图片预览 -->
-        <div v-if="uploadedImages.length > 0" class="uploaded-images">
-          <h4>已上传图片 ({{ uploadedImages.length }}/{{ MAX_POST_IMAGES }}):</h4>
-          <div class="image-grid">
-            <div v-for="(image, index) in uploadedImages" :key="image.id" class="image-preview">
-              <img :src="image.url" :alt="getGenericImageName(image, index)" class="preview-img">
-              <div class="image-info">
-                <span class="filename">{{ getGenericImageName(image, index) }}</span>
-                <button type="button" @click="removeUploadedImage(index)" class="remove-btn">×</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 其他附件（非图片：PDF/Office/压缩包等） -->
-      <div class="form-group">
-        <label>其他附件</label>
-        <FileUpload
-          :key="otherUploadKey"
-          file-type="post_attachment"
-          :max-size="MAX_POST_FILE_BYTES"
-          :enable-compression="false"
-          allow-delete
-          drag-text="点击或拖拽文件到此处上传（图片请用上方区域）"
-          @upload-success="handleOtherUploadSuccess"
-          @upload-error="handleOtherUploadError"
-          @delete-success="handleOtherDeleteSuccess"
-          @delete-error="handleOtherDeleteError"
-        />
-        <span class="upload-hint">任意类型文件（单文件不超过 10MB），最多 {{ MAX_OTHER_ATTACHMENTS }} 个；图片请仅用上方「图片附件」上传。</span>
-
-        <div v-if="otherAttachments.length > 0" class="uploaded-files-list">
-          <h4>已选附件 ({{ otherAttachments.length }}/{{ MAX_OTHER_ATTACHMENTS }})</h4>
-          <ul class="other-files-ul">
-            <li v-for="(f, index) in otherAttachments" :key="f.id" class="other-file-row">
-              <span class="other-file-name">{{ f.original_filename || `附件 ${index + 1}` }}</span>
-              <button type="button" class="remove-btn" @click="removeOtherAttachment(index)">×</button>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- 错误信息 -->
-      <div v-if="errorMessage" class="global-error">
-        {{ errorMessage }}
-      </div>
-
-      <!-- 提交按钮 -->
-      <div class="button-group">
-        <button type="button" class="cancel-btn" @click="handleCancel">
-          取消
-        </button>
-        <button
-          type="submit"
-          class="submit-btn"
-          :disabled="isLoading || !formValid"
-        >
-          {{ isLoading ? "发布中..." : "发布帖子" }}
-        </button>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useI18n } from "#imports";
-import { useApi } from "~/composables/useApi";
-import { useCustomFileUpload } from "~/composables/useFileUpload";
-import FileUpload from "~/components/FileUpload.vue";
-import IdentitySelector from "~/components/identity/IdentitySelector.vue";
-import type { FileRecord } from "~/types/file";
-import type { UserIdentity } from "~/types/identity";
-import { MAX_POST_FILE_BYTES, isPostImageFile } from "~/utils/postFileKinds";
+import type { UploadImgCallBack } from 'md-editor-v3'
+import type { FileRecord } from '~/types/file'
+import type { UserIdentity } from '~/types/identity'
+import { formatFileSize } from '~/utils/imageCompression'
 import {
   COMMON_POST_TAGS,
   MAX_POST_TAG_COUNT,
@@ -254,18 +11,22 @@ import {
   getPostTagKey,
   mergePostTagRecommendations,
   normalizePostTag,
-} from "~/utils/postTags";
+} from '~/utils/postTags'
 
-const { deleteFile } = useCustomFileUpload();
-const { fetchPublic, fetchWithAuth, getApiUrl } = useApi();
-const { t } = useI18n();
-const router = useRouter();
-const MAX_TAG_COUNT = MAX_POST_TAG_COUNT;
-const MAX_TAG_LENGTH = MAX_POST_TAG_LENGTH;
-const MAX_POST_IMAGES = 5;
-const MAX_OTHER_ATTACHMENTS = 30;
-const TAG_SEARCH_DEBOUNCE_MS = 280;
-const MAX_TAG_SEARCH_SUGGESTIONS = 8;
+type AttachmentKind = 'image' | 'video' | 'file'
+type AttachmentStatus = 'queued' | 'uploading' | 'ready' | 'error'
+
+interface ComposerAttachment {
+  clientId: string
+  source: File
+  kind: AttachmentKind
+  status: AttachmentStatus
+  progress: number
+  previewUrl?: string
+  record?: FileRecord
+  error?: string
+  abortController?: AbortController
+}
 
 const props = withDefaults(defineProps<{
   initialTags?: string[]
@@ -275,48 +36,55 @@ const props = withDefaults(defineProps<{
   initialTags: () => [],
   lockedTags: () => [],
   returnTo: null,
-});
+})
 
-// 表单数据
-const title = ref("");
-const tagInput = ref("");
-const content = ref("");
-const uploadedImages = ref<FileRecord[]>([]);
-const otherAttachments = ref<FileRecord[]>([]);
-/** Remount FileUpload after rejecting an upload so its internal state resets. */
-const otherUploadKey = ref(0);
-const selectedIdentityId = ref<number | null>(null);
+const emit = defineEmits<{ postSuccess: [postId: number] }>()
+const { t } = useI18n()
+const router = useRouter()
+const { fetchPublic, fetchWithAuth, getApiUrl } = useApi()
+const { uploadFile, deleteFile } = useCustomFileUpload()
 
-// 错误和状态
-const errors = ref({
-  title: "",
-  content: "",
-  tags: "",
-});
-const errorMessage = ref("");
-const successMessage = ref("");
-const isLoading = ref(false);
-const defaultTags = computed(() => dedupePostTags([...(props.lockedTags || []), ...(props.initialTags || [])]));
-const tags = ref<string[]>([...defaultTags.value]);
-const normalizedLockedTags = computed(() => new Set(
-  (props.lockedTags || []).map((tag) => getPostTagKey(tag))
-));
-const hasLockedTags = computed(() => normalizedLockedTags.value.size > 0);
-const isTagInputFocused = ref(false);
-const isTagSearchLoading = ref(false);
-const remoteTagSuggestions = ref<string[]>([]);
-const activeTagSuggestionIndex = ref(-1);
-let tagSearchTimer: ReturnType<typeof setTimeout> | null = null;
-let tagSearchRequestSequence = 0;
-let useGlobalTagSearchFallback = false;
-const getTagSuggestionId = (index: number) => `postTagSuggestion-${index}`;
+const MAX_TAG_COUNT = MAX_POST_TAG_COUNT
+const MAX_TAG_LENGTH = MAX_POST_TAG_LENGTH
+const MAX_POST_IMAGES = 5
+const MAX_OTHER_ATTACHMENTS = 30
+const MAX_POST_FILE_BYTES = 10 * 1024 * 1024
+const MAX_POST_VIDEO_BYTES = 100 * 1024 * 1024
+const TAG_SEARCH_DEBOUNCE_MS = 280
+const MAX_TAG_SEARCH_SUGGESTIONS = 8
+
+const markdownEditor = ref<{ insertMarkdown: (markdown: string) => void } | null>(null)
+const imageInput = ref<HTMLInputElement | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const title = ref('')
+const content = ref('')
+const tagInput = ref('')
+const selectedIdentityId = ref<number | null>(null)
+const attachments = ref<ComposerAttachment[]>([])
+const isPublishing = ref(false)
+const errorMessage = ref('')
+const errors = reactive({ title: '', content: '', tags: '' })
+
+const defaultTags = computed(() => dedupePostTags([...props.lockedTags, ...props.initialTags]))
+const tags = ref<string[]>([...defaultTags.value])
+const normalizedLockedTags = computed(() => new Set(props.lockedTags.map(getPostTagKey)))
+const hasLockedTags = computed(() => normalizedLockedTags.value.size > 0)
+const isLockedTag = (tag: string) => normalizedLockedTags.value.has(getPostTagKey(tag))
+const isTagInputFocused = ref(false)
+const isTagSearchLoading = ref(false)
+const remoteTagSuggestions = ref<string[]>([])
+const activeTagSuggestionIndex = ref(-1)
+let tagSearchTimer: ReturnType<typeof setTimeout> | null = null
+let tagSearchRequestSequence = 0
+let useGlobalTagSearchFallback = false
+const getTagSuggestionId = (index: number) => `postTagSuggestion-${index}`
 
 const commonTagRecommendations = computed(() => mergePostTagRecommendations({
   commonTags: COMMON_POST_TAGS,
   selectedTags: tags.value,
   lockedTags: props.lockedTags,
   maxTagCount: MAX_TAG_COUNT,
-}));
+}))
 
 const tagSearchSuggestions = computed(() => mergePostTagRecommendations({
   commonTags: [],
@@ -325,1236 +93,576 @@ const tagSearchSuggestions = computed(() => mergePostTagRecommendations({
   lockedTags: props.lockedTags,
   maxTagCount: MAX_TAG_COUNT,
   maxSuggestions: MAX_TAG_SEARCH_SUGGESTIONS,
-}));
+}))
 
-const normalizedTagQuery = computed(() => normalizePostTag(tagInput.value));
+const normalizedTagQuery = computed(() => normalizePostTag(tagInput.value))
 const showTagSearchPanel = computed(() => (
   isTagInputFocused.value
   && normalizedTagQuery.value.length >= 1
   && (isTagSearchLoading.value || tagSearchSuggestions.value.length > 0)
-));
+))
 const activeTagSuggestionId = computed(() => (
   showTagSearchPanel.value && activeTagSuggestionIndex.value >= 0
     ? getTagSuggestionId(activeTagSuggestionIndex.value)
     : undefined
-));
+))
 
+const imageCount = computed(() => attachments.value.filter((item) => item.kind === 'image').length)
+const otherCount = computed(() => attachments.value.length - imageCount.value)
+const isUploading = computed(() => attachments.value.some((item) => item.status === 'queued' || item.status === 'uploading'))
+const hasUploadErrors = computed(() => attachments.value.some((item) => item.status === 'error'))
+const formValid = computed(() => Boolean(
+  title.value.trim()
+  && content.value.trim()
+  && !errors.title
+  && !errors.content
+  && !errors.tags
+  && !isUploading.value
+  && !hasUploadErrors.value
+))
 
-// 验证标题
 const validateTitle = () => {
-  if (!title.value) {
-    errors.value.title = "请输入标题";
-  } else if (title.value.length < 5) {
-    errors.value.title = "标题至少需要5个字符";
-  } else if (title.value.length > 100) {
-    errors.value.title = "标题不能超过100个字符";
-  } else {
-    errors.value.title = "";
-  }
-};
+  const length = title.value.trim().length
+  errors.title = length === 0
+    ? t('forum.create.validation.titleRequired')
+    : length < 5
+      ? t('forum.create.validation.titleMin')
+      : length > 100
+        ? t('forum.create.validation.titleMax')
+        : ''
+}
 
-// 验证内容
 const validateContent = () => {
-  if (!content.value) {
-    errors.value.content = "请输入内容";
-  } else if (content.value.length < 10) {
-    errors.value.content = "内容至少需要10个字符";
-  } else {
-    errors.value.content = "";
-  }
-};
+  const length = content.value.trim().length
+  errors.content = length === 0
+    ? t('forum.create.validation.contentRequired')
+    : length < 10
+      ? t('forum.create.validation.contentMin')
+      : ''
+}
 
-// 添加标签
-const clearTagError = () => {
-  if (errors.value.tags) {
-    errors.value.tags = "";
-  }
-};
-
-const handleTagInputFocus = () => {
-  isTagInputFocused.value = true;
-};
-
+const clearTagError = () => { errors.tags = '' }
+const handleTagInputFocus = () => { isTagInputFocused.value = true }
 const handleTagInputBlur = () => {
-  isTagInputFocused.value = false;
-  activeTagSuggestionIndex.value = -1;
-  clearTagError();
-};
-
-const handleTagKeydown = (event: KeyboardEvent) => {
-  if (event.isComposing || event.key === "Process" || event.keyCode === 229) {
-    return;
-  }
-
-  if (event.key === "ArrowDown" && showTagSearchPanel.value && tagSearchSuggestions.value.length > 0) {
-    event.preventDefault();
-    activeTagSuggestionIndex.value = (
-      activeTagSuggestionIndex.value + 1
-    ) % tagSearchSuggestions.value.length;
-    return;
-  }
-
-  if (event.key === "ArrowUp" && showTagSearchPanel.value && tagSearchSuggestions.value.length > 0) {
-    event.preventDefault();
-    activeTagSuggestionIndex.value = activeTagSuggestionIndex.value <= 0
-      ? tagSearchSuggestions.value.length - 1
-      : activeTagSuggestionIndex.value - 1;
-    return;
-  }
-
-  if (event.key === "Escape" && showTagSearchPanel.value) {
-    event.preventDefault();
-    activeTagSuggestionIndex.value = -1;
-    (event.currentTarget as HTMLInputElement | null)?.blur();
-    return;
-  }
-
-  if (event.key === "Enter") {
-    event.preventDefault();
-    const highlightedSuggestion = tagSearchSuggestions.value[activeTagSuggestionIndex.value];
-    if (showTagSearchPanel.value && highlightedSuggestion) {
-      selectTagSuggestion(highlightedSuggestion);
-      return;
-    }
-    addTag();
-    return;
-  }
-
-  if (event.key === ",") {
-    event.preventDefault();
-    addTag();
-  }
-};
-
-const isLockedTag = (tag: string) => normalizedLockedTags.value.has(getPostTagKey(tag));
+  isTagInputFocused.value = false
+  activeTagSuggestionIndex.value = -1
+  clearTagError()
+}
 
 const tryAddTag = (rawTag: string) => {
-  const tag = normalizePostTag(rawTag);
+  const tag = normalizePostTag(rawTag)
   if (!tag) {
-    clearTagError();
-    return false;
+    clearTagError()
+    return false
   }
-
-  if (tag.length > MAX_TAG_LENGTH) {
-    errors.value.tags = t("forum.create.tags.errors.tooLong", { length: MAX_TAG_LENGTH });
-    return false;
+  if (tag.length > MAX_TAG_LENGTH) errors.tags = t('forum.create.tags.errors.tooLong', { length: MAX_TAG_LENGTH })
+  else if (tags.value.length >= MAX_TAG_COUNT) errors.tags = t('forum.create.tags.errors.tooMany', { count: MAX_TAG_COUNT })
+  else if (tags.value.some((item) => getPostTagKey(item) === getPostTagKey(tag))) errors.tags = t('forum.create.tags.errors.duplicate')
+  else {
+    tags.value.push(tag)
+    clearTagError()
+    return true
   }
-
-  if (tags.value.length >= MAX_TAG_COUNT) {
-    errors.value.tags = t("forum.create.tags.errors.tooMany", { count: MAX_TAG_COUNT });
-    return false;
-  }
-
-  const duplicate = tags.value.some(
-    (existingTag) => getPostTagKey(existingTag) === getPostTagKey(tag)
-  );
-  if (duplicate) {
-    errors.value.tags = t("forum.create.tags.errors.duplicate");
-    return false;
-  }
-
-  tags.value.push(tag);
-  clearTagError();
-  return true;
-};
+  return false
+}
 
 const addTag = () => {
-  const added = tryAddTag(tagInput.value);
-  if (added || !normalizePostTag(tagInput.value)) {
-    tagInput.value = "";
-  }
-  return added;
-};
+  const added = tryAddTag(tagInput.value)
+  if (added || !normalizePostTag(tagInput.value)) tagInput.value = ''
+  return added
+}
 
 const selectTagSuggestion = (tag: string) => {
-  if (!tryAddTag(tag)) return;
+  if (!tryAddTag(tag)) return
+  tagInput.value = ''
+  remoteTagSuggestions.value = []
+  activeTagSuggestionIndex.value = -1
+}
 
-  tagInput.value = "";
-  remoteTagSuggestions.value = [];
-  activeTagSuggestionIndex.value = -1;
-};
+const handleTagKeydown = (event: KeyboardEvent) => {
+  if (event.isComposing || event.key === "Process" || event.keyCode === 229) return
+  if (event.key === 'ArrowDown' && showTagSearchPanel.value && tagSearchSuggestions.value.length) {
+    event.preventDefault()
+    activeTagSuggestionIndex.value = (activeTagSuggestionIndex.value + 1) % tagSearchSuggestions.value.length
+    return
+  }
+  if (event.key === 'ArrowUp' && showTagSearchPanel.value && tagSearchSuggestions.value.length) {
+    event.preventDefault()
+    activeTagSuggestionIndex.value = activeTagSuggestionIndex.value <= 0
+      ? tagSearchSuggestions.value.length - 1
+      : activeTagSuggestionIndex.value - 1
+    return
+  }
+  if (event.key === 'Escape' && showTagSearchPanel.value) {
+    event.preventDefault()
+    activeTagSuggestionIndex.value = -1
+    ;(event.currentTarget as HTMLInputElement | null)?.blur()
+    return
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    const suggestion = tagSearchSuggestions.value[activeTagSuggestionIndex.value]
+    if (showTagSearchPanel.value && suggestion) {
+      selectTagSuggestion(suggestion)
+      return
+    }
+    addTag()
+    return
+  }
+  if (event.key === ',') {
+    event.preventDefault()
+    addTag()
+  }
+}
 
-// 删除标签
 const removeTag = (index: number) => {
   if (isLockedTag(tags.value[index])) {
-    errors.value.tags = t("forum.create.tags.errors.locked");
-    return;
+    errors.tags = t('forum.create.tags.errors.locked')
+    return
   }
-  tags.value.splice(index, 1);
-  clearTagError();
-};
+  tags.value.splice(index, 1)
+  clearTagError()
+}
 
 const applyRemoteTagSuggestions = (rawSuggestions: unknown) => {
-  const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
+  const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : []
   remoteTagSuggestions.value = suggestions
-    .map((suggestion: unknown) => {
-      if (!suggestion || typeof suggestion !== "object" || !("name" in suggestion)) return "";
-      return typeof suggestion.name === "string" ? suggestion.name : "";
-    })
-    .filter((tag: string) => Boolean(tag));
-  activeTagSuggestionIndex.value = remoteTagSuggestions.value.length > 0 ? 0 : -1;
-};
+    .map((suggestion: unknown) => (
+      suggestion && typeof suggestion === 'object' && 'name' in suggestion && typeof suggestion.name === 'string'
+        ? suggestion.name
+        : ''
+    ))
+    .filter(Boolean)
+  activeTagSuggestionIndex.value = remoteTagSuggestions.value.length ? 0 : -1
+}
 
 const fetchTagSuggestions = async (query: string, requestSequence: number) => {
   try {
     if (!useGlobalTagSearchFallback) {
       try {
-        const params = new URLSearchParams({
-          q: query,
-          limit: MAX_TAG_SEARCH_SUGGESTIONS.toString(),
-        });
-        const tagResponse = await fetchPublic(
-          getApiUrl(`/api/search/tags?${params}`)
-        );
-        if (requestSequence !== tagSearchRequestSequence) return;
-
-        if (tagResponse.ok) {
-          const tagData = await tagResponse.json();
-          if (requestSequence !== tagSearchRequestSequence) return;
-          applyRemoteTagSuggestions(tagData?.results);
-          return;
+        const params = new URLSearchParams({ q: query, limit: String(MAX_TAG_SEARCH_SUGGESTIONS) })
+        const response = await fetchPublic(getApiUrl(`/api/search/tags?${params}`))
+        if (requestSequence !== tagSearchRequestSequence) return
+        if (response.ok) {
+          const data = await response.json()
+          if (requestSequence !== tagSearchRequestSequence) return
+          applyRemoteTagSuggestions(data?.results)
+          return
         }
       } catch {
-        // Fall through to the global-search compatibility path below.
+        // Fall through to the global-search compatibility path.
       }
-
-      if (requestSequence !== tagSearchRequestSequence) return;
-      // The dedicated endpoint currently fails for some system tags such as
-      // `club`. Remember the failure for this page session to avoid repeatedly
-      // issuing a known-bad request while keeping tag entry fully usable.
-      useGlobalTagSearchFallback = true;
+      if (requestSequence !== tagSearchRequestSequence) return
+      useGlobalTagSearchFallback = true
     }
-
-    // Global search requires two characters and returns all result groups; use
-    // it only as a compatibility fallback and retain its tag group alone.
-    if (query.length < 2) return;
-    const globalResponse = await fetchPublic(
-      getApiUrl(`/api/search/global?q=${encodeURIComponent(query)}`)
-    );
-    if (!globalResponse.ok) return;
-
-    const globalData = await globalResponse.json();
-    if (requestSequence !== tagSearchRequestSequence) return;
-    applyRemoteTagSuggestions(globalData?.results?.tags);
+    if (query.length < 2) return
+    const response = await fetchPublic(getApiUrl(`/api/search/global?q=${encodeURIComponent(query)}`))
+    if (!response.ok) return
+    const data = await response.json()
+    if (requestSequence !== tagSearchRequestSequence) return
+    applyRemoteTagSuggestions(data?.results?.tags)
   } catch {
     if (requestSequence === tagSearchRequestSequence) {
-      remoteTagSuggestions.value = [];
-      activeTagSuggestionIndex.value = -1;
+      remoteTagSuggestions.value = []
+      activeTagSuggestionIndex.value = -1
     }
   } finally {
-    if (requestSequence === tagSearchRequestSequence) {
-      isTagSearchLoading.value = false;
-    }
+    if (requestSequence === tagSearchRequestSequence) isTagSearchLoading.value = false
   }
-};
+}
 
 watch(tagInput, (rawQuery) => {
-  if (tagSearchTimer) {
-    clearTimeout(tagSearchTimer);
-    tagSearchTimer = null;
-  }
-
-  tagSearchRequestSequence += 1;
-  const requestSequence = tagSearchRequestSequence;
-  const query = normalizePostTag(rawQuery);
-  remoteTagSuggestions.value = [];
-  activeTagSuggestionIndex.value = -1;
-
+  if (tagSearchTimer) clearTimeout(tagSearchTimer)
+  tagSearchRequestSequence += 1
+  const requestSequence = tagSearchRequestSequence
+  const query = normalizePostTag(rawQuery)
+  remoteTagSuggestions.value = []
+  activeTagSuggestionIndex.value = -1
   if (!query || (useGlobalTagSearchFallback && query.length < 2)) {
-    isTagSearchLoading.value = false;
-    return;
+    isTagSearchLoading.value = false
+    return
+  }
+  isTagSearchLoading.value = true
+  tagSearchTimer = setTimeout(() => {
+    tagSearchTimer = null
+    void fetchTagSuggestions(query, requestSequence)
+  }, TAG_SEARCH_DEBOUNCE_MS)
+})
+
+const classifyFile = (file: File): AttachmentKind => {
+  if (file.type.startsWith('image/')) return 'image'
+  if (file.type.startsWith('video/')) return 'video'
+  return 'file'
+}
+
+const validateIncomingFile = (file: File, kind: AttachmentKind) => {
+  if (kind === 'image' && imageCount.value >= MAX_POST_IMAGES) return t('forum.create.validation.imageCount', { count: MAX_POST_IMAGES })
+  if (kind !== 'image' && otherCount.value >= MAX_OTHER_ATTACHMENTS) return t('forum.create.validation.attachmentCount', { count: MAX_OTHER_ATTACHMENTS })
+  const maxBytes = kind === 'video' ? MAX_POST_VIDEO_BYTES : MAX_POST_FILE_BYTES
+  if (kind !== 'image' && file.size > maxBytes) return t('forum.create.validation.fileSize', { name: file.name, size: formatFileSize(maxBytes) })
+  return ''
+}
+
+const uploadAttachment = async (item: ComposerAttachment) => {
+  item.status = 'uploading'
+  item.progress = 0
+  item.error = undefined
+  item.abortController = new AbortController()
+  try {
+    item.record = await uploadFile({
+      file: item.source,
+      fileType: item.kind === 'image' ? 'post_image' : 'post_attachment',
+      entityType: 'post',
+      maxUploadBytes: item.kind === 'video' ? MAX_POST_VIDEO_BYTES : MAX_POST_FILE_BYTES,
+      enableCompression: item.kind === 'image',
+      signal: item.abortController.signal,
+      onProgress: (progress) => { item.progress = Math.round(progress) },
+    })
+    item.status = 'ready'
+    item.progress = 100
+  } catch (error) {
+    item.status = 'error'
+    item.error = error instanceof Error ? error.message : t('forum.create.upload.failed')
+  } finally {
+    item.abortController = undefined
+  }
+}
+
+const addFiles = async (files: File[]) => {
+  errorMessage.value = ''
+  const added: ComposerAttachment[] = []
+  for (const file of files) {
+    const kind = classifyFile(file)
+    const validationError = validateIncomingFile(file, kind)
+    if (validationError) {
+      errorMessage.value = validationError
+      continue
+    }
+    const item: ComposerAttachment = {
+      clientId: crypto.randomUUID(),
+      source: file,
+      kind,
+      status: 'queued',
+      progress: 0,
+      previewUrl: kind === 'image' || kind === 'video' ? URL.createObjectURL(file) : undefined,
+    }
+    attachments.value.push(item)
+    added.push(item)
+  }
+  await Promise.all(added.map(uploadAttachment))
+  return added
+}
+
+const insertUploadedImages = (items: ComposerAttachment[]) => {
+  const markdown = items
+    .filter((item) => item.kind === 'image' && item.status === 'ready' && item.previewUrl)
+    .map((item) => `\n![${item.source.name}](${item.previewUrl})\n`)
+    .join('')
+  if (markdown) markdownEditor.value?.insertMarkdown(markdown)
+}
+
+const handleEditorImageUpload = async (files: File[], callback: UploadImgCallBack) => {
+  const added = await addFiles(files)
+  callback(added.filter((item) => item.status === 'ready' && item.previewUrl).map((item) => item.previewUrl!))
+}
+
+const handleEditorFiles = async (files: File[], insertImages: boolean) => {
+  const added = await addFiles(files)
+  if (insertImages) insertUploadedImages(added)
+}
+
+const handleFileInput = async (event: Event, shouldInsertImages: boolean) => {
+  const input = event.target as HTMLInputElement
+  const added = await addFiles(Array.from(input.files || []))
+  if (shouldInsertImages) insertUploadedImages(added)
+  input.value = ''
+}
+
+const retryAttachment = (item: ComposerAttachment) => uploadAttachment(item)
+
+const removeMarkdownReference = (item: ComposerAttachment) => {
+  if (!item.previewUrl) return
+  content.value = content.value.split(item.previewUrl).join('')
+}
+
+const removeAttachment = async (item: ComposerAttachment) => {
+  item.abortController?.abort()
+  if (item.record) {
+    try {
+      await deleteFile(item.record.id)
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : t('forum.create.upload.deleteFailed')
+      return
+    }
+  }
+  removeMarkdownReference(item)
+  if (item.previewUrl) URL.revokeObjectURL(item.previewUrl)
+  attachments.value = attachments.value.filter((candidate) => candidate.clientId !== item.clientId)
+}
+
+const materializeMarkdown = () => {
+  let markdown = content.value
+  attachments.value.forEach((item) => {
+    if (item.previewUrl && item.record) markdown = markdown.split(item.previewUrl).join(`/api/files/view/${item.record.id}`)
+  })
+  return markdown
+}
+
+const handleIdentityChange = (identity: UserIdentity | null) => {
+  selectedIdentityId.value = identity?.id || null
+}
+
+const cleanupDraftUploads = async () => {
+  attachments.value.forEach((item) => item.abortController?.abort())
+  await Promise.allSettled(attachments.value.filter((item) => item.record).map((item) => deleteFile(item.record!.id)))
+  attachments.value.forEach((item) => item.previewUrl && URL.revokeObjectURL(item.previewUrl))
+  attachments.value = []
+}
+
+const handleCancel = async () => {
+  const hasDraft = title.value || content.value || tagInput.value || attachments.value.length || tags.value.some((tag) => !isLockedTag(tag))
+  if (hasDraft && !window.confirm(t('forum.create.confirmDiscard'))) return
+  await cleanupDraftUploads()
+  if (props.returnTo) await router.push(props.returnTo)
+  else router.back()
+}
+
+const readPostError = async (response: Response) => {
+  const payload = await response.json().catch(() => null) as { error?: string; message?: string; tag_errors?: string[] } | null
+  if (payload?.tag_errors?.length) return payload.tag_errors.join('；')
+  if (payload?.message) return payload.message
+  if (response.status === 401) return t('forum.create.publish.loginRequired')
+  if (response.status === 403) return t('forum.create.publish.forbidden')
+  if (response.status === 429) return t('forum.create.publish.tooFrequent')
+  if (response.status >= 500) return t('forum.create.publish.serverError')
+  return payload?.error || t('forum.create.publish.failed')
+}
+
+const handleSubmit = async () => {
+  validateTitle()
+  validateContent()
+  if (tagInput.value.trim() && !addTag()) return
+  if (!formValid.value) {
+    if (isUploading.value) errorMessage.value = t('forum.create.upload.wait')
+    else if (hasUploadErrors.value) errorMessage.value = t('forum.create.upload.resolveErrors')
+    return
   }
 
-  isTagSearchLoading.value = true;
-  tagSearchTimer = setTimeout(() => {
-    tagSearchTimer = null;
-    void fetchTagSuggestions(query, requestSequence);
-  }, TAG_SEARCH_DEBOUNCE_MS);
-});
+  isPublishing.value = true
+  errorMessage.value = ''
+  try {
+    const response = await fetchWithAuth(getApiUrl('/api/posts'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title.value.trim(),
+        content: materializeMarkdown(),
+        tags: tags.value,
+        file_ids: attachments.value.map((item) => item.record!.id),
+        display_identity_id: selectedIdentityId.value,
+      }),
+    })
+    if (!response.ok) throw new Error(await readPostError(response))
+    const post = await response.json() as { id?: number; postId?: number }
+    const postId = post.id || post.postId
+    if (!postId) throw new Error(t('forum.create.publish.invalidResponse'))
+    attachments.value.forEach((item) => item.previewUrl && URL.revokeObjectURL(item.previewUrl))
+    emit('postSuccess', postId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('forum.create.publish.failed')
+  } finally {
+    isPublishing.value = false
+  }
+}
 
 onBeforeUnmount(() => {
-  tagSearchRequestSequence += 1;
-  if (tagSearchTimer) clearTimeout(tagSearchTimer);
-});
-
-// 图片上传相关
-const handleImageUploadSuccess = (file: FileRecord) => {
-  if (uploadedImages.value.length >= MAX_POST_IMAGES) {
-    errorMessage.value = `最多只能上传 ${MAX_POST_IMAGES} 张图片`;
-    return;
-  }
-  uploadedImages.value.push(file);
-};
-
-const handleImageUploadError = (error: Error) => {
-  errorMessage.value = `图片上传失败: ${error.message}`;
-};
-
-const handleImageDeleteSuccess = () => {
-  // 图片删除成功，不需要特别处理，因为FileUpload组件会自己处理预览
-};
-
-const handleImageDeleteError = (error: Error) => {
-  errorMessage.value = `图片删除失败: ${error.message}`;
-};
-
-const handleOtherUploadSuccess = (file: FileRecord) => {
-  if (isPostImageFile(file)) {
-    errorMessage.value = "图片请使用上方「图片附件」区域上传。";
-    void deleteFile(file.id).catch(() => {});
-    otherUploadKey.value += 1;
-    return;
-  }
-  if (otherAttachments.value.length >= MAX_OTHER_ATTACHMENTS) {
-    errorMessage.value = `其他附件最多 ${MAX_OTHER_ATTACHMENTS} 个`;
-    void deleteFile(file.id).catch(() => {});
-    otherUploadKey.value += 1;
-    return;
-  }
-  otherAttachments.value.push(file);
-  otherUploadKey.value += 1;
-};
-
-const handleOtherUploadError = (err: Error) => {
-  errorMessage.value = `附件上传失败: ${err.message}`;
-};
-
-const handleOtherDeleteSuccess = () => {};
-
-const handleOtherDeleteError = (err: Error) => {
-  errorMessage.value = `附件删除失败: ${err.message}`;
-};
-
-const removeOtherAttachment = async (index: number) => {
-  const f = otherAttachments.value[index];
-  try {
-    await deleteFile(f.id);
-    otherAttachments.value.splice(index, 1);
-  } catch (error) {
-    console.error("Delete attachment error:", error);
-    errorMessage.value =
-      error instanceof Error ? `删除附件失败: ${error.message}` : "删除附件失败";
-  }
-};
-
-// 删除已上传的图片
-const removeUploadedImage = async (index: number) => {
-  const imageToRemove = uploadedImages.value[index];
-  
-  try {
-    // 从后端删除文件
-    await deleteFile(imageToRemove.id);
-    
-    // 从数组中移除
-    uploadedImages.value.splice(index, 1);
-  } catch (error) {
-    console.error('Delete error:', error);
-    errorMessage.value = error instanceof Error
-      ? `删除图片失败: ${error.message}`
-      : "删除图片失败";
-  }
-};
-
-// 处理身份选择变化
-const handleIdentityChange = (identity: UserIdentity | null) => {
-  selectedIdentityId.value = identity?.id || null;
-};
-
-// 计算表单是否有效
-const formValid = computed(() => {
-  return (
-    title.value &&
-    content.value &&
-    !errors.value.title &&
-    !errors.value.content &&
-    !errors.value.tags
-  );
-});
-
-// 取消按钮处理
-const handleCancel = () => {
-  // 询问用户是否确认放弃编辑
-  const hasUserAddedTags = tags.value.some((tag) => !isLockedTag(tag));
-  if (
-    title.value ||
-    content.value ||
-    tagInput.value ||
-    hasUserAddedTags ||
-    uploadedImages.value.length > 0 ||
-    otherAttachments.value.length > 0
-  ) {
-    if (!confirm("确定要放弃当前编辑的内容吗？")) {
-      return;
-    }
-  }
-  if (props.returnTo) {
-    router.push(props.returnTo);
-    return;
-  }
-  router.go(-1);
-};
-
-const resetForm = () => {
-  title.value = "";
-  tagInput.value = "";
-  tags.value = [...defaultTags.value];
-  content.value = "";
-  uploadedImages.value = [];
-  otherAttachments.value = [];
-  selectedIdentityId.value = null;
-  errors.value = {
-    title: "",
-    content: "",
-    tags: "",
-  };
-  errorMessage.value = "";
-};
-
-// 提交表单
-const handleSubmit = async () => {
-  validateTitle();
-  validateContent();
-  clearTagError();
-
-  if (tagInput.value.trim()) {
-    const added = addTag();
-    if (!added) {
-      return;
-    }
-  }
-
-  if (errors.value.title || errors.value.content || errors.value.tags) {
-    return;
-  }
-
-  try {
-    isLoading.value = true;
-    errorMessage.value = "";
-
-    const jsonData = {
-      title: title.value,
-      content: content.value,
-      tags: tags.value,
-      file_ids: [
-        ...uploadedImages.value.map((img: FileRecord) => img.id),
-        ...otherAttachments.value.map((f: FileRecord) => f.id),
-      ],
-      display_identity_id: selectedIdentityId.value,
-    };
-
-    const response = await fetchWithAuth(
-      getApiUrl("/api/posts"),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(jsonData),
-      }
-    );
-
-    // 只读取一次响应体
-    if (!response.ok) {
-      // 处理错误响应
-      let errorMessage = "发布失败";
-      
-      if (response.status === 401) {
-      errorMessage = "请先登录后再发布帖子";
-      } else if (response.status === 403) {
-      errorMessage = "您没有权限发布帖子";
-      } else if (response.status === 400) {
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || "请求参数错误，请检查输入内容";
-        if (Array.isArray(errorData.tag_errors) && errorData.tag_errors.length > 0) {
-          errorMessage = errorData.tag_errors.join("；");
-        }
-      } catch {
-        errorMessage = "请求参数错误，请检查输入内容";
-      }
-      } else if (response.status === 413) {
-      errorMessage = "上传内容过大，请减少附件数量或压缩文件（单文件不超过 10MB）";
-      } else if (response.status === 429) {
-      errorMessage = "发布过于频繁，请稍后再试";
-      } else if (response.status >= 500) {
-      errorMessage = "服务器错误，请稍后重试";
-      } else if (response.status === 0 || !navigator.onLine) {
-      errorMessage = "网络连接失败，请检查网络后重试";
-      } else {
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || `发布失败: ${response.status}`;
-      } catch (parseError) {
-        errorMessage = `发布失败: ${response.status} ${response.statusText}`;
-      }
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    // 成功响应：解析 JSON
-    const postData = await response.json();
-
-    // 显示成功消息
-    successMessage.value = "帖子发布成功！";
-
-    // 清空表单
-    resetForm();
-
-    // 触发成功事件
-    emit("post-success", postData.id || postData.postId);
-
-    setTimeout(() => {
-      if (props.returnTo) {
-        router.push(props.returnTo);
-      } else {
-        router.push(`/forum/posts/${postData.id || postData.postId}`);
-      }
-    }, 3000);
-  } catch (err) {
-    errorMessage.value =
-      err instanceof Error ? err.message : "发布失败，请稍后重试";
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Generate generic image description for privacy
-const getGenericImageName = (file: FileRecord, index: number): string => {
-  if (!file) return '图片';
-  
-  // Determine image type from MIME type or extension
-  let imageType = '图片';
-  
-  if (file.mime_type) {
-    if (file.mime_type.includes('jpeg') || file.mime_type.includes('jpg')) {
-      imageType = '照片';
-    } else if (file.mime_type.includes('png')) {
-      imageType = 'PNG图片';
-    } else if (file.mime_type.includes('gif')) {
-      imageType = 'GIF动图';
-    } else if (file.mime_type.includes('webp')) {
-      imageType = 'WebP图片';
-    }
-  } else if (file.original_filename) {
-    const ext = file.original_filename.toLowerCase();
-    if (ext.includes('.jpg') || ext.includes('.jpeg')) {
-      imageType = '照片';
-    } else if (ext.includes('.png')) {
-      imageType = 'PNG图片';
-    } else if (ext.includes('.gif')) {
-      imageType = 'GIF动图';
-    } else if (ext.includes('.webp')) {
-      imageType = 'WebP图片';
-    }
-  }
-  
-  // Return generic name with index if multiple images
-  const totalImages = uploadedImages.value.length;
-  if (totalImages > 1) {
-    return `${imageType} ${index + 1}/${totalImages}`;
-  } else {
-    return imageType;
-  }
-};
-
-// 定义事件
-const emit = defineEmits(["post-success"]);
+  tagSearchRequestSequence += 1
+  if (tagSearchTimer) clearTimeout(tagSearchTimer)
+  attachments.value.forEach((item) => item.previewUrl && URL.revokeObjectURL(item.previewUrl))
+})
 </script>
 
+<template>
+  <form class="composer" @submit.prevent="handleSubmit">
+    <div class="field">
+      <label for="post-title">{{ t('forum.create.fields.title') }}</label>
+      <input id="post-title" v-model="title" maxlength="100" :placeholder="t('forum.create.placeholders.title')" @blur="validateTitle">
+      <span v-if="errors.title" class="field-error" role="alert">{{ errors.title }}</span>
+    </div>
+
+    <div class="field">
+      <div class="field-heading">
+        <label>{{ t('forum.create.fields.content') }}</label>
+        <span class="markdown-badge">Markdown</span>
+      </div>
+      <CommonMarkdownEditor ref="markdownEditor" v-model="content" height="360px" :placeholder="t('forum.create.placeholders.content')" @upload-image="handleEditorImageUpload" @upload-files="handleEditorFiles" />
+      <p class="field-hint">{{ t('forum.create.markdownHint') }}</p>
+      <span v-if="errors.content" class="field-error" role="alert">{{ errors.content }}</span>
+    </div>
+
+    <section class="upload-panel" aria-labelledby="upload-heading">
+      <div class="upload-copy">
+        <h2 id="upload-heading">{{ t('forum.create.upload.title') }}</h2>
+        <p>{{ t('forum.create.upload.hint') }}</p>
+      </div>
+      <div class="upload-actions">
+        <button type="button" class="secondary-button" @click="imageInput?.click()"><Icon name="lucide:image-plus" aria-hidden="true" />{{ t('forum.create.upload.addImages') }}</button>
+        <button type="button" class="secondary-button" @click="fileInput?.click()"><Icon name="lucide:paperclip" aria-hidden="true" />{{ t('forum.create.upload.addFiles') }}</button>
+        <input ref="imageInput" class="sr-only" type="file" accept="image/*" multiple @change="handleFileInput($event, true)">
+        <input ref="fileInput" class="sr-only" type="file" multiple @change="handleFileInput($event, false)">
+      </div>
+      <p class="upload-limits">{{ t('forum.create.upload.limits') }}</p>
+
+      <ul v-if="attachments.length" class="attachment-list" :aria-label="t('forum.create.upload.queue')">
+        <li v-for="item in attachments" :key="item.clientId" class="attachment-item">
+          <img v-if="item.kind === 'image'" :src="item.previewUrl" alt="" class="attachment-preview">
+          <video v-else-if="item.kind === 'video'" :src="item.previewUrl" muted class="attachment-preview" />
+          <span v-else class="attachment-file-icon"><Icon name="lucide:file" aria-hidden="true" /></span>
+          <div class="attachment-main">
+            <div class="attachment-name-row"><span class="attachment-name" :title="item.source.name">{{ item.source.name }}</span><span class="attachment-size">{{ formatFileSize(item.source.size) }}</span></div>
+            <div v-if="item.status === 'uploading' || item.status === 'queued'" class="progress-track" role="progressbar" :aria-valuenow="item.progress" aria-valuemin="0" aria-valuemax="100"><span :style="{ width: `${item.progress}%` }" /></div>
+            <p v-if="item.status === 'error'" class="attachment-error">{{ item.error }}</p>
+            <span v-else class="attachment-status" :class="`attachment-status--${item.status}`">{{ t(`forum.create.upload.status.${item.status}`, { progress: item.progress }) }}</span>
+          </div>
+          <button v-if="item.status === 'error'" type="button" class="icon-action" :aria-label="t('forum.create.upload.retry')" @click="retryAttachment(item)"><Icon name="lucide:refresh-cw" aria-hidden="true" /></button>
+          <button type="button" class="icon-action" :aria-label="t('forum.create.upload.remove', { name: item.source.name })" @click="removeAttachment(item)"><Icon name="lucide:x" aria-hidden="true" /></button>
+        </li>
+      </ul>
+    </section>
+
+    <div class="field">
+      <label for="post-tag">{{ t('forum.create.fields.tags') }}</label>
+      <div class="tag-input-row">
+        <div class="tag-input-shell">
+          <input
+            id="post-tag"
+            v-model="tagInput"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="post-tag-suggestions"
+            :aria-expanded="showTagSearchPanel"
+            :aria-activedescendant="activeTagSuggestionId"
+            :maxlength="MAX_TAG_LENGTH"
+            :placeholder="t('forum.create.placeholders.tags')"
+            @focus="handleTagInputFocus"
+            @keydown="handleTagKeydown"
+            @blur="handleTagInputBlur"
+            @input="clearTagError"
+          >
+          <div
+            v-if="showTagSearchPanel"
+            id="post-tag-suggestions"
+            class="tag-suggestions"
+            role="listbox"
+            :aria-label="t('forum.create.tags.suggestions')"
+          >
+            <div v-if="isTagSearchLoading" class="tag-suggestions__status">
+              {{ t('forum.create.tags.searching') }}
+            </div>
+            <button
+              v-for="(suggestion, index) in tagSearchSuggestions"
+              :id="getTagSuggestionId(index)"
+              :key="suggestion"
+              type="button"
+              role="option"
+              tabindex="-1"
+              class="tag-suggestions__option"
+              :class="{ 'tag-suggestions__option--active': index === activeTagSuggestionIndex }"
+              :aria-selected="index === activeTagSuggestionIndex"
+              @mouseenter="activeTagSuggestionIndex = index"
+              @mousedown.prevent
+              @click="selectTagSuggestion(suggestion)"
+            >
+              # {{ suggestion }}
+            </button>
+          </div>
+        </div>
+        <button type="button" class="secondary-button" :disabled="tags.length >= MAX_TAG_COUNT" @click="addTag">{{ t('forum.create.actions.addTag') }}</button>
+      </div>
+      <div v-if="commonTagRecommendations.length && !normalizedTagQuery" class="common-tags">
+        <span>{{ t('forum.create.tags.common') }}</span>
+        <button v-for="tag in commonTagRecommendations" :key="tag" type="button" @click="selectTagSuggestion(tag)">
+          # {{ tag }}
+        </button>
+      </div>
+      <p class="field-hint">{{ t('forum.create.tagHint', { count: MAX_TAG_COUNT, length: MAX_TAG_LENGTH }) }}</p>
+      <p v-if="hasLockedTags" class="field-hint">{{ t('forum.create.tags.lockedHint') }}</p>
+      <div v-if="tags.length" class="tag-list">
+        <span v-for="(tag, index) in tags" :key="tag" class="tag" :class="{ 'tag--locked': isLockedTag(tag) }">{{ tag }}<Icon v-if="isLockedTag(tag)" name="lucide:lock" aria-hidden="true" /><button v-else type="button" :aria-label="t('forum.create.actions.removeTag', { tag })" @click="removeTag(index)">×</button></span>
+      </div>
+      <span v-if="errors.tags" class="field-error" role="alert">{{ errors.tags }}</span>
+    </div>
+
+    <div class="field identity-field"><IdentitySelector v-model="selectedIdentityId" size="md" :show-label="true" @change="handleIdentityChange" /></div>
+
+    <div v-if="errorMessage" class="global-error" role="alert"><Icon name="lucide:circle-alert" aria-hidden="true" /><span>{{ errorMessage }}</span></div>
+
+    <div class="form-actions">
+      <button type="button" class="cancel-button" :disabled="isPublishing" @click="handleCancel">{{ t('forum.create.actions.cancel') }}</button>
+      <button type="submit" class="primary-button" :disabled="isPublishing || !formValid"><Icon v-if="isPublishing" name="lucide:loader-circle" class="spin" aria-hidden="true" />{{ isPublishing ? t('forum.create.actions.publishing') : t('forum.create.actions.publish') }}</button>
+    </div>
+  </form>
+</template>
+
 <style lang="scss" scoped>
-.post-message-component {
-  width: 100%;
-  
-  // Mobile optimizations
-  @media (max-width: 480px) {
-    padding: 0;
-  }
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-  
-  // Mobile spacing adjustments
-  @media (max-width: 480px) {
-    margin-bottom: 1.25rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    margin-bottom: 1.375rem;
-  }
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    
-    // Mobile label styling
-    @media (max-width: 480px) {
-      font-size: 0.95rem;
-      margin-bottom: 0.625rem;
-    }
-  }
-
-  input,
-  select,
-  textarea {
-    width: 100%;
-    padding: 0.75rem;
-    background: var(--surface-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 4px;
-    font-size: 1rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    
-    // Mobile input optimizations
-    @media (max-width: 480px) {
-      padding: 1rem;
-      font-size: 1rem; // Prevent zoom on iOS
-      border-radius: 6px;
-      min-height: 44px; // Touch-friendly minimum height
-    }
-    
-    @media (min-width: 481px) and (max-width: 768px) {
-      padding: 0.875rem;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--border-focus) 20%, transparent);
-    }
-    
-    // Placeholder styling for mobile
-    &::placeholder {
-      color: var(--text-muted);
-      @media (max-width: 480px) {
-        font-size: 0.9rem;
-        opacity: 0.7;
-      }
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 150px;
-    
-    // Mobile textarea adjustments
-    @media (max-width: 480px) {
-      min-height: 120px;
-    }
-    
-    @media (min-width: 481px) and (max-width: 768px) {
-      min-height: 135px;
-    }
-  }
-}
-
-.tags-container {
-  .tag-input-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-
-    @media (max-width: 480px) {
-      flex-direction: column;
-      gap: 0.625rem;
-    }
-  }
-
-  .tag-input-shell {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-
-    @media (max-width: 480px) {
-      width: 100%;
-    }
-  }
-
-  .tag-suggestions {
-    position: absolute;
-    z-index: 20;
-    top: calc(100% + 0.35rem);
-    right: 0;
-    left: 0;
-    max-height: 15rem;
-    overflow-y: auto;
-    padding: 0.35rem;
-    background: var(--surface-elevated);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    box-shadow: var(--shadow-large);
-  }
-
-  .tag-suggestions__status {
-    padding: 0.75rem;
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-  }
-
-  .tag-suggestions__option {
-    display: flex;
-    width: 100%;
-    padding: 0.65rem 0.75rem;
-    background: transparent;
-    color: var(--text-primary);
-    border: none;
-    border-radius: 6px;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-
-    &:hover,
-    &--active {
-      background: var(--interactive-secondary);
-      color: var(--text-primary);
-    }
-  }
-
-  .common-tags {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-
-  .common-tags__label {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-  }
-
-  .common-tags__button {
-    padding: 0.35rem 0.7rem;
-    background: color-mix(in srgb, var(--interactive-primary) 10%, transparent);
-    color: var(--text-primary);
-    border: 1px solid color-mix(in srgb, var(--interactive-primary) 28%, transparent);
-    border-radius: 999px;
-    font: inherit;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-
-    &:hover {
-      background: color-mix(in srgb, var(--interactive-primary) 18%, transparent);
-      border-color: var(--border-focus);
-    }
-  }
-
-  .tag-hint {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-muted);
-  }
-
-  .tag-add-btn {
-    flex-shrink: 0;
-    min-width: 88px;
-    padding: 0.75rem 1rem;
-    background: var(--btn-primary-bg);
-    color: var(--text-inverse);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
-
-    &:hover:not(:disabled) {
-      background: var(--btn-primary-bg-hover);
-    }
-
-    &:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    @media (max-width: 480px) {
-      width: 100%;
-      min-height: 44px;
-    }
-  }
-
-  .tags-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    
-    // Mobile tag spacing
-    @media (max-width: 480px) {
-      gap: 0.375rem;
-      margin-top: 0.625rem;
-    }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background-color: var(--btn-primary-bg);
-      color: var(--text-inverse);
-      padding: 0.35rem 0.75rem;
-      border-radius: 50px;
-      font-size: 0.875rem;
-      
-      // Mobile tag sizing
-      @media (max-width: 480px) {
-        padding: 0.5rem 0.875rem;
-        font-size: 0.8rem;
-      }
-
-      .tag-remove {
-        background: none;
-        border: none;
-        color: var(--text-inverse);
-        font-size: 1.2rem;
-        margin-left: 0.35rem;
-        cursor: pointer;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 18px;
-        min-height: 18px;
-        
-        // Touch-friendly remove button on mobile
-        @media (max-width: 480px) {
-          font-size: 1.3rem;
-          margin-left: 0.5rem;
-          min-width: 24px;
-          min-height: 24px;
-        }
-      }
-    }
-  }
-}
-
-.tag--locked {
-  background-color: color-mix(in srgb, var(--interactive-primary) 14%, transparent) !important;
-  color: var(--interactive-active-text) !important;
-  border: 1px solid color-mix(in srgb, var(--interactive-primary) 28%, transparent);
-}
-
-.tag-lock {
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.error-text {
-  display: block;
-  margin-top: 0.5rem;
-  color: var(--semantic-error);
-  font-size: 0.875rem;
-}
-
-.upload-container {
-  display: flex;
-  align-items: center;
-
-  .file-input {
-    display: none;
-  }
-
-  .upload-btn {
-    padding: 0.5rem 1rem;
-    background-color: var(--btn-primary-bg);
-    color: var(--text-inverse);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:hover {
-      background-color: var(--btn-primary-bg-hover);
-    }
-  }
-
-  .upload-info {
-    margin-left: 1rem;
-    font-size: 0.875rem;
-    color: var(--text-muted);
-  }
-}
-
-.image-previews {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-
-  .image-preview {
-    position: relative;
-    width: 100px;
-    height: 100px;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-
-    .image-remove {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background-color: color-mix(in srgb, var(--semantic-error) 80%, transparent);
-      color: var(--text-inverse);
-      border: none;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-
-      &:hover {
-        background-color: var(--semantic-error);
-      }
-    }
-  }
-}
-
-.button-group {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  
-  // Mobile button layout
-  @media (max-width: 480px) {
-    flex-direction: column-reverse;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    gap: 0.75rem;
-    margin-top: 1.75rem;
-  }
-}
-
-.submit-btn,
-.cancel-btn {
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 44px; // Touch-friendly minimum height
-  font-weight: 500;
-  
-  // Mobile button optimizations
-  @media (max-width: 480px) {
-    width: 100%;
-    padding: 1rem;
-    font-size: 1rem;
-    border-radius: 6px;
-    min-height: 50px;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    padding: 0.875rem 1.75rem;
-    min-height: 46px;
-  }
-}
-
-.submit-btn {
-  background: var(--btn-primary-bg);
-  color: var(--text-inverse);
-
-  &:hover:not(:disabled) {
-    background: var(--btn-primary-bg-hover);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  
-  // Touch feedback for mobile
-  &:active:not(:disabled) {
-    @media (max-width: 768px) {
-      background-color: var(--interactive-active);
-      transform: translateY(1px);
-    }
-  }
-}
-
-.cancel-btn {
-  background: var(--surface-secondary);
-  color: var(--text-primary);
-
-  &:hover {
-    background: var(--interactive-secondary);
-  }
-  
-  // Touch feedback for mobile
-  &:active {
-    @media (max-width: 768px) {
-      background-color: var(--interactive-secondary);
-      transform: translateY(1px);
-    }
-  }
-}
-
-.error-text {
-  display: block;
-  color: var(--semantic-error);
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
-  padding: 0.375rem 0;
-  
-  // Mobile error text styling
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-    margin-top: 0.375rem;
-    padding: 0.5rem 0;
-  }
-}
-
-.global-error {
-  color: var(--semantic-error);
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: color-mix(in srgb, var(--semantic-error) 10%, transparent);
-  border-radius: 4px;
-  font-size: 0.9rem;
-  border-left: 3px solid var(--semantic-error);
-  
-  // Mobile error styling
-  @media (max-width: 480px) {
-    padding: 1rem;
-    margin-bottom: 1.25rem;
-    font-size: 0.85rem;
-    border-radius: 6px;
-  }
-  
-  @media (min-width: 481px) and (max-width: 768px) {
-    padding: 0.875rem;
-    margin-bottom: 1.125rem;
-  }
-}
-
-.success-message {
-  padding: 1rem;
-  background-color: color-mix(in srgb, var(--semantic-success) 10%, transparent);
-  border-radius: 4px;
-  color: var(--semantic-success);
-  margin-bottom: 1rem;
-  text-align: center;
-  font-size: 1.1rem;
-}
-
-.upload-progress {
-  margin-top: 0.5rem;
-
-  .progress-bar {
-    height: 0.5rem;
-    background-color: var(--surface-secondary);
-    border-radius: 4px;
-    overflow: hidden;
-
-    .progress-fill {
-      height: 100%;
-      background-color: var(--btn-primary-bg);
-      transition: width 0.2s;
-    }
-  }
-
-  .progress-text {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.25rem;
-    text-align: center;
-  }
-}
-
-.upload-hint {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  
-  // Mobile upload hint styling
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-    margin-top: 0.625rem;
-  }
-}
-
-.uploaded-images {
-  margin-top: 1rem;
-  
-  // Mobile spacing adjustments
-  @media (max-width: 480px) {
-    margin-top: 0.75rem;
-  }
-  
-  h4 {
-    margin: 0 0 1rem 0;
-    color: var(--text-primary);
-    font-size: 1rem;
-    
-    // Mobile title styling
-    @media (max-width: 480px) {
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-    }
-  }
-  
-  .image-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-    
-    // Mobile grid adjustments
-    @media (max-width: 480px) {
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 0.75rem;
-    }
-    
-    @media (min-width: 481px) and (max-width: 768px) {
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.875rem;
-    }
-    
-    .image-preview {
-      border: 1px solid var(--border-primary);
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--surface-secondary);
-      
-      // Mobile image preview styling
-      @media (max-width: 480px) {
-        border-radius: 6px;
-      }
-      
-      .preview-img {
-        width: 100%;
-        height: 120px;
-        object-fit: cover;
-        display: block;
-        
-        // Mobile image sizing
-        @media (max-width: 480px) {
-          height: 100px;
-        }
-        
-        @media (min-width: 481px) and (max-width: 768px) {
-          height: 110px;
-        }
-      }
-      
-      .image-info {
-        padding: 0.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        
-        // Mobile image info styling
-        @media (max-width: 480px) {
-          padding: 0.375rem;
-        }
-        
-        .filename {
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          flex: 1;
-          margin-right: 0.5rem;
-          
-          // Mobile filename styling
-          @media (max-width: 480px) {
-            font-size: 0.75rem;
-            margin-right: 0.375rem;
-          }
-        }
-        
-        .remove-btn {
-          background: var(--semantic-error);
-          color: var(--text-inverse);
-          border: none;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          font-size: 14px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-          
-          // Touch-friendly remove button on mobile
-          @media (max-width: 480px) {
-            width: 28px;
-            height: 28px;
-            font-size: 16px;
-          }
-          
-          @media (min-width: 481px) and (max-width: 768px) {
-            width: 24px;
-            height: 24px;
-            font-size: 15px;
-          }
-          
-          &:hover {
-            background: color-mix(in srgb, var(--semantic-error) 90%, transparent);
-          }
-          
-          // Touch feedback
-          &:active {
-            @media (max-width: 768px) {
-              background: color-mix(in srgb, var(--semantic-error) 85%, transparent);
-              transform: scale(0.95);
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-.uploaded-files-list {
-  margin-top: 1rem;
-
-  h4 {
-    margin: 0 0 0.75rem;
-    color: var(--text-primary);
-    font-size: 1rem;
-  }
-
-  .other-files-ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .other-file-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    background: var(--surface-secondary);
-  }
-
-  .other-file-name {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-  }
+.composer { display: grid; gap: 1.5rem; }
+.field { display: grid; gap: .5rem; min-width: 0; }
+.field label, .field-heading label { color: var(--text-primary); font-weight: 650; }
+.field-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.markdown-badge { padding: .2rem .55rem; border-radius: 999px; background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); color: var(--interactive-primary); font-size: .75rem; font-weight: 700; }
+input { width: 100%; min-height: 44px; padding: .72rem .85rem; border: 1px solid var(--border-primary); border-radius: .65rem; background: var(--surface-primary); color: var(--text-primary); font: inherit; }
+input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 15%, transparent); }
+.field-hint, .upload-limits { margin: 0; color: var(--text-muted); font-size: .82rem; line-height: 1.5; }
+.field-error, .attachment-error { margin: 0; color: var(--semantic-error); font-size: .83rem; }
+.upload-panel { display: grid; gap: 1rem; padding: 1rem; border: 1px dashed var(--border-primary); border-radius: .85rem; background: color-mix(in srgb, var(--interactive-primary) 3%, var(--surface-primary)); }
+.upload-copy h2 { margin: 0 0 .25rem; color: var(--text-primary); font-size: .95rem; }
+.upload-copy p { margin: 0; color: var(--text-secondary); font-size: .86rem; line-height: 1.55; }
+.upload-actions, .tag-input-row, .form-actions { display: flex; gap: .75rem; }
+.secondary-button, .cancel-button, .primary-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; padding: .65rem 1rem; border-radius: .65rem; font: inherit; font-weight: 650; cursor: pointer; transition: background .15s ease, border-color .15s ease, opacity .15s ease; }
+.secondary-button, .cancel-button { border: 1px solid var(--border-primary); background: var(--surface-primary); color: var(--text-primary); }
+.secondary-button:hover:not(:disabled), .cancel-button:hover:not(:disabled) { border-color: var(--interactive-primary); color: var(--interactive-primary); }
+.primary-button { border: 1px solid var(--btn-primary-bg); background: var(--btn-primary-bg); color: var(--text-inverse); }
+.primary-button:hover:not(:disabled) { background: var(--btn-primary-bg-hover); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+.attachment-list { display: grid; gap: .6rem; margin: 0; padding: 0; list-style: none; }
+.attachment-item { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: .65rem; border: 1px solid var(--border-primary); border-radius: .7rem; background: var(--surface-primary); }
+.attachment-preview, .attachment-file-icon { width: 46px; height: 46px; flex: 0 0 46px; border-radius: .5rem; object-fit: cover; background: var(--surface-secondary); }
+.attachment-file-icon { display: grid; place-items: center; color: var(--interactive-primary); }
+.attachment-main { flex: 1; min-width: 0; }
+.attachment-name-row { display: flex; align-items: baseline; gap: .5rem; }
+.attachment-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-size: .88rem; font-weight: 600; }
+.attachment-size { flex: none; color: var(--text-muted); font-size: .75rem; }
+.attachment-status { color: var(--text-muted); font-size: .76rem; }
+.attachment-status--ready { color: var(--semantic-success); }
+.progress-track { height: 4px; margin: .4rem 0 .25rem; overflow: hidden; border-radius: 999px; background: var(--surface-secondary); }
+.progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--interactive-primary); transition: width .15s linear; }
+.icon-action { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 0; border-radius: .55rem; background: transparent; color: var(--text-muted); cursor: pointer; }
+.icon-action:hover { background: var(--surface-secondary); color: var(--text-primary); }
+.tag-input-shell { position: relative; flex: 1; min-width: 0; }
+.tag-input-shell > input { width: 100%; }
+.tag-suggestions { position: absolute; z-index: 20; top: calc(100% + .35rem); left: 0; right: 0; max-height: 15rem; overflow-y: auto; padding: .35rem; border: 1px solid var(--border-primary); border-radius: .7rem; background: var(--surface-primary); box-shadow: 0 12px 30px color-mix(in srgb, var(--text-primary) 12%, transparent); }
+.tag-suggestions__status { padding: .55rem .65rem; color: var(--text-muted); font-size: .82rem; }
+.tag-suggestions__option { width: 100%; display: block; padding: .55rem .65rem; border: 0; border-radius: .45rem; background: transparent; color: var(--text-primary); text-align: left; font: inherit; font-size: .86rem; cursor: pointer; }
+.tag-suggestions__option:hover, .tag-suggestions__option--active { background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); color: var(--interactive-primary); }
+.common-tags { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .8rem; }
+.common-tags button { padding: .25rem .55rem; border: 1px solid var(--border-primary); border-radius: 999px; background: var(--surface-primary); color: var(--text-secondary); font: inherit; font-size: .78rem; cursor: pointer; }
+.common-tags button:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
+.tag-list { display: flex; flex-wrap: wrap; gap: .45rem; }
+.tag { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .65rem; border-radius: 999px; background: var(--btn-primary-bg); color: var(--text-inverse); font-size: .82rem; }
+.tag button { border: 0; padding: 0; background: transparent; color: inherit; font-size: 1.05rem; cursor: pointer; }
+.tag--locked { border: 1px solid color-mix(in srgb, var(--interactive-primary) 25%, transparent); background: color-mix(in srgb, var(--interactive-primary) 10%, transparent); color: var(--interactive-primary); }
+.global-error { display: flex; align-items: flex-start; gap: .55rem; padding: .8rem 1rem; border: 1px solid color-mix(in srgb, var(--semantic-error) 30%, transparent); border-radius: .7rem; background: color-mix(in srgb, var(--semantic-error) 7%, transparent); color: var(--semantic-error); font-size: .88rem; }
+.form-actions { justify-content: flex-end; padding-top: .5rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) {
+  .composer { gap: 1.25rem; }
+  .upload-actions, .tag-input-row { flex-direction: column; }
+  .tag-input-shell { width: 100%; }
+  .upload-actions .secondary-button, .tag-input-row .secondary-button { width: 100%; }
+  .form-actions { position: sticky; bottom: 0; z-index: 2; margin: 0 -1rem -1rem; padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface-primary) 94%, transparent); backdrop-filter: blur(8px); }
+  .form-actions > button { flex: 1; }
+  .attachment-size { display: none; }
 }
 </style>

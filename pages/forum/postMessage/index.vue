@@ -31,10 +31,7 @@ useHead(() => ({
 }));
 
 const handlePostSuccess = (postId) => {
-  if (returnTo.value) return;
-  setTimeout(() => {
-    router.push(localePath(`/forum/posts/${postId}`));
-  }, 1000);
+  router.replace(returnTo.value || localePath(`/forum/posts/${postId}`));
 };
 </script>
 
