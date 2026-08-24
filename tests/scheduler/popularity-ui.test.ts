@@ -73,7 +73,7 @@ describe('scheduler popularity UI contract', () => {
     expect(summary).not.toContain("t('scheduler.popularityCartLabel')")
     expect(zh).toContain('"popularityCartLabel": "购物车"')
     expect(zh).toContain('"popularityFew": "<5"')
-    expect(zh).toContain('少于 5 人时显示')
+    expect(zh).toContain('"popularityExplanation"')
     expect(zh).not.toContain('"popularitySavedPlansLabel"')
   })
 
