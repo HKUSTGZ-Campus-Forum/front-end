@@ -1778,16 +1778,16 @@
         "publishing": "Publishing…"
       },
       "upload": {
-        "title": "Images, videos, and attachments",
-        "hint": "Paste or drop files for the fastest workflow, or use the buttons below. Images are inserted into the Markdown body; other files appear as post attachments.",
-        "addImages": "Choose images",
+        "title": "Videos and files",
+        "hint": "Use the image button in the Markdown editor above, or paste or drop images directly. Choose videos and other files here, or drop them into the editor.",
         "addFiles": "Choose videos or files",
-        "limits": "Up to 5 images and 30 other attachments. Images and regular files may be up to 10 MB each; videos may be up to 100 MB each.",
+        "limits": "Up to 5 images at 10 MB each. Videos and files share a 30-item limit; videos may be up to 100 MB each and other files up to 10 MB each.",
+        "imageUseEditor": "Use the image button in the Markdown editor above, or paste or drop the image directly.",
+        "cleanupDeferred": "The attachment was removed from the draft. The server will finish cleaning it up later.",
         "queue": "Attachment upload queue",
         "retry": "Retry upload",
         "remove": "Remove {name}",
         "failed": "Upload failed",
-        "deleteFailed": "Could not delete the attachment. Please try again.",
         "wait": "Wait for every attachment to finish uploading before publishing.",
         "resolveErrors": "Some attachments failed to upload. Retry or remove them before publishing.",
         "status": {

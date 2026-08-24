@@ -26,6 +26,7 @@ interface ComposerAttachment {
   record?: FileRecord
   error?: string
   abortController?: AbortController
+  removed?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -54,7 +55,6 @@ const TAG_SEARCH_DEBOUNCE_MS = 280
 const MAX_TAG_SEARCH_SUGGESTIONS = 8
 
 const markdownEditor = ref<{ insertMarkdown: (markdown: string) => void } | null>(null)
-const imageInput = ref<HTMLInputElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const title = ref('')
 const content = ref('')
@@ -63,6 +63,8 @@ const selectedIdentityId = ref<number | null>(null)
 const attachments = ref<ComposerAttachment[]>([])
 const isPublishing = ref(false)
 const errorMessage = ref('')
+const attachmentPickerError = ref('')
+const cleanupNotice = ref('')
 const errors = reactive({ title: '', content: '', tags: '' })
 
 const defaultTags = computed(() => dedupePostTags([...props.lockedTags, ...props.initialTags]))
@@ -303,13 +305,19 @@ const validateIncomingFile = (file: File, kind: AttachmentKind) => {
   return ''
 }
 
+const queueDraftCleanup = (fileId: number) => {
+  void deleteFile(fileId).catch(() => {
+    cleanupNotice.value = t('forum.create.upload.cleanupDeferred')
+  })
+}
+
 const uploadAttachment = async (item: ComposerAttachment) => {
   item.status = 'uploading'
   item.progress = 0
   item.error = undefined
   item.abortController = new AbortController()
   try {
-    item.record = await uploadFile({
+    const record = await uploadFile({
       file: item.source,
       fileType: item.kind === 'image' ? 'post_image' : 'post_attachment',
       entityType: 'post',
@@ -318,9 +326,15 @@ const uploadAttachment = async (item: ComposerAttachment) => {
       signal: item.abortController.signal,
       onProgress: (progress) => { item.progress = Math.round(progress) },
     })
+    if (item.removed) {
+      queueDraftCleanup(record.id)
+      return
+    }
+    item.record = record
     item.status = 'ready'
     item.progress = 100
   } catch (error) {
+    if (item.removed) return
     item.status = 'error'
     item.error = error instanceof Error ? error.message : t('forum.create.upload.failed')
   } finally {
@@ -371,10 +385,19 @@ const handleEditorFiles = async (files: File[], insertImages: boolean) => {
   if (insertImages) insertUploadedImages(added)
 }
 
-const handleFileInput = async (event: Event, shouldInsertImages: boolean) => {
+const openAttachmentPicker = () => {
+  attachmentPickerError.value = ''
+  fileInput.value?.click()
+}
+
+const handleAttachmentInput = async (event: Event) => {
   const input = event.target as HTMLInputElement
-  const added = await addFiles(Array.from(input.files || []))
-  if (shouldInsertImages) insertUploadedImages(added)
+  const selectedFiles = Array.from(input.files || [])
+  const nonImageFiles = selectedFiles.filter((file) => !file.type.startsWith('image/'))
+  attachmentPickerError.value = selectedFiles.length !== nonImageFiles.length
+    ? t('forum.create.upload.imageUseEditor')
+    : ''
+  await addFiles(nonImageFiles)
   input.value = ''
 }
 
@@ -385,19 +408,13 @@ const removeMarkdownReference = (item: ComposerAttachment) => {
   content.value = content.value.split(item.previewUrl).join('')
 }
 
-const removeAttachment = async (item: ComposerAttachment) => {
+const removeAttachment = (item: ComposerAttachment) => {
+  item.removed = true
   item.abortController?.abort()
-  if (item.record) {
-    try {
-      await deleteFile(item.record.id)
-    } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : t('forum.create.upload.deleteFailed')
-      return
-    }
-  }
   removeMarkdownReference(item)
   if (item.previewUrl) URL.revokeObjectURL(item.previewUrl)
   attachments.value = attachments.value.filter((candidate) => candidate.clientId !== item.clientId)
+  if (item.record) queueDraftCleanup(item.record.id)
 }
 
 const materializeMarkdown = () => {
@@ -506,12 +523,12 @@ onBeforeUnmount(() => {
         <p>{{ t('forum.create.upload.hint') }}</p>
       </div>
       <div class="upload-actions">
-        <button type="button" class="secondary-button" @click="imageInput?.click()"><Icon name="lucide:image-plus" aria-hidden="true" />{{ t('forum.create.upload.addImages') }}</button>
-        <button type="button" class="secondary-button" @click="fileInput?.click()"><Icon name="lucide:paperclip" aria-hidden="true" />{{ t('forum.create.upload.addFiles') }}</button>
-        <input ref="imageInput" class="sr-only" type="file" accept="image/*" multiple @change="handleFileInput($event, true)">
-        <input ref="fileInput" class="sr-only" type="file" multiple @change="handleFileInput($event, false)">
+        <button type="button" class="secondary-button" @click="openAttachmentPicker"><Icon name="lucide:paperclip" aria-hidden="true" />{{ t('forum.create.upload.addFiles') }}</button>
+        <input ref="fileInput" class="sr-only" type="file" multiple tabindex="-1" aria-hidden="true" @change="handleAttachmentInput">
       </div>
       <p class="upload-limits">{{ t('forum.create.upload.limits') }}</p>
+      <p v-if="attachmentPickerError" class="upload-message upload-message--error" role="alert"><Icon name="lucide:circle-alert" aria-hidden="true" />{{ attachmentPickerError }}</p>
+      <p v-if="cleanupNotice" class="upload-message" role="status"><Icon name="lucide:info" aria-hidden="true" />{{ cleanupNotice }}</p>
 
       <ul v-if="attachments.length" class="attachment-list" :aria-label="t('forum.create.upload.queue')">
         <li v-for="item in attachments" :key="item.clientId" class="attachment-item">
@@ -617,6 +634,8 @@ input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 
 .upload-panel { display: grid; gap: 1rem; padding: 1rem; border: 1px dashed var(--border-primary); border-radius: .85rem; background: color-mix(in srgb, var(--interactive-primary) 3%, var(--surface-primary)); }
 .upload-copy h2 { margin: 0 0 .25rem; color: var(--text-primary); font-size: .95rem; }
 .upload-copy p { margin: 0; color: var(--text-secondary); font-size: .86rem; line-height: 1.55; }
+.upload-message { display: flex; align-items: flex-start; gap: .4rem; margin: 0; color: var(--text-secondary); font-size: .82rem; line-height: 1.5; }
+.upload-message--error { color: var(--semantic-error); }
 .upload-actions, .tag-input-row, .form-actions { display: flex; gap: .75rem; }
 .secondary-button, .cancel-button, .primary-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; padding: .65rem 1rem; border-radius: .65rem; font: inherit; font-weight: 650; cursor: pointer; transition: background .15s ease, border-color .15s ease, opacity .15s ease; }
 .secondary-button, .cancel-button { border: 1px solid var(--border-primary); background: var(--surface-primary); color: var(--text-primary); }
@@ -636,8 +655,9 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .attachment-status--ready { color: var(--semantic-success); }
 .progress-track { height: 4px; margin: .4rem 0 .25rem; overflow: hidden; border-radius: 999px; background: var(--surface-secondary); }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--interactive-primary); transition: width .15s linear; }
-.icon-action { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 0; border-radius: .55rem; background: transparent; color: var(--text-muted); cursor: pointer; }
+.icon-action { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: .55rem; background: transparent; color: var(--text-muted); cursor: pointer; }
 .icon-action:hover { background: var(--surface-secondary); color: var(--text-primary); }
+.icon-action:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 .tag-input-shell { position: relative; flex: 1; min-width: 0; }
 .tag-input-shell > input { width: 100%; }
 .tag-suggestions { position: absolute; z-index: 20; top: calc(100% + .35rem); left: 0; right: 0; max-height: 15rem; overflow-y: auto; padding: .35rem; border: 1px solid var(--border-primary); border-radius: .7rem; background: var(--surface-primary); box-shadow: 0 12px 30px color-mix(in srgb, var(--text-primary) 12%, transparent); }
@@ -664,5 +684,6 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .form-actions { position: sticky; bottom: 0; z-index: 2; margin: 0 -1rem -1rem; padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface-primary) 94%, transparent); backdrop-filter: blur(8px); }
   .form-actions > button { flex: 1; }
   .attachment-size { display: none; }
+  .icon-action { width: 44px; height: 44px; }
 }
 </style>
