@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import CourseUniverseCanvas from './CourseUniverseCanvas.vue'
-import CourseUniverseLegend from './CourseUniverseLegend.vue'
+import CourseUniverseExplorer from './CourseUniverseExplorer.vue'
 import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import {
@@ -197,11 +196,17 @@ onMounted(loadUniverse)
       :mode="mode"
     />
 
-    <div v-if="loading" class="cu-page__state">
-      {{ t('courseUniverse.loading') }}
+    <div v-if="loading" class="cu-page__state cu-page__state--loading" aria-busy="true">
+      <span class="cu-page__skeleton cu-page__skeleton--title" />
+      <span class="cu-page__skeleton cu-page__skeleton--controls" />
+      <span class="cu-page__skeleton cu-page__skeleton--body" />
+      <span class="sr-only">{{ t('courseUniverse.loading') }}</span>
     </div>
     <div v-else-if="errorMessage" class="cu-page__state cu-page__state--error">
-      {{ errorMessage }}
+      <p>{{ errorMessage }}</p>
+      <button type="button" @click="loadUniverse">
+        {{ t('courseUniverse.actions.retry') }}
+      </button>
     </div>
 
     <template v-else>
@@ -213,17 +218,13 @@ onMounted(loadUniverse)
       <p v-if="cartMessage" :class="['cu-page__notice', `is-${cartNoticeTone}`]">
         {{ cartMessage }}
       </p>
-      <div class="cu-page__graph">
-        <CourseUniverseLegend class="cu-page__legend" />
-        <CourseUniverseCanvas
-          :components="components"
-          :nodes="nodes"
-          :lines="lines"
-          search-query=""
-          @select="selectedCourseCode = $event"
-          @toggle-planner="togglePlannerCourse"
-        />
-      </div>
+      <CourseUniverseExplorer
+        :components="components"
+        :nodes="nodes"
+        :lines="lines"
+        @select="selectedCourseCode = $event || null"
+        @toggle-planner="togglePlannerCourse"
+      />
     </template>
   </div>
 </template>
@@ -231,7 +232,7 @@ onMounted(loadUniverse)
 <style scoped lang="scss">
 .cu-page {
   margin: 0 auto;
-  max-width: 1100px;
+  max-width: 1180px;
   padding: 24px 20px 28px;
 }
 
@@ -244,16 +245,59 @@ onMounted(loadUniverse)
   display: flex;
   justify-content: center;
   min-height: 260px;
+  padding: 24px;
 }
 
 .cu-page__state--error {
   color: var(--semantic-error);
+  flex-direction: column;
+  gap: 12px;
 }
 
-.cu-page__graph {
+.cu-page__state--error p {
+  margin: 0;
+}
+
+.cu-page__state--error button {
+  appearance: none;
+  background: var(--btn-primary-bg);
+  border: 1px solid var(--interactive-primary);
+  border-radius: 10px;
+  color: var(--text-inverse);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 750;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.cu-page__state--loading {
+  align-items: stretch;
   display: grid;
-  gap: 10px;
-  min-width: 0;
+  gap: 14px;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1fr);
+}
+
+.cu-page__skeleton {
+  animation: cu-page-pulse 1.4s ease-in-out infinite;
+  background: var(--surface-secondary);
+  border-radius: 10px;
+  display: block;
+}
+
+.cu-page__skeleton--title,
+.cu-page__skeleton--controls {
+  height: 70px;
+}
+
+.cu-page__skeleton--body {
+  grid-column: 1 / -1;
+  height: 360px;
+}
+
+@keyframes cu-page-pulse {
+  50% { opacity: 0.55; }
 }
 
 .cu-page__notice {
@@ -295,13 +339,25 @@ onMounted(loadUniverse)
   color: var(--semantic-error);
 }
 
-.cu-page__legend {
-  min-width: 0;
-}
-
 @media (max-width: 980px) {
   .cu-page {
     padding: 16px 14px 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cu-page__state--loading {
+    grid-template-columns: 1fr;
+  }
+
+  .cu-page__skeleton--body {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cu-page__skeleton {
+    animation: none;
   }
 }
 </style>

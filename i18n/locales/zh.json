@@ -1171,6 +1171,32 @@
       "fallback": "历史图谱备用数据",
       "summary": "{courses} 门课程 · {relationships} 条关系"
     },
+    "explorer": {
+      "ariaLabel": "课程关系浏览器",
+      "title": "查找课程关系",
+      "description": "先选择课程或学科，再查看真正相关的先修、共修和互斥关系。",
+      "searchLabel": "搜索课程",
+      "searchPlaceholder": "输入课程代码或名称",
+      "clearSearch": "清空课程搜索",
+      "subjectLabel": "按学科浏览",
+      "chooseSubject": "选择学科",
+      "hasRelationships": "有课程关系",
+      "noRelationshipsShort": "暂无已知关系",
+      "noSearchResults": "没有找到匹配课程。",
+      "directoryTitle": "全部学科",
+      "directoryDescription": "按字母排序并完整展示，每个学科都可直接进入。",
+      "subjectCount": "{count} 个学科",
+      "courseCount": "{count} 门课程",
+      "relatedCount": "{count} 门有关系",
+      "courseView": "课程视图",
+      "subjectView": "学科视图",
+      "subjectSummary": "{related}/{total} 门课程有结构化关系",
+      "backToDirectory": "返回全部学科",
+      "noRelationships": "目前没有找到 {course} 的结构化课程关系，你仍可进入课程页面查看完整信息。",
+      "noGraph": "当前范围暂无可绘制的课程关系。",
+      "isolatedTitle": "暂无已知关系的课程",
+      "isolatedDescription": "这些课程仍可查看，但不会占用图谱画布。"
+    },
     "modes": {
       "universe": "图谱",
       "explore": "探索",
@@ -1213,7 +1239,8 @@
       "fitGraph": "适配全图",
       "focusSelection": "定位选中课程",
       "detailsShort": "详情",
-      "showDetails": "显示详情"
+      "showDetails": "显示详情",
+      "retry": "重新加载图谱"
     },
     "detail": {
       "currentSelection": "当前选择",

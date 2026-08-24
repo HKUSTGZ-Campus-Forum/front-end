@@ -11,6 +11,9 @@ import {
   layoutCourseUniverseGraphComponents,
   buildCourseUniverseModePath,
   buildCourseUniversePrefixOptions,
+  buildCourseUniverseRelationshipCourseCodeSet,
+  buildCourseUniverseRelationalComponentSet,
+  buildCourseUniverseSubjectOptions,
   buildCourseUniverseSupplementalComponentSet,
   buildCourseUniverseVisibleComponentSet,
   buildCourseUniverseVisibleCodeSet,
@@ -434,8 +437,8 @@ describe('course universe helpers', () => {
 
     expect(viewBox.width).toBeLessThan(2300)
     expect(192 * (1200 / viewBox.width)).toBeGreaterThan(105)
-    expect(viewBox.centerX).toBe(2100)
-    expect(viewBox.centerY).toBe(600)
+    expect(viewBox.centerX).toBe(2100 + COURSE_UNIVERSE_COURSE_WIDTH / 2)
+    expect(viewBox.centerY).toBe(600 + COURSE_UNIVERSE_COURSE_HEIGHT / 2)
   })
 
   it('fits the full graph as an explicit overview action', () => {
@@ -457,13 +460,15 @@ describe('course universe helpers', () => {
     const viewport = fitCourseUniverseViewport({ nodes, canvasSize, padding: 150 })
     const overviewViewport = fitCourseUniverseViewport({ nodes, canvasSize })
     const viewBox = getCourseUniverseViewBox(viewport, canvasSize)
-    const xs = nodes.map(node => node.x)
-    const ys = nodes.map(node => node.y)
+    const leftEdges = nodes.map(node => node.x)
+    const rightEdges = nodes.map(node => node.x + COURSE_UNIVERSE_COURSE_WIDTH)
+    const topEdges = nodes.map(node => node.y)
+    const bottomEdges = nodes.map(node => node.y + COURSE_UNIVERSE_COURSE_HEIGHT)
 
-    expect(Math.min(...xs)).toBeGreaterThanOrEqual(viewBox.x)
-    expect(Math.max(...xs)).toBeLessThanOrEqual(viewBox.x + viewBox.width)
-    expect(Math.min(...ys)).toBeGreaterThanOrEqual(viewBox.y)
-    expect(Math.max(...ys)).toBeLessThanOrEqual(viewBox.y + viewBox.height)
+    expect(Math.min(...leftEdges)).toBeGreaterThanOrEqual(viewBox.x)
+    expect(Math.max(...rightEdges)).toBeLessThanOrEqual(viewBox.x + viewBox.width)
+    expect(Math.min(...topEdges)).toBeGreaterThanOrEqual(viewBox.y)
+    expect(Math.max(...bottomEdges)).toBeLessThanOrEqual(viewBox.y + viewBox.height)
     expect(viewport.zoom).toBeGreaterThan(overviewViewport.zoom)
   })
 
@@ -496,10 +501,57 @@ describe('course universe helpers', () => {
     expect(getCourseUniverseNodePrefix('DLED2010A')).toBe('DLED')
   })
 
-  it('builds prefix options sorted by graph density', () => {
-    expect(buildCourseUniversePrefixOptions(prefixNodes, 2)).toEqual([
-      { prefix: 'UCUG', count: 2 },
+  it('builds the complete subject directory alphabetically without hiding UFUG', () => {
+    expect(buildCourseUniversePrefixOptions(prefixNodes)).toEqual([
       { prefix: 'AIAA', count: 1 },
+      { prefix: 'DLED', count: 1 },
+      { prefix: 'UCUG', count: 2 },
+      { prefix: 'UFUG', count: 1 },
+    ])
+    expect(buildCourseUniversePrefixOptions(prefixNodes, 2)).toHaveLength(2)
+  })
+
+  it('counts relationship-bearing and isolated courses for every subject', () => {
+    const relationshipCourseCodes = new Set(['AIAA2205', 'UFUG1101', 'UCUG1051'])
+
+    expect(buildCourseUniverseSubjectOptions({ nodes: prefixNodes, relationshipCourseCodes })).toEqual([
+      { prefix: 'AIAA', count: 1, relatedCount: 1, isolatedCount: 0 },
+      { prefix: 'DLED', count: 1, relatedCount: 0, isolatedCount: 1 },
+      { prefix: 'UCUG', count: 2, relatedCount: 1, isolatedCount: 1 },
+      { prefix: 'UFUG', count: 1, relatedCount: 1, isolatedCount: 0 },
+    ])
+  })
+
+  it('recognizes detached corequisite and exclusion endpoints as real relationships', () => {
+    const relationshipCourseCodes = buildCourseUniverseRelationshipCourseCodeSet({
+      components: detachedRelationComponents,
+      lines: detachedRelationLines,
+    })
+
+    expect([...relationshipCourseCodes].sort()).toEqual([
+      'AMAT2040',
+      'AMAT2450',
+      'UCUG1052',
+      'UCUG1053',
+    ])
+  })
+
+  it('removes isolated course cards and orphan logic nodes from the graph canvas', () => {
+    const relationshipCourseCodes = buildCourseUniverseRelationshipCourseCodeSet({
+      components: isolatedComponents,
+      lines: isolatedLines,
+    })
+    const visible = buildCourseUniverseRelationalComponentSet({
+      components: isolatedComponents,
+      lines: isolatedLines,
+      candidateComponentIds: new Set(isolatedComponents.map(component => component.id)),
+      relationshipCourseCodes,
+    })
+
+    expect([...visible].sort()).toEqual([
+      '(UCUG1050|UCUG1051)',
+      'UCUG1050',
+      'UCUG1051',
     ])
   })
 
@@ -596,8 +648,9 @@ describe('course universe helpers', () => {
     })
     const byId = new Map(laidOut.map(component => [component.id, component]))
 
-    expect(byId.get('UCUG1051')?.y_coordinate).toBe(100 + COURSE_UNIVERSE_COURSE_HEIGHT + 24)
-    expect(byId.get('UCUG1052')?.y_coordinate).toBe(100 + (COURSE_UNIVERSE_COURSE_HEIGHT + 24) * 2)
+    expect(byId.get('UCUG1050')?.y_coordinate).toBe(80)
+    expect(byId.get('UCUG1051')?.y_coordinate).toBe(80 + COURSE_UNIVERSE_COURSE_HEIGHT + 24)
+    expect(byId.get('UCUG1052')?.y_coordinate).toBe(80 + (COURSE_UNIVERSE_COURSE_HEIGHT + 24) * 2)
   })
 
   it('packs isolated visible courses into an aligned multi-column gallery', () => {

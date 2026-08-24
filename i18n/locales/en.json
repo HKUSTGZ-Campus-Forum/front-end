@@ -1171,6 +1171,32 @@
       "fallback": "Legacy graph fallback",
       "summary": "{courses} courses · {relationships} relationships"
     },
+    "explorer": {
+      "ariaLabel": "Course relationship browser",
+      "title": "Find course relationships",
+      "description": "Choose a course or subject first, then inspect the prerequisite, corequisite, and exclusion relationships that matter.",
+      "searchLabel": "Search courses",
+      "searchPlaceholder": "Enter a course code or title",
+      "clearSearch": "Clear course search",
+      "subjectLabel": "Browse by subject",
+      "chooseSubject": "Choose a subject",
+      "hasRelationships": "Has course relationships",
+      "noRelationshipsShort": "No known relationships",
+      "noSearchResults": "No matching courses found.",
+      "directoryTitle": "All subjects",
+      "directoryDescription": "Alphabetical and complete, so every subject is directly accessible.",
+      "subjectCount": "{count} subjects",
+      "courseCount": "{count} courses",
+      "relatedCount": "{count} with relationships",
+      "courseView": "Course view",
+      "subjectView": "Subject view",
+      "subjectSummary": "{related} of {total} courses have structured relationships",
+      "backToDirectory": "Back to all subjects",
+      "noRelationships": "No structured relationships are currently known for {course}. You can still open its course page for full details.",
+      "noGraph": "There are no course relationships to draw in this view.",
+      "isolatedTitle": "Courses with no known relationships",
+      "isolatedDescription": "These courses remain available without taking space in the graph canvas."
+    },
     "modes": {
       "universe": "Course Map",
       "explore": "Explore",
@@ -1213,7 +1239,8 @@
       "fitGraph": "Fit graph",
       "focusSelection": "Focus selected course",
       "detailsShort": "Details",
-      "showDetails": "Show details"
+      "showDetails": "Show details",
+      "retry": "Reload graph"
     },
     "detail": {
       "currentSelection": "Current selection",

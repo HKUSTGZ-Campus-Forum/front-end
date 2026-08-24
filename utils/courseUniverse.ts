@@ -99,6 +99,11 @@ export interface CourseUniversePrefixOption {
   count: number
 }
 
+export interface CourseUniverseSubjectOption extends CourseUniversePrefixOption {
+  relatedCount: number
+  isolatedCount: number
+}
+
 export interface CourseUniverseRenderComponent {
   id: string
   kind: 'course' | 'logic'
@@ -436,7 +441,7 @@ export function layoutCourseUniverseGraphComponents(input: {
     const columnX = getCourseUniverseAlignedColumnX(column)
     const sortedColumn = column
       .sort((a, b) => a.y_coordinate - b.y_coordinate || a.x_coordinate - b.x_coordinate || a.id.localeCompare(b.id))
-    const compactStartY = sortedColumn[0]?.y_coordinate || 0
+    const compactStartY = 80
     sortedColumn
       .forEach((component, index) => {
         const next = laidOut.get(component.id)
@@ -458,11 +463,13 @@ export function layoutCourseUniverseGraphComponents(input: {
     const connectedMaxY = visibleLaidOutCourses.length
       ? Math.max(...visibleLaidOutCourses.map(component => component.y_coordinate))
       : Math.min(...isolatedCourses.map(component => component.y_coordinate)) - COURSE_UNIVERSE_COURSE_HEIGHT - 160
-    const columnCount = Math.min(10, Math.max(1, Math.ceil(isolatedCourses.length / 3)))
+    const columnCount = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(isolatedCourses.length))))
     const columnGap = COURSE_UNIVERSE_COURSE_WIDTH + 52
     const rowGap = COURSE_UNIVERSE_COURSE_HEIGHT + 24
     const startX = Math.round(connectedMinX)
-    const startY = Math.round(connectedMaxY + COURSE_UNIVERSE_COURSE_HEIGHT + 96)
+    const startY = visibleLaidOutCourses.length
+      ? Math.round(connectedMaxY + COURSE_UNIVERSE_COURSE_HEIGHT + 96)
+      : 80
 
     isolatedCourses
       .sort((a, b) => getCourseUniverseComponentCourseCode(a.id).localeCompare(
@@ -525,6 +532,18 @@ export function layoutCourseUniverseGraphComponents(input: {
     })
   }
 
+  const visibleComponents = [...laidOut.values()].filter(component => visibleIds.has(component.id))
+  if (visibleComponents.length) {
+    const minX = Math.min(...visibleComponents.map(component => component.x_coordinate))
+    const minY = Math.min(...visibleComponents.map(component => component.y_coordinate))
+    const offsetX = 96 - minX
+    const offsetY = 80 - minY
+    visibleComponents.forEach((component) => {
+      component.x_coordinate += offsetX
+      component.y_coordinate += offsetY
+    })
+  }
+
   return input.components.map(component => laidOut.get(component.id) || component)
 }
 
@@ -570,6 +589,9 @@ function expandCourseUniverseRequiredPrerequisiteBranches(input: {
   supplementalComponentIds?: Set<string>
 }) {
   const componentById = new Map(input.components.map(component => [component.id, component]))
+  const courseComponentIds = new Set(input.components
+    .filter(component => component.category === 0)
+    .map(component => component.id))
   const incomingPrerequisite = new Map<string, Set<string>>()
   input.lines.forEach(line => {
     if (line.category !== 1) return
@@ -587,9 +609,17 @@ function expandCourseUniverseRequiredPrerequisiteBranches(input: {
 
     const requiredBranchIds = incomingPrerequisite.get(id) || new Set<string>()
     requiredBranchIds.forEach(branchId => {
-      const branchComponents = new Set<string>([branchId])
-      traverseCourseUniverseComponents(branchId, incomingPrerequisite)
-        .forEach(componentId => branchComponents.add(componentId))
+      const branchComponents = new Set<string>()
+      const branchQueue = [branchId]
+      while (branchQueue.length) {
+        const componentId = branchQueue.shift()
+        if (!componentId || branchComponents.has(componentId)) continue
+        branchComponents.add(componentId)
+        if (courseComponentIds.has(componentId)) continue
+        incomingPrerequisite.get(componentId)?.forEach(nextId => {
+          if (!branchComponents.has(nextId)) branchQueue.push(nextId)
+        })
+      }
 
       branchComponents.forEach(componentId => {
         const wasVisible = input.componentIds.has(componentId)
@@ -822,12 +852,14 @@ export function getCourseUniverseBounds(nodes: CourseUniverseNode[], padding = 3
     }
   }
 
-  const xs = nodes.map(node => node.x)
-  const ys = nodes.map(node => node.y)
-  const minX = Math.min(...xs) - padding
-  const minY = Math.min(...ys) - padding
-  const maxX = Math.max(...xs) + padding
-  const maxY = Math.max(...ys) + padding
+  const minX = Math.min(...nodes.map(node => node.x)) - padding
+  const minY = Math.min(...nodes.map(node => node.y)) - padding
+  const maxX = Math.max(...nodes.map(node => (
+    node.x + (node.category === 0 ? COURSE_UNIVERSE_COURSE_WIDTH : 0)
+  ))) + padding
+  const maxY = Math.max(...nodes.map(node => (
+    node.y + (node.category === 0 ? COURSE_UNIVERSE_COURSE_HEIGHT : 0)
+  ))) + padding
   const width = maxX - minX
   const height = maxY - minY
 
@@ -932,7 +964,7 @@ export function getCourseUniverseViewBox(
 
 export function buildCourseUniversePrefixOptions(
   nodes: CourseUniverseNode[],
-  limit = 12,
+  limit?: number,
 ): CourseUniversePrefixOption[] {
   const counts = new Map<string, number>()
   nodes.forEach(node => {
@@ -940,10 +972,123 @@ export function buildCourseUniversePrefixOptions(
     counts.set(prefix, (counts.get(prefix) || 0) + 1)
   })
 
-  return [...counts.entries()]
+  const options = [...counts.entries()]
     .map(([prefix, count]) => ({ prefix, count }))
-    .sort((a, b) => b.count - a.count || a.prefix.localeCompare(b.prefix))
-    .slice(0, limit)
+    .sort((a, b) => a.prefix.localeCompare(b.prefix))
+
+  return typeof limit === 'number' ? options.slice(0, limit) : options
+}
+
+export function buildCourseUniverseRelationshipCourseCodeSet(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+}) {
+  const componentById = new Map(input.components.map(component => [component.id, component]))
+  const courseCodes = new Set(input.components
+    .filter(component => component.category === 0)
+    .map(component => getCourseUniverseComponentCourseCode(component.id)))
+  const relatedCodes = new Set<string>()
+
+  input.lines.forEach(line => {
+    const endpointIds = [line.start_id, line.end_id]
+    endpointIds.forEach((componentId) => {
+      const component = componentById.get(componentId)
+      if (!component) return
+      if (component.category === 0) {
+        relatedCodes.add(getCourseUniverseComponentCourseCode(component.id))
+        return
+      }
+      getCourseUniverseCodesInComponentId(component.id).forEach(code => {
+        if (courseCodes.has(code)) relatedCodes.add(code)
+      })
+    })
+  })
+
+  return relatedCodes
+}
+
+export function buildCourseUniverseSubjectOptions(input: {
+  nodes: CourseUniverseNode[]
+  relationshipCourseCodes: Set<string>
+}): CourseUniverseSubjectOption[] {
+  const counts = new Map<string, { count: number; relatedCount: number }>()
+  input.nodes.forEach((node) => {
+    const prefix = getCourseUniverseNodePrefix(node.code)
+    const current = counts.get(prefix) || { count: 0, relatedCount: 0 }
+    current.count += 1
+    if (input.relationshipCourseCodes.has(node.code)) current.relatedCount += 1
+    counts.set(prefix, current)
+  })
+
+  return [...counts.entries()]
+    .map(([prefix, value]) => ({
+      prefix,
+      count: value.count,
+      relatedCount: value.relatedCount,
+      isolatedCount: value.count - value.relatedCount,
+    }))
+    .sort((a, b) => a.prefix.localeCompare(b.prefix))
+}
+
+export function buildCourseUniverseRelationalComponentSet(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  candidateComponentIds: Set<string>
+  relationshipCourseCodes: Set<string>
+  alwaysIncludeCourseCodes?: Set<string>
+}) {
+  const keptIds = new Set<string>()
+  input.components.forEach((component) => {
+    if (!input.candidateComponentIds.has(component.id)) return
+    if (component.category !== 0) {
+      keptIds.add(component.id)
+      return
+    }
+    const code = getCourseUniverseComponentCourseCode(component.id)
+    if (
+      input.relationshipCourseCodes.has(code)
+      || input.alwaysIncludeCourseCodes?.has(code)
+    ) {
+      keptIds.add(component.id)
+    }
+  })
+
+  let changed = true
+  while (changed) {
+    changed = false
+    const connectedIds = new Set<string>()
+    input.lines.forEach((line) => {
+      if (!keptIds.has(line.start_id) || !keptIds.has(line.end_id)) return
+      connectedIds.add(line.start_id)
+      connectedIds.add(line.end_id)
+    })
+    input.components.forEach((component) => {
+      if (
+        component.category !== 0
+        && keptIds.has(component.id)
+        && !connectedIds.has(component.id)
+      ) {
+        keptIds.delete(component.id)
+        changed = true
+      }
+    })
+  }
+
+  return keptIds
+}
+
+export function getCourseUniverseIsolatedSubjectNodes(input: {
+  nodes: CourseUniverseNode[]
+  prefix: string
+  relationshipCourseCodes: Set<string>
+}) {
+  if (!input.prefix) return []
+  return input.nodes
+    .filter(node => (
+      getCourseUniverseNodePrefix(node.code) === input.prefix
+      && !input.relationshipCourseCodes.has(node.code)
+    ))
+    .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }))
 }
 
 export function getCourseUniverseNodeStatusKey(input: {
