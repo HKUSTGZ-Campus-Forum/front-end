@@ -307,7 +307,10 @@ const planCountLabel = computed(() => {
     : t('scheduler.planCountIncomplete', { count: planList.value.length })
 })
 const enabledCourses = computed(() => courseList.value.filter(course => course.enabled))
-const totalCredits = computed(() => enabledCourses.value.reduce((sum, course) => sum + course.credit, 0))
+const totalCredits = computed(() => enabledCourses.value.reduce(
+  (sum, course) => sum + (course.term_load_credit ?? course.credit),
+  0,
+))
 
 const currentPlan = computed(() => {
   const plan = planList.value[viewIndex.value - 1]
@@ -356,6 +359,15 @@ const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: strin
       description: t('scheduler.unavailableLayer', {
         course: solverResult.value.courseCode,
         layer: solverResult.value.layer,
+      }),
+    }
+  }
+  if (solverResult.value.status === 'unavailable-selection-group') {
+    return {
+      level: 'error',
+      title: t('scheduler.unavailableLayerTitle'),
+      description: t('scheduler.unavailableModuleGroup', {
+        course: solverResult.value.courseCode,
       }),
     }
   }

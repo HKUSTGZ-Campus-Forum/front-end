@@ -39,7 +39,6 @@ const emit = defineEmits<{
   (e: 'show-history', code: string): void
 }>()
 
-const activeTab = ref<'main' | 'klms'>('main')
 const { t } = useI18n()
 const displayOptionKeys: DisplayOption[] = ['name', 'section', 'location', 'instructor', 'duration']
 
@@ -69,25 +68,20 @@ function onDocumentMouseDown(event: MouseEvent) {
 onMounted(() => document.addEventListener('mousedown', onDocumentMouseDown))
 onUnmounted(() => document.removeEventListener('mousedown', onDocumentMouseDown))
 
-const filteredCourses = computed(() => {
-  if (activeTab.value === 'klms') return props.courseList.filter(c => c.klms_course)
-  return props.courseList.filter(c => !c.klms_course)
-})
-
 const currentSelectionMap = computed(() => {
-  const map: Record<string, Record<number, number>> = {}
+  const map: Record<string, string[]> = {}
   for (const sel of props.currentPlan) {
     const course = props.courseList[sel.courseIndex]
     if (course) {
-      map[course.course_code] ||= {}
-      map[course.course_code][sel.layer] = sel.bundleId
+      map[course.course_code] ||= []
+      map[course.course_code].push(`${sel.layer}:${sel.bundleId}`)
     }
   }
   return map
 })
 
 const totalCredits = computed(() =>
-  props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + c.credit, 0)
+  props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + (c.term_load_credit ?? c.credit), 0)
 )
 
 function updateDisplayOption(key: DisplayOption, event: Event) {
@@ -98,20 +92,17 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 <template>
   <div class="side-panel">
     <div class="side-panel__header">
-      <div class="side-panel__tabs">
-        <button type="button" :class="{ active: activeTab === 'main' }" @click="activeTab = 'main'">{{ t('scheduler.main') }}</button>
-        <button type="button" :class="{ active: activeTab === 'klms' }" @click="activeTab = 'klms'">{{ t('scheduler.klms') }}</button>
-      </div>
-      <div class="side-panel__credits">{{ t('scheduler.credits', { count: totalCredits }) }}</div>
+      <div class="side-panel__title">{{ t('scheduler.selectedCourses') }} · {{ courseList.length }}</div>
+      <div class="side-panel__credits">{{ t('scheduler.termLoadCredits', { count: totalCredits }) }}</div>
     </div>
 
     <div class="side-panel__list">
       <SchedulerCourseCard
-        v-for="course in filteredCourses"
+        v-for="course in courseList"
         :key="course.course_code"
         :course="course"
         :semester-id="semesterId"
-        :current-selection="currentSelectionMap[course.course_code]"
+        :current-selection-keys="currentSelectionMap[course.course_code]"
         :popularity="getSchedulerCoursePopularity(popularityByCourse, course.course_code)"
         :show-popularity="showPopularity"
         :mutations-disabled="mutationsDisabled"
@@ -124,7 +115,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         @clear-preview="emit('clear-preview')"
         @show-history="(...args) => emit('show-history', ...args)"
       />
-      <div v-if="filteredCourses.length === 0" class="side-panel__empty">
+      <div v-if="courseList.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>
         <p>{{ t('scheduler.emptyCartDescription') }}</p>
         <button type="button" class="side-panel__empty-btn" :disabled="mutationsDisabled" @click="emit('open-cart')">
@@ -253,35 +244,11 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     background: var(--surface-secondary);
   }
 
-  &__tabs {
-    display: flex;
-    gap: 4px;
-    padding: 3px;
-    border: 1px solid var(--border-secondary);
-    border-radius: 11px;
-    background: var(--surface-primary);
-
-    button {
-      min-height: 34px;
-      padding: 0 12px;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      transition: background 0.16s ease, color 0.16s ease;
-
-      &.active {
-        background: var(--scheduler-tab-active-bg);
-        color: var(--scheduler-tab-active-text);
-      }
-
-      &:not(.active):hover {
-        background: color-mix(in srgb, var(--surface-secondary) 70%, transparent);
-      }
-    }
+  &__title {
+    min-width: 0;
+    font-size: 0.84rem;
+    font-weight: 750;
+    color: var(--text-primary);
   }
 
   &__credits {

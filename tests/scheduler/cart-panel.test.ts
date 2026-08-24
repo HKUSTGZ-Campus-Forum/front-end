@@ -107,7 +107,8 @@ describe('scheduler cart panel', () => {
 
     expect(cartPanelSource).toContain('creditColorVar')
     expect(cartPanelSource).toContain('--credit-level-')
-    expect(cartPanelSource).toContain('creditColorVar(item.credit)')
+    expect(cartPanelSource).toContain('creditColorVar(item.credit, item.counts_toward_term_load)')
+    expect(cartPanelSource).toContain('--credit-excluded')
   })
 
   it('offers the course info popover on search results and drawer items', () => {

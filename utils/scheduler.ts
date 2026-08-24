@@ -37,6 +37,8 @@ export interface CourseDetail {
   course_title: string
   course_title_abbr: string | null
   credit: number
+  counts_toward_term_load?: boolean
+  term_load_credit?: number
   subject: string | null
   catalog_number: string | null
   course_desc: string | null
@@ -45,6 +47,7 @@ export interface CourseDetail {
   exclusion: string | null
   pg_course: boolean
   klms_course: boolean
+  selection_policy?: CourseSelectionPolicy
   sections: SchedulerSection[]
 }
 
@@ -53,6 +56,28 @@ export interface BundleData {
   layer: number
   enabled: boolean
   sections: SchedulerSection[]
+}
+
+export interface SchedulerSelectionGroup {
+  id: string
+  role: 'required' | 'elective' | 'section'
+  min_select: number
+  max_select: number
+  module_codes?: string[]
+  layers?: number[]
+}
+
+export interface SchedulerModule {
+  code: string
+  title: string
+  credit: number | null
+  available: boolean
+}
+
+export interface CourseSelectionPolicy {
+  kind: 'layer' | 'module'
+  groups: SchedulerSelectionGroup[]
+  modules: SchedulerModule[]
 }
 
 /** Keep the official section name intact so alternatives such as LA2A/LA2B
@@ -67,10 +92,13 @@ export interface CartCourse {
   course_code: string
   course_title: string
   credit: number
+  counts_toward_term_load?: boolean
+  term_load_credit?: number
   subject: string | null
   pg_course: boolean
   klms_course: boolean
   enabled: boolean
+  selection_policy?: CourseSelectionPolicy
   layers: Record<number, BundleData[]>
 }
 
@@ -78,6 +106,8 @@ export interface SearchResult {
   course_code: string
   course_title: string
   credit: number
+  counts_toward_term_load?: boolean
+  term_load_credit?: number
   subject: string | null
 }
 
@@ -582,6 +612,7 @@ export type SolverResult =
   | { status: 'empty-cart'; plans: [] }
   | { status: 'all-disabled'; plans: [] }
   | { status: 'unavailable-layer'; plans: []; courseCode: string; layer: number }
+  | { status: 'unavailable-selection-group'; plans: []; courseCode: string; groupId: string }
   | { status: 'search-limit'; plans: []; searchNodeLimit: number }
   | { status: 'no-solution'; plans: [] }
 
@@ -673,14 +704,90 @@ export function solvePlans(
   const choices: {
     courseIndex: number
     courseCode: string
-    layer: number
-    bundles: { selection: PlanSelection; lectures: SchedulerLecture[] }[]
+    groupId: string
+    options: { selections: PlanSelection[]; lectures: SchedulerLecture[] }[]
   }[] = []
+
+  function selectionsAreCompatible(lectures: SchedulerLecture[]): boolean {
+    return lectures.every((lecture, index) =>
+      !lectures.slice(index + 1).some(other => schedulerLecturesOverlap(lecture, other)),
+    )
+  }
+
+  function combinations<T>(items: T[], count: number): T[][] {
+    if (count === 0) return [[]]
+    if (items.length < count) return []
+    return items.flatMap((item, index) =>
+      combinations(items.slice(index + 1), count - 1).map(rest => [item, ...rest]),
+    )
+  }
+
+  function products<T>(groups: T[][]): T[][] {
+    return groups.reduce<T[][]>(
+      (acc, group) => acc.flatMap(prefix => group.map(item => [...prefix, item])),
+      [[]],
+    )
+  }
 
   for (const { course, courseIndex } of enabledCourses) {
     const layers = Object.entries(course.layers)
       .map(([layerText, bundles]) => ({ layer: Number(layerText), bundles }))
       .sort((a, b) => a.layer - b.layer)
+
+    if (course.selection_policy?.kind === 'module') {
+      const moduleCandidates = new Map<string, {
+        selection: PlanSelection
+        lectures: SchedulerLecture[]
+      }[]>()
+      for (const { layer, bundles: layerBundles } of layers) {
+        for (const bundle of layerBundles.filter(bundle => bundle.enabled)) {
+          const moduleCodes = new Set(bundle.sections.map(section => section.section_type.trim().toUpperCase()))
+          if (moduleCodes.size !== 1) continue
+          const moduleCode = [...moduleCodes][0]
+          const lectures = bundle.sections.flatMap(section => section.lectures)
+          if (overlapsBanned(lectures, bannedPeriods)) continue
+          const candidates = moduleCandidates.get(moduleCode) || []
+          candidates.push({
+            selection: { courseIndex, layer, bundleId: bundle.id },
+            lectures,
+          })
+          moduleCandidates.set(moduleCode, candidates)
+        }
+      }
+
+      for (const group of course.selection_policy.groups) {
+        const moduleCodes = (group.module_codes || []).filter(code => moduleCandidates.has(code))
+        const options: { selections: PlanSelection[]; lectures: SchedulerLecture[] }[] = []
+        for (let count = group.min_select; count <= group.max_select; count += 1) {
+          for (const selectedModules of combinations(moduleCodes, count)) {
+            const candidateGroups = selectedModules.map(code => moduleCandidates.get(code) || [])
+            for (const selectedCandidates of products(candidateGroups)) {
+              const lectures = selectedCandidates.flatMap(candidate => candidate.lectures)
+              if (!selectionsAreCompatible(lectures)) continue
+              options.push({
+                selections: selectedCandidates.map(candidate => candidate.selection),
+                lectures,
+              })
+            }
+          }
+        }
+        if (options.length === 0) {
+          return {
+            status: 'unavailable-selection-group',
+            plans: [],
+            courseCode: course.course_code,
+            groupId: group.id,
+          }
+        }
+        choices.push({
+          courseIndex,
+          courseCode: course.course_code,
+          groupId: group.id,
+          options,
+        })
+      }
+      continue
+    }
 
     for (const { layer, bundles: layerBundles } of layers) {
       const bundles = layerBundles
@@ -694,7 +801,12 @@ export function solvePlans(
       if (bundles.length === 0) {
         return { status: 'unavailable-layer', plans: [], courseCode: course.course_code, layer }
       }
-      choices.push({ courseIndex, courseCode: course.course_code, layer, bundles })
+      choices.push({
+        courseIndex,
+        courseCode: course.course_code,
+        groupId: `layer-${layer}`,
+        options: bundles.map(bundle => ({ selections: [bundle.selection], lectures: bundle.lectures })),
+      })
     }
   }
 
@@ -720,21 +832,21 @@ export function solvePlans(
       return false
     }
 
-    for (const bundle of choices[index].bundles) {
+    for (const option of choices[index].options) {
       if (searchNodes >= searchNodeLimit) {
         truncationReason = 'search-limit'
         return true
       }
       searchNodes += 1
-      if (!canPlace(bundle.lectures)) continue
-      for (const lecture of bundle.lectures) {
+      if (!canPlace(option.lectures)) continue
+      for (const lecture of option.lectures) {
         if (!bucket.has(lecture.day)) bucket.set(lecture.day, [])
         bucket.get(lecture.day)!.push(lecture)
       }
-      selected.push(bundle.selection)
+      selected.push(...option.selections)
       const shouldStop = search(index + 1)
-      selected.pop()
-      for (const lecture of bundle.lectures) bucket.get(lecture.day)!.pop()
+      selected.splice(selected.length - option.selections.length, option.selections.length)
+      for (const lecture of option.lectures) bucket.get(lecture.day)!.pop()
       if (shouldStop) return true
     }
     return false

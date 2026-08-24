@@ -48,7 +48,8 @@ const statusTimers = new Map<string, ReturnType<typeof setTimeout>>()
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const searchRequests = createLatestRequestTracker()
 
-function creditColorVar(credit: number): string {
+function creditColorVar(credit: number, countsTowardTermLoad = true): string {
+  if (!countsTowardTermLoad) return 'var(--credit-excluded)'
   const level = Math.min(6, Math.max(1, credit))
   return `var(--credit-level-${level})`
 }
@@ -161,7 +162,7 @@ async function handleRemove(code: string) {
 }
 
 const totalCredits = computed(() => (
-  props.courseList.reduce((sum, c) => sum + (c.credit || 0), 0)
+  props.courseList.reduce((sum, c) => sum + (c.term_load_credit ?? c.credit ?? 0), 0)
 ))
 
 // Guard against closing via the click event's nearest-common-ancestor
@@ -253,11 +254,12 @@ onUnmounted(() => {
                 <div class="cart-panel__result-info">
                   <div class="cart-panel__result-main">
                     <span class="cart-panel__result-code">{{ item.course_code }}</span>
-                    <span class="cart-panel__result-credits" :style="{ color: creditColorVar(item.credit) }">· {{ t('scheduler.credits', { count: item.credit }) }}</span>
+                    <span class="cart-panel__result-credits" :style="{ color: creditColorVar(item.credit, item.counts_toward_term_load) }">· {{ t('scheduler.credits', { count: item.credit }) }}<span v-if="item.counts_toward_term_load === false"> {{ t('scheduler.notCountedShort') }}</span></span>
                     <SchedulerCourseInfoPopover
                       :course-code="item.course_code"
                       :course-title="item.course_title"
                       :credit="item.credit"
+                      :counts-toward-term-load="item.counts_toward_term_load"
                       :semester-id="semesterId"
                       align="left"
                     />
@@ -324,11 +326,12 @@ onUnmounted(() => {
                   <div class="cart-panel__drawer-info">
                     <div class="cart-panel__drawer-meta">
                       <span class="cart-panel__drawer-code">{{ course.course_code }}</span>
-                      <span class="cart-panel__drawer-credits" :style="{ color: creditColorVar(course.credit) }">· {{ t('scheduler.credits', { count: course.credit }) }}</span>
+                      <span class="cart-panel__drawer-credits" :style="{ color: creditColorVar(course.credit, course.counts_toward_term_load) }">· {{ t('scheduler.credits', { count: course.credit }) }}<span v-if="course.counts_toward_term_load === false"> {{ t('scheduler.notCountedShort') }}</span></span>
                       <SchedulerCourseInfoPopover
                         :course-code="course.course_code"
                         :course-title="course.course_title"
                         :credit="course.credit"
+                        :counts-toward-term-load="course.counts_toward_term_load"
                         :semester-id="semesterId"
                         align="left"
                       />

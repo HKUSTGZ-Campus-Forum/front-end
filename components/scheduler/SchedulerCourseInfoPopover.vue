@@ -9,6 +9,7 @@ const props = defineProps<{
   courseCode: string
   courseTitle: string
   credit: number
+  countsTowardTermLoad?: boolean
   semesterId: string
   // Which edge of the popover the trigger anchors to. 'right' keeps the
   // popover's right edge under the icon (opens leftwards, side panel);
@@ -21,6 +22,7 @@ const { t } = useI18n()
 const { getCourseDetail } = useScheduler()
 
 function creditColorVar(credit: number): string {
+  if (props.countsTowardTermLoad === false) return 'var(--credit-excluded)'
   const level = Math.min(6, Math.max(1, credit))
   return `var(--credit-level-${level})`
 }
@@ -161,7 +163,7 @@ onUnmounted(() => {
         <template v-else-if="status === 'ready' && course">
           <div class="course-info-popover__title">{{ course.course_title }}</div>
           <div class="course-info-popover__meta">
-            {{ course.course_code }} · <span :style="{ color: creditColorVar(course.credit) }">{{ t('scheduler.credits', { count: course.credit }) }}</span>
+            {{ course.course_code }} · <span :style="{ color: creditColorVar(course.credit) }">{{ t('scheduler.credits', { count: course.credit }) }}<template v-if="course.counts_toward_term_load === false"> · {{ t('scheduler.notCountedInTermLoad') }}</template></span>
           </div>
           <p class="course-info-popover__desc">
             {{ course.course_desc || t('scheduler.notAvailable') }}

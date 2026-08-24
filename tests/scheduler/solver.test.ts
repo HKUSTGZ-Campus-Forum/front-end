@@ -57,6 +57,63 @@ function course(
 const noBans = () => Array.from({ length: 7 }, () => Array(8).fill(false))
 
 describe('solvePlans', () => {
+  it('selects M01 plus any two CTDL electives without treating teaching layers as choice groups', () => {
+    const ctdl = course('UCUG1000', {
+      0: [{ id: 1, lectures: [] }],
+      1: [{ id: 1, lectures: [] }, { id: 2, lectures: [] }],
+      2: [{ id: 1, lectures: [] }, { id: 2, lectures: [] }],
+    })
+    ctdl.layers[0][0].sections[0].section_type = 'M01'
+    ctdl.layers[1][0].sections[0].section_type = 'M02'
+    ctdl.layers[1][1].sections[0].section_type = 'M03'
+    ctdl.layers[2][0].sections[0].section_type = 'M05'
+    ctdl.layers[2][1].sections[0].section_type = 'M06'
+    ctdl.selection_policy = {
+      kind: 'module',
+      modules: [],
+      groups: [
+        { id: 'required', role: 'required', min_select: 1, max_select: 1, module_codes: ['M01'] },
+        { id: 'electives', role: 'elective', min_select: 2, max_select: 2, module_codes: ['M02', 'M03', 'M05', 'M06'] },
+      ],
+    }
+
+    const result = solvePlans([ctdl], noBans())
+
+    expect(result.status).toBe('ok')
+    if (result.status !== 'ok') throw new Error('expected plans')
+    expect(result.plans).toHaveLength(6)
+    expect(result.plans.every(plan => plan.length === 3 && plan[0].layer === 0)).toBe(true)
+    expect(result.plans).toContainEqual([
+      { courseIndex: 0, layer: 0, bundleId: 1 },
+      { courseIndex: 0, layer: 2, bundleId: 1 },
+      { courseIndex: 0, layer: 2, bundleId: 2 },
+    ])
+  })
+
+  it('reports a module selection group when too few modules remain available', () => {
+    const ctdl = course('UCUG1000', {
+      0: [{ id: 1, lectures: [] }],
+      1: [{ id: 1, lectures: [] }],
+    })
+    ctdl.layers[0][0].sections[0].section_type = 'M01'
+    ctdl.layers[1][0].sections[0].section_type = 'M02'
+    ctdl.selection_policy = {
+      kind: 'module',
+      modules: [],
+      groups: [
+        { id: 'required', role: 'required', min_select: 1, max_select: 1, module_codes: ['M01'] },
+        { id: 'electives', role: 'elective', min_select: 2, max_select: 2, module_codes: ['M02', 'M03'] },
+      ],
+    }
+
+    expect(solvePlans([ctdl], noBans())).toEqual({
+      status: 'unavailable-selection-group',
+      plans: [],
+      courseCode: 'UCUG1000',
+      groupId: 'electives',
+    })
+  })
+
   it('chooses one bundle from every enabled layer', () => {
     const result = solvePlans([
       course('AIAA1001', {

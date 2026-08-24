@@ -36,7 +36,10 @@ const { t } = useI18n()
           <button type="button" @click="$emit('retry')">{{ t('common.retry') }}</button>
         </div>
         <template v-else>
-          <p>{{ t('scheduler.credits', { count: course.credit }) }}</p>
+          <p :style="{ color: course.counts_toward_term_load === false ? 'var(--credit-excluded)' : undefined }">
+            {{ t('scheduler.credits', { count: course.credit }) }}
+            <span v-if="course.counts_toward_term_load === false"> · {{ t('scheduler.notCountedInTermLoad') }}</span>
+          </p>
           <section>
             <h3>{{ t('scheduler.description') }}</h3>
             <p>{{ course.course_desc || t('scheduler.notAvailable') }}</p>

@@ -25,7 +25,9 @@ export function buildSchedulerPlanCourses(
     .sort(([left], [right]) => left - right)
     .map(([, value]) => ({
       ...value,
-      selections: value.selections.sort((left, right) => left.layer - right.layer),
+      selections: value.selections.sort(
+        (left, right) => left.layer - right.layer || left.bundle_id - right.bundle_id,
+      ),
     }))
 }
 
