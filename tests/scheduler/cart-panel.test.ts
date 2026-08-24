@@ -13,7 +13,7 @@ describe('scheduler cart panel', () => {
     // Two curated rows for one-click quick picks (loading all subjects would
     // defeat the purpose of quick selection)
     expect(cartPanelSource).toContain("['UFUG', 'UCUG', 'DLED']")
-    expect(cartPanelSource).toContain("['AIAA', 'AMAT', 'DSAA', 'FTEC', 'MICS', 'ROAS', 'SMMG']")
+    expect(cartPanelSource).toContain("['AIAA', 'AMAT', 'DSAA', 'FTEC', 'MICS', 'MOES', 'ROAS', 'SMMG']")
     expect(cartPanelSource).toContain('cart-panel__subjects-row')
 
     // No longer loads the full subject list dynamically
