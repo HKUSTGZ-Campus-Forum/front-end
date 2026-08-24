@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { marked } from "marked";
 import type { Feedback, FeedbackVersion } from "~/types/feedback";
 import MergeRequestCard from "~/components/feedback/MergeRequestCard.vue";
 import VersionHistoryPanel from "~/components/feedback/VersionHistoryPanel.vue";
@@ -7,13 +6,6 @@ import VersionHistoryPanel from "~/components/feedback/VersionHistoryPanel.vue";
 definePageMeta({
   layout: "keguang",
 });
-
-marked.setOptions({ breaks: true, gfm: true });
-
-function renderMarkdown(text: string | null | undefined): string {
-  if (!text) return "";
-  return marked.parse(text) as string;
-}
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -152,7 +144,10 @@ onMounted(fetchDetail);
               </div>
             </div>
 
-            <div class="kg-markdown-body" v-html="renderMarkdown(feedback.current_version?.markdown_content)"></div>
+            <CommonMarkdownContent
+              class="kg-markdown-body"
+              :content="feedback.current_version?.markdown_content"
+            />
           </section>
 
           <section class="feedback-detail-page__panel">

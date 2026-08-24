@@ -1,15 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { marked } from 'marked'
 
 definePageMeta({ layout: 'keguang' })
-
-marked.setOptions({ breaks: true, gfm: true })
-
-function renderMarkdown(text: string | null | undefined): string {
-  if (!text) return ''
-  return marked.parse(text) as string
-}
 
 const { isLoggedIn } = useAuth()
 const { fetchWithAuth, fetchPublic } = useApi()
@@ -407,14 +399,14 @@ onUnmounted(() => clearInterval(timer))
         <main class="kg-main">
           <div v-show="activeTab === 'description'" class="kg-panel kg-card">
             <template v-if="localizedDescription">
-              <div class="kg-markdown-body" v-html="renderMarkdown(localizedDescription)"></div>
+              <CommonMarkdownContent class="kg-markdown-body" :content="localizedDescription" />
             </template>
             <p v-else class="kg-empty">{{ t('contest.empty.description') }}</p>
           </div>
 
           <div v-show="activeTab === 'announcements'" class="kg-panel kg-card">
             <template v-if="contest?.announcements">
-              <div class="kg-markdown-body" v-html="renderMarkdown(contest.announcements)"></div>
+              <CommonMarkdownContent class="kg-markdown-body" :content="contest.announcements" />
             </template>
             <p v-else class="kg-empty">{{ t('contest.empty.announcements') }}</p>
           </div>
@@ -422,7 +414,7 @@ onUnmounted(() => clearInterval(timer))
           <div v-show="activeTab === 'problems'" class="kg-panel">
             <div v-if="localizedRules" class="kg-card kg-block">
               <h2 class="kg-block-title">{{ t('contest.tabs.problems') }}</h2>
-              <div class="kg-markdown-body" v-html="renderMarkdown(localizedRules)"></div>
+              <CommonMarkdownContent class="kg-markdown-body" :content="localizedRules" />
             </div>
             <p v-else class="kg-card kg-empty">{{ t('contest.empty.problems') }}</p>
 

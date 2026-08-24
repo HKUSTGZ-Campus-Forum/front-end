@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import { marked } from "marked";
 import type { Feedback, FeedbackMergeRequest } from "~/types/feedback";
 import FeedbackMergeRequestStatusBadge from "~/components/feedback/FeedbackMergeRequestStatusBadge.vue";
 
 definePageMeta({
   layout: "keguang",
 });
-
-marked.setOptions({ breaks: true, gfm: true });
-
-function renderMarkdown(text: string | null | undefined): string {
-  if (!text) return "";
-  return marked.parse(text) as string;
-}
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -191,7 +183,10 @@ onMounted(loadPage);
               </div>
             </div>
 
-            <div class="kg-markdown-body" v-html="renderMarkdown(mergeRequest.proposed_markdown_content)"></div>
+            <CommonMarkdownContent
+              class="kg-markdown-body"
+              :content="mergeRequest.proposed_markdown_content"
+            />
           </section>
 
           <section v-if="canReviewAsAuthor" class="merge-request-detail-page__panel">

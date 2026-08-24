@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useSearch } from '~/composables/useSearch'
 import { useDebounceFn } from '@vueuse/core'
 import UserAvatar from '~/components/user/UserAvatar.vue'
+import SafeHighlight from '~/components/common/SafeHighlight.vue'
 
 // Props
 const props = defineProps<{
@@ -162,10 +163,6 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-// Strip HTML tags from highlighted text for display
-const stripHtml = (html: string) => {
-  return html.replace(/<[^>]*>/g, '')
-}
 </script>
 
 <template>
@@ -260,7 +257,7 @@ const stripHtml = (html: string) => {
               @click="selectItem('post', post)"
             >
               <div class="post-info">
-                <h4 class="post-title" v-html="post.title_highlighted"></h4>
+                <h4 class="post-title"><SafeHighlight :text="post.title" :query="inputValue" /></h4>
                 <p class="post-excerpt">{{ post.content_excerpt }}</p>
                 <div class="post-meta">
                   <UserAvatar
@@ -301,7 +298,7 @@ const stripHtml = (html: string) => {
                 :clickable="false"
               />
               <div class="user-info">
-                <h4 class="user-name" v-html="user.username_highlighted"></h4>
+                <h4 class="user-name"><SafeHighlight :text="user.username" :query="inputValue" /></h4>
                 <span class="user-role">{{ user.role_name }}</span>
               </div>
             </div>
@@ -323,7 +320,7 @@ const stripHtml = (html: string) => {
             >
               <span class="section-icon" aria-hidden="true"><Icon name="lucide:hash" /></span>
               <div class="tag-info">
-                <h4 class="tag-name" v-html="tag.name_highlighted"></h4>
+                <h4 class="tag-name"><SafeHighlight :text="tag.name" :query="inputValue" /></h4>
                 <span class="tag-count">{{ t('search.tagPostCount', { count: tag.post_count }) }}</span>
               </div>
             </div>
@@ -345,8 +342,8 @@ const stripHtml = (html: string) => {
             >
               <span class="section-icon" aria-hidden="true"><Icon name="lucide:graduation-cap" /></span>
               <div class="course-info">
-                <h4 class="course-code" v-html="course.code_highlighted"></h4>
-                <p class="course-name" v-html="course.name_highlighted"></p>
+                <h4 class="course-code"><SafeHighlight :text="course.code" :query="inputValue" /></h4>
+                <p class="course-name"><SafeHighlight :text="course.name" :query="inputValue" /></p>
               </div>
             </div>
           </div>
