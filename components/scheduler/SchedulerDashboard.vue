@@ -795,6 +795,8 @@ async function startNewPlan() {
           :filter-mode="filterMode"
           :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
           :preview-section-enabled="previewSectionEnabled"
+          :can-show-history="canShowPopularityHistory"
+          :get-history="getPopularityHistory"
           @toggle-course="handleToggleCourse"
           @toggle-bundle="handleToggleBundle"
           @toggle-layer="handleToggleLayer"
@@ -805,6 +807,7 @@ async function startNewPlan() {
           @preview-bundle="onPreviewBundle"
           @clear-preview="onClearPreview"
           @update:preview-section-enabled="(value) => previewSectionEnabled = value"
+          @show-history="handleShowPopularityHistory"
         />
       </div>
 

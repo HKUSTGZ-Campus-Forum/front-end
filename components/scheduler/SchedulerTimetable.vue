@@ -726,9 +726,10 @@ function onCellClick(day: number, period: number) {
     }
 
     &-title {
-      font-size: 0.75rem; /* original: text-xs */
+      // Slightly larger than the detail rows so the course name reads as the card's primary text; original was text-xs (0.75rem).
+      font-size: 0.82rem;
       margin-bottom: 4px; /* original: mb-1 */
-      line-height: 1.4;
+      line-height: 1.3;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
@@ -738,7 +739,8 @@ function onCellClick(day: number, period: number) {
       align-items: flex-start;
       gap: 8px; /* original: gap-2 */
       opacity: 0.7; /* original: opacity-70 */
-      font-size: 0.75rem; /* original: text-xs */
+      // Smaller than the title/code so supplementary info stays secondary.
+      font-size: 0.7rem;
 
       > span {
         min-width: 0;

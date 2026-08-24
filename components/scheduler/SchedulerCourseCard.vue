@@ -14,6 +14,12 @@ const props = defineProps<{
   popularity?: IndexedSchedulerCoursePopularity
   showPopularity: boolean
   mutationsDisabled: boolean
+  canShowHistory?: boolean
+  getHistory?: (
+    semester: string,
+    courseCode: string,
+    options: { sectionId?: string; from: string; to: string; resolution?: 'auto'; signal?: AbortSignal },
+  ) => Promise<import('~/utils/scheduler').SchedulerPopularityHistoryResponse>
 }>()
 const { t } = useI18n()
 
@@ -23,6 +29,7 @@ const emit = defineEmits<{
   (e: 'toggle-layer', code: string, layer: number, enabled: boolean): void
   (e: 'preview-bundle', code: string, layer: number, bundleId: number): void
   (e: 'clear-preview'): void
+  (e: 'show-history', code: string): void
 }>()
 
 function isBundleSelected(layer: number, bundleId: number): boolean {
@@ -47,6 +54,11 @@ function creditColorVar(credit: number): string {
             v-if="showPopularity && popularity"
             class="course-card__popularity"
             :counts="popularity"
+            :course-code="course.course_code"
+            :semester-id="semesterId"
+            :can-show-history="canShowHistory"
+            :get-history="getHistory"
+            :on-show-full-history="() => emit('show-history', course.course_code)"
           />
         </div>
         <div class="course-card__title">{{ course.course_title }}</div>
@@ -154,7 +166,7 @@ function creditColorVar(credit: number): string {
 
   &__meta {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     flex-wrap: wrap;
     gap: 4px;
     min-width: 0;

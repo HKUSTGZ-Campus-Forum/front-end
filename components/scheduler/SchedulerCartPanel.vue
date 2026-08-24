@@ -546,7 +546,7 @@ onUnmounted(() => {
   &__result-main {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     min-width: 0;
   }
 
@@ -755,7 +755,7 @@ onUnmounted(() => {
     min-width: 0;
   }
 
-  &__drawer-meta { display: flex; align-items: center; gap: 8px; }
+  &__drawer-meta { display: flex; align-items: center; gap: 4px; }
   &__drawer-code { font-size: 0.74rem; color: var(--text-secondary); flex-shrink: 0; }
   &__drawer-credits { font-size: 0.74rem; font-weight: 700; flex-shrink: 0; }
   &__drawer-title {
