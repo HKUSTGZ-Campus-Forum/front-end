@@ -26,9 +26,12 @@ export function cartCourseFromDetail(detail: CourseDetail): CartCourse {
     course_code: detail.course_code,
     course_title: detail.course_title,
     credit: detail.credit,
+    counts_toward_term_load: detail.counts_toward_term_load,
+    term_load_credit: detail.term_load_credit,
     subject: detail.subject,
     pg_course: detail.pg_course,
     klms_course: detail.klms_course,
+    selection_policy: detail.selection_policy,
     enabled: false,
     layers,
   }

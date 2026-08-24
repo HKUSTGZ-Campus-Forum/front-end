@@ -13,6 +13,8 @@ const detail: CourseDetail = {
   course_title: 'AI Basics',
   course_title_abbr: 'AI',
   credit: 3,
+  counts_toward_term_load: false,
+  term_load_credit: 0,
   subject: 'AIAA',
   catalog_number: '1001',
   course_desc: 'Intro',
@@ -21,6 +23,20 @@ const detail: CourseDetail = {
   exclusion: null,
   pg_course: false,
   klms_course: false,
+  selection_policy: {
+    kind: 'module',
+    groups: [{
+      id: 'elective',
+      role: 'elective',
+      min_select: 2,
+      max_select: 2,
+      module_codes: ['M02', 'M03'],
+    }],
+    modules: [
+      { code: 'M02', title: 'Module 2', credit: 1, available: true },
+      { code: 'M03', title: 'Module 3', credit: 1, available: true },
+    ],
+  },
   sections: [
     {
       semester_id: '2530',
@@ -54,6 +70,9 @@ describe('guest cart helpers', () => {
     expect(cart).toHaveLength(1)
     expect(cart[0].enabled).toBe(false)
     expect(Object.keys(cart[0].layers)).toEqual(['0', '1'])
+    expect(cart[0].counts_toward_term_load).toBe(false)
+    expect(cart[0].term_load_credit).toBe(0)
+    expect(cart[0].selection_policy).toEqual(detail.selection_policy)
   })
 
   it('immutably updates course, bundle, layer, and remove state', () => {
