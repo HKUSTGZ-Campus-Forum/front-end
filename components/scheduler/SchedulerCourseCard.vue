@@ -154,7 +154,7 @@ function creditColorVar(credit: number): string {
 
   &__meta {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     flex-wrap: wrap;
     gap: 4px;
     min-width: 0;
