@@ -8,7 +8,7 @@ const SW_SCRIPT_PATH = "/sw.js";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_ASSETS = [
   OFFLINE_URL,
-  "/favicon.ico",
+  "/favicon-white.ico",
   "/manifest.json",
   "/icons/sidebar_logo.svg",
   "/icons/topbar_logo.svg",
