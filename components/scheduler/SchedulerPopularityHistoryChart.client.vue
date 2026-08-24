@@ -18,6 +18,8 @@ const props = defineProps<{
   observedTimeLabel: string
   partialLabel: string
   missingLabel: string
+  height?: number
+  compact?: boolean
 }>()
 
 function formatShanghaiTime(timestamp: number): string {
@@ -69,6 +71,7 @@ const chartOptions = computed<ApexOptions>(() => ({
     hover: { sizeOffset: 3 },
   },
   legend: {
+    show: !props.compact,
     position: 'top',
     horizontalAlign: 'left',
     labels: { colors: 'var(--text-secondary)' },
@@ -77,6 +80,7 @@ const chartOptions = computed<ApexOptions>(() => ({
     type: 'datetime',
     labels: {
       datetimeUTC: false,
+      show: !props.compact,
       formatter: (value, timestamp) => formatShanghaiTime(timestamp ?? Number(value)),
       style: { colors: 'var(--text-secondary)' },
     },
@@ -92,11 +96,14 @@ const chartOptions = computed<ApexOptions>(() => ({
       style: { colors: 'var(--text-secondary)' },
     },
     title: {
-      text: props.accountsLabel,
+      text: props.compact ? '' : props.accountsLabel,
       style: { color: 'var(--text-secondary)' },
     },
   },
   tooltip: {
+    // The compact (mini) chart has its own legend and must not pop a tooltip
+    // that would cover the trend it is meant to preview.
+    enabled: !props.compact,
     shared: true,
     intersect: false,
     x: {
@@ -128,7 +135,7 @@ const chartOptions = computed<ApexOptions>(() => ({
 <template>
   <VueApexCharts
     type="line"
-    height="320"
+    :height="props.height ?? 320"
     :options="chartOptions"
     :series="chartSeries"
   />

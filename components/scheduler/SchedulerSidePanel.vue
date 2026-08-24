@@ -17,6 +17,12 @@ const props = defineProps<{
   filterMode: boolean
   mutationsDisabled: boolean
   previewSectionEnabled: boolean
+  canShowHistory?: boolean
+  getHistory?: (
+    semester: string,
+    courseCode: string,
+    options: { sectionId?: string; from: string; to: string; resolution?: 'auto'; signal?: AbortSignal },
+  ) => Promise<import('~/utils/scheduler').SchedulerPopularityHistoryResponse>
 }>()
 
 const emit = defineEmits<{
@@ -30,6 +36,7 @@ const emit = defineEmits<{
   (e: 'preview-bundle', code: string, layer: number, bundleId: number): void
   (e: 'clear-preview'): void
   (e: 'update:preview-section-enabled', value: boolean): void
+  (e: 'show-history', code: string): void
 }>()
 
 const activeTab = ref<'main' | 'klms'>('main')
@@ -108,11 +115,14 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :popularity="getSchedulerCoursePopularity(popularityByCourse, course.course_code)"
         :show-popularity="showPopularity"
         :mutations-disabled="mutationsDisabled"
+        :can-show-history="canShowHistory"
+        :get-history="getHistory"
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
         @preview-bundle="(...args) => emit('preview-bundle', ...args)"
         @clear-preview="emit('clear-preview')"
+        @show-history="(...args) => emit('show-history', ...args)"
       />
       <div v-if="filteredCourses.length === 0" class="side-panel__empty">
         <div class="side-panel__empty-title">{{ t('scheduler.emptyCart') }}</div>

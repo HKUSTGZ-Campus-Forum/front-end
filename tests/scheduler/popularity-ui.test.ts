@@ -61,7 +61,7 @@ describe('scheduler popularity UI contract', () => {
     const summary = source('../../components/scheduler/SchedulerPopularitySummary.vue')
     const zh = source('../../i18n/locales/zh.json')
 
-    expect(summary).toContain("t('scheduler.popularityCartLabel')")
+    expect(summary).toContain('lucide:flame')
     expect(summary).toContain('counts.cart_count')
     expect(summary).toContain('counts.cart_count_suppressed')
     expect(summary).toContain("t('scheduler.popularityFew')")
@@ -70,8 +70,9 @@ describe('scheduler popularity UI contract', () => {
     expect(summary).toContain('@keydown.escape.stop="close"')
     expect(summary).not.toContain(':title=')
     expect(summary).not.toContain('saved_plan_count')
+    expect(summary).not.toContain("t('scheduler.popularityCartLabel')")
     expect(zh).toContain('"popularityCartLabel": "购物车"')
-    expect(zh).toContain('"popularityFew": "少量"')
+    expect(zh).toContain('"popularityFew": "<5"')
     expect(zh).toContain('少于 5 人时显示')
     expect(zh).not.toContain('"popularitySavedPlansLabel"')
   })
@@ -117,7 +118,8 @@ describe('scheduler popularity UI contract', () => {
     expect(chart).toContain("curve: 'stepline'")
     expect(chart).toContain('dashArray: [7, 0]')
     expect(chart).toContain("animations: { enabled: !props.reducedMotion }")
-    expect(chart).toContain('text: props.accountsLabel')
+    // The y-axis title is hidden in compact (mini) mode, shown in fullscreen.
+    expect(chart).toContain('text: props.compact ? \'\' : props.accountsLabel')
     expect(chart).toContain('props.scheduledTimeLabel')
   })
 
@@ -174,7 +176,8 @@ describe('scheduler popularity UI contract', () => {
     expect(chart).toContain('discrete: partialMarkers.value')
     expect(chart).toContain('fillColor: \'var(--surface-primary)\'')
     expect(chart).toContain('strokeColor: \'var(--warning-color)\'')
-    expect(chart).toContain('text: props.accountsLabel')
+    // The y-axis title is hidden in compact (mini) mode, shown in fullscreen.
+    expect(chart).toContain('text: props.compact ? \'\' : props.accountsLabel')
     expect(chart).toContain('props.observedTimeLabel')
     expect(chart).toContain('props.partialLabel')
     expect(chart).toContain('formatPopularityHistoryTooltipValue(pointValue, props.missingLabel)')
