@@ -67,8 +67,13 @@ NUXT_PUBLIC_API_BASE_URL=https://dev.unikorn.axfff.com
 
 ```text
 NUXT_PUBLIC_MASCOT_ENABLED=true
-NUXT_PUBLIC_MASCOT_MODEL_URL=https://model.hacxy.cn/cat-black/model.json
+NUXT_PUBLIC_MASCOT_MODEL_URL=https://raw.githubusercontent.com/Live2D/CubismWebSamples/b1de66b0b1f1cb881d95fb6158622aeb6a2827bd/Samples/Resources/Natori/Natori.model3.json
+NUXT_PUBLIC_MASCOT_SCALE=0.9
+NUXT_PUBLIC_MASCOT_POSITION_X=0
+NUXT_PUBLIC_MASCOT_POSITION_Y=0
 ```
+
+共享开发环境使用 Live2D 官方 `Natori` 示例模型并固定到具体提交；该模型遵循 Live2D Free Material License，不随本项目的 MIT 依赖许可证授权。
 
 ### 构建生产版本
 

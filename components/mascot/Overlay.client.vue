@@ -86,6 +86,11 @@ const message = ref("");
 const renderer = new L2dMascotRenderer();
 const enabled = computed(() => String(config.public.mascotEnabled) === "true");
 const modelUrl = computed(() => String(config.public.mascotModelUrl || ""));
+const modelScale = computed(() => Number(config.public.mascotScale));
+const modelPosition = computed<[number, number]>(() => [
+  Number(config.public.mascotPositionX),
+  Number(config.public.mascotPositionY),
+]);
 
 let messageTimer: ReturnType<typeof setTimeout> | undefined;
 let mouthTimer: ReturnType<typeof setInterval> | undefined;
@@ -136,8 +141,8 @@ async function loadMascot(): Promise<void> {
   try {
     await renderer.mount(canvasRef.value, {
       modelUrl: modelUrl.value,
-      scale: 0.36,
-      position: [0, -0.22],
+      scale: modelScale.value,
+      position: modelPosition.value,
       onTap: playReaction,
     });
     if (disposed) return;

@@ -14,7 +14,14 @@ const apiBaseUrl = (
 const mascotEnabled = process.env.NUXT_PUBLIC_MASCOT_ENABLED === "true";
 const mascotModelUrl =
   process.env.NUXT_PUBLIC_MASCOT_MODEL_URL ||
-  "https://model.hacxy.cn/cat-black/model.json";
+  "https://raw.githubusercontent.com/Live2D/CubismWebSamples/b1de66b0b1f1cb881d95fb6158622aeb6a2827bd/Samples/Resources/Natori/Natori.model3.json";
+const mascotScale = Number(process.env.NUXT_PUBLIC_MASCOT_SCALE || "0.9");
+const mascotPositionX = Number(
+  process.env.NUXT_PUBLIC_MASCOT_POSITION_X || "0"
+);
+const mascotPositionY = Number(
+  process.env.NUXT_PUBLIC_MASCOT_POSITION_Y || "0"
+);
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
@@ -193,6 +200,9 @@ export default defineNuxtConfig({
       apiBaseUrl,
       mascotEnabled,
       mascotModelUrl,
+      mascotScale,
+      mascotPositionX,
+      mascotPositionY,
     },
   },
   ssr: true,
