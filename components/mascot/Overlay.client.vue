@@ -73,6 +73,11 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n, useRuntimeConfig } from "#imports";
 import { L2dMascotRenderer } from "~/utils/mascotL2d";
+import {
+  normalizeMascotRendererKind,
+  type MascotRenderer,
+} from "~/utils/mascotRenderer";
+import { ThreeMascotRenderer } from "~/utils/mascotThree";
 
 type MascotStatus = "idle" | "loading" | "ready" | "error";
 
@@ -83,8 +88,12 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const collapsed = ref(true);
 const status = ref<MascotStatus>("idle");
 const message = ref("");
-const renderer = new L2dMascotRenderer();
 const enabled = computed(() => String(config.public.mascotEnabled) === "true");
+const rendererKind = normalizeMascotRendererKind(config.public.mascotRenderer);
+const renderer: MascotRenderer =
+  rendererKind === "three"
+    ? new ThreeMascotRenderer()
+    : new L2dMascotRenderer();
 const modelUrl = computed(() => String(config.public.mascotModelUrl || ""));
 const modelScale = computed(() => Number(config.public.mascotScale));
 const modelPosition = computed<[number, number]>(() => [
@@ -106,7 +115,11 @@ function clearSpeechTimers(): void {
 }
 
 function animateSpeech(text: string): void {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (
+    !renderer.supportsLipSync ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+    return;
   clearInterval(mouthTimer);
   clearTimeout(mouthStopTimer);
   mouthTimer = window.setInterval(() => {

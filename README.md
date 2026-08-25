@@ -67,13 +67,14 @@ NUXT_PUBLIC_API_BASE_URL=https://dev.unikorn.axfff.com
 
 ```text
 NUXT_PUBLIC_MASCOT_ENABLED=true
-NUXT_PUBLIC_MASCOT_MODEL_URL=https://raw.githubusercontent.com/Live2D/CubismWebSamples/b1de66b0b1f1cb881d95fb6158622aeb6a2827bd/Samples/Resources/Hiyori/Hiyori.model3.json
-NUXT_PUBLIC_MASCOT_SCALE=1.35
+NUXT_PUBLIC_MASCOT_RENDERER=three
+NUXT_PUBLIC_MASCOT_MODEL_URL=https://raw.githubusercontent.com/baiyuscc13724-max/deepseek-harness-desktop/a055814112232ef3b42775d38341b90200cc5259/renderer/pets/maid-whale/model/maid-whale-rig.glb
+NUXT_PUBLIC_MASCOT_SCALE=1.08
 NUXT_PUBLIC_MASCOT_POSITION_X=0
-NUXT_PUBLIC_MASCOT_POSITION_Y=-0.32
+NUXT_PUBLIC_MASCOT_POSITION_Y=-0.06
 ```
 
-共享开发环境使用 Live2D 官方 `Hiyori` 示例模型并固定到具体提交；该模型遵循 Live2D Free Material License，不随本项目的 MIT 依赖许可证授权。
+共享开发环境使用固定版本的社区 DeepSeek 女仆鲸 GLB，仅用于非商业测试。素材采用 CC BY-NC-SA 4.0，授权、署名和口型限制见 [`docs/mascot-assets.md`](docs/mascot-assets.md)。正式部署可将 `NUXT_PUBLIC_MASCOT_RENDERER` 改回 `live2d` 并替换为自有 `.model3.json`。
 
 ### 构建生产版本
 

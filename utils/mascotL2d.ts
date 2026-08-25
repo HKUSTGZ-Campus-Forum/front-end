@@ -1,14 +1,10 @@
 import type { L2D, ParamInfo } from "l2d/dist/index.js";
+import type {
+  MascotRenderer,
+  MascotRendererOptions,
+} from "~/utils/mascotRenderer";
 
 const MOUTH_PARAMETER_IDS = ["ParamMouthOpenY", "PARAM_MOUTH_OPEN_Y"] as const;
-
-export interface L2dMascotRendererOptions {
-  modelUrl: string;
-  position?: [x: number, y: number];
-  scale?: number;
-  volume?: number;
-  onTap?: (areaName: string) => void;
-}
 
 export function normalizeMouthOpenValue(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -40,7 +36,7 @@ export function pickMotionGroup(
   return groups[index] ?? null;
 }
 
-export class L2dMascotRenderer {
+export class L2dMascotRenderer implements MascotRenderer {
   private instance: L2D | null = null;
   private mouthParameterId: string | null = null;
 
@@ -54,7 +50,7 @@ export class L2dMascotRenderer {
 
   async mount(
     canvas: HTMLCanvasElement,
-    options: L2dMascotRendererOptions
+    options: MascotRendererOptions
   ): Promise<void> {
     this.dispose();
 

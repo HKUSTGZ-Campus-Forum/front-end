@@ -139,9 +139,9 @@
 - **日期**：2026-08
 - **状态**：提议
 - **背景**：论坛需要一个跨路由常驻、可折叠且不侵入页面业务的站娘/桌宠原型；后续可能由 Agent、TTS 和论坛上下文驱动情绪、动作与口型。直接使用完整看板娘 widget 会把固定定位、提示策略和模型生命周期绑在第三方 UI 中，也容易与 PWA 提示和弹窗层级冲突。
-- **决策**：根应用只挂载一个 client-only 的全局悬浮壳层，模型渲染由 `L2dMascotRenderer` 封装 `l2d`，通过动态 import 避开 SSR，并暴露动作、表情和归一化嘴型参数控制。共享开发部署显式启用固定版本的 Live2D 官方 `Hiyori` 示例模型，并放大、偏移成上半身构图；其他构建默认关闭，模型 URL、缩放和内部位置分别通过 `NUXT_PUBLIC_MASCOT_MODEL_URL`、`NUXT_PUBLIC_MASCOT_SCALE`、`NUXT_PUBLIC_MASCOT_POSITION_X/Y` 替换。桌宠位于普通内容之上、模态框和系统级提示之下，移动端与减少动态效果偏好默认收起。
+- **决策**：根应用只挂载一个 client-only 的全局悬浮壳层，渲染层遵循 `MascotRenderer` 接口；`L2dMascotRenderer` 封装 `l2d`，`ThreeMascotRenderer` 封装 Three.js 和 GLB，两者都通过动态 import 避开 SSR。共享开发部署显式启用固定版本的社区 DeepSeek 女仆鲸 GLB；其他构建默认关闭，并可通过 `NUXT_PUBLIC_MASCOT_RENDERER`、模型 URL、缩放和内部位置切回自有 Live2D。Live2D 暴露动作、表情和归一化嘴型参数控制；女仆鲸只有骨骼动作、没有口型 Morph。桌宠位于普通内容之上、模态框和系统级提示之下，移动端与减少动态效果偏好默认收起。
 - **理由**：渲染器与壳层解耦后可以在不改页面和 Agent 策略的情况下替换自有 Live2D、静态图或其他运行时；参数驱动口型可先用文本节奏验证，未来再接 TTS 音频振幅。开发环境限定第三方演示素材，避免未经许可的模型进入学校正式发布。
-- **相关文档**：`components/mascot/Overlay.client.vue`、`utils/mascotL2d.ts`、`.github/workflows/deploy.yml`
+- **相关文档**：`components/mascot/Overlay.client.vue`、`utils/mascotRenderer.ts`、`utils/mascotL2d.ts`、`utils/mascotThree.ts`、`docs/mascot-assets.md`、`.github/workflows/deploy.yml`
 
 ---
 
