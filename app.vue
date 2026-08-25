@@ -2,11 +2,13 @@
   <NuxtLayout>
     <NuxtPage />
     <AppUpdateToast />
+    <MascotOverlay />
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import AppUpdateToast from "~/components/pwa/AppUpdateToast.vue";
+import MascotOverlay from "~/components/mascot/Overlay.client.vue";
 import { useAuth } from "~/composables/useAuth";
 import { useHead, useI18n } from "#imports";
 

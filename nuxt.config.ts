@@ -11,6 +11,10 @@ const apiBaseUrl = (
   process.env.NUXT_PUBLIC_API_BASE_URL ||
   (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "")
 ).replace(/\/$/, "");
+const mascotEnabled = process.env.NUXT_PUBLIC_MASCOT_ENABLED === "true";
+const mascotModelUrl =
+  process.env.NUXT_PUBLIC_MASCOT_MODEL_URL ||
+  "https://model.hacxy.cn/cat-black/model.json";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
@@ -187,6 +191,8 @@ export default defineNuxtConfig({
       appVersion: pkg.version,
       appBuildVersion,
       apiBaseUrl,
+      mascotEnabled,
+      mascotModelUrl,
     },
   },
   ssr: true,

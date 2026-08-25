@@ -40,6 +40,17 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "mascot": {
+    "label": "UniKorn forum mascot",
+    "expand": "Wake mascot",
+    "collapse": "Minimize mascot",
+    "interact": "Interact with mascot",
+    "loading": "Loading mascot",
+    "loadFailed": "The mascot could not be loaded right now.",
+    "retry": "Reload mascot",
+    "greeting": "Here for another look around?",
+    "reaction": "I'm here."
+  },
   "actions": {
     "login": "Login",
     "logout": "Log out",

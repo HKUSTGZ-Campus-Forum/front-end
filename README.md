@@ -63,6 +63,13 @@ npm run dev
 NUXT_PUBLIC_API_BASE_URL=https://dev.unikorn.axfff.com
 ```
 
+共享开发环境可启用全局 Live2D 桌宠预览；未显式开启时保持关闭，正式发布需在使用自有模型并确认 Cubism 与模型许可后再配置：
+
+```text
+NUXT_PUBLIC_MASCOT_ENABLED=true
+NUXT_PUBLIC_MASCOT_MODEL_URL=https://model.hacxy.cn/cat-black/model.json
+```
+
 ### 构建生产版本
 
 ```bash

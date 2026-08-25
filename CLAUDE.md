@@ -13,6 +13,8 @@
   `assets/css/variables.scss` 中的主题 token，不要硬编码界面颜色。
 - 产品视觉是稳定、理性、低学习成本的“科广蓝校园工具风”；主站页面优先复用
   `keguang` 布局、白/深色表面卡片、轻量阴影和既有响应式断点。
+- `l2d@2.1.1` 的 npm `main` 字段指向不存在的根 `index.js`；桌宠渲染器必须从
+  `l2d/dist/index.js` 动态导入，避免 Nuxt SSR 执行浏览器运行时，也避免 Vite 包入口解析失败。
 
 ## 认证：SSO-only
 

@@ -40,6 +40,17 @@
     "previous": "上一页",
     "next": "下一页"
   },
+  "mascot": {
+    "label": "UniKorn 论坛桌宠",
+    "expand": "唤醒桌宠",
+    "collapse": "收起桌宠",
+    "interact": "和桌宠互动",
+    "loading": "桌宠加载中",
+    "loadFailed": "桌宠暂时没有加载成功。",
+    "retry": "重新加载桌宠",
+    "greeting": "今天也来逛逛？",
+    "reaction": "我在。"
+  },
   "actions": {
     "login": "登录",
     "logout": "退出登录",
