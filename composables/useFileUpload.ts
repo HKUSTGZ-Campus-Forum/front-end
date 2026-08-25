@@ -3,6 +3,7 @@ import type { UploadOptions, UploadUrlResponse, FileRecord, FileType } from '~/t
 import { useApi } from './useApi'
 import { compressImage, COMPRESSION_PRESETS, type CompressionOptions, type CompressionResult } from '~/utils/imageCompression'
 import { FileUploadError } from '~/utils/fileUploadError'
+import { mapUploadByteProgress, UPLOAD_PROGRESS_STAGE } from '~/utils/uploadProgress'
 
 export const useCustomFileUpload = () => {
   const activeUploads = ref(0)
@@ -19,12 +20,20 @@ export const useCustomFileUpload = () => {
 
   const uploadFile = async (options: UploadOptions) => {
     const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onSuccess, onError, enableCompression, compressionOptions, signal } = options
+    let reportedProgress = 0
+
+    const reportProgress = (progress: number) => {
+      reportedProgress = Math.max(reportedProgress, Math.min(UPLOAD_PROGRESS_STAGE.complete, progress))
+      uploadProgress.value = reportedProgress
+      onProgress?.(reportedProgress)
+    }
     
     try {
       activeUploads.value += 1
       error.value = null
       uploadProgress.value = 0
       compressionInfo.value = null
+      reportProgress(UPLOAD_PROGRESS_STAGE.started)
 
       // Step 1: Compress image if enabled and file is an image
       let fileToUpload = file
@@ -70,6 +79,8 @@ export const useCustomFileUpload = () => {
           // Continue with original file if compression fails
         }
       }
+
+      reportProgress(UPLOAD_PROGRESS_STAGE.prepared)
 
       if (maxUploadBytes != null && fileToUpload.size > maxUploadBytes) {
         throw new FileUploadError(
@@ -118,6 +129,7 @@ export const useCustomFileUpload = () => {
       if (typeof signed_url !== 'string' || !Number.isInteger(file_id)) {
         throw new FileUploadError('signing_failed', 'The upload service returned an invalid response.')
       }
+      reportProgress(UPLOAD_PROGRESS_STAGE.signed)
 
       // Fix Mixed Content issue: Force HTTPS for OSS uploads
       const httpsSignedUrl = signed_url.replace(/^http:\/\//, 'https://')
@@ -128,9 +140,7 @@ export const useCustomFileUpload = () => {
       // Setup progress tracking
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const progress = (event.loaded / event.total) * 100
-          uploadProgress.value = progress
-          onProgress?.(progress)
+          reportProgress(mapUploadByteProgress(event.loaded, event.total))
         }
       }
 
@@ -166,6 +176,7 @@ export const useCustomFileUpload = () => {
       } finally {
         signal?.removeEventListener('abort', abortUpload)
       }
+      reportProgress(UPLOAD_PROGRESS_STAGE.verifying)
 
       // Step 3: Authenticated server-side verification against OSS metadata.
       let completionResponse: Response
@@ -183,6 +194,7 @@ export const useCustomFileUpload = () => {
         )
       }
       const fileRecord = await completionResponse.json() as FileRecord
+      reportProgress(UPLOAD_PROGRESS_STAGE.complete)
       onSuccess?.(fileRecord)
       return fileRecord
 
