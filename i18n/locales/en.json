@@ -1222,7 +1222,7 @@
         "pathStart": "Start from a course",
         "mapStart": "Start from a subject",
         "pathStartHelp": "Search for a course to see only the direct requirements before it and the courses it unlocks.",
-        "mapStartHelp": "Choose a subject to scan its complete catalog by course level without turning it into a line maze."
+      "mapStartHelp": "Choose a subject to follow its real prerequisite network. Courses without an internal path remain available in a separate directory."
       },
       "path": {
         "ariaLabel": "Direct course path for {course}",
@@ -1268,13 +1268,21 @@
         "ariaLabel": "{subject} subject map",
         "kicker": "Catalog overview",
         "title": "{subject} Subject Map",
-        "description": "The complete subject catalog is organized by course level. Lines are replaced by readable relationship signals and grouped cross-subject gateways.",
+      "description": "The real prerequisite network is arranged by course level. Arrows show learning direction; cross-subject gateways and courses without internal paths are kept separate.",
         "totalCourses": "Courses",
         "withRelationships": "With relationships",
         "independentCourses": "Independent",
         "externalGateways": "Cross-subject gateways",
-        "externalGatewaysHelp": "Related subjects are summarized instead of drawing every crossing line.",
-        "externalCount": "{count} links",
+      "externalGatewaysHelp": "Related subjects are summarized instead of drawing every crossing line.",
+      "externalCount": "{count} links",
+      "pathStage": "Path stage {stage}",
+      "zoomControls": "Map zoom controls",
+      "zoomOut": "Zoom out",
+      "zoomIn": "Zoom in",
+      "noInternalPaths": "No known prerequisite path inside this subject",
+      "noInternalPathsHelp": "Every course remains available in the directory below. Open a course to inspect its cross-subject relationships.",
+      "independentTitle": "Other courses",
+      "independentHelp": "{count} courses do not form an internal prerequisite path. Expand to browse the complete set.",
         "levelCount": "{count} courses",
         "levels": {
           "foundation": "Foundations",
@@ -1284,8 +1292,10 @@
           "4000": "4000 level",
           "5000plus": "5000+ level"
         },
-        "legendRelated": "Has a structured relationship",
-        "legendIndependent": "No known relationship",
+      "legendRelated": "Has a structured relationship",
+      "legendIndependent": "No known relationship",
+      "legendPrerequisite": "Prerequisite direction",
+      "legendCourse": "Course node",
         "clickHint": "Select any course stop to open its direct Course Path."
       }
     },

@@ -52,12 +52,58 @@ const downstreamCourses = computed(() => {
     return bLocal - aLocal || a.code.localeCompare(b.code, undefined, { numeric: true })
   })
 })
-const downstreamSplit = computed(() => splitCourseUniverseItems(downstreamCourses.value, 4))
+const prerequisiteSplit = computed(() => splitCourseUniverseItems(prerequisiteCourses.value, 4))
+const downstreamSplit = computed(() => splitCourseUniverseItems(downstreamCourses.value, 3))
 const provenance = computed(() => props.overview?.relationships.provenance || null)
 const sourceVersion = computed(() => provenance.value?.source_version?.split(':')[0] || '')
 const course = computed(() => props.overview?.course || null)
 const statusKey = computed(() => getCourseUniverseNodeStatusKey(props.selectedNode))
 const isPlannerUpdating = computed(() => props.plannerUpdatingCodes.has(props.selectedNode.code))
+
+const MAP_WIDTH = 840
+const MAP_HEIGHT = 620
+const LEFT_NODE_X = 28
+const LEFT_NODE_WIDTH = 190
+const SELECTED_X = 318
+const SELECTED_WIDTH = 230
+const RIGHT_NODE_X = 622
+const RIGHT_NODE_WIDTH = 190
+const SELECTED_CENTER_Y = 282
+
+function distributedCenters(count: number, start: number, end: number) {
+  if (count <= 0) return []
+  if (count === 1) return [(start + end) / 2]
+  return Array.from({ length: count }, (_, index) => start + (end - start) * index / (count - 1))
+}
+
+const prerequisiteCenters = computed(() => distributedCenters(prerequisiteSplit.value.visible.length, 220, 430))
+const downstreamCenters = computed(() => distributedCenters(downstreamSplit.value.visible.length, 190, 420))
+const prerequisiteUsesOr = computed(() => /\bOR\b/i.test(relationText(prerequisite.value)))
+const mapStyle = computed(() => ({
+  '--course-map-width': `${MAP_WIDTH}px`,
+  '--course-map-height': `${MAP_HEIGHT}px`,
+}))
+
+function nodeStyle(side: 'before' | 'after', index: number) {
+  const centers = side === 'before' ? prerequisiteCenters.value : downstreamCenters.value
+  const width = side === 'before' ? LEFT_NODE_WIDTH : RIGHT_NODE_WIDTH
+  const x = side === 'before' ? LEFT_NODE_X : RIGHT_NODE_X
+  return {
+    left: `${x}px`,
+    top: `${(centers[index] || SELECTED_CENTER_Y) - 42}px`,
+    width: `${width}px`,
+  }
+}
+
+function pathFromPrerequisite(index: number) {
+  const y = prerequisiteCenters.value[index] || SELECTED_CENTER_Y
+  return `M ${LEFT_NODE_X + LEFT_NODE_WIDTH} ${y} C 264 ${y}, 258 ${SELECTED_CENTER_Y}, 286 ${SELECTED_CENTER_Y} H ${SELECTED_X}`
+}
+
+function pathToDownstream(index: number) {
+  const y = downstreamCenters.value[index] || SELECTED_CENTER_Y
+  return `M ${SELECTED_X + SELECTED_WIDTH} ${SELECTED_CENTER_Y} H 590 C 610 ${SELECTED_CENTER_Y}, 598 ${y}, ${RIGHT_NODE_X} ${y}`
+}
 
 watch(() => props.selectedNode.code, () => {
   showAdditionalDownstream.value = false
@@ -117,52 +163,84 @@ function detailPath(code: string) {
       </div>
 
       <template v-else-if="overview">
-        <div class="course-path__lanes">
-          <section class="course-path__lane course-path__lane--before" aria-labelledby="course-path-before-title">
-            <header>
+        <div class="course-path__viewport">
+          <div class="course-path__map" :style="mapStyle">
+            <div class="course-path__band course-path__band--before" aria-hidden="true" />
+            <div class="course-path__band course-path__band--selected" aria-hidden="true" />
+
+            <header class="course-path__map-heading is-before">
               <span>{{ t('courseUniverse.redesign.path.stepBefore') }}</span>
-              <h4 id="course-path-before-title">{{ t('courseUniverse.redesign.path.prerequisites') }}</h4>
+              <strong id="course-path-before-title">{{ t('courseUniverse.redesign.path.prerequisites') }}</strong>
               <small>{{ t('courseUniverse.redesign.path.prerequisiteHint') }}</small>
             </header>
+            <header class="course-path__map-heading is-selected">
+              <span>{{ t('courseUniverse.redesign.path.stepCurrent') }}</span>
+              <strong id="course-path-selected-title">{{ t('courseUniverse.redesign.path.selectedCourse') }}</strong>
+            </header>
+            <header class="course-path__map-heading is-after">
+              <span>{{ t('courseUniverse.redesign.path.stepAfter') }}</span>
+              <strong id="course-path-after-title">{{ t('courseUniverse.redesign.path.unlocks') }}</strong>
+              <small>{{ t('courseUniverse.redesign.path.unlocksHint') }}</small>
+            </header>
+
+            <svg class="course-path__wires" :viewBox="`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`" aria-hidden="true">
+              <defs>
+                <marker id="course-path-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+                  <path d="M 0 0 L 8 4 L 0 8 Z" />
+                </marker>
+              </defs>
+              <path
+                v-for="(_, index) in prerequisiteSplit.visible"
+                :key="`prerequisite-wire-${index}`"
+                :d="pathFromPrerequisite(index)"
+                class="course-path__wire"
+                marker-end="url(#course-path-arrow)"
+              />
+              <path
+                v-for="(_, index) in downstreamSplit.visible"
+                :key="`downstream-wire-${index}`"
+                :d="pathToDownstream(index)"
+                class="course-path__wire"
+                marker-end="url(#course-path-arrow)"
+              />
+              <path d="M 433 372 V 438" class="course-path__relation-wire" />
+              <circle
+                v-if="prerequisiteSplit.visible.length > 1"
+                cx="286"
+                :cy="SELECTED_CENTER_Y"
+                r="7"
+                :class="['course-path__junction', { 'is-solid': !prerequisiteUsesOr }]"
+              />
+              <circle v-if="downstreamSplit.visible.length > 1" cx="590" :cy="SELECTED_CENTER_Y" r="7" class="course-path__junction" />
+            </svg>
 
             <p v-if="relationText(prerequisite)" class="course-path__expression">
               <span>{{ t('courseUniverse.redesign.path.officialExpression') }}</span>
               <code>{{ relationText(prerequisite) }}</code>
             </p>
 
-            <div v-if="prerequisiteCourses.length" class="course-path__stack course-path__stack--before">
-              <button
-                v-for="item in prerequisiteCourses"
-                :key="item.code"
-                type="button"
-                :class="['course-path-node', relationshipStatusClass(item)]"
-                @click="emit('select', item.code)"
-              >
-                <span class="course-path-node__status" aria-hidden="true" />
-                <span>
-                  <strong>{{ item.display_code }}</strong>
-                  <small>{{ item.title }}</small>
-                </span>
-                <i>{{ relationshipStatusLabel(item) }}</i>
-                <Icon name="lucide:chevron-right" aria-hidden="true" />
-              </button>
-            </div>
-            <div v-else class="course-path__empty-relation">
+            <button
+              v-for="(item, index) in prerequisiteSplit.visible"
+              :key="item.code"
+              type="button"
+              :style="nodeStyle('before', index)"
+              :class="['course-path-node', 'is-before', relationshipStatusClass(item)]"
+              @click="emit('select', item.code)"
+            >
+              <Icon name="lucide:graduation-cap" aria-hidden="true" />
+              <span>
+                <strong>{{ item.display_code }}</strong>
+                <small>{{ item.title }}</small>
+              </span>
+              <i><span class="course-path-node__status" aria-hidden="true" />{{ relationshipStatusLabel(item) }}</i>
+            </button>
+
+            <div v-if="!prerequisiteSplit.visible.length" class="course-path__empty-relation is-before">
               <Icon name="lucide:circle-check" aria-hidden="true" />
               <strong>{{ t('courseUniverse.redesign.path.noPrerequisites') }}</strong>
               <span>{{ t('courseUniverse.redesign.path.noPrerequisitesHelp') }}</span>
             </div>
-          </section>
 
-          <div class="course-path__connector course-path__connector--into" aria-hidden="true">
-            <span />
-          </div>
-
-          <section class="course-path__lane course-path__lane--selected" aria-labelledby="course-path-selected-title">
-            <header>
-              <span>{{ t('courseUniverse.redesign.path.stepCurrent') }}</span>
-              <h4 id="course-path-selected-title">{{ t('courseUniverse.redesign.path.selectedCourse') }}</h4>
-            </header>
             <article class="course-path__selected-card">
               <span class="course-path__selected-kicker">{{ t('courseUniverse.redesign.path.currentFocus') }}</span>
               <strong>{{ selectedNode.displayCode }}</strong>
@@ -187,40 +265,29 @@ function detailPath(code: string) {
                 <strong>{{ relationText(exclusion) || t('courseUniverse.redesign.path.none') }}</strong>
               </div>
             </div>
-          </section>
 
-          <div class="course-path__connector course-path__connector--out" aria-hidden="true">
-            <span />
-          </div>
+            <button
+              v-for="(item, index) in downstreamSplit.visible"
+              :key="item.code"
+              type="button"
+              :style="nodeStyle('after', index)"
+              :class="['course-path-node', 'is-after', relationshipStatusClass(item)]"
+              @click="emit('select', item.code)"
+            >
+              <Icon name="lucide:graduation-cap" aria-hidden="true" />
+              <span>
+                <strong>{{ item.display_code }}</strong>
+                <small>{{ item.title }}</small>
+              </span>
+              <i><span class="course-path-node__status" aria-hidden="true" />{{ relationshipStatusLabel(item) }}</i>
+            </button>
 
-          <section class="course-path__lane course-path__lane--after" aria-labelledby="course-path-after-title">
-            <header>
-              <span>{{ t('courseUniverse.redesign.path.stepAfter') }}</span>
-              <h4 id="course-path-after-title">{{ t('courseUniverse.redesign.path.unlocks') }}</h4>
-              <small>{{ t('courseUniverse.redesign.path.unlocksHint') }}</small>
-            </header>
-            <div v-if="downstreamSplit.visible.length" class="course-path__stack course-path__stack--after">
-              <button
-                v-for="item in downstreamSplit.visible"
-                :key="item.code"
-                type="button"
-                :class="['course-path-node', relationshipStatusClass(item)]"
-                @click="emit('select', item.code)"
-              >
-                <span class="course-path-node__status" aria-hidden="true" />
-                <span>
-                  <strong>{{ item.display_code }}</strong>
-                  <small>{{ item.title }}</small>
-                </span>
-                <i>{{ relationshipStatusLabel(item) }}</i>
-                <Icon name="lucide:chevron-right" aria-hidden="true" />
-              </button>
-            </div>
-            <div v-else class="course-path__empty-relation">
+            <div v-if="!downstreamSplit.visible.length" class="course-path__empty-relation is-after">
               <Icon name="lucide:milestone" aria-hidden="true" />
               <strong>{{ t('courseUniverse.redesign.path.noDownstream') }}</strong>
               <span>{{ t('courseUniverse.redesign.path.noDownstreamHelp') }}</span>
             </div>
+
             <button
               v-if="downstreamSplit.hidden.length"
               type="button"
@@ -233,7 +300,7 @@ function detailPath(code: string) {
                 ? t('courseUniverse.redesign.path.hideAdditional')
                 : t('courseUniverse.redesign.path.showAdditional', { count: downstreamSplit.hidden.length }) }}
             </button>
-          </section>
+          </div>
         </div>
 
         <div v-if="showAdditionalDownstream" class="course-path__additional">
@@ -371,42 +438,6 @@ function detailPath(code: string) {
   width: 16px;
 }
 
-.course-path__lanes {
-  background: var(--surface-secondary);
-  display: grid;
-  grid-template-columns: minmax(190px, 1fr) 44px minmax(210px, 1.08fr) 44px minmax(200px, 1fr);
-  min-height: 480px;
-  padding: 24px;
-}
-
-.course-path__lane {
-  align-content: center;
-  display: grid;
-  gap: 14px;
-  min-width: 0;
-}
-
-.course-path__lane > header > span {
-  color: var(--text-tertiary);
-  font-size: 0.75rem;
-  font-weight: 750;
-}
-
-.course-path__lane h4 {
-  color: var(--text-primary);
-  font-size: 1rem;
-  line-height: 1.25;
-  margin: 3px 0 0;
-}
-
-.course-path__lane header small {
-  color: var(--text-secondary);
-  display: block;
-  font-size: 0.75rem;
-  line-height: 1.4;
-  margin-top: 4px;
-}
-
 .course-path__expression {
   background: color-mix(in srgb, var(--interactive-primary) 7%, var(--surface-primary));
   border: 1px solid color-mix(in srgb, var(--interactive-primary) 24%, var(--border-secondary));
@@ -430,11 +461,6 @@ function detailPath(code: string) {
   font-weight: 750;
   line-height: 1.45;
   overflow-wrap: anywhere;
-}
-
-.course-path__stack {
-  display: grid;
-  gap: 9px;
 }
 
 .course-path-node {
@@ -510,29 +536,6 @@ function detailPath(code: string) {
   color: var(--interactive-primary);
   height: 16px;
   width: 16px;
-}
-
-.course-path__connector {
-  align-items: center;
-  display: flex;
-  position: relative;
-}
-
-.course-path__connector span {
-  background: var(--interactive-active);
-  height: 2px;
-  position: relative;
-  width: 100%;
-}
-
-.course-path__connector span::after {
-  border-bottom: 5px solid transparent;
-  border-left: 7px solid var(--interactive-active);
-  border-top: 5px solid transparent;
-  content: '';
-  position: absolute;
-  right: -1px;
-  top: -4px;
 }
 
 .course-path__selected-card {
@@ -763,6 +766,152 @@ function detailPath(code: string) {
 .course-inspector__actions button:disabled { cursor: wait; opacity: 0.65; }
 .course-inspector__actions button small { color: var(--text-secondary); flex-basis: 100%; font-size: 0.6875rem; font-weight: 600; }
 
+.course-path__viewport {
+  background: var(--surface-secondary);
+  min-height: var(--course-map-height);
+  overflow: auto hidden;
+  scrollbar-color: var(--interactive-secondary) transparent;
+  scrollbar-width: thin;
+}
+
+.course-path__map {
+  height: var(--course-map-height);
+  min-width: var(--course-map-width);
+  position: relative;
+  width: var(--course-map-width);
+}
+
+.course-path__band {
+  border-right: 1px dashed var(--border-secondary);
+  bottom: 0;
+  position: absolute;
+  top: 0;
+}
+
+.course-path__band--before { left: 0; width: 272px; }
+.course-path__band--selected { left: 272px; width: 318px; }
+
+.course-path__map-heading {
+  display: grid;
+  gap: 3px;
+  position: absolute;
+  top: 24px;
+  z-index: 2;
+}
+
+.course-path__map-heading.is-before { left: 28px; width: 190px; }
+.course-path__map-heading.is-selected { left: 318px; text-align: center; width: 230px; }
+.course-path__map-heading.is-after { left: 622px; width: 190px; }
+.course-path__map-heading span { color: var(--interactive-active-text); font-size: 0.6875rem; font-weight: 800; }
+.course-path__map-heading strong { color: var(--text-primary); font-size: 0.9375rem; }
+.course-path__map-heading small { color: var(--text-secondary); font-size: 0.6875rem; line-height: 1.35; }
+
+.course-path__wires {
+  height: 100%;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+}
+
+.course-path__wires marker path { fill: var(--interactive-active); }
+.course-path__wire {
+  fill: none;
+  stroke: var(--interactive-active);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.course-path__relation-wire {
+  fill: none;
+  stroke: var(--text-tertiary);
+  stroke-dasharray: 4 5;
+  stroke-width: 1.5;
+}
+
+.course-path__junction {
+  fill: var(--surface-secondary);
+  stroke: var(--interactive-active);
+  stroke-width: 3;
+}
+
+.course-path__junction.is-solid { fill: var(--interactive-active); }
+
+.course-path__expression {
+  left: 28px;
+  margin: 0;
+  position: absolute;
+  top: 92px;
+  width: 190px;
+  z-index: 2;
+}
+
+.course-path-node {
+  gap: 10px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  height: 84px;
+  min-height: 84px;
+  padding: 11px 12px;
+  position: absolute;
+  z-index: 3;
+}
+
+.course-path-node > :deep(svg) {
+  align-self: start;
+  color: var(--text-secondary);
+  height: 19px;
+  margin-top: 1px;
+  width: 19px;
+}
+
+.course-path-node > i {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  grid-column: 2;
+}
+
+.course-path-node__status { display: inline-block; flex: 0 0 auto; }
+
+.course-path__selected-card {
+  height: 164px;
+  left: 318px;
+  padding: 18px 20px;
+  position: absolute;
+  top: 200px;
+  width: 230px;
+  z-index: 4;
+}
+
+.course-path__other-relations {
+  left: 318px;
+  position: absolute;
+  top: 446px;
+  width: 230px;
+  z-index: 3;
+}
+
+.course-path__empty-relation {
+  position: absolute;
+  top: 214px;
+  width: 190px;
+  z-index: 3;
+}
+
+.course-path__empty-relation.is-before { left: 28px; }
+.course-path__empty-relation.is-after { left: 622px; }
+
+.course-path__more {
+  bottom: 24px;
+  left: 622px;
+  position: absolute;
+  width: 190px;
+  z-index: 3;
+}
+
 .course-path__loading {
   align-content: center;
   background: var(--surface-secondary);
@@ -815,20 +964,13 @@ function detailPath(code: string) {
 @media (max-width: 820px) {
   .course-path__header { align-items: start; flex-direction: column; gap: 8px; }
   .course-path__header p { text-align: left; }
-  .course-path__lanes { grid-template-columns: 1fr; min-height: 0; }
-  .course-path__lane { align-content: start; }
-  .course-path__connector { height: 46px; justify-content: center; }
-  .course-path__connector span { height: 100%; width: 2px; }
-  .course-path__connector span::after { border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--interactive-active); bottom: -1px; left: -4px; right: auto; top: auto; }
   .course-path__additional > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 560px) {
   .course-path__header,
-  .course-path__lanes,
   .course-path__additional,
   .course-inspector { padding-left: 14px; padding-right: 14px; }
-  .course-path__lanes { padding-bottom: 18px; padding-top: 18px; }
   .course-path__additional > div { grid-template-columns: 1fr; }
   .course-inspector__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .course-inspector__facts > div:nth-child(3) { border-left: 0 !important; border-top: 1px solid var(--border-secondary) !important; }

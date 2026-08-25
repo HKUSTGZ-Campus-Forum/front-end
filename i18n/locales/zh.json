@@ -1222,7 +1222,7 @@
         "pathStart": "从一门课程开始",
         "mapStart": "从一个学科开始",
         "pathStartHelp": "搜索课程，只查看它之前的直接要求，以及它直接解锁的后续课程。",
-        "mapStartHelp": "选择学科，按课程等级浏览完整目录，不再把所有关系画成线团。"
+      "mapStartHelp": "选择学科，沿真实先修路径浏览课程网络；没有内部路径的课程会单独收纳。"
       },
       "path": {
         "ariaLabel": "{course} 的直接课程路径",
@@ -1268,13 +1268,21 @@
         "ariaLabel": "{subject} 学科地图",
         "kicker": "课程目录总览",
         "title": "{subject} 学科地图",
-        "description": "按课程等级组织完整目录；用清晰的关系标记和跨学科入口汇总代替密集交叉线。",
+      "description": "按课程等级展开真实先修网络。箭头表示学习方向，跨学科入口和没有内部路径的课程分别收纳。",
         "totalCourses": "课程数",
         "withRelationships": "有关系",
         "independentCourses": "独立课程",
         "externalGateways": "跨学科入口",
-        "externalGatewaysHelp": "汇总相关学科，不把每一条跨越关系都画出来。",
-        "externalCount": "{count} 条关联",
+      "externalGatewaysHelp": "汇总相关学科，不把每一条跨越关系都画出来。",
+      "externalCount": "{count} 条关联",
+      "pathStage": "路径阶段 {stage}",
+      "zoomControls": "地图缩放控制",
+      "zoomOut": "缩小地图",
+      "zoomIn": "放大地图",
+      "noInternalPaths": "当前学科没有已知的内部先修路径",
+      "noInternalPathsHelp": "课程仍完整保留在下方目录中；跨学科关系可在进入单门课程后查看。",
+      "independentTitle": "其他课程",
+      "independentHelp": "{count} 门课程没有形成学科内部先修路径，展开后可完整浏览。",
         "levelCount": "{count} 门课程",
         "levels": {
           "foundation": "基础课程",
@@ -1284,8 +1292,10 @@
           "4000": "4000 级",
           "5000plus": "5000 级以上"
         },
-        "legendRelated": "有结构化关系",
-        "legendIndependent": "暂无已知关系",
+      "legendRelated": "有结构化关系",
+      "legendIndependent": "暂无已知关系",
+      "legendPrerequisite": "先修方向",
+      "legendCourse": "课程节点",
         "clickHint": "点击任意课程站点，进入它的直接课程路径。"
       }
     },
