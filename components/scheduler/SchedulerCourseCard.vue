@@ -1,5 +1,6 @@
 <!-- front-end/components/scheduler/SchedulerCourseCard.vue -->
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {
   CartCourse,
@@ -20,8 +21,11 @@ const props = defineProps<{
     courseCode: string,
     options: { sectionId?: string; from: string; to: string; resolution?: 'auto'; signal?: AbortSignal },
   ) => Promise<import('~/utils/scheduler').SchedulerPopularityHistoryResponse>
+  selected?: boolean
 }>()
 const { t } = useI18n()
+
+const isSelected = computed(() => props.selected ?? props.course.enabled)
 
 const emit = defineEmits<{
   (e: 'toggle-course', code: string, currentEnabled: boolean): void
@@ -67,30 +71,39 @@ function isModuleSelected(bundles: Array<{ id: number; layer: number }>): boolea
 </script>
 
 <template>
-  <div class="course-card" :class="{ 'course-card--disabled': !course.enabled }">
-    <!-- Header: one compact line of meta + title, click toggles the course -->
-    <div class="course-card__header" @click="!mutationsDisabled && emit('toggle-course', course.course_code, course.enabled)">
-      <div class="course-card__info">
-        <div class="course-card__meta">
-          <span class="course-card__code">{{ course.course_code }}</span>
-          <span class="course-card__credits" :style="{ color: creditColorVar(course.credit) }">
-            · {{ t('scheduler.credits', { count: course.credit }) }}
-            <span v-if="course.counts_toward_term_load === false" class="course-card__credit-note">{{ t('scheduler.notCountedInTermLoad') }}</span>
-          </span>
-          <SchedulerPopularitySummary
-            v-if="showPopularity && popularity"
-            class="course-card__popularity"
-            :counts="popularity"
-            :course-code="course.course_code"
-            :semester-id="semesterId"
-            :can-show-history="canShowHistory"
-            :get-history="getHistory"
-            :on-show-full-history="() => emit('show-history', course.course_code)"
-          />
+  <div class="course-card" :class="{ 'course-card--disabled': !isSelected }">
+    <!-- Keep the course toggle and secondary controls as sibling buttons. -->
+    <div class="course-card__header">
+      <button
+        type="button"
+        class="course-card__toggle"
+        :aria-pressed="isSelected"
+        :disabled="mutationsDisabled"
+        @click="emit('toggle-course', course.course_code, isSelected)"
+      >
+        <div class="course-card__info">
+          <div class="course-card__meta">
+            <span class="course-card__code">{{ course.course_code }}</span>
+            <span class="course-card__credits" :style="{ color: creditColorVar(course.credit) }">
+              · {{ t('scheduler.credits', { count: course.credit }) }}
+              <span v-if="course.counts_toward_term_load === false" class="course-card__credit-note">{{ t('scheduler.notCountedInTermLoad') }}</span>
+            </span>
+          </div>
+          <div class="course-card__title">{{ course.course_title }}</div>
         </div>
-        <div class="course-card__title">{{ course.course_title }}</div>
-      </div>
+        <span class="course-card__dot" :class="{ 'course-card__dot--on': isSelected }" aria-hidden="true" />
+      </button>
       <div class="course-card__actions">
+        <SchedulerPopularitySummary
+          v-if="showPopularity && popularity"
+          class="course-card__popularity"
+          :counts="popularity"
+          :course-code="course.course_code"
+          :semester-id="semesterId"
+          :can-show-history="canShowHistory"
+          :get-history="getHistory"
+          :on-show-full-history="() => emit('show-history', course.course_code)"
+        />
         <SchedulerCourseInfoPopover
           :course-code="course.course_code"
           :course-title="course.course_title"
@@ -98,11 +111,10 @@ function isModuleSelected(bundles: Array<{ id: number; layer: number }>): boolea
           :counts-toward-term-load="course.counts_toward_term_load"
           :semester-id="semesterId"
         />
-        <span class="course-card__dot" :class="{ 'course-card__dot--on': course.enabled }" />
       </div>
     </div>
 
-    <div v-if="course.enabled && course.selection_policy?.kind === 'module'" class="course-card__modules">
+    <div v-if="isSelected && course.selection_policy?.kind === 'module'" class="course-card__modules">
       <section v-for="group in moduleGroups" :key="group.id" class="course-card__module-group">
         <div class="course-card__module-group-head">
           <span>{{ t(group.role === 'required' ? 'scheduler.requiredModules' : 'scheduler.electiveModules') }}</span>
@@ -145,7 +157,7 @@ function isModuleSelected(bundles: Array<{ id: number; layer: number }>): boolea
     </div>
 
     <!-- Standard courses keep the familiar one-row-per-layer controls. -->
-    <div v-else-if="course.enabled" class="course-card__bundles">
+    <div v-else-if="isSelected" class="course-card__bundles">
       <div v-for="(bundles, layer) in course.layers" :key="layer" class="course-card__layer">
         <div class="course-card__bundle-row">
           <button
@@ -225,8 +237,32 @@ function isModuleSelected(bundles: Array<{ id: number; layer: number }>): boolea
   &__header {
     display: flex;
     align-items: flex-start;
+    gap: 8px;
+  }
+
+  &__toggle {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
     gap: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--interactive-primary);
+      outline-offset: 3px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
   }
 
   &__info {
@@ -269,7 +305,6 @@ function isModuleSelected(bundles: Array<{ id: number; layer: number }>): boolea
   &__popularity {
     flex-shrink: 0;
     align-self: center;
-    margin-left: 4px;
   }
 
   &__title {

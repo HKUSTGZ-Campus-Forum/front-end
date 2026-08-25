@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 function source(path: string) {
-  return readFileSync(new URL(path, import.meta.url), 'utf8')
+  return readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n?/g, '\n')
 }
 
 describe('scheduler hardening UI contract', () => {
@@ -84,7 +84,9 @@ describe('scheduler hardening UI contract', () => {
     expect(dashboard).toContain('settlement.isCurrent()')
     expect(dashboard).toContain("? 'ambiguous'")
     expect(dashboard).toContain(": 'failed'")
-    expect(dashboard).toContain('@toggle-course="handleToggleCourse"')
+    expect(dashboard).toContain('@toggle-course="handleToggleCourseByMode"')
+    expect(dashboard).toContain('handleToggleCourse(code, currentEnabled)')
+    expect(dashboard).toContain('optimizer.toggleCandidate(code)')
     expect(dashboard).toContain('@toggle-bundle="handleToggleBundle"')
     expect(dashboard).toContain(':semester-id="semesterId"')
   })

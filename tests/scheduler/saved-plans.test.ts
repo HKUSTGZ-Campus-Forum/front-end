@@ -51,6 +51,24 @@ describe('saved scheduler plans', () => {
     }])
   })
 
+  it('can serialize a ranked selection independently of workspace enablement', () => {
+    expect(buildSchedulerPlanCourses(courses, selections, {
+      includeDisabledCourses: true,
+    })).toEqual([
+      {
+        course_code: 'AIAA 1001',
+        selections: [
+          { bundle_id: 2, layer: 0 },
+          { bundle_id: 8, layer: 1 },
+        ],
+      },
+      {
+        course_code: 'MATH 1002',
+        selections: [{ bundle_id: 1, layer: 0 }],
+      },
+    ])
+  })
+
   it('copies blocked periods and trims plan metadata', () => {
     const bannedPeriods = Array.from({ length: 7 }, () => Array(8).fill(false))
     bannedPeriods[0][0] = true
