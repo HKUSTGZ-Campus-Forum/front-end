@@ -14,11 +14,13 @@ import {
   buildCourseUniverseRelationshipCourseCodeSet,
   buildCourseUniverseRelationalComponentSet,
   buildCourseUniverseSubjectOptions,
+  buildCourseUniverseSubjectGateways,
   buildCourseUniverseSupplementalComponentSet,
   buildCourseUniverseVisibleComponentSet,
   buildCourseUniverseVisibleCodeSet,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
+  formatCourseRequirementExpression,
   getCourseUniverseRedirect,
   getCourseUniverseLineStyle,
   getCourseUniverseActiveSchedulerSemester,
@@ -27,10 +29,13 @@ import {
   getCourseUniverseNodeStatusKey,
   getCourseUniverseViewBox,
   getCourseUniverseNodePrefix,
+  getCourseUniverseLevelKey,
+  groupCourseUniverseSubjectNodes,
   hasCourseUniversePointerMoved,
   isCourseUniverseActivePath,
   layoutCourseUniverseLocalSubgraph,
   normalizeCourseUniverseNodes,
+  splitCourseUniverseItems,
   type CourseUniverseAcademicRecord,
   type CourseUniverseCartCourse,
   type CourseUniverseMapComponent,
@@ -55,6 +60,13 @@ const records: CourseUniverseAcademicRecord[] = [
 const cart: CourseUniverseCartCourse[] = [
   { course_code: 'DSAA 3010' },
 ]
+
+describe('course requirement presentation', () => {
+  it('turns compact official expressions into readable course logic', () => {
+    expect(formatCourseRequirementExpression('UFUG1103ORUFUG1106')).toBe('UFUG 1103 OR UFUG 1106')
+    expect(formatCourseRequirementExpression('(AMAT2020ANDUFUG1501)')).toBe('(AMAT 2020 AND UFUG 1501)')
+  })
+})
 
 const prefixNodes = [
   { code: 'UCUG1051', displayCode: 'UCUG 1051', title: 'Core A', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
@@ -188,6 +200,50 @@ const isolatedLines = [
 ]
 
 describe('course universe helpers', () => {
+  it('groups a subject into stable academic levels without mixing other subjects', () => {
+    const groups = groupCourseUniverseSubjectNodes({
+      nodes: [
+        ...prefixNodes,
+        { code: 'UFUG2103', displayCode: 'UFUG 2103', title: 'Linear Algebra', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+        { code: 'UFUG4101', displayCode: 'UFUG 4101', title: 'Capstone', x: 0, y: 0, category: 0, academicStatus: null, inPlanner: false, selected: false },
+      ],
+      prefix: 'UFUG',
+    })
+
+    expect(groups.map(group => group.key)).toEqual(['1000', '2000', '4000'])
+    expect(groups.flatMap(group => group.nodes.map(node => node.code))).toEqual([
+      'UFUG1101',
+      'UFUG2103',
+      'UFUG4101',
+    ])
+  })
+
+  it('derives readable level keys and keeps dense lists progressively disclosed', () => {
+    expect(getCourseUniverseLevelKey('UFUG 2103')).toBe('2000')
+    expect(getCourseUniverseLevelKey('PHDG 6100')).toBe('5000plus')
+    expect(splitCourseUniverseItems(['a', 'b', 'c', 'd', 'e'], 3)).toEqual({
+      visible: ['a', 'b', 'c'],
+      hidden: ['d', 'e'],
+    })
+  })
+
+  it('summarizes cross-subject prerequisite dependencies as gateways', () => {
+    const gateways = buildCourseUniverseSubjectGateways({
+      components: [
+        { id: 'UFUG2103', node_type: null, x_coordinate: 0, y_coordinate: 0, category: 0 },
+        { id: 'AMAT2050', node_type: null, x_coordinate: 0, y_coordinate: 0, category: 0 },
+        { id: '(AMAT2050&UFUG2103)', node_type: false, x_coordinate: 0, y_coordinate: 0, category: 1 },
+      ],
+      lines: [
+        { id: 1, start_id: 'AMAT2050', end_id: '(AMAT2050&UFUG2103)', line_type: false, x_coordinate: 0, category: 1 },
+        { id: 2, start_id: '(AMAT2050&UFUG2103)', end_id: 'UFUG2103', line_type: null, x_coordinate: 0, category: 1 },
+      ],
+      prefix: 'UFUG',
+    })
+
+    expect(gateways).toEqual([{ prefix: 'AMAT', count: 1, courseCodes: ['AMAT2050'] }])
+  })
+
   it('renders course cards as native SVG groups so they share graph transforms with lines', () => {
     const canvasSource = readFileSync(
       new URL('../../components/courses/universe/CourseUniverseCanvas.vue', import.meta.url),

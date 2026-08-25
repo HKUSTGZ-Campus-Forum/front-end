@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import CourseUniverseExplorer from './CourseUniverseExplorer.vue'
 import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
+import type { CourseOverviewPayload } from '~/types/course-overview'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import {
   compactCourseCode,
@@ -23,6 +24,7 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
+const router = useRouter()
 const { t, locale } = useI18n()
 const { isLoggedIn } = useAuth()
 const { fetchPublic } = useApi()
@@ -42,6 +44,10 @@ const cartMessage = ref('')
 const cartNoticeTone = ref<'info' | 'success' | 'error'>('info')
 const cartUpdatingCodes = ref(new Set<string>())
 const graphMetadata = ref<CourseUniverseGraphMetadata | null>(null)
+const selectedCourseOverview = ref<CourseOverviewPayload | null>(null)
+const overviewLoading = ref(false)
+const overviewError = ref('')
+let overviewRequestId = 0
 
 const mode = computed(() => props.mode || 'universe')
 const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
@@ -123,6 +129,32 @@ async function loadUniverse() {
   }
 }
 
+async function loadCourseOverview(code: string) {
+  const requestId = ++overviewRequestId
+  overviewLoading.value = true
+  overviewError.value = ''
+  selectedCourseOverview.value = null
+  try {
+    const response = await fetchPublic(`/api/courses/by-code/${encodeURIComponent(code)}/overview`)
+    if (!response.ok) throw new Error('overview_request_failed')
+    const payload = await response.json() as CourseOverviewPayload
+    if (requestId === overviewRequestId) selectedCourseOverview.value = payload
+  } catch {
+    if (requestId === overviewRequestId) overviewError.value = t('courseUniverse.errors.courseDetail')
+  } finally {
+    if (requestId === overviewRequestId) overviewLoading.value = false
+  }
+}
+
+function selectCourse(code: string) {
+  const normalizedCode = compactCourseCode(code)
+  selectedCourseCode.value = normalizedCode || null
+  const query = { ...route.query }
+  if (normalizedCode) query.focus = normalizedCode
+  else delete query.focus
+  router.replace({ query })
+}
+
 async function refreshPlannerCart() {
   if (!isLoggedIn.value || !activeSchedulerSemester.value) {
     plannerCourses.value = []
@@ -187,6 +219,22 @@ async function togglePlannerCourse(code: string) {
 watch(activeSchedulerSemester, () => {
   refreshPlannerCart()
 })
+watch(() => route.query.focus, (focus) => {
+  const normalizedCode = typeof focus === 'string' ? compactCourseCode(focus) : ''
+  if ((selectedCourseCode.value || '') !== normalizedCode) {
+    selectedCourseCode.value = normalizedCode || null
+  }
+})
+watch(selectedCourseCode, (code) => {
+  if (!code) {
+    overviewRequestId += 1
+    selectedCourseOverview.value = null
+    overviewError.value = ''
+    overviewLoading.value = false
+    return
+  }
+  loadCourseOverview(code)
+})
 onMounted(loadUniverse)
 </script>
 
@@ -222,7 +270,13 @@ onMounted(loadUniverse)
         :components="components"
         :nodes="nodes"
         :lines="lines"
-        @select="selectedCourseCode = $event || null"
+        :overview="selectedCourseOverview"
+        :overview-loading="overviewLoading"
+        :overview-error="overviewError"
+        :active-semester-label="activeSchedulerSemesterLabel"
+        :planner-updating-codes="cartUpdatingCodes"
+        @select="selectCourse"
+        @retry-overview="selectedCourseCode && loadCourseOverview(selectedCourseCode)"
         @toggle-planner="togglePlannerCourse"
       />
     </template>
@@ -232,7 +286,7 @@ onMounted(loadUniverse)
 <style scoped lang="scss">
 .cu-page {
   margin: 0 auto;
-  max-width: 1180px;
+  max-width: 1440px;
   padding: 24px 20px 28px;
 }
 

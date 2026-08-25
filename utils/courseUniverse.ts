@@ -104,6 +104,19 @@ export interface CourseUniverseSubjectOption extends CourseUniversePrefixOption 
   isolatedCount: number
 }
 
+export type CourseUniverseLevelKey = 'foundation' | '1000' | '2000' | '3000' | '4000' | '5000plus'
+
+export interface CourseUniverseLevelGroup {
+  key: CourseUniverseLevelKey
+  nodes: CourseUniverseNode[]
+}
+
+export interface CourseUniverseSubjectGateway {
+  prefix: string
+  count: number
+  courseCodes: string[]
+}
+
 export interface CourseUniverseRenderComponent {
   id: string
   kind: 'course' | 'logic'
@@ -165,9 +178,54 @@ export function formatCourseCode(code: string) {
   return match ? `${match[1]} ${match[2]}` : compact
 }
 
+export function formatCourseRequirementExpression(expression: string) {
+  return String(expression || '')
+    .replace(/([A-Z0-9)])\s*(OR|AND)\s*(?=[A-Z(])/g, '$1 $2 ')
+    .replace(/\b([A-Z]{2,6})\s*(\d{4}[A-Z]?)\b/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function getCourseUniverseNodePrefix(code: string) {
   const match = compactCourseCode(code).match(/^([A-Z]+)\d/)
   return match?.[1] || compactCourseCode(code)
+}
+
+export function getCourseUniverseLevelKey(code: string): CourseUniverseLevelKey {
+  const match = compactCourseCode(code).match(/^[A-Z]+(\d{4})/)
+  if (!match) return 'foundation'
+  const level = Number(match[1][0])
+  if (!Number.isFinite(level) || level <= 0) return 'foundation'
+  if (level >= 5) return '5000plus'
+  return `${level}000` as CourseUniverseLevelKey
+}
+
+export function groupCourseUniverseSubjectNodes(input: {
+  nodes: CourseUniverseNode[]
+  prefix: string
+}): CourseUniverseLevelGroup[] {
+  const order: CourseUniverseLevelKey[] = ['foundation', '1000', '2000', '3000', '4000', '5000plus']
+  const groups = new Map<CourseUniverseLevelKey, CourseUniverseNode[]>()
+  input.nodes
+    .filter(node => getCourseUniverseNodePrefix(node.code) === input.prefix)
+    .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }))
+    .forEach((node) => {
+      const key = getCourseUniverseLevelKey(node.code)
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)?.push(node)
+    })
+
+  return order
+    .filter(key => groups.has(key))
+    .map(key => ({ key, nodes: groups.get(key) || [] }))
+}
+
+export function splitCourseUniverseItems<T>(items: T[], visibleLimit = 4) {
+  const safeLimit = Math.max(0, visibleLimit)
+  return {
+    visible: items.slice(0, safeLimit),
+    hidden: items.slice(safeLimit),
+  }
 }
 
 export function buildCourseUniverseModePath(mode: CourseUniverseModeKey) {
@@ -418,6 +476,46 @@ function getCourseUniverseCodesInComponentId(componentId: string) {
       .map(code => getCourseUniverseComponentCourseCode(code))
       .filter(Boolean),
   )
+}
+
+export function buildCourseUniverseSubjectGateways(input: {
+  components: CourseUniverseMapComponent[]
+  lines: CourseUniverseMapLine[]
+  prefix: string
+}): CourseUniverseSubjectGateway[] {
+  if (!input.prefix) return []
+  const componentById = new Map(input.components.map(component => [component.id, component]))
+  const externalCodesByPrefix = new Map<string, Set<string>>()
+
+  input.lines
+    .filter(line => line.category === 1)
+    .forEach((line) => {
+      const endpointCodes = [line.start_id, line.end_id]
+        .flatMap((id) => {
+          const component = componentById.get(id)
+          if (!component) return []
+          if (component.category === 0) return [getCourseUniverseComponentCourseCode(id)]
+          return [...getCourseUniverseCodesInComponentId(id)]
+        })
+      const subjectCodes = endpointCodes.filter(code => getCourseUniverseNodePrefix(code) === input.prefix)
+      if (!subjectCodes.length) return
+      endpointCodes
+        .filter(code => getCourseUniverseNodePrefix(code) !== input.prefix)
+        .forEach((code) => {
+          const prefix = getCourseUniverseNodePrefix(code)
+          if (!prefix) return
+          if (!externalCodesByPrefix.has(prefix)) externalCodesByPrefix.set(prefix, new Set())
+          externalCodesByPrefix.get(prefix)?.add(code)
+        })
+    })
+
+  return [...externalCodesByPrefix.entries()]
+    .map(([prefix, codes]) => ({
+      prefix,
+      count: codes.size,
+      courseCodes: [...codes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    }))
+    .sort((a, b) => b.count - a.count || a.prefix.localeCompare(b.prefix))
 }
 
 export function layoutCourseUniverseGraphComponents(input: {
