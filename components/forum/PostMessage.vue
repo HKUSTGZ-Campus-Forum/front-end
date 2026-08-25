@@ -113,15 +113,27 @@ const imageCount = computed(() => attachments.value.filter((item) => item.kind =
 const otherCount = computed(() => attachments.value.length - imageCount.value)
 const isUploading = computed(() => attachments.value.some((item) => item.status === 'queued' || item.status === 'uploading'))
 const hasUploadErrors = computed(() => attachments.value.some((item) => item.status === 'error'))
+const overallUploadProgress = computed(() => {
+  const uploadItems = attachments.value.filter((item) => item.status !== 'error')
+  if (!uploadItems.length) return 0
+  const totalBytes = uploadItems.reduce((total, item) => total + Math.max(item.source.size, 1), 0)
+  return Math.round(uploadItems.reduce((total, item) => total + item.progress * Math.max(item.source.size, 1), 0) / totalBytes)
+})
 const formValid = computed(() => Boolean(
-  title.value.trim()
-  && content.value.trim()
+  title.value.trim().length >= 5
+  && title.value.trim().length <= 100
+  && content.value.trim().length >= 10
   && !errors.title
   && !errors.content
   && !errors.tags
   && !isUploading.value
   && !hasUploadErrors.value
 ))
+const publishButtonLabel = computed(() => {
+  if (isPublishing.value) return t('forum.create.actions.publishing')
+  if (isUploading.value) return t('forum.create.actions.uploadingAttachments', { progress: overallUploadProgress.value })
+  return t('forum.create.actions.publish')
+})
 
 const validateTitle = () => {
   const length = title.value.trim().length
@@ -142,6 +154,14 @@ const validateContent = () => {
       ? t('forum.create.validation.contentMin')
       : ''
 }
+
+watch(title, () => {
+  if (errors.title) validateTitle()
+})
+
+watch(content, () => {
+  if (errors.content) validateContent()
+})
 
 const clearTagError = () => { errors.tags = '' }
 const handleTagInputFocus = () => { isTagInputFocused.value = true }
@@ -616,7 +636,7 @@ onBeforeUnmount(() => {
 
     <div class="form-actions">
       <button type="button" class="cancel-button" :disabled="isPublishing" @click="handleCancel">{{ t('forum.create.actions.cancel') }}</button>
-      <button type="submit" class="primary-button" :disabled="isPublishing || !formValid"><Icon v-if="isPublishing" name="lucide:loader-circle" class="spin" aria-hidden="true" />{{ isPublishing ? t('forum.create.actions.publishing') : t('forum.create.actions.publish') }}</button>
+      <button type="submit" class="primary-button" :disabled="isPublishing || isUploading"><Icon v-if="isPublishing || isUploading" name="lucide:loader-circle" class="spin" aria-hidden="true" />{{ publishButtonLabel }}</button>
     </div>
   </form>
 </template>
@@ -654,7 +674,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .attachment-status { color: var(--text-muted); font-size: .76rem; }
 .attachment-status--ready { color: var(--semantic-success); }
 .progress-track { height: 4px; margin: .4rem 0 .25rem; overflow: hidden; border-radius: 999px; background: var(--surface-secondary); }
-.progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--interactive-primary); transition: width .15s linear; }
+.progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--interactive-primary); transition: width .25s cubic-bezier(.22, 1, .36, 1); }
 .icon-action { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: .55rem; background: transparent; color: var(--text-muted); cursor: pointer; }
 .icon-action:hover { background: var(--surface-secondary); color: var(--text-primary); }
 .icon-action:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
@@ -676,6 +696,10 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .spin { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .progress-track span { transition: none; }
+  .spin { animation-duration: 1.5s; }
+}
 @media (max-width: 640px) {
   .composer { gap: 1.25rem; }
   .upload-actions, .tag-input-row { flex-direction: column; }

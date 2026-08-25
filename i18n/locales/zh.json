@@ -55,6 +55,15 @@
     "save": "保存",
     "goToPost": "去发帖"
   },
+  "identitySelector": {
+    "label": "发布身份",
+    "defaultName": "普通用户",
+    "defaultDescription": "以普通身份发布",
+    "loading": "正在加载身份…",
+    "loadFailed": "身份加载失败",
+    "noVerifiedIdentity": "暂无认证身份",
+    "noVerifiedIdentityHint": "仍可使用普通身份发布，也可以在设置中申请认证"
+  },
   "nav": {
     "home": "首页",
     "forum": "论坛",
@@ -1896,7 +1905,8 @@
         "removeTag": "删除标签 {tag}",
         "cancel": "取消",
         "publish": "发布帖子",
-        "publishing": "发布中…"
+        "publishing": "发布中…",
+        "uploadingAttachments": "附件上传中 {progress}%"
       },
       "upload": {
         "title": "视频与文件",

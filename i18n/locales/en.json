@@ -55,6 +55,15 @@
     "save": "Save",
     "goToPost": "Create post"
   },
+  "identitySelector": {
+    "label": "Posting identity",
+    "defaultName": "Regular user",
+    "defaultDescription": "Publish with your regular profile",
+    "loading": "Loading identities…",
+    "loadFailed": "Could not load identities",
+    "noVerifiedIdentity": "No verified identities",
+    "noVerifiedIdentityHint": "You can still publish normally, or request verification in Settings"
+  },
   "nav": {
     "home": "Home",
     "forum": "Forum",
@@ -1896,7 +1905,8 @@
         "removeTag": "Remove tag {tag}",
         "cancel": "Cancel",
         "publish": "Publish post",
-        "publishing": "Publishing…"
+        "publishing": "Publishing…",
+        "uploadingAttachments": "Uploading attachments {progress}%"
       },
       "upload": {
         "title": "Videos and files",

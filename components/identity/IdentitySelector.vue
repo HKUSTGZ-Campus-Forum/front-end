@@ -23,6 +23,7 @@ const props = withDefaults(defineProps<IdentitySelectorProps>(), {
 })
 
 const emit = defineEmits<IdentitySelectorEmits>()
+const { t } = useI18n()
 
 const { 
   userIdentities, 
@@ -47,13 +48,11 @@ const availableIdentities = computed(() => {
   return approvedIdentities.value
 })
 
-const hasIdentities = computed(() => availableIdentities.value.length > 0)
-
 const displayText = computed(() => {
   if (selectedIdentity.value) {
     return selectedIdentity.value.identity_type.display_name
   }
-  return hasIdentities.value ? '选择身份' : '暂无可用身份'
+  return t('identitySelector.defaultName')
 })
 
 const selectorClasses = computed(() => [
@@ -61,14 +60,14 @@ const selectorClasses = computed(() => [
   `identity-selector--${props.size}`,
   {
     'identity-selector--open': isOpen.value,
-    'identity-selector--disabled': props.disabled || !hasIdentities.value,
+    'identity-selector--disabled': props.disabled,
     'identity-selector--selected': selectedIdentity.value
   }
 ])
 
 // Methods
 const toggleDropdown = () => {
-  if (props.disabled || !hasIdentities.value) return
+  if (props.disabled) return
   isOpen.value = !isOpen.value
 }
 
@@ -131,7 +130,7 @@ onUnmounted(() => {
 <template>
   <div class="identity-selector-container">
     <label v-if="showLabel" class="identity-selector-label">
-      发布身份
+      {{ t('identitySelector.label') }}
     </label>
     
     <div :class="selectorClasses">
@@ -194,8 +193,8 @@ onUnmounted(() => {
           <div class="option-content">
             <span class="option-icon">👤</span>
             <div class="option-details">
-              <span class="option-name">普通用户</span>
-              <span class="option-description">以普通身份发布</span>
+              <span class="option-name">{{ t('identitySelector.defaultName') }}</span>
+              <span class="option-description">{{ t('identitySelector.defaultDescription') }}</span>
             </div>
           </div>
         </div>
@@ -231,21 +230,21 @@ onUnmounted(() => {
         <!-- Loading state -->
         <div v-if="loading" class="dropdown-loading">
           <span class="loading-spinner">⟳</span>
-          <span>加载中...</span>
+          <span>{{ t('identitySelector.loading') }}</span>
         </div>
 
         <!-- Error state -->
         <div v-if="error" class="dropdown-error">
           <span class="error-icon"><Icon name="lucide:circle-alert" aria-hidden="true" /></span>
-          <span>加载失败</span>
+          <span>{{ t('identitySelector.loadFailed') }}</span>
         </div>
 
         <!-- Empty state -->
         <div v-if="!loading && !error && availableIdentities.length === 0" class="dropdown-empty">
           <span class="empty-icon"><Icon name="lucide:file-text" aria-hidden="true" /></span>
           <div class="empty-content">
-            <span class="empty-title">暂无认证身份</span>
-            <span class="empty-description">您可以在设置中申请身份认证</span>
+            <span class="empty-title">{{ t('identitySelector.noVerifiedIdentity') }}</span>
+            <span class="empty-description">{{ t('identitySelector.noVerifiedIdentityHint') }}</span>
           </div>
         </div>
       </div>
