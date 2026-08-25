@@ -519,7 +519,7 @@ onUnmounted(() => {
                   </button>
                 </div>
                 <div v-if="profile.earlyRules.length" class="optimizer-settings__rules">
-                  <article v-for="rule in profile.earlyRules" :key="rule.id" class="optimizer-settings__rule" :class="{ 'is-disabled': !rule.enabled }">
+                  <article v-for="rule in profile.earlyRules" :key="rule.id" class="optimizer-settings__rule optimizer-settings__rule--early" :class="{ 'is-disabled': !rule.enabled }">
                     <label class="optimizer-settings__rule-toggle">
                       <input :checked="rule.enabled" type="checkbox" @change="updateRule('earlyRules', rule.id, { enabled: eventChecked($event) })" />
                       <span>{{ rule.enabled ? t('scheduler.optimizer.enabled') : t('scheduler.optimizer.disabled') }}</span>
@@ -1041,6 +1041,10 @@ onUnmounted(() => {
 
   &--section {
     grid-template-columns: auto minmax(150px, 1.1fr) minmax(150px, 1.1fr) minmax(95px, 0.55fr) 36px;
+  }
+
+  &--early {
+    grid-template-columns: auto repeat(3, minmax(100px, 1fr)) 36px;
   }
 
   &--time {

@@ -18,6 +18,7 @@ const sidePanel = source('../../components/scheduler/SchedulerSidePanel.vue')
 const courseCard = source('../../components/scheduler/SchedulerCourseCard.vue')
 const bottomPanel = source('../../components/scheduler/SchedulerBottomPanel.vue')
 const optimizerComposable = source('../../composables/useSchedulerOptimizer.ts')
+const optimizerSettings = source('../../components/scheduler/SchedulerOptimizerSettings.vue')
 const optimizerStorage = source('../../utils/schedulerOptimizerStorage.ts')
 
 describe('ranked scheduler UI integration contract', () => {
@@ -93,6 +94,31 @@ describe('ranked scheduler UI integration contract', () => {
     expect(bottomPanel).toContain(':disabled="totalPlans <= 0"')
     expect(bottomPanel).toContain('role="slider"')
     expect(bottomPanel).toContain(':aria-valuenow="displayedIndex"')
+  })
+
+  it('keeps every early-start rule on the same compact row as other scoring rules', () => {
+    const earlyRules = between(
+      optimizerSettings,
+      'v-if="profile.earlyRules.length"',
+      '<div v-for="state in',
+    )
+
+    expect(earlyRules).toContain(
+      'class="optimizer-settings__rule optimizer-settings__rule--early"',
+    )
+    for (const handler of [
+      "updateRule('earlyRules', rule.id, { enabled:",
+      "updateRule('earlyRules', rule.id, { day:",
+      "updateRule('earlyRules', rule.id, { startMinute:",
+      "updateRule('earlyRules', rule.id, { delta:",
+      "removeRule('earlyRules', rule.id)",
+    ]) {
+      expect(earlyRules).toContain(handler)
+    }
+    expect(earlyRules).not.toContain("updateRule('timeRules'")
+    expect(optimizerSettings).toMatch(
+      /&--early\s*\{\s*grid-template-columns:\s*auto repeat\(3, minmax\(100px, 1fr\)\) 36px;/,
+    )
   })
 })
 
