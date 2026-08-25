@@ -159,6 +159,70 @@ describe('scheduler optimizer storage', () => {
     })
   })
 
+  it('migrates legacy per-day early rules and collapses equivalent weekdays', () => {
+    const fallback = createDefaultSchedulerOptimizerConfig(['COMP1001'])
+    const legacyProfile = structuredClone(fallback.profile) as unknown as Record<string, unknown>
+    legacyProfile.baseScore = '123.5'
+    legacyProfile.earlyRules = [
+      ...[1, 2, 3, 4, 5].map(day => ({
+        id: `early-${day}`,
+        enabled: true,
+        day,
+        startMinute: 540,
+        delta: '-5',
+      })),
+      {
+        id: 'duplicate-monday',
+        enabled: true,
+        day: 1,
+        startMinute: 540,
+        delta: '-5',
+      },
+      {
+        id: 'custom-tuesday',
+        enabled: true,
+        day: 2,
+        startMinute: 625,
+        delta: '-2.5',
+      },
+    ]
+
+    const parsed = parseSchedulerOptimizerConfig({
+      schemaVersion: 1,
+      mode: 'ranked',
+      candidateCodes: ['COMP1001'],
+      minCourses: 1,
+      maxCourses: 1,
+      topX: 3,
+      profile: legacyProfile,
+    }, fallback)
+
+    expect(parsed.profile.baseScore).toBe('123.5')
+    expect(parsed.profile.earlyRules).toEqual([
+      {
+        id: 'early-1',
+        enabled: true,
+        days: [1, 2, 3, 4, 5],
+        startMinute: 540,
+        delta: '-5',
+      },
+      {
+        id: 'duplicate-monday',
+        enabled: true,
+        days: [1],
+        startMinute: 540,
+        delta: '-5',
+      },
+      {
+        id: 'custom-tuesday',
+        enabled: true,
+        days: [2],
+        startMinute: 625,
+        delta: '-2.5',
+      },
+    ])
+  })
+
   it('falls back safely for an old schema or broken score profile', () => {
     const fallback = createDefaultSchedulerOptimizerConfig(['MATH1001'])
     expect(parseSchedulerOptimizerConfig({ schemaVersion: 0 }, fallback)).toEqual(fallback)
@@ -214,5 +278,31 @@ describe('scheduler optimizer storage', () => {
     editing.profile.baseScore = '-2.75'
     saveSchedulerOptimizerConfig('2610', editing)
     expect(loadSchedulerOptimizerConfig('2610', fallback).profile.baseScore).toBe('-2.75')
+  })
+
+  it('remembers multi-day early cutoffs and changes the result fingerprint when they change', () => {
+    const values = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
+    const config = createDefaultSchedulerOptimizerConfig(['COMP1001'])
+    config.profile.earlyRules = [{
+      id: 'custom-early',
+      enabled: true,
+      days: [1, 3, 5],
+      startMinute: 625,
+      delta: '-2.75',
+    }]
+
+    saveSchedulerOptimizerConfig('2610', config)
+    const loaded = loadSchedulerOptimizerConfig('2610', createDefaultSchedulerOptimizerConfig())
+    expect(loaded.profile.earlyRules).toEqual(config.profile.earlyRules)
+
+    const initial = createSchedulerOptimizerFingerprint({ profile: loaded.profile })
+    const changedProfile = structuredClone(loaded.profile)
+    changedProfile.earlyRules[0].days = [1, 2, 3, 5]
+    const changed = createSchedulerOptimizerFingerprint({ profile: changedProfile })
+    expect(schedulerOptimizerFingerprintsEqual(initial, changed)).toBe(false)
   })
 })

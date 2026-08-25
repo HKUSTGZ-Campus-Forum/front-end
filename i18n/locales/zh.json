@@ -2515,6 +2515,7 @@
       "courseCount": "课程总数",
       "scoreDelta": "加/减分",
       "weekday": "星期",
+      "earlyCutoffTime": "最晚开始时间",
       "startTime": "开始时间",
       "endTime": "结束时间",
       "application": "计分方式",
@@ -2552,7 +2553,7 @@
         "courseCount": "课程总数为 {count} 门",
         "courseSelection": "选择 {code} · {title}",
         "sectionSelection": "选择 {code} 的 {section}",
-        "earlyStart": "{day} {time} 开始上课（命中：{matched}）",
+        "earlyStart": "在 {time} 或之前开始上课 · 命中 {quantity} 天（{matched}）",
         "timeWindow": "{state} {start}–{end} · {application} · 命中 {quantity} 次（{matched}）",
         "noMatchedDays": "无命中日期",
         "unknown": "未知评分规则"

@@ -34,7 +34,7 @@ export interface SchedulerOptimizerSectionRule {
 export interface SchedulerOptimizerEarlyRule {
   id: string
   enabled: boolean
-  day: number
+  days: number[]
   startMinute: number
   delta: string
 }
@@ -129,8 +129,8 @@ export type SchedulerOptimizerBreakdownItem =
       ruleId: string
       kind: 'early-start'
       amount: string
-      day: number
       startMinute: number
+      quantity: number
       matchedDays: number[]
     }
   | {
@@ -547,13 +547,13 @@ export function createDefaultSchedulerOptimizerScoreProfile(): SchedulerOptimize
     ],
     courseRules: [],
     sectionRules: [],
-    earlyRules: [1, 2, 3, 4, 5].map(day => ({
-      id: `early-${day}`,
+    earlyRules: [{
+      id: 'early-weekdays',
       enabled: true,
-      day,
+      days: [1, 2, 3, 4, 5],
       startMinute: 540,
       delta: '-5',
-    })),
+    }],
     timeRules: [
       {
         id: 'occupied-lunch',
@@ -613,8 +613,12 @@ export function validateSchedulerOptimizerScoreProfile(
   }
   for (const rule of profile.earlyRules) {
     claimId(rule.id)
-    if (!Number.isInteger(rule.day) || rule.day < 1 || rule.day > 7) {
-      throw new Error('Early-start rule has an invalid weekday')
+    if (
+      rule.days.length === 0
+      || rule.days.some(day => !Number.isInteger(day) || day < 1 || day > 7)
+      || new Set(rule.days).size !== rule.days.length
+    ) {
+      throw new Error('Early-start rules require at least one unique valid weekday')
     }
     if (!Number.isInteger(rule.startMinute) || rule.startMinute < 0 || rule.startMinute >= 1440) {
       throw new Error('Early-start rule has an invalid time')
@@ -769,20 +773,20 @@ export function scoreSchedulerOptimizerSelection(
   const lectures = selected.flatMap(entry => entry.option.lectures)
   for (const rule of profile.earlyRules) {
     if (!rule.enabled) continue
-    const matched = lectures.some(lecture => (
-      lecture.day === rule.day
-      && schedulerHhmmToMinutes(lecture.start_time) === rule.startMinute
-    ))
-    if (!matched) continue
-    const contribution = parseDecimal(rule.delta)
+    const matchedDays = rule.days.filter(day => lectures.some(lecture => (
+      lecture.day === day
+      && schedulerHhmmToMinutes(lecture.start_time) <= rule.startMinute
+    )))
+    if (matchedDays.length === 0) continue
+    const contribution = multiplyDecimalByInteger(parseDecimal(rule.delta), matchedDays.length)
     score = addDecimal(score, contribution)
     breakdown.push({
       ruleId: rule.id,
       kind: 'early-start',
       amount: decimalToString(contribution),
-      day: rule.day,
       startMinute: rule.startMinute,
-      matchedDays: [rule.day],
+      quantity: matchedDays.length,
+      matchedDays,
     })
   }
   for (const rule of profile.timeRules) {
@@ -816,6 +820,17 @@ type TimeAtom = {
   day: number
   startMinute: number
   endMinute: number
+}
+
+type EarlyAtom = {
+  bit: bigint
+  day: number
+  startMinute: number
+}
+
+type CompiledEarlyRule = {
+  atomMask: bigint
+  delta: bigint
 }
 
 type CompiledTimeRule = {
@@ -917,8 +932,21 @@ function compileScoreProfile(
     addToMap(bySection, rule.sectionId, alignCoefficient(value, scale))
   }
 
-  const enabledEarlyRules = earlyRules.filter(entry => entry.rule.enabled)
-  const earlyDeltas = enabledEarlyRules.map(entry => alignCoefficient(entry.value, scale))
+  const earlyAtoms: EarlyAtom[] = []
+  const compiledEarlyRules: CompiledEarlyRule[] = []
+  for (const { rule, value } of earlyRules) {
+    if (!rule.enabled) continue
+    let atomMask = 0n
+    for (const day of rule.days) {
+      const bit = 1n << BigInt(earlyAtoms.length)
+      atomMask |= bit
+      earlyAtoms.push({ bit, day, startMinute: rule.startMinute })
+    }
+    compiledEarlyRules.push({
+      atomMask,
+      delta: alignCoefficient(value, scale),
+    })
+  }
   const timeAtoms: TimeAtom[] = []
   const compiledTimeRules: CompiledTimeRule[] = []
   for (const { rule, value } of timeRules) {
@@ -953,13 +981,12 @@ function compileScoreProfile(
     const selectedCourseScore = courseScore.get(course.code) ?? 0n
     for (const option of course.options) {
       let earlyMask = 0n
-      for (let index = 0; index < enabledEarlyRules.length; index += 1) {
-        const rule = enabledEarlyRules[index].rule
+      for (const atom of earlyAtoms) {
         if (option.lectures.some(lecture => (
-          lecture.day === rule.day
-          && schedulerHhmmToMinutes(lecture.start_time) === rule.startMinute
+          lecture.day === atom.day
+          && schedulerHhmmToMinutes(lecture.start_time) <= atom.startMinute
         ))) {
-          earlyMask |= 1n << BigInt(index)
+          earlyMask |= atom.bit
         }
       }
 
@@ -1008,8 +1035,9 @@ function compileScoreProfile(
   }
   const scoreState = (state: CompiledScoreState, courseCount: number): bigint => {
     let score = baseScore + state.staticScore + (countScore.get(courseCount) ?? 0n)
-    for (let index = 0; index < earlyDeltas.length; index += 1) {
-      if ((state.earlyMask & (1n << BigInt(index))) !== 0n) score += earlyDeltas[index]
+    for (const rule of compiledEarlyRules) {
+      const matchedCount = popcount(state.earlyMask & rule.atomMask)
+      if (matchedCount !== 0) score += rule.delta * BigInt(matchedCount)
     }
     for (const rule of compiledTimeRules) {
       const occupiedMask = state.timeMask & rule.atomMask

@@ -57,8 +57,8 @@ function breakdownLabel(item: SchedulerOptimizerBreakdownItem): string {
       })
     case 'early-start':
       return t('scheduler.optimizer.breakdown.earlyStart', {
-        day: dayLabel(item.day),
         time: minuteLabel(item.startMinute),
+        quantity: item.quantity,
         matched: matchedDaysLabel(item.matchedDays),
       })
     case 'time-window':

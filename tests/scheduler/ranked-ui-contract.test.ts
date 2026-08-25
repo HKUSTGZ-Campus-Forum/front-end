@@ -96,7 +96,7 @@ describe('ranked scheduler UI integration contract', () => {
     expect(bottomPanel).toContain(':aria-valuenow="displayedIndex"')
   })
 
-  it('keeps every early-start rule on the same compact row as other scoring rules', () => {
+  it('uses one compact multi-day card for each early-cutoff rule', () => {
     const earlyRules = between(
       optimizerSettings,
       'v-if="profile.earlyRules.length"',
@@ -106,18 +106,34 @@ describe('ranked scheduler UI integration contract', () => {
     expect(earlyRules).toContain(
       'class="optimizer-settings__rule optimizer-settings__rule--early"',
     )
+    expect(earlyRules).toContain(
+      'class="optimizer-settings__rule-line optimizer-settings__rule-line--early"',
+    )
+    expect(earlyRules).toContain('<fieldset class="optimizer-settings__days">')
+    expect(earlyRules).toContain('v-for="day in weekdayNumbers"')
+    expect(earlyRules).toContain(':checked="rule.days.includes(day)"')
+    expect(earlyRules).toContain(':disabled="rule.days.length === 1 && rule.days.includes(day)"')
+    expect(earlyRules).toContain('toggleEarlyRuleDay(rule, day, eventChecked($event))')
+    expect(earlyRules).toContain("t('scheduler.optimizer.earlyCutoffTime')")
     for (const handler of [
       "updateRule('earlyRules', rule.id, { enabled:",
-      "updateRule('earlyRules', rule.id, { day:",
       "updateRule('earlyRules', rule.id, { startMinute:",
       "updateRule('earlyRules', rule.id, { delta:",
       "removeRule('earlyRules', rule.id)",
     ]) {
       expect(earlyRules).toContain(handler)
     }
+    expect(earlyRules).not.toContain(':value="rule.day"')
+    expect(earlyRules).not.toContain("{ day:")
     expect(earlyRules).not.toContain("updateRule('timeRules'")
+    expect(optimizerSettings).toContain(
+      'earlyRules: profile.earlyRules.map(rule => ({ ...rule, days: [...rule.days] }))',
+    )
     expect(optimizerSettings).toMatch(
-      /&--early\s*\{\s*grid-template-columns:\s*auto repeat\(3, minmax\(100px, 1fr\)\) 36px;/,
+      /&--early\s*\{\s*display:\s*block;/,
+    )
+    expect(optimizerSettings).toMatch(
+      /\.optimizer-settings__rule-line--early\s*\{\s*grid-template-columns:\s*auto repeat\(2, minmax\(100px, 1fr\)\) 36px;/,
     )
   })
 })

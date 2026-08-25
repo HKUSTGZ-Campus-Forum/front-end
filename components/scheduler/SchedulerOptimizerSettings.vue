@@ -94,7 +94,7 @@ function cloneProfile(profile: SchedulerOptimizerScoreProfile): SchedulerOptimiz
     countRules: profile.countRules.map(rule => ({ ...rule })),
     courseRules: profile.courseRules.map(rule => ({ ...rule })),
     sectionRules: profile.sectionRules.map(rule => ({ ...rule })),
-    earlyRules: profile.earlyRules.map(rule => ({ ...rule })),
+    earlyRules: profile.earlyRules.map(rule => ({ ...rule, days: [...rule.days] })),
     timeRules: profile.timeRules.map(rule => ({ ...rule, days: [...rule.days] })),
   }
 }
@@ -147,12 +147,10 @@ function addCountRule() {
 }
 
 function addEarlyRule() {
-  const usedDays = new Set(props.profile.earlyRules.map(rule => rule.day))
-  const day = weekdayNumbers.find(value => !usedDays.has(value)) ?? 1
   const rule: SchedulerOptimizerEarlyRule = {
     id: createRuleId('early'),
     enabled: true,
-    day,
+    days: [...weekdayNumbers],
     startMinute: 540,
     delta: '-5',
   }
@@ -211,6 +209,13 @@ function toggleTimeRuleDay(rule: SchedulerOptimizerTimeRule, day: number, checke
     ? [...new Set([...rule.days, day])].sort((left, right) => left - right)
     : rule.days.filter(value => value !== day)
   updateRule('timeRules', rule.id, { days })
+}
+
+function toggleEarlyRuleDay(rule: SchedulerOptimizerEarlyRule, day: number, checked: boolean) {
+  const days = checked
+    ? [...new Set([...rule.days, day])].sort((left, right) => left - right)
+    : rule.days.filter(value => value !== day)
+  updateRule('earlyRules', rule.id, { days })
 }
 
 function minutesToTime(minutes: number): string {
@@ -520,27 +525,30 @@ onUnmounted(() => {
                 </div>
                 <div v-if="profile.earlyRules.length" class="optimizer-settings__rules">
                   <article v-for="rule in profile.earlyRules" :key="rule.id" class="optimizer-settings__rule optimizer-settings__rule--early" :class="{ 'is-disabled': !rule.enabled }">
-                    <label class="optimizer-settings__rule-toggle">
-                      <input :checked="rule.enabled" type="checkbox" @change="updateRule('earlyRules', rule.id, { enabled: eventChecked($event) })" />
-                      <span>{{ rule.enabled ? t('scheduler.optimizer.enabled') : t('scheduler.optimizer.disabled') }}</span>
-                    </label>
-                    <label class="optimizer-settings__compact-field">
-                      <span>{{ t('scheduler.optimizer.weekday') }}</span>
-                      <select :value="rule.day" @change="updateRule('earlyRules', rule.id, { day: eventInteger($event, rule.day, 1) })">
-                        <option v-for="day in weekdayNumbers" :key="day" :value="day">{{ dayLabel(day) }}</option>
-                      </select>
-                    </label>
-                    <label class="optimizer-settings__compact-field">
-                      <span>{{ t('scheduler.optimizer.startTime') }}</span>
-                      <input type="time" :value="minutesToTime(rule.startMinute)" @input="updateRule('earlyRules', rule.id, { startMinute: timeToMinutes(eventValue($event), rule.startMinute) })" />
-                    </label>
-                    <label class="optimizer-settings__compact-field">
-                      <span>{{ t('scheduler.optimizer.scoreDelta') }}</span>
-                      <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" :value="rule.delta" @input="updateRule('earlyRules', rule.id, { delta: eventValue($event) })" />
-                    </label>
-                    <button type="button" class="optimizer-settings__delete" :aria-label="t('scheduler.optimizer.deleteRule')" @click="removeRule('earlyRules', rule.id)">
-                      <Icon name="lucide:trash-2" aria-hidden="true" />
-                    </button>
+                    <div class="optimizer-settings__rule-line optimizer-settings__rule-line--early">
+                      <label class="optimizer-settings__rule-toggle">
+                        <input :checked="rule.enabled" type="checkbox" @change="updateRule('earlyRules', rule.id, { enabled: eventChecked($event) })" />
+                        <span>{{ rule.enabled ? t('scheduler.optimizer.enabled') : t('scheduler.optimizer.disabled') }}</span>
+                      </label>
+                      <label class="optimizer-settings__compact-field">
+                        <span>{{ t('scheduler.optimizer.earlyCutoffTime') }}</span>
+                        <input type="time" :value="minutesToTime(rule.startMinute)" @input="updateRule('earlyRules', rule.id, { startMinute: timeToMinutes(eventValue($event), rule.startMinute) })" />
+                      </label>
+                      <label class="optimizer-settings__compact-field">
+                        <span>{{ t('scheduler.optimizer.scoreDelta') }}</span>
+                        <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" :value="rule.delta" @input="updateRule('earlyRules', rule.id, { delta: eventValue($event) })" />
+                      </label>
+                      <button type="button" class="optimizer-settings__delete" :aria-label="t('scheduler.optimizer.deleteRule')" @click="removeRule('earlyRules', rule.id)">
+                        <Icon name="lucide:trash-2" aria-hidden="true" />
+                      </button>
+                    </div>
+                    <fieldset class="optimizer-settings__days">
+                      <legend>{{ t('scheduler.optimizer.appliesOn') }}</legend>
+                      <label v-for="day in weekdayNumbers" :key="day">
+                        <input :checked="rule.days.includes(day)" :disabled="rule.days.length === 1 && rule.days.includes(day)" type="checkbox" @change="toggleEarlyRuleDay(rule, day, eventChecked($event))" />
+                        <span>{{ dayLabel(day) }}</span>
+                      </label>
+                    </fieldset>
                   </article>
                 </div>
                 <p v-else class="optimizer-settings__empty">{{ t('scheduler.optimizer.noRules') }}</p>
@@ -591,7 +599,7 @@ onUnmounted(() => {
                     <fieldset class="optimizer-settings__days">
                       <legend>{{ t('scheduler.optimizer.appliesOn') }}</legend>
                       <label v-for="day in weekdayNumbers" :key="day">
-                        <input :checked="rule.days.includes(day)" type="checkbox" @change="toggleTimeRuleDay(rule, day, eventChecked($event))" />
+                        <input :checked="rule.days.includes(day)" :disabled="rule.days.length === 1 && rule.days.includes(day)" type="checkbox" @change="toggleTimeRuleDay(rule, day, eventChecked($event))" />
                         <span>{{ dayLabel(day) }}</span>
                       </label>
                     </fieldset>
@@ -1044,7 +1052,7 @@ onUnmounted(() => {
   }
 
   &--early {
-    grid-template-columns: auto repeat(3, minmax(100px, 1fr)) 36px;
+    display: block;
   }
 
   &--time {
@@ -1057,6 +1065,10 @@ onUnmounted(() => {
   grid-template-columns: auto repeat(4, minmax(100px, 1fr)) 36px;
   gap: 9px;
   align-items: end;
+}
+
+.optimizer-settings__rule-line--early {
+  grid-template-columns: auto repeat(2, minmax(100px, 1fr)) 36px;
 }
 
 .optimizer-settings__rule-toggle {
@@ -1163,6 +1175,11 @@ onUnmounted(() => {
       border-color: var(--scheduler-chip-border-active);
       background: var(--scheduler-chip-bg-active);
       color: var(--scheduler-chip-text-active);
+    }
+
+    input:disabled + span {
+      cursor: not-allowed;
+      opacity: 0.58;
     }
 
     input:focus-visible + span {

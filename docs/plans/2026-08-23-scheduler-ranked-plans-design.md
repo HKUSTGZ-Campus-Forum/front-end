@@ -41,7 +41,7 @@ Each plan starts with an editable base score and then applies:
 
 - score per total course credit;
 - zero or more exact course-count rules, such as five courses `+10`;
-- a separate early-start rule for every weekday, defaulting to a 09:00 start penalty;
+- zero or more early-start cutoff rules with selectable weekdays, defaulting to one Monday-to-Friday rule that scores each day containing a course starting at or before 09:00;
 - zero or more occupied-time rules, with editable days, start/end times, value, and `per day`, `any day`, or `all days` aggregation;
 - zero or more free-time rules with the same controls;
 - zero or more selected-course rules;

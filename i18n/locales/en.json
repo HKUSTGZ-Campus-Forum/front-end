@@ -2515,6 +2515,7 @@
       "courseCount": "Total courses",
       "scoreDelta": "Point change",
       "weekday": "Weekday",
+      "earlyCutoffTime": "Latest start time",
       "startTime": "Start time",
       "endTime": "End time",
       "application": "Application",
@@ -2552,7 +2553,7 @@
         "courseCount": "Total course count is {count}",
         "courseSelection": "Selected {code} · {title}",
         "sectionSelection": "Selected {section} for {code}",
-        "earlyStart": "Starts at {time} on {day} (matched: {matched})",
+        "earlyStart": "Starts at or before {time} · {quantity} matching days ({matched})",
         "timeWindow": "{state} from {start}–{end} · {application} · {quantity} matches ({matched})",
         "noMatchedDays": "no matching days",
         "unknown": "Unknown scoring rule"

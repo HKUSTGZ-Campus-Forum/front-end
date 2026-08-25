@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildSchedulerOptimizerCourses,
+  createDefaultSchedulerOptimizerScoreProfile,
   schedulerHhmmToMinutes,
   scoreSchedulerOptimizerSelection,
   solveRankedScheduler,
+  validateSchedulerOptimizerScoreProfile,
   type SchedulerOptimizerCourse,
   type SchedulerOptimizerScoreProfile,
   type SchedulerOptimizerSelectedCourse,
@@ -400,6 +402,24 @@ describe('scheduler ranked optimizer adapter', () => {
 })
 
 describe('scheduler ranked optimizer scoring and ranking', () => {
+  it('uses one weekday early-cutoff rule by default', () => {
+    expect(createDefaultSchedulerOptimizerScoreProfile().earlyRules).toEqual([{
+      id: 'early-weekdays',
+      enabled: true,
+      days: [1, 2, 3, 4, 5],
+      startMinute: 540,
+      delta: '-5',
+    }])
+  })
+
+  it('requires at least one unique valid day for every early-cutoff rule', () => {
+    for (const days of [[], [0], [8], [1.5], [1, 1]]) {
+      expect(() => validateSchedulerOptimizerScoreProfile(emptyProfile({
+        earlyRules: [{ id: 'early', enabled: true, days, startMinute: 625, delta: '-5' }],
+      }))).toThrow(/Early-start rules require/)
+    }
+  })
+
   it('scores term-load credit when it differs from the catalogue credit', () => {
     const course = cartCourse('UCUG1000', 3, {
       0: [{ id: 1, lectures: [] }],
@@ -417,6 +437,59 @@ describe('scheduler ranked optimizer scoring and ranking', () => {
     expect(scored.score).toBe('1.25')
   })
 
+  it('treats the early time as an inclusive start cutoff and scores each matching day once', async () => {
+    const course = cartCourse('EARLY1001', 0, {
+      0: [{
+        id: 1,
+        sections: [{
+          id: 'L01',
+          lectures: [
+            lecture(1, 700, 800),
+            lecture(1, 900, 1020),
+            lecture(2, 1025, 1145),
+            lecture(3, 1030, 1150),
+            lecture(4, 900, 1020),
+          ],
+        }],
+      }],
+    })
+    const [prepared] = buildSchedulerOptimizerCourses([course], noBans(), ['EARLY1001'])
+    const profile = emptyProfile({
+      earlyRules: [{
+        id: 'early-cutoff',
+        enabled: true,
+        days: [1, 2, 3],
+        startMinute: 625,
+        delta: '-2.5',
+      }],
+    })
+    const selection = [{ course: prepared, option: prepared.options[0] }]
+
+    const scored = scoreSchedulerOptimizerSelection(selection, profile)
+    expect(scored.score).toBe('-5')
+    expect(scored.breakdown.find(item => item.ruleId === 'early-cutoff')).toMatchObject({
+      amount: '-5',
+      matchedDays: [1, 2],
+      quantity: 2,
+      startMinute: 625,
+    })
+
+    const solved = await solveRankedScheduler({
+      courses: [prepared],
+      minCourses: 1,
+      maxCourses: 1,
+      topX: 1,
+      profile,
+    })
+    expect(solved.status).toBe('complete')
+    expect(solved.plans[0].score).toBe('-5')
+    expect(solved.plans[0].breakdown.find(item => item.ruleId === 'early-cutoff')).toMatchObject({
+      amount: '-5',
+      matchedDays: [1, 2],
+      quantity: 2,
+    })
+  })
+
   it('scores a course once across multiple layers and targets L0x by section id', async () => {
     const course = cartCourse('AIAA1001', 0.12345678, {
       0: [{ id: 1, sections: [{ id: 'L01', name: 'L01', lectures: [lecture(1, 900, 1030)] }] }],
@@ -429,7 +502,7 @@ describe('scheduler ranked optimizer scoring and ranking', () => {
       countRules: [{ id: 'one-course', enabled: true, courseCount: 1, delta: '1' }],
       courseRules: [{ id: 'course', enabled: true, courseCode: 'AIAA1001', delta: '-0.5' }],
       sectionRules: [{ id: 'l01', enabled: true, courseCode: 'AIAA1001', sectionId: 'L01', delta: '2.5' }],
-      earlyRules: [{ id: 'early', enabled: true, day: 1, startMinute: 540, delta: '-5' }],
+      earlyRules: [{ id: 'early', enabled: true, days: [1], startMinute: 540, delta: '-5' }],
       timeRules: [
         {
           id: 'duplicate-occupied-days',
@@ -620,7 +693,7 @@ describe('scheduler ranked optimizer search', () => {
         { id: 'prefer-a-l2', enabled: true, courseCode: 'A1001', sectionId: 'A-L2', delta: '1' },
       ],
       earlyRules: [
-        { id: 'monday-nine', enabled: true, day: 1, startMinute: 540, delta: '-0.5' },
+        { id: 'early-weekdays', enabled: true, days: [1, 5], startMinute: 540, delta: '-0.5' },
       ],
       timeRules: [
         {
@@ -709,8 +782,8 @@ describe('scheduler ranked optimizer search', () => {
           },
         ],
         earlyRules: [
-          { id: 'monday-nine', enabled: true, day: 1, startMinute: 540, delta: '-1' },
-          { id: 'tuesday-noon', enabled: true, day: 2, startMinute: 720, delta: '0.2' },
+          { id: 'early-selected-days', enabled: true, days: [1, 3, 5], startMinute: 540, delta: '-1' },
+          { id: 'tuesday-noon', enabled: true, days: [2], startMinute: 720, delta: '0.2' },
         ],
         timeRules: [
           {

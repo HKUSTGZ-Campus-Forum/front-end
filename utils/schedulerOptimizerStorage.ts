@@ -69,6 +69,61 @@ function cloneConfig(
   return JSON.parse(JSON.stringify(config)) as SchedulerOptimizerPersistedConfig
 }
 
+function migratedScoreProfile(value: unknown): SchedulerOptimizerScoreProfile | null {
+  if (!isRecord(value)) return null
+  try {
+    const candidate = JSON.parse(JSON.stringify(value)) as Record<string, unknown>
+    if (Array.isArray(candidate.earlyRules)) {
+      const migratedRules: unknown[] = []
+      const legacyGroups = new Map<string, number[]>()
+
+      for (const entry of candidate.earlyRules) {
+        if (
+          !isRecord(entry)
+          || Array.isArray(entry.days)
+          || typeof entry.day !== 'number'
+          || !Number.isInteger(entry.day)
+        ) {
+          migratedRules.push(entry)
+          continue
+        }
+
+        const groupKey = JSON.stringify([entry.enabled, entry.startMinute, entry.delta])
+        const existingDays = legacyGroups.get(groupKey)
+        const day = Number(entry.day)
+        if (existingDays) {
+          if (!existingDays.includes(day)) {
+            existingDays.push(day)
+            continue
+          }
+
+          const duplicateDayRule: Record<string, unknown> = { ...entry, days: [day] }
+          delete duplicateDayRule.day
+          migratedRules.push(duplicateDayRule)
+          continue
+        }
+
+        const days = [day]
+        const migratedRule: Record<string, unknown> = { ...entry, days }
+        delete migratedRule.day
+        legacyGroups.set(groupKey, days)
+        migratedRules.push(migratedRule)
+      }
+
+      for (const days of legacyGroups.values()) {
+        days.sort((left, right) => left - right)
+      }
+      candidate.earlyRules = migratedRules
+    }
+
+    const profile = candidate as unknown as SchedulerOptimizerScoreProfile
+    validateSchedulerOptimizerScoreProfile(profile)
+    return profile
+  } catch {
+    return null
+  }
+}
+
 export function createDefaultSchedulerOptimizerConfig(
   candidateCodes: string[] = [],
 ): SchedulerOptimizerPersistedConfig {
@@ -98,15 +153,8 @@ export function parseSchedulerOptimizerConfig(
   }
 
   let profile = JSON.parse(JSON.stringify(fallback.profile)) as SchedulerOptimizerScoreProfile
-  if (isRecord(payload.profile)) {
-    try {
-      const candidate = JSON.parse(JSON.stringify(payload.profile)) as SchedulerOptimizerScoreProfile
-      validateSchedulerOptimizerScoreProfile(candidate)
-      profile = candidate
-    } catch {
-      // Keep the known-good default profile.
-    }
-  }
+  const parsedProfile = migratedScoreProfile(payload.profile)
+  if (parsedProfile) profile = parsedProfile
 
   return {
     schemaVersion: CONFIG_SCHEMA_VERSION,
@@ -159,9 +207,7 @@ export function saveSchedulerOptimizerConfig(
         try {
           const previous = JSON.parse(previousRaw) as unknown
           if (isRecord(previous) && isRecord(previous.profile)) {
-            const candidate = JSON.parse(JSON.stringify(previous.profile)) as SchedulerOptimizerScoreProfile
-            validateSchedulerOptimizerScoreProfile(candidate)
-            profile = candidate
+            profile = migratedScoreProfile(previous.profile) ?? profile
           }
         } catch {
           // A corrupt previous record cannot supply a safe profile; use defaults.
