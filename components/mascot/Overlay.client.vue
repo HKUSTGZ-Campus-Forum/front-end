@@ -63,7 +63,7 @@
         :title="t('mascot.expand')"
         @click="expand"
       >
-        <Icon name="lucide:cat" aria-hidden="true" />
+        <Icon name="lucide:sparkles" aria-hidden="true" />
       </button>
     </aside>
   </Teleport>
