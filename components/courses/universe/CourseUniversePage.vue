@@ -50,6 +50,11 @@ const overviewError = ref('')
 let overviewRequestId = 0
 
 const mode = computed(() => props.mode || 'universe')
+const graphSourceKind = computed<'official' | 'mixed' | 'fallback'>(() => {
+  if (!graphMetadata.value) return 'official'
+  if ((graphMetadata.value.fallback_relationship_count || 0) > 0) return 'mixed'
+  return graphMetadata.value.is_fallback ? 'fallback' : 'official'
+})
 const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
 const activeSchedulerSemesterLabel = computed(() => {
   const semester = semesters.value.find(item => item.id === activeSchedulerSemester.value)
@@ -258,8 +263,11 @@ onMounted(loadUniverse)
     </div>
 
     <template v-else>
-      <p v-if="graphMetadata" :class="['cu-page__source', { 'is-fallback': graphMetadata.is_fallback }]">
-        <span>{{ graphMetadata.is_fallback ? t('courseUniverse.source.fallback') : t('courseUniverse.source.official') }}</span>
+      <p v-if="graphMetadata" :class="['cu-page__source', `is-${graphSourceKind}`]">
+        <span v-if="graphSourceKind === 'mixed'">
+          {{ t('courseUniverse.source.mixed', { count: graphMetadata.fallback_relationship_count || 0 }) }}
+        </span>
+        <span v-else>{{ graphSourceKind === 'fallback' ? t('courseUniverse.source.fallback') : t('courseUniverse.source.official') }}</span>
         <span aria-hidden="true">·</span>
         <span>{{ t('courseUniverse.source.summary', { courses: graphMetadata.course_count, relationships: graphMetadata.relationship_count }) }}</span>
       </p>
@@ -377,7 +385,8 @@ onMounted(loadUniverse)
   margin: 0 0 10px;
 }
 
-.cu-page__source.is-fallback {
+.cu-page__source.is-fallback,
+.cu-page__source.is-mixed {
   color: var(--semantic-warning);
 }
 

@@ -1168,6 +1168,7 @@
     "selectCourse": "Select a course to inspect it",
     "source": {
       "official": "Official course catalog",
+      "mixed": "Official catalog · {count} fallback relationships",
       "fallback": "Legacy graph fallback",
       "summary": "{courses} courses · {relationships} relationships"
     },

@@ -1168,6 +1168,7 @@
     "selectCourse": "选择一门课程查看详情",
     "source": {
       "official": "学校课程目录",
+      "mixed": "学校官方目录 · {count} 条备用关系",
       "fallback": "历史图谱备用数据",
       "summary": "{courses} 门课程 · {relationships} 条关系"
     },
