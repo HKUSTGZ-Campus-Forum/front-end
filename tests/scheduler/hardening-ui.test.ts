@@ -56,6 +56,13 @@ describe('scheduler hardening UI contract', () => {
     expect(planner).toContain('@retry-cart-load="reload"')
     expect(dashboard).toContain("t('scheduler.cartLoadFailed')")
     expect(dashboard).toContain("emit('retry-cart-load')")
+    const workspaceTag = dashboard.match(/<div\s+[^>]*id="scheduler-planner-workspace"[^>]*>/)?.[0]
+    expect(workspaceTag).toBeTruthy()
+    expect(workspaceTag).toContain('ref="bodyRef"')
+    expect(workspaceTag).toContain('class="dashboard__body"')
+    expect(workspaceTag).not.toContain('v-if=')
+    expect(dashboard).toContain('<ClientOnly>')
+    expect(dashboard).toContain('<template #fallback>')
     expect(dashboard).toContain('v-if="!cartLoadError && !loading"')
     expect(dashboard).toContain(':visible="showCartPanel && !loading && !cartLoadError && !cart.requiresReload.value"')
     expect(semesterIndex).toContain('v-else-if="loadError"')

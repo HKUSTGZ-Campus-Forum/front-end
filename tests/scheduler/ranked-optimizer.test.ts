@@ -11,6 +11,7 @@ import {
 } from '../../utils/schedulerOptimizer'
 import {
   schedulerLecturesOverlap,
+  solvePlans,
   type CartCourse,
   type SchedulerLecture,
   type SchedulerSection,
@@ -225,6 +226,162 @@ describe('scheduler ranked optimizer adapter', () => {
     expect(prepared.options.flatMap(option => option.sections).some(section => section.sectionId === 'L01')).toBe(true)
   })
 
+  it('matches solvePlans for complete required and elective module selections', () => {
+    const course = cartCourse('UCUG1000', 3, {
+      0: [{ id: 1, sections: [{ id: 'M01-L01', sectionType: 'M01' }] }],
+      1: [
+        { id: 10, sections: [{ id: 'M02-L01', sectionType: 'M02' }] },
+        { id: 11, sections: [{ id: 'M03-L01', sectionType: 'M03' }] },
+      ],
+      2: [
+        { id: 20, sections: [{ id: 'M05-L01', sectionType: 'M05' }] },
+        { id: 21, sections: [{ id: 'M06-L01', sectionType: 'M06' }] },
+      ],
+    })
+    course.selection_policy = {
+      kind: 'module',
+      modules: [
+        { code: 'M01', title: 'Required', credit: 1, available: true },
+        { code: 'M02', title: 'Elective 2', credit: 1, available: true },
+        { code: 'M03', title: 'Elective 3', credit: 1, available: true },
+        { code: 'M05', title: 'Elective 5', credit: 1, available: true },
+        { code: 'M06', title: 'Elective 6', credit: 1, available: true },
+      ],
+      groups: [
+        { id: 'required', role: 'required', min_select: 1, max_select: 1, module_codes: ['M01'] },
+        {
+          id: 'electives',
+          role: 'elective',
+          min_select: 1,
+          max_select: 2,
+          module_codes: ['M02', 'M03', 'M05', 'M06'],
+        },
+      ],
+    }
+
+    const [prepared] = buildSchedulerOptimizerCourses([course], noBans(), ['UCUG1000'])
+    const fixedSolver = solvePlans([course], noBans())
+    expect(fixedSolver.status).toBe('ok')
+    if (fixedSolver.status !== 'ok') throw new Error('expected fixed-solver module plans')
+
+    expect(prepared.options.map(option => option.selections.map(selection => ({
+      courseIndex: 0,
+      ...selection,
+    })))).toEqual(fixedSolver.plans)
+    expect(prepared.options).toHaveLength(10)
+    expect(new Set(prepared.options.map(option => option.selections.length))).toEqual(new Set([2, 3]))
+    expect(prepared.options.find(option => option.selections.some(selection => (
+      selection.layer === 2 && selection.bundleId === 21
+    )))?.sections.some(section => section.sectionId === 'M06-L01')).toBe(true)
+  })
+
+  it('makes a module course unavailable when disabled and banned modules cannot meet a group minimum', () => {
+    const course = cartCourse('UCUG1000', 3, {
+      0: [{ id: 1, sections: [{ id: 'M01-L01', sectionType: 'M01' }] }],
+      1: [
+        {
+          id: 2,
+          enabled: false,
+          sections: [{ id: 'M02-L01', sectionType: 'M02' }],
+        },
+        {
+          id: 3,
+          sections: [{
+            id: 'M03-L01',
+            sectionType: 'M03',
+            lectures: [lecture(1, 900, 1030)],
+          }],
+        },
+      ],
+    })
+    course.selection_policy = {
+      kind: 'module',
+      modules: [],
+      groups: [
+        { id: 'required', role: 'required', min_select: 1, max_select: 1, module_codes: ['M01'] },
+        {
+          id: 'electives',
+          role: 'elective',
+          min_select: 1,
+          max_select: 1,
+          module_codes: ['M02', 'M03'],
+        },
+      ],
+    }
+    const banned = noBans()
+    banned[0][0] = true
+
+    const [prepared] = buildSchedulerOptimizerCourses([course], banned, ['UCUG1000'])
+    expect(prepared.options).toEqual([])
+    expect(solvePlans([course], banned)).toMatchObject({
+      status: 'unavailable-selection-group',
+      groupId: 'electives',
+    })
+  })
+
+  it('uses exact date ranges while rejecting conflicts inside a module selection', () => {
+    const september = [{ start_date: '2026-09-01', end_date: '2026-09-30' }]
+    const october = [{ start_date: '2026-10-01', end_date: '2026-10-31' }]
+    const touchesSeptember = [{ start_date: '2026-09-30', end_date: '2026-10-31' }]
+    const course = cartCourse('UCUG1000', 3, {
+      0: [{
+        id: 1,
+        sections: [{
+          id: 'M01-L01',
+          sectionType: 'M01',
+          lectures: [lecture(1, 900, 1030, september)],
+        }],
+      }],
+      1: [
+        {
+          id: 2,
+          sections: [{
+            id: 'M02-L01',
+            sectionType: 'M02',
+            lectures: [lecture(1, 900, 1030, october)],
+          }],
+        },
+        {
+          id: 3,
+          sections: [{
+            id: 'M02-L02',
+            sectionType: 'M02',
+            lectures: [lecture(1, 900, 1030, touchesSeptember)],
+          }],
+        },
+        {
+          id: 4,
+          sections: [
+            {
+              id: 'M02-L03A',
+              sectionType: 'M02',
+              lectures: [lecture(2, 900, 1030)],
+            },
+            {
+              id: 'M02-L03B',
+              sectionType: 'M02',
+              lectures: [lecture(2, 1000, 1130)],
+            },
+          ],
+        },
+      ],
+    })
+    course.selection_policy = {
+      kind: 'module',
+      modules: [],
+      groups: [
+        { id: 'required', role: 'required', min_select: 1, max_select: 1, module_codes: ['M01'] },
+        { id: 'elective', role: 'elective', min_select: 1, max_select: 1, module_codes: ['M02'] },
+      ],
+    }
+
+    const [prepared] = buildSchedulerOptimizerCourses([course], noBans(), ['UCUG1000'])
+    expect(prepared.options.map(option => option.selections)).toEqual([[
+      { layer: 0, bundleId: 1 },
+      { layer: 1, bundleId: 2 },
+    ]])
+  })
+
   it('filters hard banned periods before building options and validates HHMM', () => {
     const course = cartCourse('AIAA1001', 3, {
       0: [
@@ -243,6 +400,23 @@ describe('scheduler ranked optimizer adapter', () => {
 })
 
 describe('scheduler ranked optimizer scoring and ranking', () => {
+  it('scores term-load credit when it differs from the catalogue credit', () => {
+    const course = cartCourse('UCUG1000', 3, {
+      0: [{ id: 1, lectures: [] }],
+    })
+    course.counts_toward_term_load = false
+    course.term_load_credit = 0.5
+    const [prepared] = buildSchedulerOptimizerCourses([course], noBans(), ['UCUG1000'])
+    const scored = scoreSchedulerOptimizerSelection(
+      [{ course: prepared, option: prepared.options[0] }],
+      emptyProfile({ creditDelta: '2.5' }),
+    )
+
+    expect(prepared.credits).toBe('0.5')
+    expect(scored.totalCredits).toBe('0.5')
+    expect(scored.score).toBe('1.25')
+  })
+
   it('scores a course once across multiple layers and targets L0x by section id', async () => {
     const course = cartCourse('AIAA1001', 0.12345678, {
       0: [{ id: 1, sections: [{ id: 'L01', name: 'L01', lectures: [lecture(1, 900, 1030)] }] }],

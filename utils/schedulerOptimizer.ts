@@ -333,6 +333,27 @@ function stableOptionId(selections: readonly SchedulerOptimizerBundleSelection[]
   return JSON.stringify(selections.map(selection => [selection.layer, selection.bundleId]))
 }
 
+function combinations<T>(items: readonly T[], count: number): T[][] {
+  if (count === 0) return [[]]
+  if (items.length < count) return []
+  return items.flatMap((item, index) => (
+    combinations(items.slice(index + 1), count - 1).map(rest => [item, ...rest])
+  ))
+}
+
+function products<T>(groups: readonly (readonly T[])[]): T[][] {
+  return groups.reduce<T[][]>(
+    (acc, group) => acc.flatMap(prefix => group.map(item => [...prefix, item])),
+    [[]],
+  )
+}
+
+function lecturesAreCompatible(lectures: readonly SchedulerLecture[]): boolean {
+  return lectures.every((lecture, index) => (
+    !lectures.slice(index + 1).some(other => schedulerLecturesOverlap(lecture, other))
+  ))
+}
+
 export function buildSchedulerOptimizerCourses(
   courseList: readonly CartCourse[],
   bannedPeriods: readonly (readonly boolean[])[],
@@ -362,17 +383,15 @@ export function buildSchedulerOptimizerCourses(
       throw new Error(`Invalid scheduler layer in ${code}`)
     }
 
-    type PartialOption = Omit<SchedulerOptimizerCourseOption, 'id'>
-    // A selected course must contribute one bundle from at least one layer.
-    // Treat malformed/no-section offerings as unavailable instead of creating
-    // a zero-selection course that could not be displayed or saved.
-    let partials: PartialOption[] = layers.length
-      ? [{ selections: [], lectures: [], sections: [] }]
-      : []
-
-    for (const { layer, bundles } of layers) {
+    type PreparedBundle = {
+      bundleId: number
+      layer: number
+      lectures: SchedulerLecture[]
+      sections: SchedulerOptimizerSectionRef[]
+    }
+    const prepareLayer = ({ layer, bundles }: (typeof layers)[number]): PreparedBundle[] => {
       const seenBundleIds = new Set<number>()
-      const available = bundles
+      return bundles
         .filter(bundle => bundle.enabled)
         .sort((left, right) => left.id - right.id)
         .map((bundle) => {
@@ -386,7 +405,8 @@ export function buildSchedulerOptimizerCourses(
           const lectures = bundle.sections.flatMap(section => section.lectures)
           for (const lecture of lectures) validateLecture(lecture)
           return {
-            bundle,
+            bundleId: bundle.id,
+            layer,
             lectures,
             sections: bundle.sections.map(section => ({
               sectionId: section.section_id,
@@ -399,34 +419,113 @@ export function buildSchedulerOptimizerCourses(
           }
         })
         .filter(entry => !lecturesOverlapBannedPeriods(entry.lectures, bannedPeriods))
+    }
 
-      if (available.length === 0) {
-        partials = []
-        break
-      }
+    type PartialOption = Omit<SchedulerOptimizerCourseOption, 'id'>
+    let partials: PartialOption[]
 
-      const next: PartialOption[] = []
-      for (const partial of partials) {
-        for (const entry of available) {
-          // A bundle is an atomic API choice. Preserve the existing scheduler's
-          // semantics by checking it only against bundles chosen earlier, not
-          // by rejecting overlaps among lectures inside the same bundle.
-          if (lecturesConflict(partial.lectures, entry.lectures)) continue
-          next.push({
-            selections: [...partial.selections, { layer, bundleId: entry.bundle.id }],
-            lectures: [...partial.lectures, ...entry.lectures],
-            sections: [...partial.sections, ...entry.sections],
-          })
+    if (source.course.selection_policy?.kind === 'module') {
+      const moduleCandidates = new Map<string, PreparedBundle[]>()
+      for (const entry of layers) {
+        const bundles = prepareLayer(entry)
+        for (const bundle of bundles) {
+          const moduleCodes = new Set(bundle.sections.map(
+            section => section.sectionType.trim().toUpperCase(),
+          ))
+          if (moduleCodes.size !== 1) continue
+          const moduleCode = [...moduleCodes][0]
+          const candidates = moduleCandidates.get(moduleCode) ?? []
+          candidates.push(bundle)
+          moduleCandidates.set(moduleCode, candidates)
         }
       }
-      partials = next
+
+      // solvePlans treats every module selection group as a choice and then
+      // takes the compatible Cartesian product across all groups. Build that
+      // complete course-internal product here because the ranked solver chooses
+      // one whole option for each selected course.
+      partials = [{ selections: [], lectures: [], sections: [] }]
+      for (const group of source.course.selection_policy.groups) {
+        const moduleCodes = (group.module_codes ?? []).filter(code => moduleCandidates.has(code))
+        const groupOptions: PartialOption[] = []
+        for (let count = group.min_select; count <= group.max_select; count += 1) {
+          for (const selectedModules of combinations(moduleCodes, count)) {
+            const candidateGroups = selectedModules.map(code => moduleCandidates.get(code) ?? [])
+            for (const selectedCandidates of products(candidateGroups)) {
+              const lectures = selectedCandidates.flatMap(candidate => candidate.lectures)
+              // Unlike a standard layer bundle, a module candidate participates
+              // in solvePlans' group-level compatibility check as well. This
+              // therefore also catches conflicts inside one module bundle.
+              if (!lecturesAreCompatible(lectures)) continue
+              groupOptions.push({
+                selections: selectedCandidates.map(candidate => ({
+                  layer: candidate.layer,
+                  bundleId: candidate.bundleId,
+                })),
+                lectures,
+                sections: selectedCandidates.flatMap(candidate => candidate.sections),
+              })
+            }
+          }
+        }
+
+        if (groupOptions.length === 0) {
+          partials = []
+          break
+        }
+
+        const next: PartialOption[] = []
+        for (const partial of partials) {
+          for (const option of groupOptions) {
+            if (lecturesConflict(partial.lectures, option.lectures)) continue
+            next.push({
+              selections: [...partial.selections, ...option.selections],
+              lectures: [...partial.lectures, ...option.lectures],
+              sections: [...partial.sections, ...option.sections],
+            })
+          }
+        }
+        partials = next
+      }
+    } else {
+      // A standard selected course must contribute one bundle from at least
+      // one layer. Treat no-layer offerings as unavailable instead of creating
+      // a zero-selection course that could not be displayed or saved.
+      partials = layers.length
+        ? [{ selections: [], lectures: [], sections: [] }]
+        : []
+
+      for (const entry of layers) {
+        const { layer } = entry
+        const available = prepareLayer(entry)
+        if (available.length === 0) {
+          partials = []
+          break
+        }
+
+        const next: PartialOption[] = []
+        for (const partial of partials) {
+          for (const entry of available) {
+            // A standard layer bundle is an atomic API choice. Preserve the
+            // existing scheduler's semantics by checking it only against
+            // bundles chosen earlier, not lectures inside the same bundle.
+            if (lecturesConflict(partial.lectures, entry.lectures)) continue
+            next.push({
+              selections: [...partial.selections, { layer, bundleId: entry.bundleId }],
+              lectures: [...partial.lectures, ...entry.lectures],
+              sections: [...partial.sections, ...entry.sections],
+            })
+          }
+        }
+        partials = next
+      }
     }
 
     prepared.push({
       sourceIndex: source.sourceIndex,
       code,
       title: source.course.course_title,
-      credits: canonicalDecimal(String(source.course.credit)),
+      credits: canonicalDecimal(String(source.course.term_load_credit ?? source.course.credit)),
       options: partials.map(option => ({
         ...option,
         id: stableOptionId(option.selections),

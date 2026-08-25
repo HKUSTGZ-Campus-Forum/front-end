@@ -1005,97 +1005,113 @@ async function startNewPlan() {
     </div>
 
     <div
-      v-if="!cartLoadError && !loading"
       id="scheduler-planner-workspace"
       ref="bodyRef"
       class="dashboard__body"
       role="tabpanel"
       :aria-labelledby="isRankedMode ? 'scheduler-mode-ranked' : 'scheduler-mode-fixed'"
+      :aria-busy="loading"
       :style="{ '--side-panel-width': sidePanelWidthPx }"
     >
-      <div class="dashboard__left">
-        <div class="dashboard__timetable-card">
-          <SchedulerTimetable
-            :course-list="courseList"
-            :current-plan="currentPlan"
-            :banned-periods="bannedPeriods"
-            :filter-mode="filterMode"
-            :display-options="displayOptions"
-            :max-day-num="maxDayNum"
-            :preview-section="previewSection"
-            :preview-section-enabled="previewSectionEnabled"
-            @toggle-ban="toggleBan"
-          />
-          <SchedulerBottomPanel
-            :current-index="activeViewIndex"
-            :total-plans="activePlanCount"
-            @update:index="activeViewIndex = $event"
-          />
+      <!-- The workspace wrapper is deliberately stable across SSR and client
+           hydration. Auth can become ready before hydration, so switching the
+           wrapper itself between dashboard__loading and dashboard__body would
+           leave production Vue with the server-side class. ClientOnly owns the
+           stateful subtree and mounts the resolved client state after hydration. -->
+      <ClientOnly>
+        <template #default>
+          <template v-if="!cartLoadError && !loading">
+            <div class="dashboard__left">
+              <div class="dashboard__timetable-card">
+                <SchedulerTimetable
+                  :course-list="courseList"
+                  :current-plan="currentPlan"
+                  :banned-periods="bannedPeriods"
+                  :filter-mode="filterMode"
+                  :display-options="displayOptions"
+                  :max-day-num="maxDayNum"
+                  :preview-section="previewSection"
+                  :preview-section-enabled="previewSectionEnabled"
+                  @toggle-ban="toggleBan"
+                />
+                <SchedulerBottomPanel
+                  :current-index="activeViewIndex"
+                  :total-plans="activePlanCount"
+                  @update:index="activeViewIndex = $event"
+                />
 
-          <!-- Dim overlay with solver hint. Scoped to the timetable card only
-               (like the original planner), so the side panel stays visible. -->
-          <Transition name="overlay">
-            <div v-if="planMessage" class="dashboard__overlay" role="status">
-              <span
-                :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
-                aria-hidden="true"
-              >
-                <Icon v-if="planIcon" :name="planIcon" />
-              </span>
-              <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
-              <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+                <!-- Dim overlay with solver hint. Scoped to the timetable card only
+                     (like the original planner), so the side panel stays visible. -->
+                <Transition name="overlay">
+                  <div v-if="planMessage" class="dashboard__overlay" role="status">
+                    <span
+                      :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
+                      aria-hidden="true"
+                    >
+                      <Icon v-if="planIcon" :name="planIcon" />
+                    </span>
+                    <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
+                    <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+                  </div>
+                </Transition>
+              </div>
             </div>
-          </Transition>
-        </div>
-      </div>
 
-      <div class="dashboard__right">
-        <SchedulerSidePanel
-          :course-list="courseList"
-          :current-plan="currentPlan"
-          :display-options="displayOptions"
-          :popularity-by-course="popularity.popularityByCourse.value"
-          :show-popularity="popularity.canShowPopularity.value"
-          :semester-id="semesterId"
-          :filter-mode="filterMode"
-          :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
-          :preview-section-enabled="previewSectionEnabled"
-          :can-show-history="canShowPopularityHistory"
-          :get-history="getPopularityHistory"
-          :candidate-mode="isRankedMode"
-          :candidate-codes="optimizerCandidateCodes"
-          :credits-override="totalCredits"
-          @toggle-course="handleToggleCourseByMode"
-          @toggle-bundle="handleToggleBundle"
-          @toggle-layer="handleToggleLayer"
-          @open-cart="showCartPanel = true"
-          @toggle-filter="filterMode = !filterMode"
-          @clear-bans="clearBans"
-          @update:display-option="(key, value) => displayOptions[key] = value"
-          @preview-bundle="onPreviewBundle"
-          @clear-preview="onClearPreview"
-          @update:preview-section-enabled="(value) => previewSectionEnabled = value"
-          @show-history="handleShowPopularityHistory"
-        />
-      </div>
+            <div class="dashboard__right">
+              <SchedulerSidePanel
+                :course-list="courseList"
+                :current-plan="currentPlan"
+                :display-options="displayOptions"
+                :popularity-by-course="popularity.popularityByCourse.value"
+                :show-popularity="popularity.canShowPopularity.value"
+                :semester-id="semesterId"
+                :filter-mode="filterMode"
+                :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
+                :preview-section-enabled="previewSectionEnabled"
+                :can-show-history="canShowPopularityHistory"
+                :get-history="getPopularityHistory"
+                :candidate-mode="isRankedMode"
+                :candidate-codes="optimizerCandidateCodes"
+                :credits-override="totalCredits"
+                @toggle-course="handleToggleCourseByMode"
+                @toggle-bundle="handleToggleBundle"
+                @toggle-layer="handleToggleLayer"
+                @open-cart="showCartPanel = true"
+                @toggle-filter="filterMode = !filterMode"
+                @clear-bans="clearBans"
+                @update:display-option="(key, value) => displayOptions[key] = value"
+                @preview-bundle="onPreviewBundle"
+                @clear-preview="onClearPreview"
+                @update:preview-section-enabled="(value) => previewSectionEnabled = value"
+                @show-history="handleShowPopularityHistory"
+              />
+            </div>
 
-      <!-- Drag handle between timetable and side panel (wide screens only) -->
-      <div
-        class="dashboard__resize-handle"
-        role="separator"
-        tabindex="0"
-        :aria-label="t('scheduler.resizePanel')"
-        aria-orientation="vertical"
-        :aria-valuemin="SIDE_PANEL_MIN"
-        :aria-valuemax="SIDE_PANEL_MAX"
-        :aria-valuenow="sidePanelWidth"
-        @mousedown="onResizeStart"
-        @keydown="onResizeHandleKeydown"
-      >
-        <Icon name="lucide:grip-vertical" class="dashboard__resize-handle-icon" aria-hidden="true" />
-      </div>
+            <!-- Drag handle between timetable and side panel (wide screens only) -->
+            <div
+              class="dashboard__resize-handle"
+              role="separator"
+              tabindex="0"
+              :aria-label="t('scheduler.resizePanel')"
+              aria-orientation="vertical"
+              :aria-valuemin="SIDE_PANEL_MIN"
+              :aria-valuemax="SIDE_PANEL_MAX"
+              :aria-valuenow="sidePanelWidth"
+              @mousedown="onResizeStart"
+              @keydown="onResizeHandleKeydown"
+            >
+              <Icon name="lucide:grip-vertical" class="dashboard__resize-handle-icon" aria-hidden="true" />
+            </div>
+          </template>
+          <div v-else-if="loading" class="dashboard__loading" role="status">
+            {{ t('scheduler.loading') }}
+          </div>
+        </template>
+        <template #fallback>
+          <div class="dashboard__loading" role="status">{{ t('scheduler.loading') }}</div>
+        </template>
+      </ClientOnly>
     </div>
-    <div v-else-if="loading" class="dashboard__loading">{{ t('scheduler.loading') }}</div>
 
     <!-- Cart Panel Modal -->
     <SchedulerCartPanel
@@ -1640,6 +1656,8 @@ async function startNewPlan() {
   }
 
   &__loading {
+    grid-column: 1 / -1;
+    grid-row: 1;
     display: flex;
     align-items: center;
     justify-content: center;
