@@ -12,8 +12,6 @@ const apiBaseUrl = (
   (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "")
 ).replace(/\/$/, "");
 const mascotEnabled = process.env.NUXT_PUBLIC_MASCOT_ENABLED === "true";
-const mascotRenderer =
-  process.env.NUXT_PUBLIC_MASCOT_RENDERER === "three" ? "three" : "live2d";
 const mascotModelUrl =
   process.env.NUXT_PUBLIC_MASCOT_MODEL_URL ||
   "https://raw.githubusercontent.com/Live2D/CubismWebSamples/b1de66b0b1f1cb881d95fb6158622aeb6a2827bd/Samples/Resources/Hiyori/Hiyori.model3.json";
@@ -201,7 +199,6 @@ export default defineNuxtConfig({
       appBuildVersion,
       apiBaseUrl,
       mascotEnabled,
-      mascotRenderer,
       mascotModelUrl,
       mascotScale,
       mascotPositionX,
