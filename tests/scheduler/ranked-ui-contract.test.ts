@@ -42,6 +42,11 @@ describe('ranked scheduler UI integration contract', () => {
     expect(dashboard).toContain('<SchedulerScoreBreakdown')
     expect(dashboard).toContain(':plan="currentRankedPlan"')
     expect(dashboard).toContain('role="progressbar"')
+
+    const message = between(dashboard, 'const planMessage = computed', 'const planIcon = computed')
+    expect(message.indexOf("optimizerRunState.value === 'running'")).toBeLessThan(
+      message.indexOf('if (optimizerStale.value)'),
+    )
   })
 
   it('toggles ranked candidates locally instead of mutating the cart', () => {
@@ -126,7 +131,7 @@ describe('ranked scheduler cache and async input contract', () => {
     const fingerprint = between(optimizerComposable, 'const fingerprint = computed', 'const stale = computed')
     for (const field of [
       'semesterId: options.semesterId',
-      'candidates: preparedCourses.value',
+      'candidates: canonicalSchedulerOptimizerCandidates(preparedCourses.value)',
       'bannedPeriods: options.bannedPeriods.value',
       'minCourses: minCourses.value',
       'maxCourses: maxCourses.value',
@@ -159,16 +164,16 @@ describe('ranked scheduler cache and async input contract', () => {
     )
   })
 
-  it('captures every solver input and its fingerprint before the first asynchronous cache lookup', () => {
+  it('captures solver inputs and rechecks their fingerprint after every asynchronous boundary', () => {
     const run = between(optimizerComposable, 'async function run(', 'function cancel()')
     const firstAwait = run.indexOf('await readSchedulerOptimizerCachedResult(runFingerprint)')
     expect(firstAwait).toBeGreaterThan(0)
 
     for (const capture of [
       'runFingerprint = fingerprint.value',
-      'courses = availableCourses.value',
+      'courses = cloneCourses(availableCourses.value)',
       'capturedMinCourses = minCourses.value',
-      'capturedMaxCourses = maxCourses.value',
+      'capturedMaxCourses = Math.min(maxCourses.value, courses.length)',
       'capturedTopX = topX.value',
       'capturedProfile = cloneProfile(profile.value)',
     ]) {
@@ -177,15 +182,38 @@ describe('ranked scheduler cache and async input contract', () => {
     }
 
     const afterFirstAwait = run.slice(firstAwait)
-    expect(afterFirstAwait).not.toContain('fingerprint.value')
-    expect(afterFirstAwait).not.toContain('minCourses.value')
-    expect(afterFirstAwait).not.toContain('maxCourses.value')
-    expect(afterFirstAwait).not.toContain('topX.value')
-    expect(afterFirstAwait).not.toContain('profile.value')
     expect(afterFirstAwait).toContain('minCourses: capturedMinCourses')
     expect(afterFirstAwait).toContain('maxCourses: capturedMaxCourses')
     expect(afterFirstAwait).toContain('topX: capturedTopX')
     expect(afterFirstAwait).toContain('profile: capturedProfile')
     expect(afterFirstAwait).toContain('writeSchedulerOptimizerCachedResult(runFingerprint, solved)')
+
+    const cacheRecheck = run.indexOf(
+      'schedulerOptimizerFingerprintsEqual(fingerprint.value, runFingerprint)',
+      firstAwait,
+    )
+    const solveAwait = run.indexOf('await solveRankedScheduler')
+    const solveRecheck = run.indexOf(
+      'schedulerOptimizerFingerprintsEqual(fingerprint.value, runFingerprint)',
+      solveAwait,
+    )
+    const applyResult = run.indexOf('applyCompletedResult(solved, runFingerprint, false)')
+    expect(cacheRecheck).toBeGreaterThan(firstAwait)
+    expect(cacheRecheck).toBeLessThan(solveAwait)
+    expect(solveRecheck).toBeGreaterThan(solveAwait)
+    expect(solveRecheck).toBeLessThan(applyResult)
+    expect(run.slice(cacheRecheck, solveAwait)).toContain('void run(force)')
+    expect(run.slice(solveRecheck, applyResult)).toContain('void run(force)')
+  })
+
+  it('keeps an old stale result hidden while a replacement run is active', () => {
+    const stale = between(optimizerComposable, 'const stale = computed', 'const rankedPlans = computed')
+    expect(stale).toContain("runState.value === 'running'")
+    expect(stale).toContain("runState.value === 'checking-cache'")
+
+    const apply = between(optimizerComposable, 'function applyCompletedResult', 'async function run(')
+    expect(apply.indexOf('resultFingerprintKey.value = runFingerprint.key')).toBeLessThan(
+      apply.indexOf('result.value = nextResult'),
+    )
   })
 })

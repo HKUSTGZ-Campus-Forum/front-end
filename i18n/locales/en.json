@@ -2471,7 +2471,7 @@
       "noSolutionHint": "Widen the course-count range, re-enable sections, or unblock time periods and try again.",
       "errors": {
         "no-candidates": "Select at least one candidate with a complete available section choice.",
-        "invalid-range": "The course-count range is invalid, or its maximum exceeds the available candidates.",
+        "invalid-range": "The course-count range is invalid, or its minimum exceeds the available candidates.",
         "invalid-top-x": "Top X must be a positive integer.",
         "invalid-profile": "A scoring rule contains an invalid number or condition. Check the rules and try again.",
         "invalid-data": "Course section or time data is invalid, so a safe calculation cannot start.",

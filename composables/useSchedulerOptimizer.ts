@@ -6,7 +6,7 @@ import {
   watch,
   type Ref,
 } from 'vue'
-import type { CartCourse, PlanSelection } from '~/utils/scheduler'
+import type { CartCourse, PlanSelection } from '../utils/scheduler'
 import {
   buildSchedulerOptimizerCourses,
   solveRankedScheduler,
@@ -15,17 +15,19 @@ import {
   type SchedulerOptimizerProgress,
   type SchedulerOptimizerScoreProfile,
   type SchedulerOptimizerSolveResult,
-} from '~/utils/schedulerOptimizer'
+} from '../utils/schedulerOptimizer'
 import {
+  canonicalSchedulerOptimizerCandidates,
   createDefaultSchedulerOptimizerConfig,
   createSchedulerOptimizerFingerprint,
   loadSchedulerOptimizerConfig,
   readSchedulerOptimizerCachedResult,
   saveSchedulerOptimizerConfig,
+  schedulerOptimizerFingerprintsEqual,
   writeSchedulerOptimizerCachedResult,
   type SchedulerOptimizerFingerprint,
   type SchedulerPlannerMode,
-} from '~/utils/schedulerOptimizerStorage'
+} from '../utils/schedulerOptimizerStorage'
 
 export type SchedulerOptimizerRunState =
   | 'idle'
@@ -62,6 +64,10 @@ const EMPTY_PROGRESS: SchedulerOptimizerProgress = {
 
 function cloneProfile(profile: SchedulerOptimizerScoreProfile): SchedulerOptimizerScoreProfile {
   return JSON.parse(JSON.stringify(profile)) as SchedulerOptimizerScoreProfile
+}
+
+function cloneCourses(courses: readonly SchedulerOptimizerCourse[]): SchedulerOptimizerCourse[] {
+  return JSON.parse(JSON.stringify(courses)) as SchedulerOptimizerCourse[]
 }
 
 function validCandidateDefaults(courses: readonly CartCourse[]): string[] {
@@ -150,7 +156,7 @@ export function useSchedulerOptimizer(options: {
       return createSchedulerOptimizerFingerprint({
         schemaVersion: 1,
         semesterId: options.semesterId,
-        candidates: preparedCourses.value,
+        candidates: canonicalSchedulerOptimizerCandidates(preparedCourses.value),
         bannedPeriods: options.bannedPeriods.value,
         minCourses: minCourses.value,
         maxCourses: maxCourses.value,
@@ -162,14 +168,14 @@ export function useSchedulerOptimizer(options: {
     }
   })
 
-  const stale = computed(() => Boolean(
-    result.value
-    && resultFingerprintKey.value
-    && (
-      fingerprint.value?.key !== resultFingerprintKey.value
-      || fingerprint.value?.canonicalInput !== resultFingerprintCanonical.value
-    ),
-  ))
+  const stale = computed(() => {
+    if (runState.value === 'running' || runState.value === 'checking-cache') return false
+    if (!result.value || !resultFingerprintKey.value) return false
+    return !schedulerOptimizerFingerprintsEqual(fingerprint.value, {
+      key: resultFingerprintKey.value,
+      canonicalInput: resultFingerprintCanonical.value,
+    })
+  })
   const rankedPlans = computed(() => result.value?.plans || [])
   const currentRankedPlan = computed(() => rankedPlans.value[rankedViewIndex.value - 1] || null)
   const currentRankedSelections = computed(() => (
@@ -179,10 +185,14 @@ export function useSchedulerOptimizer(options: {
   const workload = computed<SchedulerOptimizerWorkload>(() => {
     let estimate = 0n
     try {
+      const effectiveMaximum = Math.min(
+        Math.max(0, maxCourses.value),
+        availableCourses.value.length,
+      )
       estimate = combinationsByOptionCount(
         availableCourses.value,
         Math.max(0, minCourses.value),
-        Math.max(0, maxCourses.value),
+        effectiveMaximum,
       )
     } catch {
       estimate = 0n
@@ -314,7 +324,7 @@ export function useSchedulerOptimizer(options: {
       || !Number.isSafeInteger(maxCourses.value)
       || minCourses.value < 1
       || maxCourses.value < minCourses.value
-      || maxCourses.value > availableCourses.value.length
+      || minCourses.value > availableCourses.value.length
     ) return 'invalid-range'
     return ''
   }
@@ -324,9 +334,9 @@ export function useSchedulerOptimizer(options: {
     runFingerprint: SchedulerOptimizerFingerprint,
     fromCache: boolean,
   ) {
-    result.value = nextResult
     resultFingerprintKey.value = runFingerprint.key
     resultFingerprintCanonical.value = runFingerprint.canonicalInput
+    result.value = nextResult
     cacheHit.value = fromCache
     runState.value = nextResult.status === 'no-solution' ? 'no-solution' : 'complete'
     progress.value = {
@@ -359,9 +369,9 @@ export function useSchedulerOptimizer(options: {
         return
       }
       runFingerprint = fingerprint.value
-      courses = availableCourses.value
+      courses = cloneCourses(availableCourses.value)
       capturedMinCourses = minCourses.value
-      capturedMaxCourses = maxCourses.value
+      capturedMaxCourses = Math.min(maxCourses.value, courses.length)
       capturedTopX = topX.value
       capturedProfile = cloneProfile(profile.value)
       if (!runFingerprint) throw new Error('Optimizer input fingerprint is unavailable')
@@ -382,6 +392,11 @@ export function useSchedulerOptimizer(options: {
       if (!force) {
         const cached = await readSchedulerOptimizerCachedResult(runFingerprint)
         if (generation !== runGeneration || signal.aborted) return
+        if (!schedulerOptimizerFingerprintsEqual(fingerprint.value, runFingerprint)) {
+          controller = null
+          void run(force)
+          return
+        }
         if (cached) {
           applyCompletedResult(cached, runFingerprint, true)
           return
@@ -403,6 +418,11 @@ export function useSchedulerOptimizer(options: {
       if (generation !== runGeneration) return
       if (solved.status === 'cancelled') {
         runState.value = 'cancelled'
+        return
+      }
+      if (!schedulerOptimizerFingerprintsEqual(fingerprint.value, runFingerprint)) {
+        controller = null
+        void run(force)
         return
       }
       applyCompletedResult(solved, runFingerprint, false)

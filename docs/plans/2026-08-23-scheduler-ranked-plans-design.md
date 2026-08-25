@@ -108,7 +108,7 @@ Per-semester local configuration stores:
 - last displayed ranked result index;
 - settings drawer state only when useful, not transient progress or errors.
 
-Storage parsing is defensive and versioned. Invalid, obsolete, or partially corrupt values fall back field-by-field to defaults. Results are not restored from `localStorage`; only a matching complete IndexedDB cache entry may restore them.
+Storage parsing is defensive and versioned. Invalid scalar settings fall back field-by-field; a malformed scoring profile falls back as a unit to known-safe defaults. Temporarily invalid numeric drafts such as an empty value or `-` never overwrite the last valid persisted profile, while mode, candidate, range, Top X, and preferred-plan changes continue to persist. Results are not restored from `localStorage`; only a matching complete IndexedDB cache entry may restore them.
 
 Fixed and ranked modes keep independent result indices. Switching modes must not erase fixed-mode choices, ranked configuration, or the last complete ranked result.
 

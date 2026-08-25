@@ -1,4 +1,5 @@
 import type {
+  SchedulerOptimizerCourse,
   SchedulerOptimizerScoreProfile,
   SchedulerOptimizerSolveResult,
 } from './schedulerOptimizer'
@@ -144,7 +145,30 @@ export function saveSchedulerOptimizerConfig(
 ): void {
   if (typeof localStorage === 'undefined') return
   try {
-    localStorage.setItem(configKey(semesterId), JSON.stringify(config))
+    const key = configKey(semesterId)
+    let profile = config.profile
+    try {
+      validateSchedulerOptimizerScoreProfile(profile)
+    } catch {
+      // Numeric inputs have temporarily invalid editing states such as an
+      // empty string or just "-". Keep saving the other preferences without
+      // replacing the last complete scoring profile with that draft.
+      profile = createDefaultSchedulerOptimizerScoreProfile()
+      const previousRaw = localStorage.getItem(key)
+      if (previousRaw) {
+        try {
+          const previous = JSON.parse(previousRaw) as unknown
+          if (isRecord(previous) && isRecord(previous.profile)) {
+            const candidate = JSON.parse(JSON.stringify(previous.profile)) as SchedulerOptimizerScoreProfile
+            validateSchedulerOptimizerScoreProfile(candidate)
+            profile = candidate
+          }
+        } catch {
+          // A corrupt previous record cannot supply a safe profile; use defaults.
+        }
+      }
+    }
+    localStorage.setItem(key, JSON.stringify({ ...config, profile }))
   } catch {
     // Preferences remain usable in memory when browser storage is unavailable.
   }
@@ -166,6 +190,71 @@ export function stableSchedulerOptimizerStringify(value: unknown): string {
     .join(',')}}`
 }
 
+/**
+ * Keep cache invalidation tied to data that can change the ranked result.
+ * Cart responses may arrive in a different order and `sourceIndex` is only a
+ * pointer into the current UI list, so neither belongs in the persisted input
+ * identity. Room/instructor changes are also display-only; the timetable reads
+ * those fields from the current cart after a plan is selected.
+ */
+export function canonicalSchedulerOptimizerCandidates(
+  candidates: readonly SchedulerOptimizerCourse[],
+): unknown[] {
+  return candidates
+    .map(course => ({
+      code: course.code,
+      title: course.title,
+      credits: course.credits,
+      options: course.options
+        .map(option => ({
+          id: option.id,
+          selections: option.selections
+            .map(selection => ({
+              layer: selection.layer,
+              bundleId: selection.bundleId,
+            }))
+            .sort((left, right) => (
+              left.layer - right.layer || left.bundleId - right.bundleId
+            )),
+          lectures: option.lectures
+            .map((lecture) => {
+              const dateRanges = Array.isArray(lecture.date_ranges) && lecture.date_ranges.length
+                ? lecture.date_ranges
+                    .map(range => ({
+                      startDate: range.start_date,
+                      endDate: range.end_date,
+                    }))
+                    .sort((left, right) => (
+                      left.startDate.localeCompare(right.startDate, 'en')
+                      || left.endDate.localeCompare(right.endDate, 'en')
+                    ))
+                : null
+              return {
+                day: lecture.day,
+                startTime: lecture.start_time,
+                endTime: lecture.end_time,
+                ...(dateRanges ? { dateRanges } : {}),
+              }
+            })
+            .sort((left, right) => (
+              stableSchedulerOptimizerStringify(left)
+                .localeCompare(stableSchedulerOptimizerStringify(right), 'en')
+            )),
+          sections: option.sections
+            .map(section => ({
+              sectionId: section.sectionId,
+              name: section.name,
+            }))
+            .sort((left, right) => (
+              left.sectionId.localeCompare(right.sectionId, 'en')
+              || left.name.localeCompare(right.name, 'en')
+            )),
+        }))
+        .sort((left, right) => left.id.localeCompare(right.id, 'en')),
+    }))
+    .sort((left, right) => left.code.localeCompare(right.code, 'en'))
+}
+
 export function createSchedulerOptimizerFingerprint(value: unknown): SchedulerOptimizerFingerprint {
   const canonicalInput = stableSchedulerOptimizerStringify(value)
   let hash = 1469598103934665603n
@@ -179,6 +268,18 @@ export function createSchedulerOptimizerFingerprint(value: unknown): SchedulerOp
     key: `ranked-v1-${hash.toString(16).padStart(16, '0')}`,
     canonicalInput,
   }
+}
+
+export function schedulerOptimizerFingerprintsEqual(
+  left: SchedulerOptimizerFingerprint | null | undefined,
+  right: SchedulerOptimizerFingerprint | null | undefined,
+): boolean {
+  return Boolean(
+    left
+    && right
+    && left.key === right.key
+    && left.canonicalInput === right.canonicalInput,
+  )
 }
 
 function openDatabase(): Promise<IDBDatabase> {

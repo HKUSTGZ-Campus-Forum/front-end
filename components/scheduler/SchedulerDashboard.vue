@@ -423,13 +423,6 @@ const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: strin
         description: t('scheduler.emptyCartHint'),
       }
     }
-    if (optimizerStale.value) {
-      return {
-        level: 'warning',
-        title: t('scheduler.optimizer.staleTitle'),
-        description: t('scheduler.optimizer.staleHint'),
-      }
-    }
     if (optimizerRunState.value === 'error') {
       return {
         level: 'error',
@@ -453,6 +446,13 @@ const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: strin
         level: 'info',
         title: t('scheduler.optimizer.runningTitle'),
         description: t('scheduler.optimizer.runningHint'),
+      }
+    }
+    if (optimizerStale.value) {
+      return {
+        level: 'warning',
+        title: t('scheduler.optimizer.staleTitle'),
+        description: t('scheduler.optimizer.staleHint'),
       }
     }
     if (optimizerRunState.value === 'cancelled' && !currentPlan.value.length) {

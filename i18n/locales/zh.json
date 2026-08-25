@@ -2471,7 +2471,7 @@
       "noSolutionHint": "请放宽课程数量、重新启用班别，或减少屏蔽时段后重试。",
       "errors": {
         "no-candidates": "请至少选择一门具有完整可用班别的候选课程。",
-        "invalid-range": "课程数量范围无效，且最多课程数不能超过当前可用候选数。",
+        "invalid-range": "课程数量范围无效；最少课程数不能超过当前可用候选数。",
         "invalid-top-x": "Top X 必须是正整数。",
         "invalid-profile": "评分规则中存在无效数字或条件，请检查后重试。",
         "invalid-data": "课程班别或时间数据无效，无法安全计算。",

@@ -1,6 +1,6 @@
 # Scheduler ranked plans implementation plan
 
-- [x] Fast-forward local `main` to verified remote SHA `324e9b757082ee7e7839e347a06cd0729a65a88e` and create the integration branch.
+- [x] Rebase the integration work onto verified remote `main` SHA `59bedee75cf60cf7a8890dd637c8dcd858309fbd` before final verification.
 - [x] Map the standalone optimizer semantics onto production course, layer, bundle, lecture, date-range, saved-plan, and theme contracts.
 - [x] Add exact decimal scoring, formal course-option expansion, exact ranked search, deterministic Top X ties, progress, cancellation, and stable fingerprints as pure utilities.
 - [x] Add versioned per-semester preferences and completed-result IndexedDB caching with defensive parsing and bounded retention.

@@ -1,12 +1,21 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  canonicalSchedulerOptimizerCandidates,
   createDefaultSchedulerOptimizerConfig,
   createSchedulerOptimizerFingerprint,
+  loadSchedulerOptimizerConfig,
   parseSchedulerOptimizerConfig,
+  saveSchedulerOptimizerConfig,
+  schedulerOptimizerFingerprintsEqual,
   stableSchedulerOptimizerStringify,
 } from '../../utils/schedulerOptimizerStorage'
+import type { SchedulerOptimizerCourse } from '../../utils/schedulerOptimizer'
 
 describe('scheduler optimizer storage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('creates a stable fingerprint independent of object key order', () => {
     const left = createSchedulerOptimizerFingerprint({ z: [2, 1], a: { y: true, x: 'v' } })
     const right = createSchedulerOptimizerFingerprint({ a: { x: 'v', y: true }, z: [2, 1] })
@@ -22,6 +31,108 @@ describe('scheduler optimizer storage', () => {
 
     expect(first.canonicalInput).not.toBe(changed.canonicalInput)
     expect(first.canonicalInput).toContain('"topX":3')
+  })
+
+  it('normalizes display-only cart ordering while retaining solver-relevant changes', () => {
+    const candidates: SchedulerOptimizerCourse[] = [
+      {
+        sourceIndex: 0,
+        code: 'COMP1001',
+        title: 'Programming',
+        credits: '3',
+        options: [{
+          id: '[[1,1]]',
+          selections: [{ layer: 1, bundleId: 1 }],
+          lectures: [{
+            day: 1,
+            start_time: 900,
+            end_time: 1020,
+            room: 'Room A',
+            instructor: 'Teacher A',
+            date_ranges: [
+              { start_date: '2026-09-01', end_date: '2026-10-31', facility_id: 'A' },
+              { start_date: '2026-11-01', end_date: '2026-12-20', facility_id: 'B' },
+            ],
+          }],
+          sections: [{
+            sectionId: 'COMP1001-L01',
+            name: 'L01',
+            sectionType: 'L',
+            isMain: true,
+            layer: 1,
+            bundleId: 1,
+          }],
+        }],
+      },
+      {
+        sourceIndex: 1,
+        code: 'MATH1001',
+        title: 'Calculus',
+        credits: '4',
+        options: [{
+          id: '[[1,2]]',
+          selections: [{ layer: 1, bundleId: 2 }],
+          lectures: [{
+            day: 2,
+            start_time: 1030,
+            end_time: 1150,
+            room: 'Room B',
+            instructor: 'Teacher B',
+          }],
+          sections: [{
+            sectionId: 'MATH1001-L02',
+            name: 'L02',
+            sectionType: 'L',
+            isMain: true,
+            layer: 1,
+            bundleId: 2,
+          }],
+        }],
+      },
+    ]
+    const reordered = structuredClone(candidates).reverse()
+    reordered[0].sourceIndex = 7
+    reordered[1].sourceIndex = 3
+    reordered[0].options[0].lectures[0].room = 'Updated room'
+    reordered[0].options[0].lectures[0].instructor = 'Updated teacher'
+    const reorderedRanges = reordered[1].options[0].lectures[0].date_ranges
+    if (reorderedRanges) {
+      reorderedRanges.reverse()
+      reorderedRanges[0].facility_id = 'Updated facility'
+    }
+
+    const initial = createSchedulerOptimizerFingerprint({
+      candidates: canonicalSchedulerOptimizerCandidates(candidates),
+    })
+    const displayOnlyChange = createSchedulerOptimizerFingerprint({
+      candidates: canonicalSchedulerOptimizerCandidates(reordered),
+    })
+    expect(displayOnlyChange).toEqual(initial)
+    expect(schedulerOptimizerFingerprintsEqual(initial, displayOnlyChange)).toBe(true)
+
+    reordered[0].options[0].lectures[0].start_time = 1100
+    const solverChange = createSchedulerOptimizerFingerprint({
+      candidates: canonicalSchedulerOptimizerCandidates(reordered),
+    })
+    expect(schedulerOptimizerFingerprintsEqual(initial, solverChange)).toBe(false)
+
+    const creditChange = structuredClone(candidates)
+    creditChange[0].credits = '4'
+    expect(schedulerOptimizerFingerprintsEqual(initial, createSchedulerOptimizerFingerprint({
+      candidates: canonicalSchedulerOptimizerCandidates(creditChange),
+    }))).toBe(false)
+
+    const sectionChange = structuredClone(candidates)
+    sectionChange[0].options[0].sections[0].sectionId = 'COMP1001-L02'
+    expect(schedulerOptimizerFingerprintsEqual(initial, createSchedulerOptimizerFingerprint({
+      candidates: canonicalSchedulerOptimizerCandidates(sectionChange),
+    }))).toBe(false)
+
+    const dateRangeChange = structuredClone(candidates)
+    dateRangeChange[0].options[0].lectures[0].date_ranges![0].start_date = '2026-09-02'
+    expect(schedulerOptimizerFingerprintsEqual(initial, createSchedulerOptimizerFingerprint({
+      candidates: canonicalSchedulerOptimizerCandidates(dateRangeChange),
+    }))).toBe(false)
   })
 
   it('parses known fields defensively and deduplicates candidate codes', () => {
@@ -66,5 +177,42 @@ describe('scheduler optimizer storage', () => {
     expect(parsed.maxCourses).toBe(fallback.maxCourses)
     expect(parsed.topX).toBe(fallback.topX)
     expect(parsed.profile).toEqual(fallback.profile)
+  })
+
+  it('keeps the last valid profile while persisting other preferences from an invalid draft', () => {
+    const values = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
+    const fallback = createDefaultSchedulerOptimizerConfig(['COMP1001'])
+    const valid = structuredClone(fallback)
+    valid.profile.baseScore = '125.5'
+    saveSchedulerOptimizerConfig('2610', valid)
+
+    const editing = structuredClone(valid)
+    editing.mode = 'ranked'
+    editing.candidateCodes = ['COMP1001', 'MATH1001']
+    editing.minCourses = 1
+    editing.maxCourses = 2
+    editing.topX = 7
+    editing.rankedPlanKey = 'scheduler-ranked:v1:remembered'
+    editing.profile.baseScore = '-'
+    saveSchedulerOptimizerConfig('2610', editing)
+
+    const preserved = loadSchedulerOptimizerConfig('2610', fallback)
+    expect(preserved).toMatchObject({
+      mode: 'ranked',
+      candidateCodes: ['COMP1001', 'MATH1001'],
+      minCourses: 1,
+      maxCourses: 2,
+      topX: 7,
+      rankedPlanKey: 'scheduler-ranked:v1:remembered',
+    })
+    expect(preserved.profile.baseScore).toBe('125.5')
+
+    editing.profile.baseScore = '-2.75'
+    saveSchedulerOptimizerConfig('2610', editing)
+    expect(loadSchedulerOptimizerConfig('2610', fallback).profile.baseScore).toBe('-2.75')
   })
 })
