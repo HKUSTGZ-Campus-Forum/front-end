@@ -207,8 +207,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .mascot-overlay {
   position: fixed;
-  left: 14px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  left: 28px;
+  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
   z-index: 1100;
   width: 280px;
   height: 330px;
