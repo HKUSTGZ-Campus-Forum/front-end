@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CartCourse } from '~/utils/scheduler'
+import type { SchedulerCourseRangeHandle } from '~/utils/schedulerCourseRange'
 import type {
   SchedulerOptimizerCourseCountRule,
   SchedulerOptimizerCourseRule,
@@ -9,6 +10,13 @@ import type {
   SchedulerOptimizerSectionRule,
   SchedulerOptimizerTimeRule,
 } from '~/utils/schedulerOptimizer'
+import {
+  moveSchedulerCourseRangeHandle,
+  nearestSchedulerCourseRangeHandle,
+  normalizeSchedulerCourseRange,
+  schedulerCourseRangePercent,
+  schedulerCourseRangeValueAtPosition,
+} from '~/utils/schedulerCourseRange'
 
 type RuleCollection = 'countRules' | 'courseRules' | 'sectionRules' | 'earlyRules' | 'timeRules'
 
@@ -33,7 +41,17 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const closeButton = ref<HTMLButtonElement | null>(null)
 const drawerRef = ref<HTMLElement | null>(null)
-const activeCourseRangeHandle = ref<'minimum' | 'maximum'>('maximum')
+const courseRangeSlider = ref<HTMLElement | null>(null)
+const minimumCourseThumb = ref<HTMLButtonElement | null>(null)
+const maximumCourseThumb = ref<HTMLButtonElement | null>(null)
+const activeCourseRangeHandle = ref<SchedulerCourseRangeHandle>('maximum')
+const draggingCourseRangeHandle = ref<SchedulerCourseRangeHandle | null>(null)
+const editingCourseCount = ref<SchedulerCourseRangeHandle | null>(null)
+const minimumCoursesDraft = ref('')
+const maximumCoursesDraft = ref('')
+let courseRangePointerId: number | null = null
+let overlappingCourseRangeClientX: number | null = null
+let courseRangePointerOffsetX = 0
 let previousFocus: HTMLElement | null = null
 let generatedRuleId = 0
 
@@ -53,21 +71,34 @@ const candidateCourses = computed(() => props.candidateCodes.map((code) => {
   }
 }))
 
-const candidateLimit = computed(() => Math.max(1, props.candidateCodes.length))
+const candidateCount = computed(() => props.candidateCodes.length)
+const candidateLimit = computed(() => Math.max(1, candidateCount.value))
 const visibleCandidateCourses = computed(() => candidateCourses.value.slice(0, 10))
 const hiddenCandidateCount = computed(() => Math.max(0, candidateCourses.value.length - 10))
 
-function courseRangePercent(value: number): number {
-  const maximum = candidateLimit.value
-  if (maximum <= 1) return 0
-  const boundedValue = Math.max(1, Math.min(value, maximum))
-  return ((boundedValue - 1) / (maximum - 1)) * 100
-}
+const displayedCourseRange = computed(() => normalizeSchedulerCourseRange(
+  props.minCourses,
+  props.maxCourses,
+  candidateLimit.value,
+))
 
 const courseRangeFillStyle = computed(() => ({
-  left: `${courseRangePercent(props.minCourses)}%`,
-  right: `${100 - courseRangePercent(props.maxCourses)}%`,
+  left: `${schedulerCourseRangePercent(displayedCourseRange.value.minimum, candidateLimit.value)}%`,
+  right: `${100 - schedulerCourseRangePercent(displayedCourseRange.value.maximum, candidateLimit.value)}%`,
 }))
+
+const minimumCourseThumbStyle = computed(() => ({
+  left: `${schedulerCourseRangePercent(displayedCourseRange.value.minimum, candidateLimit.value)}%`,
+}))
+
+const maximumCourseThumbStyle = computed(() => ({
+  left: `${schedulerCourseRangePercent(displayedCourseRange.value.maximum, candidateLimit.value)}%`,
+}))
+
+watch(displayedCourseRange, (range) => {
+  if (editingCourseCount.value !== 'minimum') minimumCoursesDraft.value = String(range.minimum)
+  if (editingCourseCount.value !== 'maximum') maximumCoursesDraft.value = String(range.maximum)
+}, { immediate: true })
 
 interface SectionChoice {
   id: string
@@ -257,14 +288,174 @@ function eventInteger(event: Event, fallback: number, minimum = 0): number {
   return Number.isSafeInteger(value) ? Math.max(minimum, value) : fallback
 }
 
-function updateMinimumCourses(event: Event) {
-  const value = eventInteger(event, props.minCourses, 1)
-  emit('update:minCourses', Math.min(value, props.maxCourses, candidateLimit.value))
+function updateCourseRangeHandle(handle: SchedulerCourseRangeHandle, value: number) {
+  if (candidateCount.value === 0) return displayedCourseRange.value
+  activeCourseRangeHandle.value = handle
+  const nextRange = moveSchedulerCourseRangeHandle(
+    handle,
+    value,
+    displayedCourseRange.value,
+    candidateLimit.value,
+  )
+  if (nextRange.minimum !== displayedCourseRange.value.minimum) {
+    emit('update:minCourses', nextRange.minimum)
+  }
+  if (nextRange.maximum !== displayedCourseRange.value.maximum) {
+    emit('update:maxCourses', nextRange.maximum)
+  }
+  minimumCoursesDraft.value = String(nextRange.minimum)
+  maximumCoursesDraft.value = String(nextRange.maximum)
+  return nextRange
 }
 
-function updateMaximumCourses(event: Event) {
-  const value = eventInteger(event, props.maxCourses, 1)
-  emit('update:maxCourses', Math.max(props.minCourses, Math.min(value, candidateLimit.value)))
+function beginCourseCountEdit(handle: SchedulerCourseRangeHandle) {
+  activeCourseRangeHandle.value = handle
+  editingCourseCount.value = handle
+  if (handle === 'minimum') minimumCoursesDraft.value = String(displayedCourseRange.value.minimum)
+  else maximumCoursesDraft.value = String(displayedCourseRange.value.maximum)
+}
+
+function updateCourseCountDraft(handle: SchedulerCourseRangeHandle, event: Event) {
+  if (handle === 'minimum') minimumCoursesDraft.value = eventValue(event)
+  else maximumCoursesDraft.value = eventValue(event)
+}
+
+function commitCourseCountEdit(handle: SchedulerCourseRangeHandle) {
+  const draft = handle === 'minimum' ? minimumCoursesDraft.value : maximumCoursesDraft.value
+  const value = Number(draft)
+  if (draft.trim() && Number.isSafeInteger(value)) updateCourseRangeHandle(handle, value)
+  else if (handle === 'minimum') minimumCoursesDraft.value = String(displayedCourseRange.value.minimum)
+  else maximumCoursesDraft.value = String(displayedCourseRange.value.maximum)
+  editingCourseCount.value = null
+}
+
+function cancelCourseCountEdit(handle: SchedulerCourseRangeHandle) {
+  if (handle === 'minimum') minimumCoursesDraft.value = String(displayedCourseRange.value.minimum)
+  else maximumCoursesDraft.value = String(displayedCourseRange.value.maximum)
+  editingCourseCount.value = null
+}
+
+function courseRangeValueFromPointer(event: PointerEvent): number {
+  const bounds = courseRangeSlider.value?.getBoundingClientRect()
+  if (!bounds) return displayedCourseRange.value.minimum
+  return schedulerCourseRangeValueAtPosition(
+    event.clientX - courseRangePointerOffsetX,
+    bounds.left,
+    bounds.width,
+    candidateLimit.value,
+  )
+}
+
+function courseRangeHandleClientX(value: number): number | null {
+  const bounds = courseRangeSlider.value?.getBoundingClientRect()
+  if (!bounds) return null
+  return bounds.left + (
+    schedulerCourseRangePercent(value, candidateLimit.value) / 100
+  ) * bounds.width
+}
+
+function nearestCourseRangeHandle(value: number, clientX: number): SchedulerCourseRangeHandle {
+  const overlapClientX = displayedCourseRange.value.minimum === displayedCourseRange.value.maximum
+    ? courseRangeHandleClientX(displayedCourseRange.value.minimum)
+    : null
+  const overlapDirection = overlapClientX === null ? 0 : Math.sign(clientX - overlapClientX)
+  return nearestSchedulerCourseRangeHandle(
+    value,
+    displayedCourseRange.value,
+    activeCourseRangeHandle.value,
+    overlapDirection,
+  )
+}
+
+function focusCourseRangeHandle(handle: SchedulerCourseRangeHandle) {
+  const thumb = handle === 'minimum' ? minimumCourseThumb.value : maximumCourseThumb.value
+  thumb?.focus()
+}
+
+function startCourseRangeDrag(handle: SchedulerCourseRangeHandle, event: PointerEvent) {
+  if (
+    candidateCount.value === 0
+    || !event.isPrimary
+    || courseRangePointerId !== null
+    || (event.pointerType === 'mouse' && event.button !== 0)
+  ) return
+  activeCourseRangeHandle.value = handle
+  draggingCourseRangeHandle.value = handle
+  courseRangePointerId = event.pointerId
+  overlappingCourseRangeClientX = displayedCourseRange.value.minimum === displayedCourseRange.value.maximum
+    ? courseRangeHandleClientX(displayedCourseRange.value.minimum)
+    : null
+  focusCourseRangeHandle(handle)
+  courseRangeSlider.value?.setPointerCapture?.(event.pointerId)
+  updateCourseRangeHandle(handle, courseRangeValueFromPointer(event))
+  event.preventDefault()
+}
+
+function startCourseRangeTrackDrag(event: PointerEvent) {
+  if (
+    !event.isPrimary
+    || courseRangePointerId !== null
+    || (event.pointerType === 'mouse' && event.button !== 0)
+  ) return
+  const value = courseRangeValueFromPointer(event)
+  const handle = nearestCourseRangeHandle(value, event.clientX)
+  const handleValue = handle === 'minimum'
+    ? displayedCourseRange.value.minimum
+    : displayedCourseRange.value.maximum
+  const handleClientX = courseRangeHandleClientX(handleValue)
+  courseRangePointerOffsetX = handleClientX !== null && Math.abs(event.clientX - handleClientX) <= 22
+    ? event.clientX - handleClientX
+    : 0
+  startCourseRangeDrag(handle, event)
+}
+
+function continueCourseRangeDrag(event: PointerEvent) {
+  if (!draggingCourseRangeHandle.value || event.pointerId !== courseRangePointerId) return
+  if (
+    overlappingCourseRangeClientX !== null
+    && displayedCourseRange.value.minimum === displayedCourseRange.value.maximum
+  ) {
+    const direction = Math.sign(
+      event.clientX - courseRangePointerOffsetX - overlappingCourseRangeClientX,
+    )
+    if (direction !== 0) {
+      draggingCourseRangeHandle.value = direction < 0 ? 'minimum' : 'maximum'
+      activeCourseRangeHandle.value = draggingCourseRangeHandle.value
+      focusCourseRangeHandle(draggingCourseRangeHandle.value)
+    }
+  }
+  updateCourseRangeHandle(draggingCourseRangeHandle.value, courseRangeValueFromPointer(event))
+  event.preventDefault()
+}
+
+function resetCourseRangeDrag() {
+  const pointerId = courseRangePointerId
+  courseRangePointerId = null
+  if (pointerId !== null && courseRangeSlider.value?.hasPointerCapture?.(pointerId)) {
+    courseRangeSlider.value.releasePointerCapture(pointerId)
+  }
+  draggingCourseRangeHandle.value = null
+  overlappingCourseRangeClientX = null
+  courseRangePointerOffsetX = 0
+}
+
+function finishCourseRangeDrag(event: PointerEvent) {
+  if (event.pointerId !== courseRangePointerId) return
+  resetCourseRangeDrag()
+}
+
+function handleCourseRangeKeydown(handle: SchedulerCourseRangeHandle, event: KeyboardEvent) {
+  const currentValue = handle === 'minimum'
+    ? displayedCourseRange.value.minimum
+    : displayedCourseRange.value.maximum
+  let nextValue: number | null = null
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') nextValue = currentValue - 1
+  else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') nextValue = currentValue + 1
+  else if (event.key === 'Home') nextValue = 1
+  else if (event.key === 'End') nextValue = candidateLimit.value
+  if (nextValue === null) return
+  event.preventDefault()
+  updateCourseRangeHandle(handle, nextValue)
 }
 
 function updateTopX(event: Event) {
@@ -312,6 +503,7 @@ function onWindowKeydown(event: KeyboardEvent) {
 watch(() => props.visible, async (visible) => {
   if (typeof window === 'undefined') return
   if (!visible) {
+    resetCourseRangeDrag()
     window.removeEventListener('keydown', onWindowKeydown)
     previousFocus?.focus()
     previousFocus = null
@@ -324,6 +516,7 @@ watch(() => props.visible, async (visible) => {
 }, { immediate: true })
 
 onUnmounted(() => {
+  resetCourseRangeDrag()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onWindowKeydown)
 })
 </script>
@@ -408,76 +601,99 @@ onUnmounted(() => {
                       {{ t('scheduler.optimizer.minimumCourses') }} –
                       {{ t('scheduler.optimizer.maximumCourses') }}
                     </span>
-                    <strong>{{ minCourses }}–{{ maxCourses }}</strong>
+                    <strong v-if="candidateCount > 0">
+                      {{ displayedCourseRange.minimum }}–{{ displayedCourseRange.maximum }}
+                    </strong>
+                    <strong v-else>—</strong>
                   </div>
 
-                  <div
-                    class="optimizer-settings__dual-range"
-                    role="group"
-                    :aria-label="t('scheduler.optimizer.courseRangeTitle')"
-                  >
-                    <div class="optimizer-settings__range-track" aria-hidden="true">
-                      <span :style="courseRangeFillStyle" />
-                    </div>
-                    <input
-                      class="optimizer-settings__range-slider optimizer-settings__range-slider--minimum"
-                      :class="{ 'is-active': activeCourseRangeHandle === 'minimum' }"
-                      type="range"
-                      min="1"
-                      :max="candidateLimit"
-                      step="1"
-                      :value="Math.min(minCourses, candidateLimit)"
-                      :aria-label="t('scheduler.optimizer.minimumCourses')"
-                      :disabled="candidateCodes.length === 0"
-                      @focus="activeCourseRangeHandle = 'minimum'"
-                      @pointerdown="activeCourseRangeHandle = 'minimum'"
-                      @input="updateMinimumCourses"
-                    />
-                    <input
-                      class="optimizer-settings__range-slider optimizer-settings__range-slider--maximum"
-                      :class="{ 'is-active': activeCourseRangeHandle === 'maximum' }"
-                      type="range"
-                      min="1"
-                      :max="candidateLimit"
-                      step="1"
-                      :value="Math.min(maxCourses, candidateLimit)"
-                      :aria-label="t('scheduler.optimizer.maximumCourses')"
-                      :disabled="candidateCodes.length === 0"
-                      @focus="activeCourseRangeHandle = 'maximum'"
-                      @pointerdown="activeCourseRangeHandle = 'maximum'"
-                      @input="updateMaximumCourses"
-                    />
-                  </div>
-
-                  <div class="optimizer-settings__range-inputs">
-                    <label class="optimizer-settings__field">
-                      <span>{{ t('scheduler.optimizer.minimumCourses') }}</span>
-                      <input
-                        type="number"
-                        inputmode="numeric"
-                        min="1"
-                        :max="Math.min(candidateLimit, maxCourses)"
-                        :value="minCourses"
-                        :disabled="candidateCodes.length === 0"
+                  <template v-if="candidateCount > 0">
+                    <div
+                      ref="courseRangeSlider"
+                      class="optimizer-settings__dual-range"
+                      data-testid="scheduler-course-range"
+                      role="group"
+                      :aria-label="t('scheduler.optimizer.courseRangeTitle')"
+                      @pointerdown="startCourseRangeTrackDrag"
+                      @pointermove="continueCourseRangeDrag"
+                      @pointerup="finishCourseRangeDrag"
+                      @pointercancel="finishCourseRangeDrag"
+                      @lostpointercapture="finishCourseRangeDrag"
+                    >
+                      <div class="optimizer-settings__range-track" aria-hidden="true">
+                        <span :style="courseRangeFillStyle" />
+                      </div>
+                      <button
+                        ref="minimumCourseThumb"
+                        type="button"
+                        class="optimizer-settings__range-thumb optimizer-settings__range-thumb--minimum"
+                        data-testid="scheduler-course-range-minimum-thumb"
+                        :class="{ 'is-active': activeCourseRangeHandle === 'minimum' }"
+                        :style="minimumCourseThumbStyle"
+                        role="slider"
+                        :aria-label="t('scheduler.optimizer.minimumCourses')"
+                        aria-valuemin="1"
+                        :aria-valuemax="displayedCourseRange.maximum"
+                        :aria-valuenow="displayedCourseRange.minimum"
                         @focus="activeCourseRangeHandle = 'minimum'"
-                        @input="updateMinimumCourses"
+                        @keydown="handleCourseRangeKeydown('minimum', $event)"
                       />
-                    </label>
-                    <span aria-hidden="true">–</span>
-                    <label class="optimizer-settings__field">
-                      <span>{{ t('scheduler.optimizer.maximumCourses') }}</span>
-                      <input
-                        type="number"
-                        inputmode="numeric"
-                        :min="Math.min(minCourses, candidateLimit)"
-                        :max="candidateLimit"
-                        :value="maxCourses"
-                        :disabled="candidateCodes.length === 0"
+                      <button
+                        ref="maximumCourseThumb"
+                        type="button"
+                        class="optimizer-settings__range-thumb optimizer-settings__range-thumb--maximum"
+                        data-testid="scheduler-course-range-maximum-thumb"
+                        :class="{ 'is-active': activeCourseRangeHandle === 'maximum' }"
+                        :style="maximumCourseThumbStyle"
+                        role="slider"
+                        :aria-label="t('scheduler.optimizer.maximumCourses')"
+                        :aria-valuemin="displayedCourseRange.minimum"
+                        :aria-valuemax="candidateLimit"
+                        :aria-valuenow="displayedCourseRange.maximum"
                         @focus="activeCourseRangeHandle = 'maximum'"
-                        @input="updateMaximumCourses"
+                        @keydown="handleCourseRangeKeydown('maximum', $event)"
                       />
-                    </label>
-                  </div>
+                    </div>
+
+                    <div class="optimizer-settings__range-inputs">
+                      <label class="optimizer-settings__field">
+                        <span>{{ t('scheduler.optimizer.minimumCourses') }}</span>
+                        <input
+                          type="number"
+                          data-testid="scheduler-course-range-minimum-input"
+                          inputmode="numeric"
+                          min="1"
+                          :max="displayedCourseRange.maximum"
+                          :value="minimumCoursesDraft"
+                          @focus="beginCourseCountEdit('minimum')"
+                          @input="updateCourseCountDraft('minimum', $event)"
+                          @blur="commitCourseCountEdit('minimum')"
+                          @keydown.enter.prevent="commitCourseCountEdit('minimum')"
+                          @keydown.esc.stop.prevent="cancelCourseCountEdit('minimum')"
+                        />
+                      </label>
+                      <span aria-hidden="true">–</span>
+                      <label class="optimizer-settings__field">
+                        <span>{{ t('scheduler.optimizer.maximumCourses') }}</span>
+                        <input
+                          type="number"
+                          data-testid="scheduler-course-range-maximum-input"
+                          inputmode="numeric"
+                          :min="displayedCourseRange.minimum"
+                          :max="candidateLimit"
+                          :value="maximumCoursesDraft"
+                          @focus="beginCourseCountEdit('maximum')"
+                          @input="updateCourseCountDraft('maximum', $event)"
+                          @blur="commitCourseCountEdit('maximum')"
+                          @keydown.enter.prevent="commitCourseCountEdit('maximum')"
+                          @keydown.esc.stop.prevent="cancelCourseCountEdit('maximum')"
+                        />
+                      </label>
+                    </div>
+                  </template>
+                  <p v-else class="optimizer-settings__range-empty">
+                    {{ t('scheduler.optimizer.candidatePoolEmpty') }}
+                  </p>
                 </div>
                 <label class="optimizer-settings__field optimizer-settings__top-x">
                   <span>{{ t('scheduler.optimizer.topX') }}</span>
@@ -1009,7 +1225,9 @@ onUnmounted(() => {
 .optimizer-settings__dual-range {
   position: relative;
   height: 44px;
-  margin: 12px 4px 6px;
+  margin: 12px 18px 6px;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .optimizer-settings__range-track {
@@ -1029,71 +1247,60 @@ onUnmounted(() => {
   }
 }
 
-.optimizer-settings__range-slider {
+.optimizer-settings__range-thumb {
   position: absolute;
-  top: 8px;
-  left: 0;
-  width: 100%;
-  height: 28px;
+  z-index: 1;
+  top: 0;
+  width: 44px;
+  height: 44px;
   margin: 0;
   padding: 0;
   border: 0;
-  outline: 0;
+  border-radius: 50%;
+  outline: none;
   background: transparent;
+  cursor: grab;
   pointer-events: none;
-  appearance: none;
+  transform: translateX(-50%);
 
-  &::-webkit-slider-runnable-track {
-    height: 5px;
-    border: 0;
-    background: transparent;
-  }
-
-  &::-webkit-slider-thumb {
+  &::before {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    box-sizing: border-box;
     width: 24px;
     height: 24px;
-    margin-top: -9.5px;
     border: 5px solid var(--interactive-primary);
     border-radius: 50%;
     background: var(--surface-primary);
     box-shadow: var(--shadow-small);
-    cursor: grab;
-    pointer-events: auto;
-    appearance: none;
+    content: '';
   }
 
-  &::-moz-range-track {
-    height: 5px;
-    border: 0;
-    background: transparent;
+  &:active {
+    cursor: grabbing;
   }
 
-  &::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    border: 5px solid var(--interactive-primary);
-    border-radius: 50%;
-    background: var(--surface-primary);
-    box-shadow: var(--shadow-small);
-    cursor: grab;
-    pointer-events: auto;
-  }
-
-  &:focus-visible::-webkit-slider-thumb {
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--interactive-primary) 24%, transparent),
-      var(--shadow-small);
-  }
-
-  &:focus-visible::-moz-range-thumb {
+  &:focus-visible::before {
     box-shadow:
       0 0 0 3px color-mix(in srgb, var(--interactive-primary) 24%, transparent),
       var(--shadow-small);
   }
 }
 
-.optimizer-settings__range-slider.is-active {
+.optimizer-settings__range-thumb.is-active {
   z-index: 2;
+}
+
+.optimizer-settings__range-empty {
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px dashed var(--border-primary);
+  border-radius: 9px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .optimizer-settings__range-inputs {

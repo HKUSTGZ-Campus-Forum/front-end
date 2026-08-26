@@ -211,4 +211,17 @@ describe('ranked scheduler optimizer async state', () => {
     expect(optimizer.runState.value).toBe('complete')
     scope.stop()
   })
+
+  it('keeps the stored course range within the live candidate count', async () => {
+    const courses = Array.from({ length: 6 }, (_, index) => course(`TEST${index + 1}`))
+    const { optimizer, scope } = setupOptimizer(courses)
+    optimizer.minCourses.value = 4
+    optimizer.maxCourses.value = 6
+
+    optimizer.candidateCodes.value = courses.slice(0, 3).map(entry => entry.course_code)
+
+    expect(optimizer.minCourses.value).toBe(3)
+    expect(optimizer.maxCourses.value).toBe(3)
+    scope.stop()
+  })
 })

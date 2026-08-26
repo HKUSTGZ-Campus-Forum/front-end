@@ -96,46 +96,48 @@ describe('ranked scheduler UI integration contract', () => {
     expect(bottomPanel).toContain(':aria-valuenow="displayedIndex"')
   })
 
-  it('uses one shared course-count track with two accessible range handles', () => {
+  it('uses one genuinely interactive course-count track with two accessible handles', () => {
     const courseRange = between(
       optimizerSettings,
       '<section class="optimizer-settings__section" aria-labelledby="optimizer-range-title">',
       '<label class="optimizer-settings__field optimizer-settings__top-x">',
     )
-    const minimumUpdate = between(
-      optimizerSettings,
-      'function updateMinimumCourses',
-      'function updateMaximumCourses',
-    )
-    const maximumUpdate = between(
-      optimizerSettings,
-      'function updateMaximumCourses',
-      'function updateTopX',
-    )
 
+    expect(courseRange).toContain('<template v-if="candidateCount > 0">')
     expect(courseRange).toContain('class="optimizer-settings__dual-range"')
     expect(courseRange).toContain('class="optimizer-settings__range-track"')
     expect(courseRange).toContain('<span :style="courseRangeFillStyle" />')
-    expect(courseRange.match(/type="range"/g)).toHaveLength(2)
-    expect(courseRange).toContain('optimizer-settings__range-slider--minimum')
-    expect(courseRange).toContain('optimizer-settings__range-slider--maximum')
+    expect(courseRange.match(/role="slider"/g)).toHaveLength(2)
+    expect(courseRange).toContain('optimizer-settings__range-thumb--minimum')
+    expect(courseRange).toContain('optimizer-settings__range-thumb--maximum')
     expect(courseRange).toContain(":class=\"{ 'is-active': activeCourseRangeHandle === 'minimum' }\"")
     expect(courseRange).toContain(":class=\"{ 'is-active': activeCourseRangeHandle === 'maximum' }\"")
-    expect(courseRange.match(/:max="candidateLimit"/g)).toHaveLength(3)
-    expect(courseRange.match(/step="1"/g)).toHaveLength(2)
+    expect(courseRange).toContain(':aria-valuenow="displayedCourseRange.minimum"')
+    expect(courseRange).toContain(':aria-valuenow="displayedCourseRange.maximum"')
     expect(courseRange).toContain(':aria-label="t(\'scheduler.optimizer.minimumCourses\')"')
     expect(courseRange).toContain(':aria-label="t(\'scheduler.optimizer.maximumCourses\')"')
     expect(courseRange).toContain('@focus="activeCourseRangeHandle = \'minimum\'"')
     expect(courseRange).toContain('@focus="activeCourseRangeHandle = \'maximum\'"')
+    expect(courseRange).toContain('@pointerdown="startCourseRangeTrackDrag"')
+    expect(courseRange).toContain('@pointermove="continueCourseRangeDrag"')
+    expect(courseRange).toContain('ref="minimumCourseThumb"')
+    expect(courseRange).toContain('ref="maximumCourseThumb"')
+    expect(courseRange).not.toContain('@pointerdown.stop="startCourseRangeDrag')
+    expect(courseRange).toContain('@keydown="handleCourseRangeKeydown(\'minimum\', $event)"')
+    expect(courseRange).toContain('@keydown="handleCourseRangeKeydown(\'maximum\', $event)"')
     expect(courseRange).toContain('class="optimizer-settings__range-inputs"')
-    expect(courseRange).not.toContain('optimizer-settings__range-field')
-    expect(minimumUpdate).toContain('Math.min(value, props.maxCourses, candidateLimit.value)')
-    expect(maximumUpdate).toContain('Math.max(props.minCourses, Math.min(value, candidateLimit.value))')
+    expect(courseRange).toContain(':value="minimumCoursesDraft"')
+    expect(courseRange).toContain(':value="maximumCoursesDraft"')
+    expect(courseRange).toContain('@blur="commitCourseCountEdit(\'minimum\')"')
+    expect(courseRange).toContain('@blur="commitCourseCountEdit(\'maximum\')"')
+    expect(courseRange).toContain('@keydown.enter.prevent="commitCourseCountEdit(\'minimum\')"')
+    expect(courseRange).toContain('@keydown.esc.stop.prevent="cancelCourseCountEdit(\'maximum\')"')
+    expect(courseRange).toContain('<p v-else class="optimizer-settings__range-empty">')
     expect(optimizerSettings).toMatch(
-      /\.optimizer-settings__range-slider\s*\{[\s\S]*?pointer-events:\s*none;/,
+      /\.optimizer-settings__dual-range\s*\{[\s\S]*?touch-action:\s*none;/,
     )
     expect(optimizerSettings).toMatch(
-      /&::-(?:webkit-slider-thumb|moz-range-thumb)\s*\{[\s\S]*?pointer-events:\s*auto;/,
+      /\.optimizer-settings__range-thumb\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;[\s\S]*?pointer-events:\s*none;/,
     )
   })
 

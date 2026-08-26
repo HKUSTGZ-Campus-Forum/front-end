@@ -7,6 +7,7 @@ import {
   type Ref,
 } from 'vue'
 import type { CartCourse, PlanSelection } from '../utils/scheduler'
+import { normalizeSchedulerCourseRange } from '../utils/schedulerCourseRange'
 import {
   buildSchedulerOptimizerCourses,
   solveRankedScheduler,
@@ -259,6 +260,21 @@ export function useSchedulerOptimizer(options: {
     mounted.value = true
     initialize(options.courseList.value)
   })
+
+  watch(
+    () => candidateCodes.value.length,
+    (candidateCount) => {
+      if (candidateCount === 0) return
+      const normalized = normalizeSchedulerCourseRange(
+        minCourses.value,
+        maxCourses.value,
+        candidateCount,
+      )
+      minCourses.value = normalized.minimum
+      maxCourses.value = normalized.maximum
+    },
+    { flush: 'sync' },
+  )
 
   watch(
     () => options.courseList.value.map(course => course.course_code).join('\u0000'),
