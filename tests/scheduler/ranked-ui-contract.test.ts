@@ -96,6 +96,49 @@ describe('ranked scheduler UI integration contract', () => {
     expect(bottomPanel).toContain(':aria-valuenow="displayedIndex"')
   })
 
+  it('uses one shared course-count track with two accessible range handles', () => {
+    const courseRange = between(
+      optimizerSettings,
+      '<section class="optimizer-settings__section" aria-labelledby="optimizer-range-title">',
+      '<label class="optimizer-settings__field optimizer-settings__top-x">',
+    )
+    const minimumUpdate = between(
+      optimizerSettings,
+      'function updateMinimumCourses',
+      'function updateMaximumCourses',
+    )
+    const maximumUpdate = between(
+      optimizerSettings,
+      'function updateMaximumCourses',
+      'function updateTopX',
+    )
+
+    expect(courseRange).toContain('class="optimizer-settings__dual-range"')
+    expect(courseRange).toContain('class="optimizer-settings__range-track"')
+    expect(courseRange).toContain('<span :style="courseRangeFillStyle" />')
+    expect(courseRange.match(/type="range"/g)).toHaveLength(2)
+    expect(courseRange).toContain('optimizer-settings__range-slider--minimum')
+    expect(courseRange).toContain('optimizer-settings__range-slider--maximum')
+    expect(courseRange).toContain(":class=\"{ 'is-active': activeCourseRangeHandle === 'minimum' }\"")
+    expect(courseRange).toContain(":class=\"{ 'is-active': activeCourseRangeHandle === 'maximum' }\"")
+    expect(courseRange.match(/:max="candidateLimit"/g)).toHaveLength(3)
+    expect(courseRange.match(/step="1"/g)).toHaveLength(2)
+    expect(courseRange).toContain(':aria-label="t(\'scheduler.optimizer.minimumCourses\')"')
+    expect(courseRange).toContain(':aria-label="t(\'scheduler.optimizer.maximumCourses\')"')
+    expect(courseRange).toContain('@focus="activeCourseRangeHandle = \'minimum\'"')
+    expect(courseRange).toContain('@focus="activeCourseRangeHandle = \'maximum\'"')
+    expect(courseRange).toContain('class="optimizer-settings__range-inputs"')
+    expect(courseRange).not.toContain('optimizer-settings__range-field')
+    expect(minimumUpdate).toContain('Math.min(value, props.maxCourses, candidateLimit.value)')
+    expect(maximumUpdate).toContain('Math.max(props.minCourses, Math.min(value, candidateLimit.value))')
+    expect(optimizerSettings).toMatch(
+      /\.optimizer-settings__range-slider\s*\{[\s\S]*?pointer-events:\s*none;/,
+    )
+    expect(optimizerSettings).toMatch(
+      /&::-(?:webkit-slider-thumb|moz-range-thumb)\s*\{[\s\S]*?pointer-events:\s*auto;/,
+    )
+  })
+
   it('uses one compact multi-day card for each early-cutoff rule', () => {
     const earlyRules = between(
       optimizerSettings,

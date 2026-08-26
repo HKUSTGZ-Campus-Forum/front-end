@@ -33,6 +33,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const closeButton = ref<HTMLButtonElement | null>(null)
 const drawerRef = ref<HTMLElement | null>(null)
+const activeCourseRangeHandle = ref<'minimum' | 'maximum'>('maximum')
 let previousFocus: HTMLElement | null = null
 let generatedRuleId = 0
 
@@ -55,6 +56,18 @@ const candidateCourses = computed(() => props.candidateCodes.map((code) => {
 const candidateLimit = computed(() => Math.max(1, props.candidateCodes.length))
 const visibleCandidateCourses = computed(() => candidateCourses.value.slice(0, 10))
 const hiddenCandidateCount = computed(() => Math.max(0, candidateCourses.value.length - 10))
+
+function courseRangePercent(value: number): number {
+  const maximum = candidateLimit.value
+  if (maximum <= 1) return 0
+  const boundedValue = Math.max(1, Math.min(value, maximum))
+  return ((boundedValue - 1) / (maximum - 1)) * 100
+}
+
+const courseRangeFillStyle = computed(() => ({
+  left: `${courseRangePercent(props.minCourses)}%`,
+  right: `${100 - courseRangePercent(props.maxCourses)}%`,
+}))
 
 interface SectionChoice {
   id: string
@@ -389,46 +402,83 @@ onUnmounted(() => {
               </div>
 
               <div class="optimizer-settings__range-grid">
-                <label class="optimizer-settings__field optimizer-settings__range-field">
-                  <span>{{ t('scheduler.optimizer.minimumCourses') }}</span>
-                  <strong>{{ minCourses }}</strong>
-                  <input
-                    type="number"
-                    inputmode="numeric"
-                    min="1"
-                    :max="Math.min(candidateLimit, maxCourses)"
-                    :value="minCourses"
-                    @input="updateMinimumCourses"
-                  />
-                  <input
-                    type="range"
-                    min="1"
-                    :max="Math.min(candidateLimit, maxCourses)"
-                    :value="minCourses"
-                    :aria-label="t('scheduler.optimizer.minimumCourses')"
-                    @input="updateMinimumCourses"
-                  />
-                </label>
-                <label class="optimizer-settings__field optimizer-settings__range-field">
-                  <span>{{ t('scheduler.optimizer.maximumCourses') }}</span>
-                  <strong>{{ maxCourses }}</strong>
-                  <input
-                    type="number"
-                    inputmode="numeric"
-                    :min="Math.min(minCourses, candidateLimit)"
-                    :max="candidateLimit"
-                    :value="maxCourses"
-                    @input="updateMaximumCourses"
-                  />
-                  <input
-                    type="range"
-                    :min="Math.min(minCourses, candidateLimit)"
-                    :max="candidateLimit"
-                    :value="maxCourses"
-                    :aria-label="t('scheduler.optimizer.maximumCourses')"
-                    @input="updateMaximumCourses"
-                  />
-                </label>
+                <div class="optimizer-settings__range-card">
+                  <div class="optimizer-settings__range-summary">
+                    <span>
+                      {{ t('scheduler.optimizer.minimumCourses') }} –
+                      {{ t('scheduler.optimizer.maximumCourses') }}
+                    </span>
+                    <strong>{{ minCourses }}–{{ maxCourses }}</strong>
+                  </div>
+
+                  <div
+                    class="optimizer-settings__dual-range"
+                    role="group"
+                    :aria-label="t('scheduler.optimizer.courseRangeTitle')"
+                  >
+                    <div class="optimizer-settings__range-track" aria-hidden="true">
+                      <span :style="courseRangeFillStyle" />
+                    </div>
+                    <input
+                      class="optimizer-settings__range-slider optimizer-settings__range-slider--minimum"
+                      :class="{ 'is-active': activeCourseRangeHandle === 'minimum' }"
+                      type="range"
+                      min="1"
+                      :max="candidateLimit"
+                      step="1"
+                      :value="Math.min(minCourses, candidateLimit)"
+                      :aria-label="t('scheduler.optimizer.minimumCourses')"
+                      :disabled="candidateCodes.length === 0"
+                      @focus="activeCourseRangeHandle = 'minimum'"
+                      @pointerdown="activeCourseRangeHandle = 'minimum'"
+                      @input="updateMinimumCourses"
+                    />
+                    <input
+                      class="optimizer-settings__range-slider optimizer-settings__range-slider--maximum"
+                      :class="{ 'is-active': activeCourseRangeHandle === 'maximum' }"
+                      type="range"
+                      min="1"
+                      :max="candidateLimit"
+                      step="1"
+                      :value="Math.min(maxCourses, candidateLimit)"
+                      :aria-label="t('scheduler.optimizer.maximumCourses')"
+                      :disabled="candidateCodes.length === 0"
+                      @focus="activeCourseRangeHandle = 'maximum'"
+                      @pointerdown="activeCourseRangeHandle = 'maximum'"
+                      @input="updateMaximumCourses"
+                    />
+                  </div>
+
+                  <div class="optimizer-settings__range-inputs">
+                    <label class="optimizer-settings__field">
+                      <span>{{ t('scheduler.optimizer.minimumCourses') }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        :max="Math.min(candidateLimit, maxCourses)"
+                        :value="minCourses"
+                        :disabled="candidateCodes.length === 0"
+                        @focus="activeCourseRangeHandle = 'minimum'"
+                        @input="updateMinimumCourses"
+                      />
+                    </label>
+                    <span aria-hidden="true">–</span>
+                    <label class="optimizer-settings__field">
+                      <span>{{ t('scheduler.optimizer.maximumCourses') }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        :min="Math.min(minCourses, candidateLimit)"
+                        :max="candidateLimit"
+                        :value="maxCourses"
+                        :disabled="candidateCodes.length === 0"
+                        @focus="activeCourseRangeHandle = 'maximum'"
+                        @input="updateMaximumCourses"
+                      />
+                    </label>
+                  </div>
+                </div>
                 <label class="optimizer-settings__field optimizer-settings__top-x">
                   <span>{{ t('scheduler.optimizer.topX') }}</span>
                   <input
@@ -924,38 +974,146 @@ onUnmounted(() => {
   }
 }
 
-.optimizer-settings__range-field,
+.optimizer-settings__range-card,
 .optimizer-settings__top-x {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 82px;
-  align-items: center;
   padding: 15px;
   border: 1px solid var(--border-secondary);
   border-radius: 13px;
   background: var(--surface-secondary);
+}
 
-  > strong {
-    position: absolute;
-    top: 14px;
-    right: 108px;
-    color: var(--interactive-active-text);
-    font-size: 1rem;
+.optimizer-settings__range-card {
+  grid-column: 1 / -1;
+}
+
+.optimizer-settings__range-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  > span {
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    font-weight: 750;
   }
 
-  input[type='range'] {
-    grid-column: 1 / -1;
-    min-height: 28px;
-    padding: 0;
+  > strong {
+    color: var(--interactive-active-text);
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+}
+
+.optimizer-settings__dual-range {
+  position: relative;
+  height: 44px;
+  margin: 12px 4px 6px;
+}
+
+.optimizer-settings__range-track {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  left: 0;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--border-secondary);
+
+  > span {
+    position: absolute;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--interactive-primary);
+  }
+}
+
+.optimizer-settings__range-slider {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  pointer-events: none;
+  appearance: none;
+
+  &::-webkit-slider-runnable-track {
+    height: 5px;
     border: 0;
-    box-shadow: none;
-    accent-color: var(--interactive-primary);
+    background: transparent;
+  }
+
+  &::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -9.5px;
+    border: 5px solid var(--interactive-primary);
+    border-radius: 50%;
+    background: var(--surface-primary);
+    box-shadow: var(--shadow-small);
+    cursor: grab;
+    pointer-events: auto;
+    appearance: none;
+  }
+
+  &::-moz-range-track {
+    height: 5px;
+    border: 0;
+    background: transparent;
+  }
+
+  &::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 5px solid var(--interactive-primary);
+    border-radius: 50%;
+    background: var(--surface-primary);
+    box-shadow: var(--shadow-small);
+    cursor: grab;
+    pointer-events: auto;
+  }
+
+  &:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--interactive-primary) 24%, transparent),
+      var(--shadow-small);
+  }
+
+  &:focus-visible::-moz-range-thumb {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--interactive-primary) 24%, transparent),
+      var(--shadow-small);
+  }
+}
+
+.optimizer-settings__range-slider.is-active {
+  z-index: 2;
+}
+
+.optimizer-settings__range-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+
+  > span {
+    padding-bottom: 12px;
+    color: var(--text-secondary);
+    font-weight: 800;
   }
 }
 
 .optimizer-settings__top-x {
   grid-column: 1 / -1;
+  display: grid;
   grid-template-columns: minmax(0, 1fr) 120px;
+  align-items: center;
 
   small {
     grid-column: 1 / -1;
