@@ -3,11 +3,20 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from '#app'
 import { AMWC_RESULTS_URL } from '~/utils/externalLinks'
+import { MEETCAMPUS_BETA_EMAIL } from '~/utils/meetcampus'
 
 const { t } = useI18n()
 const route = useRoute()
 const { user, isLoggedIn } = useAuth()
 const { getLocalePath } = useAppLocale()
+
+const hasMeetCampusBetaAccess = computed(() =>
+  Boolean(
+    isLoggedIn.value &&
+    user.value?.email_verified &&
+    user.value?.email?.trim().toLocaleLowerCase() === MEETCAMPUS_BETA_EMAIL,
+  ),
+)
 
 const props = defineProps<{
   mobileOpen?: boolean
@@ -92,6 +101,14 @@ function isCourseActive() {
             <span class="kg-label">{{ t('nav.teamMatching') }}</span>
           </NuxtLink>
         </li>
+        <ClientOnly>
+          <li v-if="hasMeetCampusBetaAccess">
+            <NuxtLink :to="getLocalePath('/meetcampus')" :class="{ active: isActive('/meetcampus') }">
+              <Icon name="lucide:map-pinned" class="kg-icon kg-icon--component" aria-hidden="true" />
+              <span class="kg-label">{{ t('nav.meetCampus') }}</span>
+            </NuxtLink>
+          </li>
+        </ClientOnly>
         <li>
           <NuxtLink
             v-if="isLoggedIn && user?.id"
@@ -245,6 +262,13 @@ img.kg-icon {
   height: 22px;
   flex-shrink: 0;
   filter: brightness(0) invert(1);
+}
+
+.kg-icon--component {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: currentColor;
 }
 
 .kg-icon--emoji {
