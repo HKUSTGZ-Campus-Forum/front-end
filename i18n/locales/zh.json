@@ -85,6 +85,7 @@
     "academicMap": "学业进度",
     "activity": "活动",
     "teamMatching": "组队",
+    "meetCampus": "MeetCampus 内测",
     "users": "用户",
     "scheduler": "排课助手",
     "wiki": "HKUST-GZ Wiki",
@@ -2646,6 +2647,142 @@
       "fri": "周五",
       "sat": "周六",
       "sun": "周日"
+    }
+  },
+  "meetCampus": {
+    "title": "MeetCampus",
+    "privateBeta": "私密内测",
+    "subtitle": "让沙盒 Agent 先在虚拟校园里相遇，再判断是否值得把一段故事带到线下。",
+    "metaDescription": "MeetCampus 私密内测：体验虚拟校园 Agent 相遇、共享故事与线下破冰流程。",
+    "sandboxBadge": "引导沙盒",
+    "progress": "第 {current} / {total} 步",
+    "map": {
+      "ariaLabel": "MeetCampus 虚拟校园地图",
+      "sandboxAgents": "4 个沙盒 Agent 正在探索",
+      "taskLocation": "当前任务地点",
+      "sandboxLegend": "地图角色为演示状态，不代表真实在线用户"
+    },
+    "phases": {
+      "setup": "设定这次社交意图",
+      "searching": "Agent 正在寻找场景",
+      "encounter": "一次沙盒相遇",
+      "experience": "选择演示故事分支",
+      "story": "查看共享故事",
+      "consent": "运行双向同意演示",
+      "profile": "查看已解锁资料",
+      "planning": "安排线下破冰",
+      "pass": "线下破冰通行证",
+      "feedback": "记录见面感受",
+      "complete": "本次体验完成"
+    },
+    "setup": {
+      "transparency": "当前版本用于验证流程。候选人、匹配理由、故事和回应均为预设内容，不是实时 Agent 决策。",
+      "intentLabel": "你现在想找什么搭子？",
+      "paceLabel": "希望用什么节奏开始？",
+      "paces": {
+        "quiet": "安静陪伴",
+        "easy": "轻松交流",
+        "active": "主动认识"
+      },
+      "paceHint": "节奏会保存在本次体验中，但当前不会改变候选人或故事内容。",
+      "groupLabel": "人数偏好",
+      "oneToOne": "当前沙盒支持一对一",
+      "groupComingSoon": "三人小组暂未开放"
+    },
+    "searching": {
+      "title": "正在前往虚拟校园",
+      "description": "你的 Agent 正在前往{location}，系统随后会载入固定沙盒候选人。",
+      "fixedCandidate": "固定候选人",
+      "noLiveSearch": "没有实时用户搜索"
+    },
+    "encounter": {
+      "title": "你的 Agent 遇见了“{agent}”",
+      "atLocation": "这次沙盒相遇发生在{location}。"
+    },
+    "experience": {
+      "userChoiceDisclosure": "这里由你选择预设故事分支。它用于验证交互，不代表 Agent 自主做出了决定。"
+    },
+    "story": {
+      "sharedStory": "预设共享故事",
+      "myAgent": "我的 Agent 做了什么",
+      "otherAgent": "{agent}做了什么",
+      "commonGround": "一个共同点",
+      "difference": "一个有趣的差异",
+      "icebreaker": "第一条破冰问题"
+    },
+    "consent": {
+      "you": "你的选择",
+      "accepted": "愿意认识对方",
+      "simulatedPending": "等待沙盒回应",
+      "disclosure": "目前没有第二位真实用户。下面的按钮会明确运行一次“对方同意”模拟。"
+    },
+    "profile": {
+      "unlocked": "沙盒资料已解锁"
+    },
+    "planning": {
+      "location": "地点",
+      "duration": "时长",
+      "minutes": "{count} 分钟",
+      "chooseTime": "选择一个演示时间",
+      "disclosure": "时间不会发送给真实用户，也不会读取日历。确认结果由沙盒模拟。"
+    },
+    "pass": {
+      "label": "线下破冰通行证",
+      "time": "时间",
+      "place": "地点",
+      "duration": "预计时长",
+      "task": "共同任务",
+      "icebreaker": "开场问题",
+      "safety": "真实上线后，线下见面应选择公共地点，双方都可以随时取消或离开。当前按钮只推进测试流程。"
+    },
+    "feedback": {
+      "title": "这次模拟见面感觉如何？",
+      "description": "反馈仅保存在当前浏览器，用于观察完整流程，不会训练 Agent。",
+      "options": {
+        "natural": { "label": "很自然", "description": "节奏舒服，愿意再见一次" },
+        "good": { "label": "还不错", "description": "有一点生疏，但整体可以" },
+        "pressure": { "label": "有点压力", "description": "下次需要更慢或更明确的边界" }
+      }
+    },
+    "complete": {
+      "title": "你走完了 MeetCampus 沙盒流程",
+      "description": "从意图、相遇、共享故事到线下反馈，这次测试进度已完整记录。",
+      "memoryLabel": "本地共同记忆",
+      "storageDisclosure": "这条记忆只保存在当前浏览器，不会同步到其他设备，也不会用于模型学习。"
+    },
+    "about": {
+      "title": "这次内测实际验证什么",
+      "description": "当前迁移保留原项目的交互流程，同时把模拟边界和真实能力清楚分开。",
+      "pointOne": "真实 UniKorn 登录与服务端白名单",
+      "pointTwo": "预设候选人、故事与回应",
+      "pointThree": "浏览器本地测试进度"
+    },
+    "loading": {
+      "title": "正在核验内测身份",
+      "description": "系统正在通过 UniKorn 登录状态检查 MeetCampus 私密内测权限。"
+    },
+    "restricted": {
+      "title": "此账号暂未受邀",
+      "description": "MeetCampus 目前只对指定内测账号开放。你的 UniKorn 其他功能不会受影响。"
+    },
+    "error": {
+      "title": "暂时无法载入 MeetCampus",
+      "description": "权限检查或沙盒数据载入失败，请检查网络后重试。"
+    },
+    "actions": {
+      "aboutBeta": "内测说明",
+      "reset": "重新开始",
+      "resetConfirm": "确定清除当前 MeetCampus 本地测试进度并重新开始吗？",
+      "dispatchAgent": "派出我的 Agent",
+      "viewEncounter": "查看这次相遇",
+      "requestIntroduction": "愿意认识对方",
+      "runningSimulation": "正在运行模拟…",
+      "simulateConsent": "模拟：对方同意",
+      "planMeetup": "安排一次线下破冰",
+      "simulatePlan": "模拟：对方确认时间",
+      "markMeetupComplete": "模拟：已完成这次见面",
+      "backHome": "返回首页",
+      "retry": "重新载入"
     }
   },
   "adminCharts": {

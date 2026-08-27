@@ -85,6 +85,7 @@
     "academicMap": "Degree Progress",
     "activity": "Activities",
     "teamMatching": "Form a team",
+    "meetCampus": "MeetCampus beta",
     "users": "Users",
     "scheduler": "Scheduling Assistant",
     "wiki": "HKUST-GZ Wiki",
@@ -2646,6 +2647,142 @@
       "fri": "Fri",
       "sat": "Sat",
       "sun": "Sun"
+    }
+  },
+  "meetCampus": {
+    "title": "MeetCampus",
+    "privateBeta": "Private beta",
+    "subtitle": "Let sandbox Agents meet in a virtual campus, then decide whether a shared story is worth taking offline.",
+    "metaDescription": "MeetCampus private beta: explore a virtual-campus Agent encounter, shared story, and offline icebreaker flow.",
+    "sandboxBadge": "Guided sandbox",
+    "progress": "Step {current} of {total}",
+    "map": {
+      "ariaLabel": "MeetCampus virtual campus map",
+      "sandboxAgents": "4 sandbox Agents are exploring",
+      "taskLocation": "Current task location",
+      "sandboxLegend": "Map characters are demos, not real online users"
+    },
+    "phases": {
+      "setup": "Set a social intention",
+      "searching": "Agent is finding a scene",
+      "encounter": "A sandbox encounter",
+      "experience": "Choose a demo story branch",
+      "story": "Read the shared story",
+      "consent": "Run the mutual-consent demo",
+      "profile": "View the unlocked profile",
+      "planning": "Plan an offline icebreaker",
+      "pass": "Offline icebreaker pass",
+      "feedback": "Record how it felt",
+      "complete": "Experience complete"
+    },
+    "setup": {
+      "transparency": "This version validates the flow. Candidates, match reasons, stories, and responses are preset content, not live Agent decisions.",
+      "intentLabel": "Who would you like to meet right now?",
+      "paceLabel": "How should the interaction begin?",
+      "paces": {
+        "quiet": "Quiet company",
+        "easy": "Easy conversation",
+        "active": "Meet proactively"
+      },
+      "paceHint": "The pace is saved with this session, but it does not change the candidate or story yet.",
+      "groupLabel": "Group preference",
+      "oneToOne": "The current sandbox supports one-to-one meetings",
+      "groupComingSoon": "Three-person groups are not available yet"
+    },
+    "searching": {
+      "title": "Entering the virtual campus",
+      "description": "Your Agent is heading to {location}. A fixed sandbox candidate will load next.",
+      "fixedCandidate": "Fixed candidate",
+      "noLiveSearch": "No live user search"
+    },
+    "encounter": {
+      "title": "Your Agent met “{agent}”",
+      "atLocation": "This sandbox encounter takes place at {location}."
+    },
+    "experience": {
+      "userChoiceDisclosure": "You choose a preset story branch here. This validates the interaction and does not represent an autonomous Agent decision."
+    },
+    "story": {
+      "sharedStory": "Preset shared story",
+      "myAgent": "What my Agent did",
+      "otherAgent": "What {agent} did",
+      "commonGround": "One thing in common",
+      "difference": "One interesting difference",
+      "icebreaker": "First icebreaker question"
+    },
+    "consent": {
+      "you": "Your choice",
+      "accepted": "Open to meeting",
+      "simulatedPending": "Waiting for a sandbox response",
+      "disclosure": "There is no second real user yet. The button below explicitly runs a simulated acceptance."
+    },
+    "profile": {
+      "unlocked": "Sandbox profile unlocked"
+    },
+    "planning": {
+      "location": "Location",
+      "duration": "Duration",
+      "minutes": "{count} min",
+      "chooseTime": "Choose a demo time",
+      "disclosure": "This time is not sent to a real user and no calendar is read. Confirmation is simulated."
+    },
+    "pass": {
+      "label": "Offline icebreaker pass",
+      "time": "Time",
+      "place": "Place",
+      "duration": "Duration",
+      "task": "Shared task",
+      "icebreaker": "Opening question",
+      "safety": "In a real release, meet in a public place and remember that either person can cancel or leave at any time. This button only advances the test flow."
+    },
+    "feedback": {
+      "title": "How did the simulated meetup feel?",
+      "description": "Feedback stays in this browser to complete the flow. It does not train an Agent.",
+      "options": {
+        "natural": { "label": "Very natural", "description": "The pace felt comfortable and I would meet again" },
+        "good": { "label": "Pretty good", "description": "A little unfamiliar, but positive overall" },
+        "pressure": { "label": "A bit pressured", "description": "Next time should be slower or have clearer boundaries" }
+      }
+    },
+    "complete": {
+      "title": "You completed the MeetCampus sandbox",
+      "description": "Your test journey from intention and encounter to shared story and offline feedback is complete.",
+      "memoryLabel": "Local shared memory",
+      "storageDisclosure": "This memory stays in this browser. It does not sync to other devices or train a model."
+    },
+    "about": {
+      "title": "What this private beta actually validates",
+      "description": "This migration keeps the original interaction flow while separating simulated behavior from real capabilities.",
+      "pointOne": "Real UniKorn login and server-side allowlist",
+      "pointTwo": "Preset candidates, stories, and responses",
+      "pointThree": "Browser-local test progress"
+    },
+    "loading": {
+      "title": "Checking private-beta access",
+      "description": "UniKorn is checking your signed-in identity before loading MeetCampus."
+    },
+    "restricted": {
+      "title": "This account is not invited yet",
+      "description": "MeetCampus is currently limited to selected beta accounts. Your other UniKorn features are unaffected."
+    },
+    "error": {
+      "title": "MeetCampus could not be loaded",
+      "description": "The access check or sandbox data failed to load. Check your connection and try again."
+    },
+    "actions": {
+      "aboutBeta": "About this beta",
+      "reset": "Start over",
+      "resetConfirm": "Clear your local MeetCampus test progress and start over?",
+      "dispatchAgent": "Send my Agent",
+      "viewEncounter": "View this encounter",
+      "requestIntroduction": "I am open to meeting",
+      "runningSimulation": "Running simulation…",
+      "simulateConsent": "Simulate: candidate accepts",
+      "planMeetup": "Plan an offline icebreaker",
+      "simulatePlan": "Simulate: candidate confirms time",
+      "markMeetupComplete": "Simulate: meetup completed",
+      "backHome": "Back to home",
+      "retry": "Reload"
     }
   },
   "adminCharts": {
