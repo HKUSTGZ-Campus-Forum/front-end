@@ -1,279 +1,84 @@
 <script setup lang="ts">
-import type { MeetCampusLocation } from "~/types/meetcampus";
+import type { MeetCampusResident, MeetCampusScene } from "~/types/meetcampus";
 import { localizeText } from "~/utils/meetcampus";
 
 const props = defineProps<{
-  locations: MeetCampusLocation[];
-  activeLocationId?: string | null;
+  scenes: MeetCampusScene[];
+  residents: MeetCampusResident[];
+  myResidentId: string;
+  selectedSceneId?: string | null;
 }>();
-
+const emit = defineEmits<{ selectScene: [id: string]; selectResident: [id: string] }>();
 const { t } = useI18n();
 const { locale } = useAppLocale();
 
-const markerIcon = (kind: MeetCampusLocation["kind"]) => ({
-  study: "lucide:book-open",
-  dining: "lucide:utensils",
-  activity: "lucide:sparkles",
-}[kind]);
-
-const agentMarkers = [
-  { id: "mine", label: "M", x: 38, y: 53, tone: "mine" },
-  { id: "blue", label: "B", x: 65, y: 45, tone: "blue" },
-  { id: "orange", label: "O", x: 57, y: 61, tone: "orange" },
-  { id: "mo", label: "A", x: 72, y: 70, tone: "purple" },
-];
+const topScenes = computed(() => props.scenes.filter(scene => scene.parentSceneId && scene.parentSceneId.endsWith("campus")));
+const sceneById = computed(() => new Map(props.scenes.map(scene => [scene.id, scene])));
+const residentPosition = (resident: MeetCampusResident) => {
+  const scene = sceneById.value.get(resident.state.sceneId);
+  const parent = scene?.parentSceneId ? sceneById.value.get(scene.parentSceneId) : null;
+  const anchor = parent?.slug === "campus" ? scene : parent ?? scene;
+  const jitterX = (resident.state.position.x - 50) * 0.08;
+  const jitterY = (resident.state.position.y - 50) * 0.08;
+  return { left: `${Math.max(5, Math.min(95, (anchor?.map.x ?? 50) + jitterX))}%`, top: `${Math.max(8, Math.min(92, (anchor?.map.y ?? 50) + jitterY))}%` };
+};
+const sceneIcon = (kind: string) => ({ study: "lucide:book-open", sport: "lucide:dumbbell", dining: "lucide:utensils", home: "lucide:house", activity: "lucide:sparkles", outdoor: "lucide:trees" }[kind] || "lucide:map-pin");
 </script>
 
 <template>
-  <section class="mc-map" :aria-label="t('meetCampus.map.ariaLabel')">
-    <div class="mc-map__status" role="status">
-      <span class="mc-map__status-dot" aria-hidden="true"></span>
-      {{ t('meetCampus.map.sandboxAgents') }}
+  <section class="world-map" :aria-label="t('meetCampus.world.mapAria')">
+    <div class="world-map__status" role="status">
+      <span aria-hidden="true"></span>
+      {{ t('meetCampus.world.residentsAlive', { count: residents.length }) }}
     </div>
-
-    <div
-      v-for="locationItem in props.locations"
-      :key="locationItem.id"
-      class="mc-map__location"
-      :class="{
-        'mc-map__location--active': locationItem.id === activeLocationId,
-        [`mc-map__location--${locationItem.kind}`]: true,
-      }"
-      :style="{ left: `${locationItem.x}%`, top: `${locationItem.y}%` }"
+    <button
+      v-for="scene in topScenes"
+      :key="scene.id"
+      type="button"
+      class="world-map__place"
+      :class="{ 'world-map__place--selected': scene.id === selectedSceneId }"
+      :style="{ left: `${scene.map.x}%`, top: `${scene.map.y}%` }"
+      @click="emit('selectScene', scene.id)"
     >
-      <span class="mc-map__location-icon" aria-hidden="true">
-        <Icon :name="markerIcon(locationItem.kind)" />
-      </span>
-      <span>{{ localizeText(locationItem.name, locale) }}</span>
-      <span v-if="locationItem.id === activeLocationId" class="mc-map__active-tag">
-        {{ t('meetCampus.map.taskLocation') }}
-      </span>
-    </div>
-
-    <div
-      v-for="agent in agentMarkers"
-      :key="agent.id"
-      class="mc-map__agent"
-      :class="`mc-map__agent--${agent.tone}`"
-      :style="{ left: `${agent.x}%`, top: `${agent.y}%` }"
-      aria-hidden="true"
+      <span><Icon :name="sceneIcon(scene.kind)" aria-hidden="true" /></span>
+      {{ localizeText(scene.name, locale) }}
+    </button>
+    <button
+      v-for="resident in residents"
+      :key="resident.id"
+      type="button"
+      class="pixel-person"
+      :class="{ 'pixel-person--mine': resident.id === myResidentId }"
+      :style="residentPosition(resident)"
+      :aria-label="localizeText(resident.name, locale)"
+      @click="emit('selectResident', resident.id)"
     >
-      <span>{{ agent.label }}</span>
-    </div>
-
-    <div class="mc-map__legend">
-      <Icon name="lucide:flask-conical" aria-hidden="true" />
-      <span>{{ t('meetCampus.map.sandboxLegend') }}</span>
-    </div>
+      <span class="pixel-person__shadow"></span>
+      <span class="pixel-person__body" :data-palette="resident.appearance.palette || 'blue'">
+        <i class="pixel-person__hair"></i><i class="pixel-person__face"></i><i class="pixel-person__shirt"></i>
+      </span>
+      <strong v-if="resident.id === myResidentId">{{ t('meetCampus.world.mine') }}</strong>
+    </button>
+    <div class="world-map__legend"><Icon name="lucide:clock-3" />{{ t('meetCampus.world.softRealtime') }}</div>
   </section>
 </template>
 
 <style scoped lang="scss">
-.mc-map {
-  position: relative;
-  width: 100%;
-  min-height: 680px;
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: 16px;
-  background-color: var(--meetcampus-map-grass);
-  background-image:
-    linear-gradient(to bottom, transparent 72%, color-mix(in srgb, var(--interactive-primary) 8%, transparent)),
-    url('/image/meetcampus/campus-map.webp');
-  background-position: center;
-  background-size: 100% 100%;
-  box-shadow: var(--shadow-medium);
-}
-
-.mc-map::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
-  border-radius: inherit;
-}
-
-.mc-map__status,
-.mc-map__legend {
-  position: absolute;
-  z-index: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  color: var(--meetcampus-map-ink);
-  background: var(--meetcampus-map-overlay);
-  box-shadow: var(--meetcampus-map-shadow-small);
-  backdrop-filter: blur(6px);
-}
-
-.mc-map__status {
-  top: 16px;
-  left: 16px;
-  padding: 8px 13px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 650;
-}
-
-.mc-map__status-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--semantic-success);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--semantic-success) 16%, transparent);
-}
-
-.mc-map__legend {
-  right: 14px;
-  bottom: 14px;
-  max-width: calc(100% - 28px);
-  padding: 8px 11px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.mc-map__legend :deep(svg) {
-  flex: 0 0 auto;
-  color: var(--meetcampus-map-study);
-}
-
-.mc-map__location {
-  position: absolute;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 38px;
-  max-width: min(190px, 40%);
-  padding: 7px 11px 7px 7px;
-  border-radius: 999px;
-  color: var(--meetcampus-map-ink);
-  background: var(--meetcampus-map-overlay);
-  box-shadow: var(--meetcampus-map-shadow-medium);
-  transform: translate(-50%, -50%);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.2;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.mc-map__location--active {
-  z-index: 6;
-  box-shadow: 0 0 0 3px var(--meetcampus-map-outline), 0 0 0 6px var(--meetcampus-map-active);
-  transform: translate(-50%, -50%) scale(1.04);
-}
-
-.mc-map__location-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  color: var(--meetcampus-map-outline);
-  background: var(--meetcampus-map-study);
-}
-
-.mc-map__location--dining .mc-map__location-icon {
-  background: var(--meetcampus-map-dining);
-}
-
-.mc-map__location--activity .mc-map__location-icon {
-  background: var(--meetcampus-map-activity);
-}
-
-.mc-map__active-tag {
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 5px);
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: var(--meetcampus-map-study-text);
-  background: var(--meetcampus-map-outline);
-  box-shadow: var(--meetcampus-map-shadow-small);
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.65rem;
-  font-weight: 700;
-}
-
-.mc-map__agent {
-  position: absolute;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--meetcampus-map-outline);
-  border-radius: 9px;
-  color: var(--meetcampus-map-outline);
-  background: var(--meetcampus-map-agent-neutral);
-  box-shadow: var(--meetcampus-map-agent-shadow);
-  transform: translate(-50%, -50%);
-  font-size: 0.65rem;
-  font-weight: 800;
-  animation: agent-float 2.8s ease-in-out infinite alternate;
-}
-
-.mc-map__agent--mine { background: var(--meetcampus-map-agent-mine); }
-.mc-map__agent--blue { background: var(--meetcampus-map-agent-blue); animation-delay: -0.8s; }
-.mc-map__agent--orange { background: var(--meetcampus-map-dining); animation-delay: -1.6s; }
-.mc-map__agent--purple { background: var(--meetcampus-map-study); animation-delay: -2.1s; }
-
-@keyframes agent-float {
-  from { transform: translate(-50%, -50%) translateY(-2px); }
-  to { transform: translate(-50%, -50%) translateY(3px); }
-}
-
-@media (max-width: 900px) {
-  .mc-map {
-    min-height: 560px;
-  }
-}
-
-@media (max-width: 520px) {
-  .mc-map {
-    min-height: 510px;
-    border-radius: 14px;
-  }
-
-  .mc-map__status {
-    top: 12px;
-    left: 12px;
-    font-size: 0.75rem;
-  }
-
-  .mc-map__location {
-    gap: 5px;
-    max-width: 43%;
-    min-height: 34px;
-    padding: 5px 8px 5px 5px;
-    font-size: 0.68rem;
-  }
-
-  .mc-map__location-icon {
-    width: 25px;
-    height: 25px;
-  }
-
-  .mc-map__agent {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mc-map__agent {
-    animation: none;
-  }
-
-  .mc-map__location {
-    transition: none;
-  }
-}
+.world-map { position: relative; min-height: 680px; overflow: hidden; isolation: isolate; border: 1px solid var(--border-primary); border-radius: 20px; background: var(--meetcampus-map-grass) url('/image/meetcampus/campus-map.webp') center/100% 100% no-repeat; box-shadow: var(--shadow-medium); }
+.world-map::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: linear-gradient(180deg, color-mix(in srgb, var(--surface-primary) 6%, transparent), transparent 60%, color-mix(in srgb, var(--text-primary) 10%, transparent)); }
+.world-map__status,.world-map__legend { position: absolute; z-index: 12; display: flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid color-mix(in srgb,var(--border-primary) 70%,transparent); border-radius: 999px; color: var(--text-primary); background: color-mix(in srgb,var(--surface-primary) 92%,transparent); box-shadow: var(--shadow-small); backdrop-filter: blur(10px); font-size: .78rem; font-weight: 700; }
+.world-map__status { top: 16px; left: 16px; }.world-map__status span { width: 9px; height: 9px; border-radius: 50%; background: var(--semantic-success); box-shadow: 0 0 0 4px color-mix(in srgb,var(--semantic-success) 16%,transparent); }
+.world-map__legend { right: 14px; bottom: 14px; border-radius: 10px; font-size: .72rem; }
+.world-map__place { position: absolute; z-index: 5; display: flex; align-items: center; gap: 7px; max-width: 180px; min-height: 38px; padding: 6px 11px 6px 6px; border: 1px solid color-mix(in srgb,var(--border-primary) 70%,transparent); border-radius: 999px; color: var(--text-primary); background: color-mix(in srgb,var(--surface-primary) 93%,transparent); box-shadow: var(--shadow-small); transform: translate(-50%,-50%); cursor: pointer; font-size: .74rem; font-weight: 750; transition: transform .18s ease, box-shadow .18s ease; }
+.world-map__place:hover,.world-map__place--selected { z-index: 8; transform: translate(-50%,-50%) scale(1.05); box-shadow: 0 0 0 3px color-mix(in srgb,var(--interactive-primary) 24%,transparent),var(--shadow-medium); }
+.world-map__place > span { display:grid; place-items:center; width:27px; height:27px; border-radius:50%; color:var(--text-inverse); background:var(--interactive-primary); }
+.pixel-person { position:absolute; z-index:7; width:32px; height:42px; padding:0; border:0; background:transparent; transform:translate(-50%,-50%); cursor:pointer; filter:drop-shadow(0 2px 2px rgba(15,35,68,.3)); transition:transform .18s ease; animation:mc-breathe 2.8s ease-in-out infinite alternate; }
+.pixel-person:hover { z-index:10; transform:translate(-50%,-50%) scale(1.18); }.pixel-person--mine { z-index:9; }
+.pixel-person__body,.pixel-person__hair,.pixel-person__face,.pixel-person__shirt { position:absolute; display:block; image-rendering:pixelated; }
+.pixel-person__body { left:7px; top:3px; width:18px; height:31px; }.pixel-person__hair { left:3px; top:0; width:12px; height:7px; background:#30253a; box-shadow:-3px 3px #30253a,12px 3px #30253a; }.pixel-person__face { left:3px; top:6px; width:12px; height:10px; background:#f4bd88; box-shadow:3px 3px #f4bd88; }.pixel-person__shirt { left:1px; top:17px; width:16px; height:13px; background:var(--interactive-primary); box-shadow:-3px 3px var(--interactive-primary),3px 13px #263d67,10px 13px #263d67; }
+.pixel-person__body[data-palette='green'] .pixel-person__shirt,.pixel-person__body[data-palette='mint'] .pixel-person__shirt,.pixel-person__body[data-palette='forest'] .pixel-person__shirt { background:#2f9b73; box-shadow:-3px 3px #2f9b73,3px 13px #263d67,10px 13px #263d67; }.pixel-person__body[data-palette='orange'] .pixel-person__shirt,.pixel-person__body[data-palette='amber'] .pixel-person__shirt { background:#ed7c38; box-shadow:-3px 3px #ed7c38,3px 13px #263d67,10px 13px #263d67; }.pixel-person--mine .pixel-person__shirt { background:#7653d6; box-shadow:-3px 3px #7653d6,3px 13px #263d67,10px 13px #263d67; }
+.pixel-person__shadow { position:absolute; left:5px; bottom:1px; width:22px; height:6px; border-radius:50%; background:rgba(17,35,61,.2); }.pixel-person strong { position:absolute; left:50%; top:-19px; transform:translateX(-50%); padding:3px 6px; border-radius:999px; color:var(--text-inverse); background:var(--semantic-purple); font-size:.58rem; white-space:nowrap; }
+@keyframes mc-breathe { from { margin-top:-1px } to { margin-top:2px } }
+@media(max-width:760px){.world-map{min-height:calc(100dvh - 154px);border-radius:0;border-left:0;border-right:0}.world-map__place{max-width:128px;font-size:.65rem}.world-map__status{top:12px;left:12px}.world-map__legend{display:none}.pixel-person{transform:translate(-50%,-50%) scale(.9)}}
+@media(prefers-reduced-motion:reduce){.pixel-person{animation:none}.world-map__place,.pixel-person{transition:none}}
 </style>

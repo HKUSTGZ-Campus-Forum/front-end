@@ -1,15 +1,4 @@
-import type {
-  MeetCampusBootstrap,
-  MeetCampusFeedback,
-  MeetCampusPace,
-  MeetCampusScenario,
-  MeetCampusSession,
-} from "~/types/meetcampus";
-import {
-  createMeetCampusSession,
-  MEETCAMPUS_SESSION_KEY,
-  parseMeetCampusSession,
-} from "~/utils/meetcampus";
+import type { MeetCampusBootstrap, MeetCampusCommandInput, MeetCampusOnboardingInput, MeetCampusScene, MeetCampusStory } from "~/types/meetcampus";
 
 type MeetCampusLoadState = "idle" | "loading" | "ready" | "denied" | "error";
 
@@ -17,220 +6,89 @@ export function useMeetCampus() {
   const { fetchWithAuth } = useApi();
   const bootstrap = ref<MeetCampusBootstrap | null>(null);
   const loadState = ref<MeetCampusLoadState>("idle");
-  const session = ref<MeetCampusSession>(createMeetCampusSession());
-  const isAdvancing = ref(false);
-  let transitionTimer: ReturnType<typeof setTimeout> | null = null;
+  const isSubmitting = ref(false);
+  const actionError = ref<string | null>(null);
+  const selectedStoryId = ref<string | null>(null);
+  const selectedSceneId = ref<string | null>(null);
+  let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
-  const scenario = computed<MeetCampusScenario | null>(() => {
-    if (!bootstrap.value || !session.value.scenarioId) return null;
-    return bootstrap.value.scenarios.find((item) => item.id === session.value.scenarioId) ?? null;
-  });
+  const myResident = computed(() => bootstrap.value?.snapshot.residents.find(resident => resident.id === bootstrap.value?.myResidentId) ?? null);
+  const currentScene = computed(() => bootstrap.value?.snapshot.scenes.find(scene => scene.id === myResident.value?.state.sceneId) ?? null);
+  const unreadStories = computed(() => bootstrap.value?.stories.filter(story => !story.isViewed) ?? []);
+  const selectedStory = computed<MeetCampusStory | null>(() => bootstrap.value?.stories.find(story => story.id === selectedStoryId.value) ?? bootstrap.value?.stories[0] ?? null);
+  const selectedScene = computed<MeetCampusScene | null>(() => bootstrap.value?.snapshot.scenes.find(scene => scene.id === selectedSceneId.value) ?? currentScene.value ?? null);
 
-  const location = computed(() => {
-    if (!bootstrap.value || !scenario.value) return null;
-    return bootstrap.value.locations.find((item) => item.id === scenario.value?.locationId) ?? null;
-  });
-
-  const story = computed(() => {
-    if (!scenario.value || !session.value.choiceId) return null;
-    return scenario.value.stories[session.value.choiceId] ?? null;
-  });
-
-  const selectedTime = computed(() => {
-    if (!scenario.value || !session.value.timeId) return null;
-    return scenario.value.times.find((item) => item.id === session.value.timeId) ?? null;
-  });
-
-  const progress = computed(() => {
-    const steps = ["setup", "encounter", "story", "profile", "pass", "complete"];
-    const phaseIndex: Record<MeetCampusSession["phase"], number> = {
-      setup: 0,
-      searching: 0,
-      encounter: 1,
-      experience: 1,
-      story: 2,
-      consent: 2,
-      profile: 3,
-      planning: 3,
-      pass: 4,
-      feedback: 4,
-      complete: 5,
-    };
-    return {
-      current: phaseIndex[session.value.phase],
-      total: steps.length,
-      percent: ((phaseIndex[session.value.phase] + 1) / steps.length) * 100,
-    };
-  });
-
-  function persistSession() {
-    if (!import.meta.client) return;
-    const next = { ...session.value, updatedAt: new Date().toISOString() };
-    session.value = next;
-    localStorage.setItem(MEETCAMPUS_SESSION_KEY, JSON.stringify(next));
+  async function request(path: string, options?: RequestInit) {
+    const response = await fetchWithAuth(path, options);
+    if (response.status === 403) {
+      loadState.value = "denied";
+      throw new Error("meetcampus_beta_required");
+    }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body?.code || `request_failed_${response.status}`);
+    }
+    return response.json();
   }
 
-  function patchSession(updates: Partial<MeetCampusSession>) {
-    session.value = { ...session.value, ...updates, updatedAt: new Date().toISOString() };
-    persistSession();
-  }
-
-  function restoreSession() {
-    if (!import.meta.client) return;
-    const restored = parseMeetCampusSession(localStorage.getItem(MEETCAMPUS_SESSION_KEY));
-    session.value = restored ?? createMeetCampusSession();
-  }
-
-  function clearTimer() {
-    if (transitionTimer) clearTimeout(transitionTimer);
-    transitionTimer = null;
-  }
-
-  function scheduleEncounter() {
-    clearTimer();
-    transitionTimer = setTimeout(() => {
-      if (session.value.phase === "searching") patchSession({ phase: "encounter" });
-    }, 1400);
+  function applySnapshot(payload: Pick<MeetCampusBootstrap, "snapshot" | "stories" | "relationships">) {
+    if (bootstrap.value) bootstrap.value = { ...bootstrap.value, ...payload };
   }
 
   async function load() {
     loadState.value = "loading";
     try {
-      const response = await fetchWithAuth("/api/meetcampus/bootstrap");
-      if (response.status === 403) {
-        bootstrap.value = null;
-        loadState.value = "denied";
-        return;
-      }
-      if (!response.ok) throw new Error(`MeetCampus bootstrap failed (${response.status})`);
-      bootstrap.value = (await response.json()) as MeetCampusBootstrap;
+      bootstrap.value = await request("/api/meetcampus/bootstrap") as MeetCampusBootstrap;
+      selectedSceneId.value = myResident.value?.state.sceneId ?? null;
       loadState.value = "ready";
-      restoreSession();
-
-      const restoredScenario = session.value.scenarioId
-        ? bootstrap.value.scenarios.find((item) => item.id === session.value.scenarioId)
-        : null;
-      const restoredChoiceIsValid =
-        !session.value.choiceId ||
-        Boolean(restoredScenario?.choices.some((item) => item.id === session.value.choiceId));
-      const restoredTimeIsValid =
-        !session.value.timeId ||
-        Boolean(restoredScenario?.times.some((item) => item.id === session.value.timeId));
-
-      if (
-        (session.value.scenarioId && !restoredScenario) ||
-        !restoredChoiceIsValid ||
-        !restoredTimeIsValid
-      ) {
-        reset();
-      } else if (session.value.phase === "searching") {
-        scheduleEncounter();
-      }
+      startRefresh();
     } catch (error) {
+      if (loadState.value !== "denied") loadState.value = "error";
       console.error("Failed to load MeetCampus", error);
-      bootstrap.value = null;
-      loadState.value = "error";
     }
   }
 
-  function selectScenario(scenarioId: MeetCampusScenario["id"]) {
-    patchSession({
-      phase: "setup",
-      scenarioId,
-      choiceId: null,
-      timeId: null,
-      feedback: null,
-    });
+  async function refresh() {
+    if (loadState.value !== "ready" || isSubmitting.value) return;
+    try { applySnapshot(await request("/api/meetcampus/snapshot")); }
+    catch (error) { console.warn("MeetCampus refresh degraded", error); }
   }
 
-  function setPace(pace: MeetCampusPace) {
-    patchSession({ pace });
+  function stopRefresh() { if (refreshTimer) clearInterval(refreshTimer); refreshTimer = null; }
+  function startRefresh() { stopRefresh(); refreshTimer = setInterval(refresh, 45_000); }
+
+  async function submitOnboarding(input: MeetCampusOnboardingInput) {
+    isSubmitting.value = true; actionError.value = null;
+    try {
+      bootstrap.value = await request("/api/meetcampus/onboarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }) as MeetCampusBootstrap;
+      selectedSceneId.value = myResident.value?.state.sceneId ?? null;
+    } catch (error) { actionError.value = error instanceof Error ? error.message : "request_failed"; throw error; }
+    finally { isSubmitting.value = false; }
   }
 
-  function dispatchAgent() {
-    if (!scenario.value) return;
-    patchSession({ phase: "searching" });
-    scheduleEncounter();
+  async function sendCommand(input: MeetCampusCommandInput) {
+    isSubmitting.value = true; actionError.value = null;
+    try {
+      await request("/api/meetcampus/commands", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+    } catch (error) { actionError.value = error instanceof Error ? error.message : "request_failed"; throw error; }
+    finally { isSubmitting.value = false; }
   }
 
-  function beginExperience() {
-    if (session.value.phase === "encounter") patchSession({ phase: "experience" });
+  async function openStory(story: MeetCampusStory) {
+    selectedStoryId.value = story.id;
+    if (!story.isViewed) {
+      const updated = await request(`/api/meetcampus/stories/${story.id}/view`, { method: "POST" });
+      if (bootstrap.value) bootstrap.value.stories = bootstrap.value.stories.map(item => item.id === story.id ? updated : item);
+    }
   }
 
-  function chooseExperience(choiceId: string) {
-    if (!scenario.value?.choices.some((choice) => choice.id === choiceId)) return;
-    patchSession({ choiceId, phase: "story" });
+  async function createBridge(storyId: string) {
+    isSubmitting.value = true; actionError.value = null;
+    try { return await request(`/api/meetcampus/stories/${storyId}/bridge`, { method: "POST" }); }
+    catch (error) { actionError.value = error instanceof Error ? error.message : "request_failed"; throw error; }
+    finally { isSubmitting.value = false; }
   }
 
-  function requestIntroduction() {
-    if (story.value) patchSession({ phase: "consent" });
-  }
-
-  async function simulateConsent() {
-    if (session.value.phase !== "consent" || isAdvancing.value) return;
-    isAdvancing.value = true;
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    patchSession({ phase: "profile" });
-    isAdvancing.value = false;
-  }
-
-  function startPlanning() {
-    if (session.value.phase === "profile") patchSession({ phase: "planning" });
-  }
-
-  function selectTime(timeId: string) {
-    if (!scenario.value?.times.some((time) => time.id === timeId)) return;
-    patchSession({ timeId });
-  }
-
-  async function simulatePlanConfirmation() {
-    if (session.value.phase !== "planning" || !selectedTime.value || isAdvancing.value) return;
-    isAdvancing.value = true;
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    patchSession({ phase: "pass" });
-    isAdvancing.value = false;
-  }
-
-  function markMeetupComplete() {
-    if (session.value.phase === "pass") patchSession({ phase: "feedback" });
-  }
-
-  function submitFeedback(feedback: MeetCampusFeedback) {
-    if (session.value.phase !== "feedback") return;
-    patchSession({ feedback, phase: "complete" });
-  }
-
-  function reset() {
-    clearTimer();
-    session.value = createMeetCampusSession();
-    if (import.meta.client) localStorage.removeItem(MEETCAMPUS_SESSION_KEY);
-  }
-
-  onBeforeUnmount(clearTimer);
-
-  return {
-    bootstrap,
-    loadState,
-    session,
-    scenario,
-    location,
-    story,
-    selectedTime,
-    progress,
-    isAdvancing,
-    load,
-    selectScenario,
-    setPace,
-    dispatchAgent,
-    beginExperience,
-    chooseExperience,
-    requestIntroduction,
-    simulateConsent,
-    startPlanning,
-    selectTime,
-    simulatePlanConfirmation,
-    markMeetupComplete,
-    submitFeedback,
-    reset,
-  };
+  onBeforeUnmount(stopRefresh);
+  return { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedStoryId, selectedScene, selectedSceneId, load, refresh, submitOnboarding, sendCommand, openStory, createBridge };
 }

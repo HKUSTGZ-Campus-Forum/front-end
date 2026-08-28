@@ -1,340 +1,119 @@
 <script setup lang="ts">
-import MeetCampusJourneyPanel from "~/components/meetcampus/MeetCampusJourneyPanel.vue";
 import MeetCampusMap from "~/components/meetcampus/MeetCampusMap.vue";
+import type { MeetCampusCommandInput, MeetCampusResident, MeetCampusStory } from "~/types/meetcampus";
+import { formatMeetCampusTime, localizeText } from "~/utils/meetcampus";
 
 definePageMeta({ layout: "keguang", middleware: ["auth"] });
-
 const { t } = useI18n();
-const { getLocalePath } = useAppLocale();
-const showAbout = ref(false);
+const { locale, getLocalePath } = useAppLocale();
+const activeTab = ref<"homecoming" | "relations" | "guide">("homecoming");
+const selectedResident = ref<MeetCampusResident | null>(null);
+const commandText = ref("");
+const commandSent = ref(false);
+const bridgeResult = ref<Record<string, any> | null>(null);
+const onboarding = reactive({ residentName: "", socialPace: "slow_warmup", preferredPlaces: ["library"] as string[], ownerNote: "", autonomyLevel: "balanced" as "guided" | "balanced" | "brave" });
 
-const {
-  bootstrap,
-  loadState,
-  session,
-  scenario,
-  location,
-  story,
-  selectedTime,
-  progress,
-  isAdvancing,
-  load,
-  selectScenario,
-  setPace,
-  dispatchAgent,
-  beginExperience,
-  chooseExperience,
-  requestIntroduction,
-  simulateConsent,
-  startPlanning,
-  selectTime,
-  simulatePlanConfirmation,
-  markMeetupComplete,
-  submitFeedback,
-  reset,
-} = useMeetCampus();
+const { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedScene, selectedSceneId, load, refresh, submitOnboarding, sendCommand, openStory, createBridge } = useMeetCampus();
+const showOnboarding = computed(() => bootstrap.value?.onboarding.status !== "completed");
+const activityLabel = computed(() => myResident.value?.state.activity.replaceAll("_", " ") || t("meetCampus.world.waiting"));
 
-function resetJourney() {
-  if (!import.meta.client || window.confirm(t("meetCampus.actions.resetConfirm"))) reset();
+function togglePlace(slug: string) {
+  const index = onboarding.preferredPlaces.indexOf(slug);
+  if (index >= 0) onboarding.preferredPlaces.splice(index, 1);
+  else if (onboarding.preferredPlaces.length < 3) onboarding.preferredPlaces.push(slug);
 }
+async function finishOnboarding() {
+  await submitOnboarding({ locale: locale.value, autonomyLevel: onboarding.autonomyLevel, anchors: { ...onboarding } });
+}
+async function submitCommand() {
+  const text = commandText.value.trim(); if (!text) return;
+  const input: MeetCampusCommandInput = { kind: selectedScene.value?.id ? "visit" : "goal", text };
+  if (selectedScene.value?.id) input.targetSceneId = selectedScene.value.id;
+  await sendCommand(input); commandText.value = ""; commandSent.value = true;
+  setTimeout(() => { commandSent.value = false; }, 3500);
+}
+async function showStory(story: MeetCampusStory) { activeTab.value = "homecoming"; await openStory(story); }
+async function proposeBridge() { if (selectedStory.value) bridgeResult.value = await createBridge(selectedStory.value.id); }
+function selectResident(id: string) { selectedResident.value = bootstrap.value?.snapshot.residents.find(item => item.id === id) ?? null; }
 
 onMounted(load);
-
-useHead(() => ({
-  title: `${t("meetCampus.title")} - ${t("common.appName")}`,
-  meta: [{ name: "description", content: t("meetCampus.metaDescription") }],
-}));
+useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, meta: [{ name: "description", content: t("meetCampus.metaDescription") }] }));
 </script>
 
 <template>
-  <main class="mc-page">
-    <header class="mc-page__header">
-      <div class="mc-page__identity">
-        <span class="mc-page__mark" aria-hidden="true">
-          <Icon name="lucide:map-pinned" />
-        </span>
-        <div>
-          <div class="mc-page__title-row">
-            <h1>{{ t('meetCampus.title') }}</h1>
-            <span>{{ t('meetCampus.privateBeta') }}</span>
-          </div>
-          <p>{{ t('meetCampus.subtitle') }}</p>
-        </div>
-      </div>
-      <div v-if="loadState === 'ready'" class="mc-page__actions">
-        <button type="button" @click="showAbout = !showAbout">
-          <Icon name="lucide:circle-help" aria-hidden="true" />
-          {{ t('meetCampus.actions.aboutBeta') }}
-        </button>
-        <button type="button" @click="resetJourney">
-          <Icon name="lucide:rotate-ccw" aria-hidden="true" />
-          {{ t('meetCampus.actions.reset') }}
-        </button>
-      </div>
+  <main class="mc-shell">
+    <header class="mc-header">
+      <div class="mc-header__identity"><span><Icon name="lucide:orbit" /></span><div><div><h1>{{ t('meetCampus.title') }}</h1><em>{{ t('meetCampus.privateBeta') }}</em></div><p>{{ t('meetCampus.subtitle') }}</p></div></div>
+      <button v-if="loadState === 'ready'" class="icon-action" type="button" :aria-label="t('meetCampus.world.refresh')" @click="refresh"><Icon name="lucide:refresh-cw" /></button>
     </header>
 
-    <Transition name="mc-expand">
-      <aside v-if="showAbout && loadState === 'ready'" class="mc-page__about">
-        <Icon name="lucide:flask-conical" aria-hidden="true" />
-        <div>
-          <strong>{{ t('meetCampus.about.title') }}</strong>
-          <p>{{ t('meetCampus.about.description') }}</p>
-          <ul>
-            <li>{{ t('meetCampus.about.pointOne') }}</li>
-            <li>{{ t('meetCampus.about.pointTwo') }}</li>
-            <li>{{ t('meetCampus.about.pointThree') }}</li>
-          </ul>
+    <section v-if="loadState === 'idle' || loadState === 'loading'" class="mc-state" aria-live="polite"><span class="loader"></span><h2>{{ t('meetCampus.loading.title') }}</h2><p>{{ t('meetCampus.loading.description') }}</p></section>
+    <section v-else-if="loadState === 'denied'" class="mc-state"><Icon name="lucide:lock-keyhole" /><h2>{{ t('meetCampus.restricted.title') }}</h2><p>{{ t('meetCampus.restricted.description') }}</p><NuxtLink :to="getLocalePath('/')">{{ t('meetCampus.actions.backHome') }}</NuxtLink></section>
+    <section v-else-if="loadState === 'error'" class="mc-state"><Icon name="lucide:wifi-off" /><h2>{{ t('meetCampus.error.title') }}</h2><p>{{ t('meetCampus.error.description') }}</p><button type="button" @click="load">{{ t('meetCampus.actions.retry') }}</button></section>
+
+    <div v-else-if="bootstrap" class="mc-world">
+      <div class="mc-world__stage">
+        <MeetCampusMap :scenes="bootstrap.snapshot.scenes" :residents="bootstrap.snapshot.residents" :my-resident-id="bootstrap.myResidentId" :selected-scene-id="selectedScene?.id" @select-scene="selectedSceneId = $event" @select-resident="selectResident" />
+        <div v-if="myResident" class="companion-chip">
+          <span class="mini-avatar"><i></i></span><div><small>{{ localizeText(currentScene?.name, locale) }}</small><strong>{{ localizeText(myResident.name, locale) }} · {{ activityLabel }}</strong></div><span class="live-dot"></span>
         </div>
+      </div>
+
+      <aside class="mc-panel">
+        <nav class="mc-tabs" :aria-label="t('meetCampus.world.panelNav')">
+          <button type="button" :class="{active:activeTab==='homecoming'}" @click="activeTab='homecoming'"><Icon name="lucide:book-heart" />{{ t('meetCampus.world.homecoming') }}<b v-if="unreadStories.length">{{ unreadStories.length }}</b></button>
+          <button type="button" :class="{active:activeTab==='relations'}" @click="activeTab='relations'"><Icon name="lucide:users" />{{ t('meetCampus.world.relations') }}</button>
+          <button type="button" :class="{active:activeTab==='guide'}" @click="activeTab='guide'"><Icon name="lucide:message-circle-more" />{{ t('meetCampus.world.guide') }}</button>
+        </nav>
+
+        <section v-if="activeTab === 'homecoming'" class="panel-body">
+          <div class="section-heading"><div><span>{{ t('meetCampus.world.fromCompanion') }}</span><h2>{{ t('meetCampus.world.todayReport') }}</h2></div><Icon name="lucide:sparkles" /></div>
+          <article v-if="selectedStory" class="story-card">
+            <div class="story-card__meta"><span>{{ formatMeetCampusTime(selectedStory.createdAt, locale) }}</span><i v-if="!selectedStory.isViewed">{{ t('meetCampus.world.new') }}</i></div>
+            <h3>{{ localizeText(selectedStory.title, locale) }}</h3><p class="story-voice">“{{ localizeText(selectedStory.narration, locale) }}”</p>
+            <ol class="evidence"><li v-for="event in selectedStory.events" :key="event.id"><span></span><div><strong>{{ localizeText(bootstrap.snapshot.scenes.find(scene => scene.id === event.sceneId)?.name, locale) }}</strong><p>{{ localizeText(event.summary, locale) }}</p></div></li></ol>
+            <button v-if="selectedStory.bridgeCandidate" type="button" class="primary-action" :disabled="isSubmitting" @click="proposeBridge"><Icon name="lucide:handshake" />{{ t('meetCampus.world.takeOffline') }}</button>
+          </article>
+          <div v-else class="empty"><Icon name="lucide:moon-star" /><h3>{{ t('meetCampus.world.noStoryTitle') }}</h3><p>{{ t('meetCampus.world.noStoryDescription') }}</p></div>
+          <div v-if="bootstrap.stories.length > 1" class="story-list"><button v-for="story in bootstrap.stories" :key="story.id" type="button" :class="{active:story.id===selectedStory?.id}" @click="showStory(story)"><span v-if="!story.isViewed"></span><div><strong>{{ localizeText(story.title, locale) }}</strong><small>{{ formatMeetCampusTime(story.createdAt, locale) }}</small></div><Icon name="lucide:chevron-right" /></button></div>
+        </section>
+
+        <section v-else-if="activeTab === 'relations'" class="panel-body">
+          <div class="section-heading"><div><span>{{ t('meetCampus.world.livedTogether') }}</span><h2>{{ t('meetCampus.world.relationshipBook') }}</h2></div><Icon name="lucide:heart-handshake" /></div>
+          <div v-if="bootstrap.relationships.length" class="relation-list"><article v-for="relation in bootstrap.relationships" :key="relation.id"><span class="relation-avatar">{{ localizeText(relation.resident.name, locale).slice(0,1) }}</span><div><h3>{{ localizeText(relation.resident.name, locale) }}<em v-if="relation.resident.isSynthetic">{{ t('meetCampus.world.synthetic') }}</em></h3><p>{{ localizeText(relation.summary, locale) }}</p><div class="warmth"><span :style="{width:`${relation.warmth}%`}"></span></div></div></article></div>
+          <div v-else class="empty"><Icon name="lucide:footprints" /><h3>{{ t('meetCampus.world.noRelationsTitle') }}</h3><p>{{ t('meetCampus.world.noRelationsDescription') }}</p></div>
+        </section>
+
+        <section v-else class="panel-body">
+          <div class="section-heading"><div><span>{{ t('meetCampus.world.notRemoteControl') }}</span><h2>{{ t('meetCampus.world.giveDirection') }}</h2></div><Icon name="lucide:compass" /></div>
+          <div class="scene-target"><span><Icon name="lucide:map-pin" /></span><div><small>{{ t('meetCampus.world.currentDestination') }}</small><strong>{{ localizeText(selectedScene?.name, locale) }}</strong></div><button type="button" @click="selectedSceneId = currentScene?.id || null">{{ t('meetCampus.world.clear') }}</button></div>
+          <form class="command-box" @submit.prevent="submitCommand"><label for="mc-command">{{ t('meetCampus.world.commandLabel') }}</label><textarea id="mc-command" v-model="commandText" maxlength="280" :placeholder="t('meetCampus.world.commandPlaceholder')"></textarea><div><small>{{ t('meetCampus.world.commandHint') }}</small><button type="submit" :disabled="!commandText.trim() || isSubmitting"><Icon name="lucide:send" />{{ t('meetCampus.world.send') }}</button></div></form>
+          <p v-if="commandSent" class="success-note"><Icon name="lucide:check-circle-2" />{{ t('meetCampus.world.commandAccepted') }}</p><p v-if="actionError" class="error-note">{{ t('meetCampus.world.actionFailed') }}</p>
+        </section>
       </aside>
-    </Transition>
-
-    <section v-if="loadState === 'idle' || loadState === 'loading'" class="mc-state-card" aria-live="polite">
-      <span class="mc-state-card__loader" aria-hidden="true"></span>
-      <h2>{{ t('meetCampus.loading.title') }}</h2>
-      <p>{{ t('meetCampus.loading.description') }}</p>
-    </section>
-
-    <section v-else-if="loadState === 'denied'" class="mc-state-card mc-state-card--restricted">
-      <span class="mc-state-card__icon" aria-hidden="true"><Icon name="lucide:lock-keyhole" /></span>
-      <h2>{{ t('meetCampus.restricted.title') }}</h2>
-      <p>{{ t('meetCampus.restricted.description') }}</p>
-      <NuxtLink :to="getLocalePath('/')" class="mc-state-card__action">
-        <Icon name="lucide:arrow-left" aria-hidden="true" />
-        {{ t('meetCampus.actions.backHome') }}
-      </NuxtLink>
-    </section>
-
-    <section v-else-if="loadState === 'error'" class="mc-state-card mc-state-card--error">
-      <span class="mc-state-card__icon" aria-hidden="true"><Icon name="lucide:wifi-off" /></span>
-      <h2>{{ t('meetCampus.error.title') }}</h2>
-      <p>{{ t('meetCampus.error.description') }}</p>
-      <button type="button" class="mc-state-card__action" @click="load">
-        <Icon name="lucide:refresh-cw" aria-hidden="true" />
-        {{ t('meetCampus.actions.retry') }}
-      </button>
-    </section>
-
-    <div v-else-if="bootstrap" class="mc-page__workspace">
-      <MeetCampusMap
-        :locations="bootstrap.locations"
-        :active-location-id="location?.id"
-      />
-      <MeetCampusJourneyPanel
-        :bootstrap="bootstrap"
-        :session="session"
-        :scenario="scenario"
-        :location="location"
-        :story="story"
-        :selected-time="selectedTime"
-        :progress="progress"
-        :is-advancing="isAdvancing"
-        @select-scenario="selectScenario"
-        @set-pace="setPace"
-        @dispatch="dispatchAgent"
-        @begin-experience="beginExperience"
-        @choose-experience="chooseExperience"
-        @request-introduction="requestIntroduction"
-        @simulate-consent="simulateConsent"
-        @start-planning="startPlanning"
-        @select-time="selectTime"
-        @simulate-plan-confirmation="simulatePlanConfirmation"
-        @mark-meetup-complete="markMeetupComplete"
-        @submit-feedback="submitFeedback"
-      />
     </div>
+
+    <div v-if="bootstrap && showOnboarding" class="onboarding" role="dialog" aria-modal="true" :aria-label="t('meetCampus.onboarding.title')">
+      <form class="onboarding__card" @submit.prevent="finishOnboarding">
+        <div class="onboarding__companion"><span class="large-avatar"><i></i></span><div><small>{{ t('meetCampus.onboarding.firstMeeting') }}</small><h2>{{ t('meetCampus.onboarding.hello') }}</h2><p>{{ t('meetCampus.onboarding.intro') }}</p></div></div>
+        <label>{{ t('meetCampus.onboarding.nameLabel') }}<input v-model="onboarding.residentName" maxlength="20" required :placeholder="t('meetCampus.onboarding.namePlaceholder')" /></label>
+        <fieldset><legend>{{ t('meetCampus.onboarding.paceLabel') }}</legend><div class="choices"><button v-for="pace in ['slow_warmup','natural','adventurous']" :key="pace" type="button" :class="{active:onboarding.socialPace===pace}" @click="onboarding.socialPace=pace">{{ t(`meetCampus.onboarding.paces.${pace}`) }}</button></div></fieldset>
+        <fieldset><legend>{{ t('meetCampus.onboarding.placesLabel') }}</legend><div class="choices"><button v-for="place in ['library','gym','canteen','lakeside']" :key="place" type="button" :class="{active:onboarding.preferredPlaces.includes(place)}" @click="togglePlace(place)">{{ t(`meetCampus.onboarding.places.${place}`) }}</button></div></fieldset>
+        <label>{{ t('meetCampus.onboarding.noteLabel') }}<textarea v-model="onboarding.ownerNote" maxlength="280" :placeholder="t('meetCampus.onboarding.notePlaceholder')"></textarea></label>
+        <div class="onboarding__promise"><Icon name="lucide:shield-check" /><p><strong>{{ t('meetCampus.onboarding.promiseTitle') }}</strong>{{ t('meetCampus.onboarding.promise') }}</p></div>
+        <button class="primary-action" type="submit" :disabled="isSubmitting || !onboarding.residentName.trim()"><span>{{ isSubmitting ? t('meetCampus.onboarding.waking') : t('meetCampus.onboarding.begin') }}</span><Icon name="lucide:arrow-right" /></button>
+      </form>
+    </div>
+
+    <div v-if="selectedResident" class="sheet-backdrop" @click.self="selectedResident=null"><aside class="resident-sheet"><button type="button" @click="selectedResident=null"><Icon name="lucide:x" /></button><span class="large-avatar"><i></i></span><small>{{ selectedResident.isMine ? t('meetCampus.world.yourCompanion') : t('meetCampus.world.townResident') }}</small><h2>{{ localizeText(selectedResident.name, locale) }}</h2><p>{{ selectedResident.persona.interests?.join(' · ') }}</p><div><Icon name="lucide:map-pin" />{{ localizeText(bootstrap?.snapshot.scenes.find(scene=>scene.id===selectedResident?.state.sceneId)?.name, locale) }}</div></aside></div>
+    <div v-if="bridgeResult" class="sheet-backdrop" @click.self="bridgeResult=null"><aside class="resident-sheet consent-sheet"><button type="button" @click="bridgeResult=null"><Icon name="lucide:x" /></button><Icon name="lucide:users-round" class="consent-icon" /><small>{{ t('meetCampus.world.bridgePreview') }}</small><h2>{{ t('meetCampus.world.bridgeTitle') }}</h2><p>{{ t('meetCampus.world.bridgeSyntheticDisclosure') }}</p><div><Icon name="lucide:shield-check" />{{ t('meetCampus.world.noContactShared') }}</div></aside></div>
   </main>
 </template>
 
 <style scoped lang="scss">
-.mc-page {
-  width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 28px 24px 64px;
-}
-
-.mc-page__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 22px;
-}
-
-.mc-page__identity {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  min-width: 0;
-}
-
-.mc-page__mark {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  flex: 0 0 auto;
-  border-radius: 14px;
-  color: var(--text-inverse);
-  background: var(--semantic-purple);
-  box-shadow: var(--shadow-small);
-}
-
-.mc-page__mark :deep(svg) {
-  width: 26px;
-  height: 26px;
-}
-
-.mc-page__title-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 9px;
-}
-
-.mc-page__title-row h1 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 2rem;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
-.mc-page__title-row span {
-  padding: 5px 8px;
-  border-radius: 999px;
-  color: var(--interactive-active-text);
-  background: color-mix(in srgb, var(--interactive-primary) 12%, var(--surface-primary));
-  font-size: 0.7rem;
-  font-weight: 750;
-}
-
-.mc-page__identity p {
-  max-width: 640px;
-  margin: 6px 0 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
-
-.mc-page__actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mc-page__actions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 8px 11px;
-  border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  color: var(--text-secondary);
-  background: var(--surface-primary);
-  font-size: 0.78rem;
-  font-weight: 650;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
-}
-
-.mc-page__actions button:hover {
-  border-color: var(--interactive-primary);
-  color: var(--interactive-active-text);
-  background: var(--surface-secondary);
-}
-
-.mc-page__actions button:focus-visible,
-.mc-state-card__action:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--interactive-primary) 35%, transparent);
-  outline-offset: 2px;
-}
-
-.mc-page__about {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin: -6px 0 20px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  background: var(--surface-primary);
-  box-shadow: var(--shadow-small);
-}
-
-.mc-page__about > :deep(svg) {
-  flex: 0 0 auto;
-  margin-top: 2px;
-  color: var(--semantic-purple);
-}
-
-.mc-page__about strong { color: var(--text-primary); font-size: 0.88rem; }
-.mc-page__about p { margin: 4px 0 0; font-size: 0.8rem; line-height: 1.55; }
-.mc-page__about ul { display: flex; flex-wrap: wrap; gap: 5px 18px; margin: 8px 0 0; padding-left: 18px; font-size: 0.75rem; }
-
-.mc-page__workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1.28fr) minmax(350px, 0.92fr);
-  gap: 18px;
-  align-items: stretch;
-}
-
-.mc-state-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  min-height: 440px;
-  padding: 32px;
-  border: var(--card-border);
-  border-radius: 16px;
-  color: var(--text-primary);
-  background: var(--surface-primary);
-  box-shadow: var(--card-shadow);
-  text-align: center;
-}
-
-.mc-state-card h2 { margin: 16px 0 0; font-size: 1.25rem; }
-.mc-state-card p { max-width: 48ch; margin: 8px 0 0; color: var(--text-secondary); font-size: 0.86rem; line-height: 1.6; }
-.mc-state-card__loader { width: 44px; height: 44px; border: 4px solid var(--surface-secondary); border-top-color: var(--interactive-primary); border-radius: 50%; animation: mc-page-spin 0.9s linear infinite; }
-.mc-state-card__icon { display: grid; place-items: center; width: 66px; height: 66px; border-radius: 16px; color: var(--interactive-active-text); background: var(--surface-secondary); }
-.mc-state-card__icon :deep(svg) { width: 28px; height: 28px; }
-.mc-state-card--error .mc-state-card__icon { color: var(--error-color); background: var(--error-background); }
-.mc-state-card__action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 20px; padding: 9px 15px; border: 0; border-radius: 11px; color: var(--text-inverse); background: var(--btn-primary-bg); font-size: 0.84rem; font-weight: 700; text-decoration: none; cursor: pointer; }
-
-.mc-expand-enter-active,
-.mc-expand-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
-.mc-expand-enter-from,
-.mc-expand-leave-to { opacity: 0; transform: translateY(-4px); }
-
-@keyframes mc-page-spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 980px) {
-  .mc-page__workspace { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 700px) {
-  .mc-page { padding: 22px 16px 48px; }
-  .mc-page__header { flex-direction: column; gap: 15px; }
-  .mc-page__actions { width: 100%; }
-  .mc-page__actions button { flex: 1; }
-  .mc-page__title-row h1 { font-size: 1.7rem; }
-}
-
-@media (max-width: 420px) {
-  .mc-page__identity { align-items: flex-start; }
-  .mc-page__mark { width: 46px; height: 46px; border-radius: 12px; }
-  .mc-page__actions { flex-direction: column; }
-  .mc-page__actions button { width: 100%; }
-  .mc-state-card { min-height: 380px; padding: 24px 18px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mc-page__actions button,
-  .mc-expand-enter-active,
-  .mc-expand-leave-active { transition: none; }
-  .mc-state-card__loader { animation: none; }
-}
+.mc-shell{width:100%;max-width:1280px;margin:0 auto;padding:24px 22px 56px}.mc-header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:18px}.mc-header__identity{display:flex;align-items:center;gap:13px}.mc-header__identity>span{display:grid;place-items:center;width:50px;height:50px;border-radius:15px;color:var(--text-inverse);background:linear-gradient(135deg,var(--interactive-primary),var(--semantic-purple));box-shadow:var(--shadow-small)}.mc-header__identity>span :deep(svg){width:25px;height:25px}.mc-header__identity>div>div{display:flex;align-items:center;gap:9px}.mc-header h1{margin:0;color:var(--text-primary);font-size:1.85rem;letter-spacing:-.03em}.mc-header em{padding:4px 8px;border-radius:999px;color:var(--interactive-active-text);background:var(--surface-secondary);font-size:.67rem;font-style:normal;font-weight:800}.mc-header p{margin:3px 0 0;color:var(--text-secondary);font-size:.82rem}.icon-action{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--border-primary);border-radius:11px;color:var(--text-secondary);background:var(--surface-primary);cursor:pointer}.mc-world{display:grid;grid-template-columns:minmax(0,1.5fr)minmax(340px,.75fr);gap:18px;align-items:stretch}.mc-world__stage{position:relative;min-width:0}.companion-chip{position:absolute;z-index:20;left:18px;bottom:18px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 36px);padding:9px 12px;border:1px solid color-mix(in srgb,var(--border-primary) 70%,transparent);border-radius:14px;color:var(--text-primary);background:color-mix(in srgb,var(--surface-primary) 94%,transparent);box-shadow:var(--shadow-medium);backdrop-filter:blur(10px)}.companion-chip div{display:flex;flex-direction:column}.companion-chip small{color:var(--text-secondary);font-size:.65rem}.companion-chip strong{font-size:.78rem}.live-dot{width:8px;height:8px;margin-left:5px;border-radius:50%;background:var(--semantic-success)}.mini-avatar,.large-avatar{position:relative;display:block;border-radius:10px;background:var(--surface-secondary)}.mini-avatar{width:34px;height:34px}.large-avatar{width:72px;height:72px;flex:0 0 auto;border-radius:20px;background:linear-gradient(145deg,var(--surface-secondary),color-mix(in srgb,var(--semantic-purple) 15%,var(--surface-primary)))}.mini-avatar::before,.large-avatar::before{content:'';position:absolute;left:29%;top:19%;width:42%;height:31%;background:#f4bd88;box-shadow:0 -5px #30253a}.mini-avatar i,.large-avatar i{position:absolute;left:23%;bottom:15%;width:54%;height:36%;background:var(--semantic-purple);border-radius:5px 5px 2px 2px}.mc-panel{display:flex;min-height:680px;flex-direction:column;overflow:hidden;border:1px solid var(--border-primary);border-radius:20px;background:var(--surface-primary);box-shadow:var(--shadow-medium)}.mc-tabs{display:grid;grid-template-columns:repeat(3,1fr);padding:8px;border-bottom:1px solid var(--border-primary);background:var(--surface-secondary)}.mc-tabs button{position:relative;display:flex;align-items:center;justify-content:center;gap:5px;min-height:42px;border:0;border-radius:9px;color:var(--text-secondary);background:transparent;font-size:.72rem;font-weight:750;cursor:pointer}.mc-tabs button.active{color:var(--interactive-active-text);background:var(--surface-primary);box-shadow:var(--shadow-small)}.mc-tabs b{display:grid;place-items:center;min-width:17px;height:17px;border-radius:999px;color:#fff;background:var(--semantic-purple);font-size:.58rem}.panel-body{padding:20px;overflow:auto}.section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:17px}.section-heading span{color:var(--interactive-active-text);font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.section-heading h2{margin:3px 0 0;color:var(--text-primary);font-size:1.24rem}.section-heading>svg{color:var(--semantic-purple)}.story-card{padding:17px;border:1px solid var(--border-primary);border-radius:15px;background:var(--surface-secondary)}.story-card__meta{display:flex;justify-content:space-between;color:var(--text-tertiary);font-size:.66rem}.story-card__meta i,.relation-list em{padding:2px 6px;border-radius:99px;color:var(--interactive-active-text);background:color-mix(in srgb,var(--interactive-primary) 12%,var(--surface-primary));font-style:normal;font-weight:800}.story-card h3{margin:12px 0 7px;color:var(--text-primary);font-size:1.05rem}.story-voice{margin:0;color:var(--text-secondary);font-size:.83rem;line-height:1.7}.evidence{margin:17px 0;padding:0;list-style:none}.evidence li{display:flex;gap:10px}.evidence li>span{position:relative;width:8px;height:8px;margin-top:5px;border:2px solid var(--interactive-primary);border-radius:50%;background:var(--surface-primary)}.evidence strong{color:var(--text-primary);font-size:.72rem}.evidence p{margin:3px 0 13px;color:var(--text-secondary);font-size:.73rem;line-height:1.45}.primary-action{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:44px;padding:9px 13px;border:0;border-radius:11px;color:var(--text-inverse);background:var(--btn-primary-bg);font-weight:800;cursor:pointer}.primary-action:disabled{opacity:.55;cursor:not-allowed}.story-list{display:flex;flex-direction:column;gap:7px;margin-top:12px}.story-list button{display:flex;align-items:center;gap:9px;width:100%;padding:10px;border:1px solid var(--border-primary);border-radius:11px;color:var(--text-primary);background:var(--surface-primary);text-align:left;cursor:pointer}.story-list button.active{border-color:var(--interactive-primary)}.story-list button>span{width:7px;height:7px;border-radius:50%;background:var(--semantic-purple)}.story-list div{display:flex;min-width:0;flex:1;flex-direction:column}.story-list strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.75rem}.story-list small{color:var(--text-tertiary);font-size:.62rem}.empty{display:flex;min-height:290px;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:var(--text-secondary)}.empty>svg{width:34px;height:34px;color:var(--interactive-primary)}.empty h3{margin:14px 0 5px;color:var(--text-primary);font-size:.96rem}.empty p{max-width:30ch;margin:0;font-size:.76rem;line-height:1.55}.relation-list{display:flex;flex-direction:column;gap:9px}.relation-list article{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--border-primary);border-radius:13px}.relation-avatar{display:grid;place-items:center;width:39px;height:39px;flex:0 0 auto;border-radius:12px;color:var(--interactive-active-text);background:var(--surface-secondary);font-weight:850}.relation-list article>div{min-width:0;flex:1}.relation-list h3{display:flex;align-items:center;gap:6px;margin:0;color:var(--text-primary);font-size:.82rem}.relation-list em{font-size:.55rem}.relation-list p{margin:3px 0 7px;color:var(--text-secondary);font-size:.69rem}.warmth{height:4px;overflow:hidden;border-radius:99px;background:var(--border-primary)}.warmth span{display:block;height:100%;border-radius:inherit;background:var(--semantic-purple)}.scene-target{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--border-primary);border-radius:13px}.scene-target>span{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;color:var(--interactive-active-text);background:var(--surface-secondary)}.scene-target>div{display:flex;min-width:0;flex:1;flex-direction:column}.scene-target small{color:var(--text-tertiary);font-size:.62rem}.scene-target strong{font-size:.78rem}.scene-target button{border:0;color:var(--interactive-active-text);background:none;font-size:.68rem;cursor:pointer}.command-box{margin-top:14px}.command-box label{display:block;margin-bottom:7px;color:var(--text-primary);font-size:.76rem;font-weight:750}.command-box textarea,.onboarding textarea,.onboarding input{width:100%;border:1px solid var(--border-primary);border-radius:11px;color:var(--text-primary);background:var(--surface-primary);font:inherit;outline:none}.command-box textarea{min-height:126px;padding:12px;resize:vertical;font-size:.8rem;line-height:1.55}.command-box textarea:focus,.onboarding textarea:focus,.onboarding input:focus{border-color:var(--interactive-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--interactive-primary) 14%,transparent)}.command-box>div{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}.command-box small{color:var(--text-tertiary);font-size:.61rem;line-height:1.4}.command-box button{display:flex;align-items:center;gap:5px;min-height:38px;padding:8px 11px;border:0;border-radius:9px;color:var(--text-inverse);background:var(--btn-primary-bg);font-size:.7rem;font-weight:800;cursor:pointer}.success-note,.error-note{display:flex;align-items:center;gap:6px;margin:12px 0 0;padding:9px;border-radius:9px;font-size:.7rem}.success-note{color:var(--semantic-success);background:color-mix(in srgb,var(--semantic-success) 9%,var(--surface-primary))}.error-note{color:var(--error-color);background:var(--error-background)}.mc-state{display:flex;min-height:480px;align-items:center;justify-content:center;flex-direction:column;padding:30px;border:1px solid var(--border-primary);border-radius:18px;background:var(--surface-primary);text-align:center}.mc-state>svg{width:44px;height:44px;color:var(--interactive-primary)}.mc-state h2{margin:15px 0 5px;color:var(--text-primary)}.mc-state p{max-width:46ch;margin:0;color:var(--text-secondary)}.mc-state a,.mc-state button{margin-top:18px;padding:10px 14px;border:0;border-radius:10px;color:var(--text-inverse);background:var(--btn-primary-bg);text-decoration:none}.loader{width:42px;height:42px;border:4px solid var(--surface-secondary);border-top-color:var(--interactive-primary);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.onboarding,.sheet-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:color-mix(in srgb,var(--text-primary) 38%,transparent);backdrop-filter:blur(8px)}.onboarding__card{width:min(620px,100%);max-height:calc(100dvh - 36px);overflow:auto;padding:24px;border:1px solid var(--border-primary);border-radius:22px;background:var(--surface-primary);box-shadow:var(--shadow-large)}.onboarding__companion{display:flex;align-items:center;gap:15px;margin-bottom:20px}.onboarding__companion small,.resident-sheet small{color:var(--interactive-active-text);font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.onboarding__companion h2{margin:3px 0;color:var(--text-primary);font-size:1.35rem}.onboarding__companion p{margin:0;color:var(--text-secondary);font-size:.78rem;line-height:1.5}.onboarding label,.onboarding fieldset{display:block;margin:15px 0 0;padding:0;border:0;color:var(--text-primary);font-size:.75rem;font-weight:750}.onboarding input{height:42px;margin-top:7px;padding:0 11px}.onboarding textarea{min-height:74px;margin-top:7px;padding:10px;resize:vertical}.choices{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.choices button{min-height:36px;padding:7px 11px;border:1px solid var(--border-primary);border-radius:999px;color:var(--text-secondary);background:var(--surface-primary);font-size:.7rem;cursor:pointer}.choices button.active{border-color:var(--interactive-primary);color:var(--interactive-active-text);background:color-mix(in srgb,var(--interactive-primary) 9%,var(--surface-primary))}.onboarding__promise{display:flex;gap:9px;margin:17px 0;padding:10px;border-radius:11px;color:var(--text-secondary);background:var(--surface-secondary)}.onboarding__promise svg{flex:0 0 auto;color:var(--semantic-success)}.onboarding__promise p{display:flex;flex-direction:column;margin:0;font-size:.68rem;line-height:1.5}.onboarding__promise strong{color:var(--text-primary)}.resident-sheet{position:relative;width:min(390px,100%);padding:27px;border:1px solid var(--border-primary);border-radius:21px;background:var(--surface-primary);box-shadow:var(--shadow-large);text-align:center}.resident-sheet>button{position:absolute;right:13px;top:13px;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:9px;color:var(--text-secondary);background:var(--surface-secondary);cursor:pointer}.resident-sheet .large-avatar{margin:0 auto 14px}.resident-sheet h2{margin:4px 0;color:var(--text-primary)}.resident-sheet p{color:var(--text-secondary);font-size:.78rem;line-height:1.55}.resident-sheet>div{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;padding:9px;border-radius:10px;color:var(--text-secondary);background:var(--surface-secondary);font-size:.7rem}.consent-icon{width:52px;height:52px;margin-bottom:14px;color:var(--semantic-purple)}
+@media(max-width:1000px){.mc-world{grid-template-columns:1fr}.mc-panel{min-height:520px}}
+@media(max-width:760px){.mc-shell{max-width:none;padding:14px 0 0}.mc-header{padding:0 14px 12px;margin:0}.mc-header__identity>span{width:42px;height:42px}.mc-header h1{font-size:1.45rem}.mc-header p{display:none}.mc-world{gap:0}.mc-panel{position:relative;z-index:30;min-height:390px;margin-top:-22px;border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(22,45,83,.13)}.companion-chip{left:12px;bottom:38px}.panel-body{padding:18px 16px}.onboarding{padding:0;align-items:end}.onboarding__card{max-height:94dvh;padding:20px 17px;border-radius:22px 22px 0 0}.mc-state{margin:0 14px}.mc-tabs{position:sticky;top:0;z-index:2}.large-avatar{width:60px;height:60px}}
+@media(prefers-reduced-motion:reduce){.loader{animation:none}}
 </style>

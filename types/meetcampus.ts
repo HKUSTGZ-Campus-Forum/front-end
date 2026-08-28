@@ -1,104 +1,65 @@
 export type MeetCampusLocale = "zh" | "en";
-
-export interface LocalizedText {
-  zh: string;
-  en: string;
-}
+export interface LocalizedText { zh: string; en: string }
 
 export interface MeetCampusFeatureFlags {
-  id: "meetcampus";
-  stage: "private_beta";
-  mode: "guided_sandbox";
-  sessionStorage: "browser_local";
-  liveAgents: false;
-  realPeople: false;
-  autonomousAgentDecisions: false;
+  id: "meetcampus"; stage: "private_beta"; mode: "persistent_world";
+  sessionStorage: "server"; liveAgents: true; realPeople: false;
+  autonomousAgentDecisions: true; syntheticResidentCount: number; providerConfigured: boolean;
 }
 
-export interface MeetCampusLocation {
-  id: string;
-  name: LocalizedText;
-  kind: "study" | "dining" | "activity";
-  x: number;
-  y: number;
+export interface MeetCampusScene {
+  id: string; slug: string; parentSceneId: string | null; kind: string; name: LocalizedText;
+  map: { x: number; y: number }; affordances: string[]; visual: Record<string, unknown>;
 }
 
-export interface MeetCampusCandidate {
-  displayName: LocalizedText;
-  agentName: LocalizedText;
-  headline: LocalizedText;
-  bio: LocalizedText;
+export interface MeetCampusResident {
+  id: string; slug: string; name: LocalizedText; isMine: boolean; isSynthetic: boolean;
+  appearance: { palette?: string; hair?: string; outfit?: string };
+  persona: { interests?: string[]; temperament?: string };
+  state: { sceneId: string; position: { x: number; y: number }; activity: string;
+    activityStartedAt: string; nextDecisionAt: string | null };
 }
 
-export interface MeetCampusChoice {
-  id: string;
-  label: LocalizedText;
-  description: LocalizedText;
+export interface MeetCampusWorldSnapshot {
+  world: { id: string; name: LocalizedText; status: string; stateVersion: number;
+    lastAdvancedAt: string; serverTime: string };
+  scenes: MeetCampusScene[]; residents: MeetCampusResident[];
+}
+
+export interface MeetCampusStoryEvent {
+  id: string; kind: string; summary: LocalizedText; sceneId: string;
+  participantResidentIds: string[]; importance: number; occurredAt: string;
 }
 
 export interface MeetCampusStory {
-  title: LocalizedText;
-  summary: LocalizedText;
-  myAgent: LocalizedText;
-  otherAgent: LocalizedText;
-  commonGround: LocalizedText;
-  difference: LocalizedText;
-  icebreaker: LocalizedText;
+  id: string; title: LocalizedText; narration: LocalizedText; events: MeetCampusStoryEvent[];
+  bridgeCandidate: boolean; isViewed: boolean; createdAt: string;
 }
 
-export interface MeetCampusTimeChoice {
+export interface MeetCampusRelationship {
   id: string;
-  label: LocalizedText;
+  resident: Pick<MeetCampusResident, "id" | "name" | "appearance" | "isSynthetic">;
+  familiarity: number; trust: number; warmth: number; sharedInterests: string[];
+  summary: LocalizedText; updatedAt: string;
 }
 
-export interface MeetCampusScenario {
-  id: "study" | "dining" | "activity";
-  label: LocalizedText;
-  summary: LocalizedText;
-  icon: string;
-  locationId: string;
-  candidate: MeetCampusCandidate;
-  matchReasons: LocalizedText[];
-  event: {
-    title: LocalizedText;
-    description: LocalizedText;
-  };
-  choices: MeetCampusChoice[];
-  stories: Record<string, MeetCampusStory>;
-  times: MeetCampusTimeChoice[];
-  durationMinutes: number;
-  offlineTask: LocalizedText;
+export interface MeetCampusOnboarding {
+  status: "not_started" | "completed"; completedAt: string | null;
+  autonomyLevel: "guided" | "balanced" | "brave";
+  anchors: Record<string, unknown>; privacyRules: Record<string, boolean>;
 }
 
 export interface MeetCampusBootstrap {
-  feature: MeetCampusFeatureFlags;
-  locations: MeetCampusLocation[];
-  scenarios: MeetCampusScenario[];
+  feature: MeetCampusFeatureFlags; onboarding: MeetCampusOnboarding; myResidentId: string;
+  snapshot: MeetCampusWorldSnapshot; stories: MeetCampusStory[];
+  relationships: MeetCampusRelationship[];
 }
 
-export type MeetCampusPhase =
-  | "setup"
-  | "searching"
-  | "encounter"
-  | "experience"
-  | "story"
-  | "consent"
-  | "profile"
-  | "planning"
-  | "pass"
-  | "feedback"
-  | "complete";
+export interface MeetCampusOnboardingInput {
+  locale: MeetCampusLocale; autonomyLevel: "guided" | "balanced" | "brave";
+  anchors: { residentName: string; socialPace: string; preferredPlaces: string[]; ownerNote: string };
+}
 
-export type MeetCampusPace = "quiet" | "easy" | "active";
-export type MeetCampusFeedback = "natural" | "good" | "pressure";
-
-export interface MeetCampusSession {
-  version: 1;
-  phase: MeetCampusPhase;
-  scenarioId: MeetCampusScenario["id"] | null;
-  pace: MeetCampusPace;
-  choiceId: string | null;
-  timeId: string | null;
-  feedback: MeetCampusFeedback | null;
-  updatedAt: string;
+export interface MeetCampusCommandInput {
+  kind: "goal" | "visit" | "activity"; text: string; targetSceneId?: string;
 }
