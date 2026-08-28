@@ -96,6 +96,9 @@ importers:
       '@types/node':
         specifier: ^22.13.1
         version: 22.13.1
+      markdown-it:
+        specifier: 14.1.1
+        version: 14.1.1
       sass:
         specifier: ^1.84.0
         version: 1.84.0
@@ -4508,8 +4511,8 @@ packages:
   markdown-it-sup@2.0.0:
     resolution: {integrity: sha512-5VgmdKlkBd8sgXuoDoxMpiU+BiEt3I49GItBzzw7Mxq9CxvnhE/k09HFli09zgfFDRixDQDfDxi0mgBCXtaTvA==}
 
-  markdown-it@14.2.0:
-    resolution: {integrity: sha512-1TGiQiJVRQ3NPmZH6sx5Cfnmg6GQm9jvC1ch4TK511NjSJvjzKLzn5pPfZRNZkRPZP0HqCioSndqH8v2nRaWVQ==}
+  markdown-it@14.1.1:
+    resolution: {integrity: sha512-BuU2qnTti9YKgK5N+IeMubp14ZUKUUw7yeJbkjtosvHiP0AZ5c8IAgEMk79D0eC8F23r4Ac/q8cAIFdm2FtyoA==}
     hasBin: true
 
   marked@17.0.6:
@@ -11534,15 +11537,15 @@ snapshots:
 
   map-obj@4.3.0: {}
 
-  markdown-it-image-figures@2.1.1(markdown-it@14.2.0):
+  markdown-it-image-figures@2.1.1(markdown-it@14.1.1):
     dependencies:
-      markdown-it: 14.2.0
+      markdown-it: 14.1.1
 
   markdown-it-sub@2.0.0: {}
 
   markdown-it-sup@2.0.0: {}
 
-  markdown-it@14.2.0:
+  markdown-it@14.1.1:
     dependencies:
       argparse: 2.0.1
       entities: 4.5.0
@@ -11569,8 +11572,8 @@ snapshots:
       '@vavt/copy2clipboard': 1.0.3
       '@vavt/util': 2.1.2
       codemirror: 6.0.2
-      markdown-it: 14.2.0
-      markdown-it-image-figures: 2.1.1(markdown-it@14.2.0)
+      markdown-it: 14.1.1
+      markdown-it-image-figures: 2.1.1(markdown-it@14.1.1)
       markdown-it-sub: 2.0.0
       markdown-it-sup: 2.0.0
       medium-zoom: 1.1.0

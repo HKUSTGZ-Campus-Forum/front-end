@@ -123,10 +123,80 @@
       "overview": "概览",
       "users": "用户",
       "content": "内容",
+      "carousel": "首页轮播",
       "feedback": "反馈审核",
       "identity": "身份认证",
       "domains": "课程与运维",
       "audit": "审计日志"
+    }
+  },
+  "adminCarousel": {
+    "title": "首页轮播管理",
+    "description": "按中英文分别维护首页横幅、跳转链接、显示状态与顺序。上传后的图片会通过 UniKorn 稳定地址展示。",
+    "loading": "正在加载轮播内容…",
+    "empty": "还没有轮播内容。点击“新增轮播”添加第一张横幅。",
+    "missingImage": "图片不可用",
+    "untitled": "未命名横幅",
+    "singleLanguageAlt": "此横幅仅配置了目标语言的替代文字",
+    "archivedTitle": "已归档",
+    "actions": {
+      "add": "新增轮播",
+      "refresh": "刷新",
+      "retry": "重试",
+      "save": "保存轮播",
+      "saving": "保存中…",
+      "cancel": "取消",
+      "edit": "编辑",
+      "archive": "归档",
+      "restore": "恢复",
+      "reorder": "调整轮播顺序",
+      "moveUp": "向前移动",
+      "moveDown": "向后移动"
+    },
+    "form": {
+      "createEyebrow": "新增内容",
+      "editEyebrow": "编辑内容",
+      "createTitle": "新增首页横幅",
+      "editTitle": "编辑首页横幅",
+      "locale": "显示语言",
+      "altZh": "中文图片说明",
+      "altEn": "英文图片说明",
+      "href": "点击后跳转（可选）",
+      "hrefPlaceholder": "/courses 或 https://example.com",
+      "hrefHint": "只接受本站路径或 HTTPS 链接。本站路径会自动带上当前语言。",
+      "active": "立即在首页显示",
+      "currentImage": "当前图片",
+      "uploadImage": "点击或拖入轮播图片",
+      "replaceImage": "上传新图片以替换当前图片",
+      "imageHint": "支持 JPG、PNG、WebP、GIF，最大 10 MB；建议使用约 3:1 的横向图片。"
+    },
+    "locales": {
+      "all": "中英文",
+      "zh": "仅中文",
+      "en": "仅英文"
+    },
+    "status": {
+      "active": "展示中",
+      "inactive": "已停用",
+      "scheduler": "排课专题样式"
+    },
+    "confirm": {
+      "archive": "归档后首页将不再显示这张横幅，确定继续吗？",
+      "restore": "确定恢复这张横幅吗？恢复后仍按原显示状态生效。"
+    },
+    "messages": {
+      "created": "轮播已新增。",
+      "updated": "轮播已更新。",
+      "reordered": "轮播顺序已保存。",
+      "archived": "轮播已归档。",
+      "restored": "轮播已恢复。"
+    },
+    "errors": {
+      "requestFailed": "轮播管理请求失败。",
+      "loadFailed": "无法加载轮播内容。",
+      "saveFailed": "无法保存轮播内容。",
+      "reorderFailed": "无法保存轮播顺序。",
+      "imageRequired": "请先上传一张轮播图片。"
     }
   },
   "adminOverview": {
