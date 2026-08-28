@@ -17,7 +17,8 @@
     "i18n:scan-hardcoded": "node ./scripts/scan-hardcoded-i18n.mjs",
     "i18n:check": "npm run i18n:check-keys && npm run i18n:scan-hardcoded",
     "test": "vitest run",
-    "test:scheduler": "vitest run tests/scheduler"
+    "test:scheduler": "vitest run tests/scheduler",
+    "test:scheduler:ranked": "vitest run tests/scheduler/ranked-optimizer.test.ts tests/scheduler/ranked-storage.test.ts tests/scheduler/ranked-composable.test.ts tests/scheduler/ranked-ui-contract.test.ts tests/scheduler/bottom-panel.test.ts"
   },
   "dependencies": {
     "@intlify/message-compiler": "^11.1.3",

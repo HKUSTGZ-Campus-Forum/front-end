@@ -155,6 +155,15 @@ export default defineNuxtConfig({
     "~/assets/css/transitions.scss",
   ],
   nitro: {
+    // Ranked scheduling uses native BigInt for exact decimal scores and tie
+    // cutoffs. Node 20 and supported evergreen browsers implement ES2020;
+    // matching Nitro's transform target avoids emitting an unsafe es2019
+    // bundle warning for those exact calculations.
+    esbuild: {
+      options: {
+        target: "es2020",
+      },
+    },
     // 匹配 /api 后会把剩余路径拼到 target 上；target 必须带上 /api，
     // 否则 /api/auth/oidc/status 会变成上游 /auth/oidc/status 导致 404。
     devProxy: {

@@ -1,6 +1,6 @@
 <!-- front-end/components/scheduler/SchedulerSidePanel.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartCourse, SchedulerPopularityByCourse } from '~/utils/scheduler'
 import { getSchedulerCoursePopularity } from '~/utils/scheduler'
@@ -23,6 +23,9 @@ const props = defineProps<{
     courseCode: string,
     options: { sectionId?: string; from: string; to: string; resolution?: 'auto'; signal?: AbortSignal },
   ) => Promise<import('~/utils/scheduler').SchedulerPopularityHistoryResponse>
+  candidateMode?: boolean
+  candidateCodes?: string[]
+  creditsOverride?: number | string
 }>()
 
 const emit = defineEmits<{
@@ -44,8 +47,14 @@ const displayOptionKeys: DisplayOption[] = ['name', 'section', 'location', 'inst
 
 // Bottom action bar state (replicates the original planner's compact bottom bar)
 const showMenu = ref(false)
-const showFilterTip = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
+const filterActionWrapRef = ref<HTMLElement | null>(null)
+const filterHovered = ref(false)
+const filterFocusWithin = ref(false)
+const filterPinned = ref(false)
+const filterTipId = `scheduler-filter-tip-${useId()}`
+const filterTipTitleId = `${filterTipId}-title`
+const showFilterTip = computed(() => filterHovered.value || filterFocusWithin.value || filterPinned.value)
 let menuLastClose = 0
 
 function closeMenu() {
@@ -59,14 +68,35 @@ function toggleMenu() {
   showMenu.value = !showMenu.value
 }
 
-function onDocumentMouseDown(event: MouseEvent) {
-  if (showMenu.value && menuRef.value && !menuRef.value.contains(event.target as Node)) {
-    closeMenu()
+function closeFilterTip() {
+  filterHovered.value = false
+  filterFocusWithin.value = false
+  filterPinned.value = false
+}
+
+function onFilterActionClick() {
+  filterPinned.value = !filterPinned.value
+  emit('toggle-filter')
+}
+
+function onFilterFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null
+  if (!next || !filterActionWrapRef.value?.contains(next)) {
+    filterFocusWithin.value = false
   }
 }
 
-onMounted(() => document.addEventListener('mousedown', onDocumentMouseDown))
-onUnmounted(() => document.removeEventListener('mousedown', onDocumentMouseDown))
+function onDocumentPointerDown(event: PointerEvent) {
+  if (showMenu.value && menuRef.value && !menuRef.value.contains(event.target as Node)) {
+    closeMenu()
+  }
+  if (filterPinned.value && filterActionWrapRef.value && !filterActionWrapRef.value.contains(event.target as Node)) {
+    closeFilterTip()
+  }
+}
+
+onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
+onUnmounted(() => document.removeEventListener('pointerdown', onDocumentPointerDown))
 
 const currentSelectionMap = computed(() => {
   const map: Record<string, string[]> = {}
@@ -81,8 +111,11 @@ const currentSelectionMap = computed(() => {
 })
 
 const totalCredits = computed(() =>
-  props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + (c.term_load_credit ?? c.credit), 0)
+  props.creditsOverride
+  ?? props.courseList.filter(c => c.enabled).reduce((sum, c) => sum + (c.term_load_credit ?? c.credit), 0)
 )
+
+const candidateCodeSet = computed(() => new Set(props.candidateCodes || []))
 
 function updateDisplayOption(key: DisplayOption, event: Event) {
   emit('update:display-option', key, (event.target as HTMLInputElement).checked)
@@ -97,6 +130,10 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     </div>
 
     <div class="side-panel__list">
+      <div v-if="candidateMode" class="side-panel__context">
+        <strong>{{ t('scheduler.optimizer.candidatePoolTitle') }}</strong>
+        <span>{{ t('scheduler.optimizer.candidatePoolHint') }}</span>
+      </div>
       <SchedulerCourseCard
         v-for="course in courseList"
         :key="course.course_code"
@@ -108,6 +145,7 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         :mutations-disabled="mutationsDisabled"
         :can-show-history="canShowHistory"
         :get-history="getHistory"
+        :selected="candidateMode ? candidateCodeSet.has(course.course_code) : undefined"
         @toggle-course="(...args) => emit('toggle-course', ...args)"
         @toggle-bundle="(...args) => emit('toggle-bundle', ...args)"
         @toggle-layer="(...args) => emit('toggle-layer', ...args)"
@@ -127,16 +165,22 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     <!-- Compact bottom action bar (Filter / Menu / Cart), leaves the list as the dominant area -->
     <div class="side-panel__actions">
       <div
+        ref="filterActionWrapRef"
         class="side-panel__action-wrap"
-        @mouseenter="showFilterTip = true"
-        @mouseleave="showFilterTip = false"
+        @mouseenter="filterHovered = true"
+        @mouseleave="filterHovered = false"
+        @focusin="filterFocusWithin = true"
+        @focusout="onFilterFocusOut"
+        @keydown.esc.stop.prevent="closeFilterTip"
       >
         <button
           type="button"
           class="side-panel__action"
           :class="{ 'side-panel__action--active': filterMode }"
           :aria-pressed="filterMode"
-          @click="emit('toggle-filter')"
+          :aria-expanded="showFilterTip"
+          :aria-controls="filterTipId"
+          @click="onFilterActionClick"
         >
           <span class="side-panel__action-icon" aria-hidden="true"><Icon name="lucide:sliders-horizontal" /></span>
           <span class="side-panel__action-label">{{ t('scheduler.filter') }}</span>
@@ -144,11 +188,13 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
         <Transition name="tip">
           <div
             v-if="showFilterTip"
+            :id="filterTipId"
             class="side-panel__tip"
             :class="{ 'side-panel__tip--active': filterMode }"
-            role="tooltip"
+            role="region"
+            :aria-labelledby="filterTipTitleId"
           >
-            <div class="side-panel__tip-title">
+            <div :id="filterTipTitleId" class="side-panel__tip-title">
               {{ t('scheduler.filterTipTitle') }}
               <span
                 class="side-panel__tip-state"
@@ -263,6 +309,28 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
     overflow-y: auto;
     padding: 10px;
     background: var(--surface-secondary);
+  }
+
+  &__context {
+    display: grid;
+    gap: 3px;
+    margin-bottom: 10px;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--interactive-primary) 24%, var(--border-secondary));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--interactive-primary) 7%, var(--surface-primary));
+
+    strong {
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    span {
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
   }
 
   &__menu {
@@ -567,6 +635,13 @@ function updateDisplayOption(key: DisplayOption, event: Event) {
 
     &__credits {
       padding-left: 4px;
+    }
+
+    &__tip {
+      // Span the three compact action columns without being clipped by the
+      // narrow mobile side panel.
+      width: calc(300% + 1rem);
+      max-width: calc(100vw - 32px);
     }
   }
 }

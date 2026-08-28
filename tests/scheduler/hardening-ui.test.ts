@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 function source(path: string) {
-  return readFileSync(new URL(path, import.meta.url), 'utf8')
+  return readFileSync(new URL(path, import.meta.url), 'utf8').replace(/\r\n?/g, '\n')
 }
 
 describe('scheduler hardening UI contract', () => {
@@ -56,6 +56,13 @@ describe('scheduler hardening UI contract', () => {
     expect(planner).toContain('@retry-cart-load="reload"')
     expect(dashboard).toContain("t('scheduler.cartLoadFailed')")
     expect(dashboard).toContain("emit('retry-cart-load')")
+    const workspaceTag = dashboard.match(/<div\s+[^>]*id="scheduler-planner-workspace"[^>]*>/)?.[0]
+    expect(workspaceTag).toBeTruthy()
+    expect(workspaceTag).toContain('ref="bodyRef"')
+    expect(workspaceTag).toContain('class="dashboard__body"')
+    expect(workspaceTag).not.toContain('v-if=')
+    expect(dashboard).toContain('<ClientOnly>')
+    expect(dashboard).toContain('<template #fallback>')
     expect(dashboard).toContain('v-if="!cartLoadError && !loading"')
     expect(dashboard).toContain(':visible="showCartPanel && !loading && !cartLoadError && !cart.requiresReload.value"')
     expect(semesterIndex).toContain('v-else-if="loadError"')
@@ -84,7 +91,9 @@ describe('scheduler hardening UI contract', () => {
     expect(dashboard).toContain('settlement.isCurrent()')
     expect(dashboard).toContain("? 'ambiguous'")
     expect(dashboard).toContain(": 'failed'")
-    expect(dashboard).toContain('@toggle-course="handleToggleCourse"')
+    expect(dashboard).toContain('@toggle-course="handleToggleCourseByMode"')
+    expect(dashboard).toContain('handleToggleCourse(code, currentEnabled)')
+    expect(dashboard).toContain('optimizer.toggleCandidate(code)')
     expect(dashboard).toContain('@toggle-bundle="handleToggleBundle"')
     expect(dashboard).toContain(':semester-id="semesterId"')
   })

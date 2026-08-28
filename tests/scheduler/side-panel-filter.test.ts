@@ -32,10 +32,14 @@ describe('scheduler side-panel filter UI', () => {
     expect(src).toContain('side-panel__clear-all-icon')
   })
 
-  it('makes the tooltip card hoverable so the button is reachable', () => {
+  it('exposes the interactive filter card to pointer, keyboard, and touch users', () => {
     const src = source()
-    // The tip must accept pointer events (it used to be pointer-events:none),
-    // and a bridge closes the 8px gap so moving up to the button keeps the tip open.
+    expect(src).toContain(':aria-expanded="showFilterTip"')
+    expect(src).toContain(':aria-controls="filterTipId"')
+    expect(src).toContain('@focusin="filterFocusWithin = true"')
+    expect(src).toContain('@keydown.esc.stop.prevent="closeFilterTip"')
+    expect(src).toContain('role="region"')
+    expect(src).not.toContain('role="tooltip"')
     expect(src).toContain('pointer-events: auto;')
     expect(src).toContain('&::after {')
   })

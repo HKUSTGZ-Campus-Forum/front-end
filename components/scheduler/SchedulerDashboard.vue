@@ -22,6 +22,7 @@ import {
   buildSchedulerPlanWriteInput,
   schedulerPlanContentFingerprint,
 } from '~/utils/schedulerPlans'
+import { useSchedulerOptimizer } from '~/composables/useSchedulerOptimizer'
 
 const props = defineProps<{
   semesterId: string
@@ -177,10 +178,57 @@ function onResizeStart(event: MouseEvent) {
   document.addEventListener('mouseup', onUp)
 }
 
+function persistSidePanelWidth() {
+  try {
+    localStorage.setItem(SIDE_PANEL_STORAGE_KEY, String(sidePanelWidth.value))
+  } catch {
+    // Storage unavailable; keep the in-memory width for this session.
+  }
+}
+
+function onResizeHandleKeydown(event: KeyboardEvent) {
+  let nextWidth = sidePanelWidth.value
+  if (event.key === 'ArrowLeft') nextWidth += 16
+  else if (event.key === 'ArrowRight') nextWidth -= 16
+  else if (event.key === 'Home') nextWidth = SIDE_PANEL_MIN
+  else if (event.key === 'End') nextWidth = SIDE_PANEL_MAX
+  else return
+
+  event.preventDefault()
+  sidePanelWidth.value = clampSidePanelWidth(nextWidth)
+  persistSidePanelWidth()
+}
+
 const viewIndex = ref(1)
 const bannedPeriods = ref<boolean[][]>(
   Array.from({ length: 7 }, () => Array(8).fill(false))
 )
+const optimizer = useSchedulerOptimizer({
+  semesterId: props.semesterId,
+  courseList,
+  bannedPeriods,
+})
+const {
+  mode: plannerMode,
+  candidateCodes: optimizerCandidateCodes,
+  minCourses: optimizerMinCourses,
+  maxCourses: optimizerMaxCourses,
+  topX: optimizerTopX,
+  profile: optimizerProfile,
+  rankedViewIndex,
+  runState: optimizerRunState,
+  errorCode: optimizerErrorCode,
+  errorDetail: optimizerErrorDetail,
+  progress: optimizerProgress,
+  result: optimizerResult,
+  cacheHit: optimizerCacheHit,
+  stale: optimizerStale,
+  rankedPlans,
+  currentRankedPlan,
+  currentRankedSelections,
+  unavailableCourseCodes: optimizerUnavailableCourseCodes,
+  workload: optimizerWorkload,
+} = optimizer
 const filterMode = ref(false)
 const showCartPanel = ref(false)
 const showGuestHint = ref(true)
@@ -193,6 +241,8 @@ const historyAccessError = ref('')
 const activeSavedPlan = ref<SchedulerSavedPlan | null>(null)
 const savedPlanBaseline = ref('')
 const showPlanDialog = ref(false)
+const showOptimizerSettings = ref(false)
+const showScoreBreakdown = ref(false)
 const planSubmitting = ref(false)
 const planActionError = ref('')
 const planActionMessage = ref('')
@@ -299,20 +349,42 @@ watch(
 
 const solverResult = computed(() => solvePlans(courseList.value, bannedPeriods.value))
 const planList = computed(() => solverResult.value.status === 'ok' ? solverResult.value.plans : [])
+const isRankedMode = computed(() => plannerMode.value === 'ranked')
+const activePlanCount = computed(() => (
+  isRankedMode.value ? rankedPlans.value.length : planList.value.length
+))
+const activeViewIndex = computed({
+  get: () => isRankedMode.value ? rankedViewIndex.value : viewIndex.value,
+  set: (value: number) => {
+    if (isRankedMode.value) optimizer.setRankedViewIndex(value)
+    else viewIndex.value = value
+  },
+})
 const plansTruncated = computed(() => solverResult.value.status === 'ok' && solverResult.value.truncated)
 const planCountLabel = computed(() => {
+  if (isRankedMode.value) return String(rankedPlans.value.length)
   if (!plansTruncated.value || solverResult.value.status !== 'ok') return String(planList.value.length)
   return solverResult.value.truncationReason === 'plan-limit'
     ? t('scheduler.planCountTruncated', { count: planList.value.length })
     : t('scheduler.planCountIncomplete', { count: planList.value.length })
 })
 const enabledCourses = computed(() => courseList.value.filter(course => course.enabled))
-const totalCredits = computed(() => enabledCourses.value.reduce(
-  (sum, course) => sum + (course.term_load_credit ?? course.credit),
-  0,
+const selectedCourseCount = computed(() => (
+  isRankedMode.value
+    ? currentRankedPlan.value?.courseCount ?? optimizerCandidateCodes.value.length
+    : enabledCourses.value.length
+))
+const totalCredits = computed(() => (
+  isRankedMode.value
+    ? currentRankedPlan.value?.totalCredits ?? '0'
+    : enabledCourses.value.reduce(
+        (sum, course) => sum + (course.term_load_credit ?? course.credit),
+        0,
+      )
 ))
 
 const currentPlan = computed(() => {
+  if (isRankedMode.value) return currentRankedSelections.value
   const plan = planList.value[viewIndex.value - 1]
   return plan || []
 })
@@ -321,6 +393,7 @@ const currentPlanFingerprint = computed(() => schedulerPlanContentFingerprint({
   courses: courseList.value,
   selections: currentPlan.value,
   bannedPeriods: bannedPeriods.value,
+  includeDisabledCourses: isRankedMode.value,
 }))
 const savedPlanDirty = computed(() => Boolean(
   activeSavedPlan.value?.is_owner
@@ -329,7 +402,11 @@ const savedPlanDirty = computed(() => Boolean(
 ))
 const canSaveCurrentPlan = computed(() => (
   props.isLoggedIn
-  && solverResult.value.status === 'ok'
+  && (
+    isRankedMode.value
+      ? optimizerRunState.value === 'complete' && !optimizerStale.value
+      : solverResult.value.status === 'ok'
+  )
   && currentPlan.value.length > 0
   && !cart.requiresReload.value
 ))
@@ -338,6 +415,62 @@ const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.valu
 
 const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: string; description: string } | null>(() => {
   if (props.loading || props.cartLoadError) return null
+  if (isRankedMode.value) {
+    if (courseList.value.length === 0) {
+      return {
+        level: 'info',
+        title: t('scheduler.emptyCartTitle'),
+        description: t('scheduler.emptyCartHint'),
+      }
+    }
+    if (optimizerRunState.value === 'error') {
+      return {
+        level: 'error',
+        title: t('scheduler.optimizer.errorTitle'),
+        description: t(`scheduler.optimizer.errors.${optimizerErrorCode.value || 'failed'}`),
+      }
+    }
+    if (optimizerRunState.value === 'no-solution') {
+      return {
+        level: 'error',
+        title: t('scheduler.optimizer.noSolutionTitle'),
+        description: t('scheduler.optimizer.noSolutionHint'),
+      }
+    }
+    if (
+      optimizerRunState.value === 'running'
+      || optimizerRunState.value === 'checking-cache'
+    ) {
+      if (currentPlan.value.length) return null
+      return {
+        level: 'info',
+        title: t('scheduler.optimizer.runningTitle'),
+        description: t('scheduler.optimizer.runningHint'),
+      }
+    }
+    if (optimizerStale.value) {
+      return {
+        level: 'warning',
+        title: t('scheduler.optimizer.staleTitle'),
+        description: t('scheduler.optimizer.staleHint'),
+      }
+    }
+    if (optimizerRunState.value === 'cancelled' && !currentPlan.value.length) {
+      return {
+        level: 'warning',
+        title: t('scheduler.optimizer.cancelledTitle'),
+        description: t('scheduler.optimizer.cancelledHint'),
+      }
+    }
+    if (!optimizerResult.value) {
+      return {
+        level: 'info',
+        title: t('scheduler.optimizer.setupTitle'),
+        description: t('scheduler.optimizer.setupHint'),
+      }
+    }
+    return null
+  }
   if (solverResult.value.status === 'empty-cart') {
     return {
       level: 'info',
@@ -403,6 +536,41 @@ const planIcon = computed(() => {
   if (msg.level === 'info') return 'lucide:face-slightly-smiling'
   if (msg.level === 'warning') return 'lucide:face-neutral'
   return 'lucide:face-slightly-frowning'
+})
+
+const optimizerBusy = computed(() => (
+  optimizerRunState.value === 'running' || optimizerRunState.value === 'checking-cache'
+))
+const optimizerProgressPercent = computed(() => {
+  try {
+    const total = BigInt(optimizerProgress.value.totalWork)
+    if (total <= 0n) return 0
+    const processed = BigInt(optimizerProgress.value.processedWork)
+    return Number((processed * 1000n) / total) / 10
+  } catch {
+    return 0
+  }
+})
+const optimizerWorkloadLabel = computed(() => t(
+  `scheduler.optimizer.workload.${optimizerWorkload.value.kind}`,
+))
+const optimizerStatusLabel = computed(() => {
+  if (optimizerRunState.value === 'checking-cache') return t('scheduler.optimizer.checkingCache')
+  if (optimizerRunState.value === 'running') {
+    return t('scheduler.optimizer.progress', {
+      percent: optimizerProgressPercent.value.toFixed(1),
+      feasible: optimizerProgress.value.feasibleCount,
+    })
+  }
+  if (optimizerStale.value) return t('scheduler.optimizer.staleShort')
+  if (optimizerCacheHit.value) return t('scheduler.optimizer.cacheHit')
+  if (optimizerRunState.value === 'cancelled') return t('scheduler.optimizer.cancelledShort')
+  if (optimizerUnavailableCourseCodes.value.length) {
+    return t('scheduler.optimizer.unavailableCandidates', {
+      count: optimizerUnavailableCourseCodes.value.length,
+    })
+  }
+  return ''
 })
 
 // Reset viewIndex when plans change; a restored (persisted) plan index is
@@ -514,6 +682,14 @@ function handleToggleCourse(code: string, currentEnabled: boolean) {
   })
 }
 
+function handleToggleCourseByMode(code: string, currentEnabled: boolean) {
+  if (isRankedMode.value) {
+    optimizer.toggleCandidate(code)
+    return
+  }
+  handleToggleCourse(code, currentEnabled)
+}
+
 function handleToggleBundle(
   code: string,
   bundleId: number,
@@ -608,6 +784,7 @@ async function saveCurrentPlan(metadata: {
       selections: currentPlan.value,
       bannedPeriods: bannedPeriods.value,
       version: shouldUpdate ? activeSavedPlan.value!.version : undefined,
+      includeDisabledCourses: isRankedMode.value,
     })
     const saved = shouldUpdate
       ? await updatePlan(activeSavedPlan.value!.public_id, input as typeof input & { version: number })
@@ -666,6 +843,7 @@ async function startNewPlan() {
             <Icon name="lucide:arrow-left" class="dashboard__back-icon" aria-hidden="true" />
           </NuxtLink>
           <h1>{{ t('scheduler.title') }}</h1>
+          <SchedulerModeSwitch v-model="plannerMode" class="dashboard__mode-switch" />
         </div>
         <p>{{ t('scheduler.workspaceSubtitle') }}</p>
       </div>
@@ -700,10 +878,10 @@ async function startNewPlan() {
             {{ t('scheduler.savedPlans.shared') }}
           </NuxtLink>
         </nav>
-        <div class="dashboard__summary" aria-label="planner summary">
+        <div class="dashboard__summary" :aria-label="t('scheduler.summaryLabel')">
         <div class="dashboard__summary-item">
-          <span>{{ t('scheduler.selectedCourses') }}</span>
-          <strong>{{ enabledCourses.length }}</strong>
+          <span>{{ isRankedMode ? t('scheduler.optimizer.candidateCount') : t('scheduler.selectedCourses') }}</span>
+          <strong>{{ isRankedMode ? optimizerCandidateCodes.length : selectedCourseCount }}</strong>
         </div>
         <div class="dashboard__summary-item">
           <span>{{ t('scheduler.planCount') }}</span>
@@ -716,6 +894,78 @@ async function startNewPlan() {
         </div>
       </div>
     </header>
+
+    <section
+      v-if="isRankedMode"
+      class="dashboard__optimizer-bar"
+      :class="[`is-${optimizerWorkload.tone}`, { 'is-stale': optimizerStale }]"
+      :aria-label="t('scheduler.optimizer.runSectionLabel')"
+    >
+      <div class="dashboard__optimizer-copy">
+        <span class="dashboard__optimizer-icon" aria-hidden="true">
+          <Icon name="lucide:sparkles" />
+        </span>
+        <div>
+          <strong>
+            {{ t('scheduler.optimizer.rangeSummary', {
+              count: optimizerCandidateCodes.length,
+              min: optimizerMinCourses,
+              max: optimizerMaxCourses,
+            }) }}
+          </strong>
+          <span v-if="optimizerStatusLabel" :title="optimizerErrorDetail || undefined">
+            {{ optimizerStatusLabel }}
+          </span>
+        </div>
+      </div>
+      <div class="dashboard__optimizer-meta">
+        <span class="dashboard__workload" :class="`is-${optimizerWorkload.tone}`">
+          {{ optimizerWorkloadLabel }} · {{ t('scheduler.optimizer.estimatedPlans', { count: optimizerWorkload.estimate }) }}
+        </span>
+        <button
+          v-if="currentRankedPlan"
+          type="button"
+          class="dashboard__score"
+          @click="showScoreBreakdown = true"
+        >
+          <Icon name="lucide:gauge" aria-hidden="true" />
+          {{ t('scheduler.optimizer.scoreSummary', {
+            score: currentRankedPlan.score,
+            rank: currentRankedPlan.scoreRank,
+          }) }}
+        </button>
+      </div>
+      <div class="dashboard__optimizer-actions">
+        <button
+          type="button"
+          class="dashboard__optimizer-settings"
+          @click="showOptimizerSettings = true"
+        >
+          <Icon name="lucide:sliders-horizontal" aria-hidden="true" />
+          {{ t('scheduler.optimizer.openSettings') }}
+        </button>
+        <button
+          type="button"
+          class="dashboard__optimizer-run"
+          :class="{ 'is-cancel': optimizerBusy }"
+          @click="optimizerBusy ? optimizer.cancel() : optimizer.run()"
+        >
+          <Icon :name="optimizerBusy ? 'lucide:square' : 'lucide:play'" aria-hidden="true" />
+          {{ optimizerBusy ? t('scheduler.optimizer.cancel') : t('scheduler.optimizer.start') }}
+        </button>
+      </div>
+      <div
+        v-if="optimizerBusy"
+        class="dashboard__optimizer-progress"
+        role="progressbar"
+        :aria-label="t('scheduler.optimizer.progressLabel')"
+        :aria-valuenow="optimizerProgressPercent"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <span :style="{ width: `${optimizerProgressPercent}%` }" />
+      </div>
+    </section>
 
     <div v-if="planActionMessage" class="dashboard__notice dashboard__notice--success" role="status">
       <span>{{ planActionMessage }}</span>
@@ -755,85 +1005,113 @@ async function startNewPlan() {
     </div>
 
     <div
-      v-if="!cartLoadError && !loading"
+      id="scheduler-planner-workspace"
       ref="bodyRef"
       class="dashboard__body"
+      role="tabpanel"
+      :aria-labelledby="isRankedMode ? 'scheduler-mode-ranked' : 'scheduler-mode-fixed'"
+      :aria-busy="loading"
       :style="{ '--side-panel-width': sidePanelWidthPx }"
     >
-      <div class="dashboard__left">
-        <div class="dashboard__timetable-card">
-          <SchedulerTimetable
-            :course-list="courseList"
-            :current-plan="currentPlan"
-            :banned-periods="bannedPeriods"
-            :filter-mode="filterMode"
-            :display-options="displayOptions"
-            :max-day-num="maxDayNum"
-            :preview-section="previewSection"
-            :preview-section-enabled="previewSectionEnabled"
-            @toggle-ban="toggleBan"
-          />
-          <SchedulerBottomPanel
-            :current-index="viewIndex"
-            :total-plans="planList.length"
-            @update:index="viewIndex = $event"
-          />
+      <!-- The workspace wrapper is deliberately stable across SSR and client
+           hydration. Auth can become ready before hydration, so switching the
+           wrapper itself between dashboard__loading and dashboard__body would
+           leave production Vue with the server-side class. ClientOnly owns the
+           stateful subtree and mounts the resolved client state after hydration. -->
+      <ClientOnly>
+        <template #default>
+          <template v-if="!cartLoadError && !loading">
+            <div class="dashboard__left">
+              <div class="dashboard__timetable-card">
+                <SchedulerTimetable
+                  :course-list="courseList"
+                  :current-plan="currentPlan"
+                  :banned-periods="bannedPeriods"
+                  :filter-mode="filterMode"
+                  :display-options="displayOptions"
+                  :max-day-num="maxDayNum"
+                  :preview-section="previewSection"
+                  :preview-section-enabled="previewSectionEnabled"
+                  @toggle-ban="toggleBan"
+                />
+                <SchedulerBottomPanel
+                  :current-index="activeViewIndex"
+                  :total-plans="activePlanCount"
+                  @update:index="activeViewIndex = $event"
+                />
 
-          <!-- Dim overlay with solver hint. Scoped to the timetable card only
-               (like the original planner), so the side panel stays visible. -->
-          <Transition name="overlay">
-            <div v-if="planMessage" class="dashboard__overlay" role="status">
-              <span
-                :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
-                aria-hidden="true"
-              >
-                <Icon v-if="planIcon" :name="planIcon" />
-              </span>
-              <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
-              <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+                <!-- Dim overlay with solver hint. Scoped to the timetable card only
+                     (like the original planner), so the side panel stays visible. -->
+                <Transition name="overlay">
+                  <div v-if="planMessage" class="dashboard__overlay" role="status">
+                    <span
+                      :class="['dashboard__overlay-icon', `is-${planMessage.level}`]"
+                      aria-hidden="true"
+                    >
+                      <Icon v-if="planIcon" :name="planIcon" />
+                    </span>
+                    <p class="dashboard__overlay-title">{{ planMessage.title }}</p>
+                    <p class="dashboard__overlay-description">{{ planMessage.description }}</p>
+                  </div>
+                </Transition>
+              </div>
             </div>
-          </Transition>
-        </div>
-      </div>
 
-      <div class="dashboard__right">
-        <SchedulerSidePanel
-          :course-list="courseList"
-          :current-plan="currentPlan"
-          :display-options="displayOptions"
-          :popularity-by-course="popularity.popularityByCourse.value"
-          :show-popularity="popularity.canShowPopularity.value"
-          :semester-id="semesterId"
-          :filter-mode="filterMode"
-          :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
-          :preview-section-enabled="previewSectionEnabled"
-          :can-show-history="canShowPopularityHistory"
-          :get-history="getPopularityHistory"
-          @toggle-course="handleToggleCourse"
-          @toggle-bundle="handleToggleBundle"
-          @toggle-layer="handleToggleLayer"
-          @open-cart="showCartPanel = true"
-          @toggle-filter="filterMode = !filterMode"
-          @clear-bans="clearBans"
-          @update:display-option="(key, value) => displayOptions[key] = value"
-          @preview-bundle="onPreviewBundle"
-          @clear-preview="onClearPreview"
-          @update:preview-section-enabled="(value) => previewSectionEnabled = value"
-          @show-history="handleShowPopularityHistory"
-        />
-      </div>
+            <div class="dashboard__right">
+              <SchedulerSidePanel
+                :course-list="courseList"
+                :current-plan="currentPlan"
+                :display-options="displayOptions"
+                :popularity-by-course="popularity.popularityByCourse.value"
+                :show-popularity="popularity.canShowPopularity.value"
+                :semester-id="semesterId"
+                :filter-mode="filterMode"
+                :mutations-disabled="cart.requiresReload.value || cart.reloading.value"
+                :preview-section-enabled="previewSectionEnabled"
+                :can-show-history="canShowPopularityHistory"
+                :get-history="getPopularityHistory"
+                :candidate-mode="isRankedMode"
+                :candidate-codes="optimizerCandidateCodes"
+                :credits-override="totalCredits"
+                @toggle-course="handleToggleCourseByMode"
+                @toggle-bundle="handleToggleBundle"
+                @toggle-layer="handleToggleLayer"
+                @open-cart="showCartPanel = true"
+                @toggle-filter="filterMode = !filterMode"
+                @clear-bans="clearBans"
+                @update:display-option="(key, value) => displayOptions[key] = value"
+                @preview-bundle="onPreviewBundle"
+                @clear-preview="onClearPreview"
+                @update:preview-section-enabled="(value) => previewSectionEnabled = value"
+                @show-history="handleShowPopularityHistory"
+              />
+            </div>
 
-      <!-- Drag handle between timetable and side panel (wide screens only) -->
-      <div
-        class="dashboard__resize-handle"
-        role="separator"
-        aria-orientation="vertical"
-        @mousedown="onResizeStart"
-      >
-        <Icon name="lucide:grip-vertical" class="dashboard__resize-handle-icon" aria-hidden="true" />
-      </div>
+            <!-- Drag handle between timetable and side panel (wide screens only) -->
+            <div
+              class="dashboard__resize-handle"
+              role="separator"
+              tabindex="0"
+              :aria-label="t('scheduler.resizePanel')"
+              aria-orientation="vertical"
+              :aria-valuemin="SIDE_PANEL_MIN"
+              :aria-valuemax="SIDE_PANEL_MAX"
+              :aria-valuenow="sidePanelWidth"
+              @mousedown="onResizeStart"
+              @keydown="onResizeHandleKeydown"
+            >
+              <Icon name="lucide:grip-vertical" class="dashboard__resize-handle-icon" aria-hidden="true" />
+            </div>
+          </template>
+          <div v-else-if="loading" class="dashboard__loading" role="status">
+            {{ t('scheduler.loading') }}
+          </div>
+        </template>
+        <template #fallback>
+          <div class="dashboard__loading" role="status">{{ t('scheduler.loading') }}</div>
+        </template>
+      </ClientOnly>
     </div>
-    <div v-else-if="loading" class="dashboard__loading">{{ t('scheduler.loading') }}</div>
 
     <!-- Cart Panel Modal -->
     <SchedulerCartPanel
@@ -865,6 +1143,27 @@ async function startNewPlan() {
       @close="showPlanDialog = false"
       @save="saveCurrentPlan"
     />
+
+    <SchedulerOptimizerSettings
+      :visible="showOptimizerSettings"
+      :course-list="courseList"
+      :candidate-codes="optimizerCandidateCodes"
+      :min-courses="optimizerMinCourses"
+      :max-courses="optimizerMaxCourses"
+      :top-x="optimizerTopX"
+      :profile="optimizerProfile"
+      @close="showOptimizerSettings = false"
+      @update:min-courses="optimizerMinCourses = $event"
+      @update:max-courses="optimizerMaxCourses = $event"
+      @update:top-x="optimizerTopX = $event"
+      @update:profile="optimizerProfile = $event"
+    />
+
+    <SchedulerScoreBreakdown
+      :visible="showScoreBreakdown"
+      :plan="currentRankedPlan"
+      @close="showScoreBreakdown = false"
+    />
   </div>
 </template>
 
@@ -892,7 +1191,7 @@ async function startNewPlan() {
   &__header-side {
     align-items: flex-end;
     display: flex;
-    flex: 1;
+    flex: 0 1 430px;
     flex-direction: column;
     gap: 10px;
     min-width: 0;
@@ -949,6 +1248,7 @@ async function startNewPlan() {
   }
 
   &__heading {
+    flex: 1 1 640px;
     min-width: 0;
 
     &-row {
@@ -959,6 +1259,7 @@ async function startNewPlan() {
     }
 
     h1 {
+      flex: 0 0 auto;
       margin: 0;
       color: var(--text-primary);
       font-size: 1.5rem;
@@ -1006,6 +1307,12 @@ async function startNewPlan() {
     line-height: 1;
   }
 
+  &__mode-switch {
+    flex: 1 1 360px;
+    min-width: 0;
+    margin-left: 4px;
+  }
+
   &__summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(92px, 1fr));
@@ -1033,6 +1340,169 @@ async function startNewPlan() {
       color: var(--text-primary);
       font-size: 1.02rem;
       line-height: 1.2;
+    }
+  }
+
+  &__optimizer-bar {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) auto auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 72px;
+    padding: 11px 13px 13px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--interactive-primary) 34%, var(--border-secondary));
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--interactive-primary) 6%, var(--surface-primary));
+    box-shadow: var(--shadow-small);
+
+    &.is-high {
+      border-color: color-mix(in srgb, var(--semantic-warning) 48%, var(--border-secondary));
+    }
+
+    &.is-critical,
+    &.is-stale {
+      border-color: color-mix(in srgb, var(--semantic-error) 46%, var(--border-secondary));
+    }
+  }
+
+  &__optimizer-copy {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    > div {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    strong {
+      color: var(--text-primary);
+      font-size: 0.98rem;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    span:not(.dashboard__optimizer-icon) {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+  }
+
+  &__optimizer-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: var(--scheduler-tab-active-bg);
+    color: var(--scheduler-tab-active-text);
+    font-size: 1.15rem;
+  }
+
+  &__optimizer-meta {
+    display: grid;
+    justify-items: end;
+    gap: 5px;
+  }
+
+  &__workload {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-high { color: var(--semantic-warning); }
+    &.is-critical { color: var(--semantic-error); }
+  }
+
+  &__score {
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 9px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 999px;
+    background: var(--surface-primary);
+    color: var(--interactive-active-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+
+    &:hover {
+      border-color: var(--interactive-primary);
+      background: var(--surface-secondary);
+    }
+  }
+
+  &__optimizer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 15px;
+      border-radius: 11px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 800;
+      white-space: nowrap;
+      transition: background 0.16s, border-color 0.16s, color 0.16s;
+    }
+  }
+
+  &__optimizer-settings {
+    border: 1px solid var(--border-secondary);
+    background: var(--surface-primary);
+    color: var(--text-primary);
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--interactive-primary) 42%, var(--border-secondary));
+      color: var(--interactive-active-text);
+    }
+  }
+
+  &__optimizer-run {
+    min-width: 132px;
+    border: 1px solid var(--interactive-primary);
+    background: var(--btn-primary-bg);
+    color: var(--text-on-interactive);
+
+    &:hover { background: var(--btn-primary-bg-hover); }
+
+    &.is-cancel {
+      border-color: color-mix(in srgb, var(--semantic-error) 60%, var(--border-secondary));
+      background: color-mix(in srgb, var(--semantic-error) 14%, var(--surface-primary));
+      color: var(--semantic-error);
+    }
+  }
+
+  &__optimizer-progress {
+    position: absolute;
+    inset: auto 0 0;
+    height: 4px;
+    background: var(--timetable-grid);
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--interactive-primary);
+      transition: width 0.12s linear;
     }
   }
 
@@ -1186,6 +1656,8 @@ async function startNewPlan() {
   }
 
   &__loading {
+    grid-column: 1 / -1;
+    grid-row: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1277,7 +1749,12 @@ async function startNewPlan() {
       flex-direction: column;
     }
 
-    &__header-side { align-items: stretch; }
+    &__heading { flex: 0 0 auto; }
+
+    &__header-side {
+      align-items: stretch;
+      flex: 0 0 auto;
+    }
     &__plan-actions { justify-content: flex-start; }
 
     &__resize-handle {
@@ -1287,6 +1764,19 @@ async function startNewPlan() {
     &__summary {
       flex-basis: auto;
       width: 100%;
+    }
+
+    &__optimizer-bar {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    &__optimizer-meta {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 6px 10px;
     }
 
     &__body {
@@ -1314,6 +1804,30 @@ async function startNewPlan() {
     &__summary {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
+    }
+
+    &__heading-row {
+      flex-wrap: wrap;
+    }
+
+    &__mode-switch {
+      width: calc(100% - 44px);
+      margin: 4px 0 0 44px;
+    }
+
+    &__optimizer-bar {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    &__optimizer-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+
+      button {
+        width: 100%;
+      }
     }
 
     &__plan-actions {
