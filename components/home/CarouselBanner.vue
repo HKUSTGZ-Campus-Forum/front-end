@@ -1,5 +1,5 @@
 <template>
-  <div class="carousel-banner">
+  <div v-if="slides.length" class="carousel-banner">
     <div class="slides-wrap">
       <div
         class="slides-track"
@@ -7,7 +7,7 @@
       >
         <div
           v-for="(slide, idx) in slides"
-          :key="idx"
+          :key="slide.id"
           class="slide"
         >
           <div class="slide-inner">
@@ -56,6 +56,7 @@
     </div>
 
     <button
+      v-if="slides.length > 1"
       class="arrow arrow-left"
       @click="prev"
       :aria-label="t('homePage.carousel.previousSlide')"
@@ -64,6 +65,7 @@
     </button>
 
     <button
+      v-if="slides.length > 1"
       class="arrow arrow-right"
       @click="next"
       :aria-label="t('homePage.carousel.nextSlide')"
@@ -71,7 +73,7 @@
       <span class="chevron chevron-right"></span>
     </button>
 
-    <div class="dots">
+    <div v-if="slides.length > 1" class="dots">
       <button
         v-for="(_, idx) in slides"
         :key="idx"
@@ -86,11 +88,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import type { HomeCarouselPublicSlide } from "~/types/homeCarousel";
+import { fallbackHomeCarouselSlides, localizeCarouselHref } from "~/utils/homeCarousel";
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 
 type BannerSlide = {
+  id: number
   image: string
   alt: string
   href: string
@@ -101,28 +106,49 @@ type BannerSlide = {
   cta?: string
 }
 
-const slides = computed<BannerSlide[]>(() => [
-  {
-    image: "/image/banner/scheduler-planner-hero.webp",
-    alt: t("homePage.carousel.slides.schedulerAlt"),
-    href: localePath("/courses/planner"),
-    variant: "scheduler",
-    eyebrow: t("homePage.carousel.slides.schedulerEyebrow"),
-    title: t("homePage.carousel.slides.schedulerTitle"),
-    description: t("homePage.carousel.slides.schedulerDescription"),
-    cta: t("homePage.carousel.slides.schedulerCta"),
+const localeCode = computed<'zh' | 'en'>(() => locale.value === 'en' ? 'en' : 'zh')
+const { fetchPublic } = useApi()
+const { data: carouselData, error: carouselError } = await useAsyncData(
+  'home-carousel',
+  async () => {
+    const response = await fetchPublic(`/api/home/carousel?locale=${localeCode.value}`)
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw new Error(payload?.error || 'Unable to load home carousel')
+    }
+    return payload as { locale: 'zh' | 'en', slides: HomeCarouselPublicSlide[] }
   },
-  {
-    image: "/image/banner/welcome_cn_2.jpg",
-    alt: t("homePage.carousel.slides.welcomeZhAlt"),
-    href: localePath("/"),
-  },
-  {
-    image: "/image/banner/welcome_en.jpg",
-    alt: t("homePage.carousel.slides.welcomeEnAlt"),
-    href: localePath("/"),
-  },
-]);
+  { watch: [localeCode] },
+)
+
+const sourceSlides = computed(() => {
+  if (
+    carouselError.value
+    || !carouselData.value
+    || carouselData.value.locale !== localeCode.value
+  ) {
+    return fallbackHomeCarouselSlides(localeCode.value)
+  }
+  return carouselData.value?.slides || []
+})
+
+const slides = computed<BannerSlide[]>(() => sourceSlides.value.map((slide) => ({
+  id: slide.id,
+  image: slide.image_url,
+  alt: slide.alt_text || (
+    slide.presentation_variant === 'scheduler'
+      ? t('homePage.carousel.slides.schedulerAlt')
+      : localeCode.value === 'en'
+        ? t('homePage.carousel.slides.welcomeEnAlt')
+        : t('homePage.carousel.slides.welcomeZhAlt')
+  ),
+  href: localizeCarouselHref(slide.href, localePath) || '',
+  variant: slide.presentation_variant === 'scheduler' ? 'scheduler' : undefined,
+  eyebrow: t('homePage.carousel.slides.schedulerEyebrow'),
+  title: t('homePage.carousel.slides.schedulerTitle'),
+  description: t('homePage.carousel.slides.schedulerDescription'),
+  cta: t('homePage.carousel.slides.schedulerCta'),
+})))
 
 function isExternalHref(url: string) {
   return /^https?:\/\//i.test(url);
@@ -132,11 +158,13 @@ const current = ref(0);
 let timer: ReturnType<typeof setInterval>;
 
 function next() {
+  if (slides.value.length < 2) return;
   current.value = (current.value + 1) % slides.value.length;
   resetTimer();
 }
 
 function prev() {
+  if (slides.value.length < 2) return;
   current.value = (current.value - 1 + slides.value.length) % slides.value.length;
   resetTimer();
 }
@@ -148,15 +176,16 @@ function goTo(idx: number) {
 
 function resetTimer() {
   clearInterval(timer);
-  timer = setInterval(next, 4000);
+  if (slides.value.length > 1) timer = setInterval(next, 4000);
 }
 
-watch(locale, () => {
+watch([locale, () => slides.value.length], () => {
   current.value = 0;
+  resetTimer();
 });
 
 onMounted(() => {
-  timer = setInterval(next, 4000);
+  resetTimer();
 });
 
 onUnmounted(() => clearInterval(timer));

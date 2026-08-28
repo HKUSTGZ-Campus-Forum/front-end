@@ -31,9 +31,10 @@ describe('AMWC external navigation contract', () => {
       import.meta.url,
     )
 
-    expect(carousel).toContain('image: "/image/banner/scheduler-planner-hero.webp"')
-    expect(carousel).toContain('alt: t("homePage.carousel.slides.schedulerAlt")')
-    expect(carousel).toContain('href: localePath("/courses/planner")')
+    expect(carousel).toContain('/api/home/carousel?locale=${localeCode.value}')
+    expect(carousel).toContain('fallbackHomeCarouselSlides(localeCode.value)')
+    expect(carousel).toContain("localizeCarouselHref(slide.href, localePath)")
+    expect(carousel).toContain("t('homePage.carousel.slides.schedulerAlt')")
     expect(carousel).toContain('slide.variant === \'scheduler\'')
     expect(carousel).not.toContain('href: AMWC_RESULTS_URL')
     expect(carousel).not.toContain('/image/banner/AMWC-1.jpg')

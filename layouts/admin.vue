@@ -29,6 +29,13 @@ const navItems = computed(() => [
     exact: false,
   },
   {
+    key: "carousel",
+    label: t("adminShell.nav.carousel"),
+    to: getLocalePath("/admin/carousel"),
+    match: "/admin/carousel",
+    exact: false,
+  },
+  {
     key: "feedback",
     label: t("adminShell.nav.feedback"),
     to: getLocalePath("/admin/feedback"),

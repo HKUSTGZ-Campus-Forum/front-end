@@ -48,17 +48,13 @@
   "overrides": {
     "linkify-it": "5.0.2"
   },
-  "pnpm": {
-    "overrides": {
-      "linkify-it": "5.0.2"
-    }
-  },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.123",
     "@nuxtjs/i18n": "^9.5.2",
     "@nuxtjs/style-resources": "^1.2.2",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^22.13.1",
+    "markdown-it": "^14.2.0",
     "sass": "^1.84.0",
     "sass-loader": "^16.0.4",
     "standard-version": "^9.5.0",

@@ -123,10 +123,80 @@
       "overview": "Overview",
       "users": "Users",
       "content": "Content",
+      "carousel": "Home carousel",
       "feedback": "Feedback review",
       "identity": "Identity",
       "domains": "Courses and ops",
       "audit": "Audit logs"
+    }
+  },
+  "adminCarousel": {
+    "title": "Home carousel",
+    "description": "Manage homepage banners, destinations, visibility, and ordering for Chinese and English. Uploaded images use stable UniKorn URLs.",
+    "loading": "Loading carousel content…",
+    "empty": "There are no carousel slides yet. Add the first homepage banner to get started.",
+    "missingImage": "Image unavailable",
+    "untitled": "Untitled banner",
+    "singleLanguageAlt": "This banner has alternative text for its target language only",
+    "archivedTitle": "Archived",
+    "actions": {
+      "add": "Add slide",
+      "refresh": "Refresh",
+      "retry": "Try again",
+      "save": "Save slide",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "archive": "Archive",
+      "restore": "Restore",
+      "reorder": "Reorder carousel slides",
+      "moveUp": "Move earlier",
+      "moveDown": "Move later"
+    },
+    "form": {
+      "createEyebrow": "New content",
+      "editEyebrow": "Edit content",
+      "createTitle": "Add homepage banner",
+      "editTitle": "Edit homepage banner",
+      "locale": "Display language",
+      "altZh": "Chinese image description",
+      "altEn": "English image description",
+      "href": "Click destination (optional)",
+      "hrefPlaceholder": "/courses or https://example.com",
+      "hrefHint": "Use a site path or an HTTPS link. Site paths are localized automatically.",
+      "active": "Show on the homepage now",
+      "currentImage": "Current image",
+      "uploadImage": "Click or drag in a carousel image",
+      "replaceImage": "Upload a new image to replace the current one",
+      "imageHint": "JPG, PNG, WebP, or GIF up to 10 MB. A landscape image around 3:1 is recommended."
+    },
+    "locales": {
+      "all": "Chinese and English",
+      "zh": "Chinese only",
+      "en": "English only"
+    },
+    "status": {
+      "active": "Visible",
+      "inactive": "Paused",
+      "scheduler": "Planner feature layout"
+    },
+    "confirm": {
+      "archive": "Archiving removes this banner from the homepage. Continue?",
+      "restore": "Restore this banner? Its previous visibility setting will still apply."
+    },
+    "messages": {
+      "created": "Carousel slide added.",
+      "updated": "Carousel slide updated.",
+      "reordered": "Carousel order saved.",
+      "archived": "Carousel slide archived.",
+      "restored": "Carousel slide restored."
+    },
+    "errors": {
+      "requestFailed": "The carousel request failed.",
+      "loadFailed": "Could not load carousel content.",
+      "saveFailed": "Could not save the carousel slide.",
+      "reorderFailed": "Could not save the carousel order.",
+      "imageRequired": "Upload a carousel image first."
     }
   },
   "adminOverview": {

@@ -1,4 +1,4 @@
-export type FileType = 'avatar' | 'post_image' | 'post_attachment' | 'comment_attachment' | 'general';
+export type FileType = 'avatar' | 'post_image' | 'post_attachment' | 'comment_attachment' | 'carousel_image' | 'general';
 
 export interface UploadUrlResponse {
   signed_url: string;
