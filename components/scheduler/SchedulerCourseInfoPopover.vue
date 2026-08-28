@@ -124,11 +124,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <span
+  <button
     ref="hostRef"
+    type="button"
     class="course-info-trigger"
-    role="button"
-    tabindex="0"
     :aria-label="t('scheduler.details')"
     aria-haspopup="dialog"
     :aria-expanded="visible"
@@ -136,9 +135,9 @@ onUnmounted(() => {
     @mouseleave="close"
     @focus="open"
     @blur="close"
-    @click.stop
-    @keydown.enter.prevent="open"
-    @keydown.space.prevent="open"
+    @click.stop="open"
+    @keydown.enter.stop.prevent="open"
+    @keydown.space.stop.prevent="open"
   >
     <Icon name="lucide:info" class="course-info-trigger__icon" aria-hidden="true" />
     <Teleport to="body">
@@ -185,7 +184,7 @@ onUnmounted(() => {
         </template>
       </div>
     </Teleport>
-  </span>
+  </button>
 </template>
 
 <style lang="scss" scoped>
@@ -194,6 +193,10 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
   cursor: pointer;
   color: var(--text-muted);
   transition: color 0.15s;

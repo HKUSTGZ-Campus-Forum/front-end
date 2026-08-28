@@ -1,7 +1,8 @@
 <!-- front-end/components/scheduler/SchedulerBottomPanel.vue -->
 <script setup lang="ts">
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { clampSchedulerPlanIndex } from '~/utils/schedulerPlanNavigation'
 
 const props = defineProps<{
   currentIndex: number
@@ -14,18 +15,75 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+const displayedIndex = computed(() => clampSchedulerPlanIndex(props.currentIndex, props.totalPlans))
+const editableIndex = ref(String(displayedIndex.value))
+const isEditingIndex = ref(false)
+
+function restoreEditableIndex() {
+  editableIndex.value = String(displayedIndex.value)
+}
+
+function onIndexInput(event: Event) {
+  editableIndex.value = (event.target as HTMLInputElement).value
+}
+
+function onIndexFocus(event: FocusEvent) {
+  isEditingIndex.value = true
+  restoreEditableIndex()
+  const input = event.target as HTMLInputElement
+  input.select()
+}
+
+function commitIndexEdit() {
+  const nextIndex = clampSchedulerPlanIndex(
+    editableIndex.value,
+    props.totalPlans,
+    displayedIndex.value,
+  )
+  isEditingIndex.value = false
+  editableIndex.value = String(nextIndex)
+  if (nextIndex !== displayedIndex.value) emit('update:index', nextIndex)
+}
+
+function cancelIndexEdit() {
+  isEditingIndex.value = false
+  restoreEditableIndex()
+}
+
+watch(
+  () => [props.currentIndex, props.totalPlans],
+  () => {
+    if (!isEditingIndex.value || props.totalPlans <= 0) restoreEditableIndex()
+  },
+  { flush: 'sync' },
+)
+
 const sliderPercent = computed(() => {
   if (props.totalPlans <= 1) return 0
-  return ((props.currentIndex - 1) / (props.totalPlans - 1)) * 100
+  return ((displayedIndex.value - 1) / (props.totalPlans - 1)) * 100
 })
 
-function goToStart() { emit('update:index', 1) }
+function goToStart() { if (props.totalPlans > 0) emit('update:index', 1) }
 function goToEnd() { if (props.totalPlans > 0) emit('update:index', props.totalPlans) }
-function goPrev() { emit('update:index', Math.max(1, props.currentIndex - 1)) }
-function goNext() { if (props.totalPlans > 0) emit('update:index', Math.min(props.totalPlans, props.currentIndex + 1)) }
+function goPrev() { if (props.totalPlans > 0) emit('update:index', Math.max(1, displayedIndex.value - 1)) }
+function goNext() { if (props.totalPlans > 0) emit('update:index', Math.min(props.totalPlans, displayedIndex.value + 1)) }
 
-// Draggable slider: mousedown jumps to the clicked position, then tracks
-// window mousemove/mouseup for free dragging (mirrors the original panel).
+function onSliderKeyDown(event: KeyboardEvent) {
+  if (props.totalPlans <= 0) return
+
+  let action: (() => void) | undefined
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') action = goPrev
+  if (event.key === 'ArrowRight' || event.key === 'ArrowUp') action = goNext
+  if (event.key === 'Home') action = goToStart
+  if (event.key === 'End') action = goToEnd
+  if (action === undefined) return
+
+  event.preventDefault()
+  action()
+}
+
+// Pointer capture keeps mouse, pen, and touch dragging on one code path even
+// when the pointer leaves the track.
 const sliderRef = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
 
@@ -34,40 +92,29 @@ function updateFromClientX(clientX: number) {
   const rect = sliderRef.value.getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   const newIndex = Math.round(ratio * (props.totalPlans - 1)) + 1
-  if (newIndex !== props.currentIndex) emit('update:index', newIndex)
+  if (newIndex !== displayedIndex.value) emit('update:index', newIndex)
 }
 
-function onSliderMouseDown(e: MouseEvent) {
+function onSliderPointerDown(event: PointerEvent) {
   if (props.totalPlans <= 0) return
-  e.preventDefault()
+  event.preventDefault()
   isDragging.value = true
-  updateFromClientX(e.clientX)
+  sliderRef.value?.setPointerCapture(event.pointerId)
+  updateFromClientX(event.clientX)
 }
 
-function onWindowMouseMove(e: MouseEvent) {
+function onSliderPointerMove(event: PointerEvent) {
   if (!isDragging.value) return
-  e.preventDefault()
-  updateFromClientX(e.clientX)
+  event.preventDefault()
+  updateFromClientX(event.clientX)
 }
 
-function onWindowMouseUp() {
+function onSliderPointerEnd(event: PointerEvent) {
+  if (sliderRef.value?.hasPointerCapture(event.pointerId)) {
+    sliderRef.value.releasePointerCapture(event.pointerId)
+  }
   isDragging.value = false
 }
-
-watch(isDragging, (dragging) => {
-  if (dragging) {
-    window.addEventListener('mousemove', onWindowMouseMove)
-    window.addEventListener('mouseup', onWindowMouseUp)
-  } else {
-    window.removeEventListener('mousemove', onWindowMouseMove)
-    window.removeEventListener('mouseup', onWindowMouseUp)
-  }
-})
-
-onUnmounted(() => {
-  window.removeEventListener('mousemove', onWindowMouseMove)
-  window.removeEventListener('mouseup', onWindowMouseUp)
-})
 </script>
 
 <template>
@@ -76,6 +123,7 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.firstPlan')"
+        :disabled="totalPlans <= 0 || displayedIndex <= 1"
         @click="goToStart"
       >
         <Icon name="lucide:chevrons-left" class="bottom-panel__icon" />
@@ -83,19 +131,37 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.previousPlan')"
+        :disabled="totalPlans <= 0 || displayedIndex <= 1"
         @click="goPrev"
       >
         <Icon name="lucide:chevron-left" class="bottom-panel__icon" />
       </button>
 
       <span class="bottom-panel__counter">
-        <span class="bottom-panel__counter-current">{{ totalPlans === 0 ? 0 : currentIndex }}</span>
+        <input
+          data-testid="scheduler-plan-index-input"
+          class="bottom-panel__counter-current"
+          type="number"
+          inputmode="numeric"
+          step="1"
+          :min="totalPlans > 0 ? 1 : 0"
+          :max="Math.max(0, totalPlans)"
+          :value="editableIndex"
+          :disabled="totalPlans <= 0"
+          :aria-label="t('scheduler.plan')"
+          @input="onIndexInput"
+          @focus="onIndexFocus"
+          @blur="commitIndexEdit"
+          @keydown.enter.prevent="commitIndexEdit"
+          @keydown.esc.prevent="cancelIndexEdit"
+        >
         <span class="bottom-panel__counter-total">/ {{ totalPlans }}</span>
       </span>
 
       <button
         type="button"
         :aria-label="t('scheduler.nextPlan')"
+        :disabled="totalPlans <= 0 || displayedIndex >= totalPlans"
         @click="goNext"
       >
         <Icon name="lucide:chevron-right" class="bottom-panel__icon" />
@@ -103,13 +169,30 @@ onUnmounted(() => {
       <button
         type="button"
         :aria-label="t('scheduler.lastPlan')"
+        :disabled="totalPlans <= 0 || displayedIndex >= totalPlans"
         @click="goToEnd"
       >
         <Icon name="lucide:chevrons-right" class="bottom-panel__icon" />
       </button>
     </div>
 
-    <div ref="sliderRef" class="bottom-panel__slider" @mousedown="onSliderMouseDown">
+    <div
+      ref="sliderRef"
+      class="bottom-panel__slider"
+      :class="{ 'bottom-panel__slider--disabled': totalPlans <= 0 }"
+      role="slider"
+      :tabindex="totalPlans > 0 ? 0 : -1"
+      :aria-label="t('scheduler.plan')"
+      :aria-valuemin="totalPlans > 0 ? 1 : 0"
+      :aria-valuemax="Math.max(0, totalPlans)"
+      :aria-valuenow="displayedIndex"
+      :aria-disabled="totalPlans <= 0"
+      @keydown="onSliderKeyDown"
+      @pointerdown="onSliderPointerDown"
+      @pointermove="onSliderPointerMove"
+      @pointerup="onSliderPointerEnd"
+      @pointercancel="onSliderPointerEnd"
+    >
       <div class="bottom-panel__track">
         <div class="bottom-panel__progress" :style="{ width: `${sliderPercent}%` }" />
         <div
@@ -117,7 +200,7 @@ onUnmounted(() => {
           :class="{ 'bottom-panel__thumb--dragging': isDragging }"
           :style="{ left: `${sliderPercent}%` }"
         >
-          <div v-if="isDragging" class="bottom-panel__tooltip">{{ currentIndex }}</div>
+          <div v-if="isDragging" class="bottom-panel__tooltip">{{ displayedIndex }}</div>
         </div>
       </div>
     </div>
@@ -158,6 +241,12 @@ onUnmounted(() => {
       &:hover {
         color: var(--interactive-active);
       }
+
+      &:disabled {
+        color: var(--text-secondary);
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
     }
   }
 
@@ -176,10 +265,35 @@ onUnmounted(() => {
     user-select: none;
 
     &-current {
+      width: 58px;
+      min-width: 0;
+      padding: 3px 6px;
+      border: 1px solid var(--border-secondary);
+      border-radius: 8px;
+      background: var(--surface-primary);
       color: var(--text-primary);
       font-size: 1.7rem;
       font-weight: 700;
       line-height: 1;
+      text-align: center;
+      appearance: textfield;
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        margin: 0;
+        appearance: none;
+      }
+
+      &:focus-visible {
+        border-color: var(--interactive-active);
+        outline: 2px solid var(--interactive-active);
+        outline-offset: 2px;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
     }
 
     &-total {
@@ -197,6 +311,18 @@ onUnmounted(() => {
     align-items: center;
     cursor: pointer;
     padding: 0 12px;
+    touch-action: none;
+
+    &:focus-visible {
+      border-radius: 999px;
+      outline: 2px solid var(--interactive-active);
+      outline-offset: 2px;
+    }
+
+    &--disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
   }
 
   &__track {
@@ -246,7 +372,7 @@ onUnmounted(() => {
     padding: 3px 7px;
     border-radius: 6px;
     background: var(--btn-primary-bg);
-    color: var(--text-inverse);
+    color: var(--text-on-interactive);
     font-size: 0.78rem;
     font-weight: 700;
     text-align: center;
@@ -263,8 +389,8 @@ onUnmounted(() => {
       gap: 8px;
 
       button {
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
       }
     }
 
