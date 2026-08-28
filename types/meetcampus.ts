@@ -12,9 +12,23 @@ export interface MeetCampusScene {
   map: { x: number; y: number }; affordances: string[]; visual: Record<string, unknown>;
 }
 
+export type MeetCampusSkinTone = "porcelain" | "warm" | "tan" | "deep";
+export type MeetCampusHairStyle = "crop" | "bob" | "waves" | "bun" | "curly" | "cap";
+export type MeetCampusHairColor = "ink" | "chestnut" | "auburn" | "plum" | "ocean";
+export type MeetCampusOutfit = "campus_blue" | "mint_cardigan" | "sunset_hoodie" | "lavender_knit" | "sport_green" | "lab_coat";
+export type MeetCampusAccessory = "none" | "round_glasses" | "headphones" | "beret" | "hairclip";
+
+export interface MeetCampusAppearance {
+  skinTone: MeetCampusSkinTone;
+  hairStyle: MeetCampusHairStyle;
+  hairColor: MeetCampusHairColor;
+  outfit: MeetCampusOutfit;
+  accessory: MeetCampusAccessory;
+}
+
 export interface MeetCampusResident {
   id: string; slug: string; name: LocalizedText; isMine: boolean; isSynthetic: boolean;
-  appearance: { palette?: string; hair?: string; outfit?: string };
+  appearance: MeetCampusAppearance;
   persona: { interests?: string[]; temperament?: string };
   state: { sceneId: string; position: { x: number; y: number }; activity: string;
     activityStartedAt: string; nextDecisionAt: string | null };
@@ -58,6 +72,7 @@ export interface MeetCampusBootstrap {
 export interface MeetCampusOnboardingInput {
   locale: MeetCampusLocale; autonomyLevel: "guided" | "balanced" | "brave";
   anchors: { residentName: string; socialPace: string; preferredPlaces: string[]; ownerNote: string };
+  appearance: MeetCampusAppearance;
 }
 
 export interface MeetCampusCommandInput {

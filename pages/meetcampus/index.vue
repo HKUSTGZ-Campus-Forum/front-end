@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import MeetCampusMap from "~/components/meetcampus/MeetCampusMap.vue";
-import type { MeetCampusCommandInput, MeetCampusResident, MeetCampusStory } from "~/types/meetcampus";
+import MeetCampusAvatar from "~/components/meetcampus/MeetCampusAvatar.vue";
+import MeetCampusAppearanceEditor from "~/components/meetcampus/MeetCampusAppearanceEditor.vue";
+import type { MeetCampusAppearance, MeetCampusCommandInput, MeetCampusResident, MeetCampusStory } from "~/types/meetcampus";
+import { DEFAULT_MEETCAMPUS_APPEARANCE, normalizeMeetCampusAppearance } from "~/utils/meetcampusAppearance";
 import { formatMeetCampusTime, localizeText } from "~/utils/meetcampus";
 
 definePageMeta({ layout: "keguang", middleware: ["auth"] });
@@ -12,8 +15,12 @@ const commandText = ref("");
 const commandSent = ref(false);
 const bridgeResult = ref<Record<string, any> | null>(null);
 const onboarding = reactive({ residentName: "", socialPace: "slow_warmup", preferredPlaces: ["library"] as string[], ownerNote: "", autonomyLevel: "balanced" as "guided" | "balanced" | "brave" });
+const onboardingAppearance = ref<MeetCampusAppearance>({ ...DEFAULT_MEETCAMPUS_APPEARANCE });
+const appearanceDraft = ref<MeetCampusAppearance>({ ...DEFAULT_MEETCAMPUS_APPEARANCE });
+const appearanceOpen = ref(false);
+const appearanceContext = ref<"onboarding" | "resident">("onboarding");
 
-const { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedScene, selectedSceneId, load, refresh, submitOnboarding, sendCommand, openStory, createBridge } = useMeetCampus();
+const { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedScene, selectedSceneId, load, refresh, submitOnboarding, updateAppearance, sendCommand, openStory, createBridge } = useMeetCampus();
 const showOnboarding = computed(() => bootstrap.value?.onboarding.status !== "completed");
 const activityLabel = computed(() => myResident.value?.state.activity.replaceAll("_", " ") || t("meetCampus.world.waiting"));
 
@@ -23,7 +30,18 @@ function togglePlace(slug: string) {
   else if (onboarding.preferredPlaces.length < 3) onboarding.preferredPlaces.push(slug);
 }
 async function finishOnboarding() {
-  await submitOnboarding({ locale: locale.value, autonomyLevel: onboarding.autonomyLevel, anchors: { ...onboarding } });
+  await submitOnboarding({ locale: locale.value, autonomyLevel: onboarding.autonomyLevel, anchors: { ...onboarding }, appearance: onboardingAppearance.value });
+}
+function openAppearance(context: "onboarding" | "resident") {
+  appearanceContext.value = context;
+  appearanceDraft.value = { ...normalizeMeetCampusAppearance(context === "onboarding" ? onboardingAppearance.value : myResident.value?.appearance) };
+  appearanceOpen.value = true;
+}
+async function saveAppearance() {
+  if (appearanceContext.value === "onboarding") onboardingAppearance.value = { ...appearanceDraft.value };
+  else await updateAppearance(appearanceDraft.value);
+  appearanceOpen.value = false;
+  if (selectedResident.value?.isMine && myResident.value) selectedResident.value = myResident.value;
 }
 async function submitCommand() {
   const text = commandText.value.trim(); if (!text) return;
@@ -54,9 +72,9 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
     <div v-else-if="bootstrap" class="mc-world">
       <div class="mc-world__stage">
         <MeetCampusMap :scenes="bootstrap.snapshot.scenes" :residents="bootstrap.snapshot.residents" :my-resident-id="bootstrap.myResidentId" :selected-scene-id="selectedScene?.id" @select-scene="selectedSceneId = $event" @select-resident="selectResident" />
-        <div v-if="myResident" class="companion-chip">
-          <span class="mini-avatar"><i></i></span><div><small>{{ localizeText(currentScene?.name, locale) }}</small><strong>{{ localizeText(myResident.name, locale) }} · {{ activityLabel }}</strong></div><span class="live-dot"></span>
-        </div>
+        <button v-if="myResident" class="companion-chip" type="button" @click="selectResident(myResident.id)">
+          <MeetCampusAvatar :appearance="myResident.appearance" size="tiny" animated /><span><small>{{ localizeText(currentScene?.name, locale) }}</small><strong>{{ localizeText(myResident.name, locale) }} · {{ activityLabel }}</strong></span><i class="live-dot"></i>
+        </button>
       </div>
 
       <aside class="mc-panel">
@@ -80,7 +98,7 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
 
         <section v-else-if="activeTab === 'relations'" class="panel-body">
           <div class="section-heading"><div><span>{{ t('meetCampus.world.livedTogether') }}</span><h2>{{ t('meetCampus.world.relationshipBook') }}</h2></div><Icon name="lucide:heart-handshake" /></div>
-          <div v-if="bootstrap.relationships.length" class="relation-list"><article v-for="relation in bootstrap.relationships" :key="relation.id"><span class="relation-avatar">{{ localizeText(relation.resident.name, locale).slice(0,1) }}</span><div><h3>{{ localizeText(relation.resident.name, locale) }}<em v-if="relation.resident.isSynthetic">{{ t('meetCampus.world.synthetic') }}</em></h3><p>{{ localizeText(relation.summary, locale) }}</p><div class="warmth"><span :style="{width:`${relation.warmth}%`}"></span></div></div></article></div>
+          <div v-if="bootstrap.relationships.length" class="relation-list"><article v-for="relation in bootstrap.relationships" :key="relation.id"><span class="relation-avatar"><MeetCampusAvatar :appearance="relation.resident.appearance" size="tiny" /></span><div><h3>{{ localizeText(relation.resident.name, locale) }}<em v-if="relation.resident.isSynthetic">{{ t('meetCampus.world.synthetic') }}</em></h3><p>{{ localizeText(relation.summary, locale) }}</p><div class="warmth"><span :style="{width:`${relation.warmth}%`}"></span></div></div></article></div>
           <div v-else class="empty"><Icon name="lucide:footprints" /><h3>{{ t('meetCampus.world.noRelationsTitle') }}</h3><p>{{ t('meetCampus.world.noRelationsDescription') }}</p></div>
         </section>
 
@@ -95,7 +113,8 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
 
     <div v-if="bootstrap && showOnboarding" class="onboarding" role="dialog" aria-modal="true" :aria-label="t('meetCampus.onboarding.title')">
       <form class="onboarding__card" @submit.prevent="finishOnboarding">
-        <div class="onboarding__companion"><span class="large-avatar"><i></i></span><div><small>{{ t('meetCampus.onboarding.firstMeeting') }}</small><h2>{{ t('meetCampus.onboarding.hello') }}</h2><p>{{ t('meetCampus.onboarding.intro') }}</p></div></div>
+        <div class="onboarding__companion"><span class="onboarding__avatar"><MeetCampusAvatar :appearance="onboardingAppearance" size="large" animated /></span><div><small>{{ t('meetCampus.onboarding.firstMeeting') }}</small><h2>{{ t('meetCampus.onboarding.hello') }}</h2><p>{{ t('meetCampus.onboarding.intro') }}</p></div></div>
+        <button class="appearance-invite" type="button" @click="openAppearance('onboarding')"><span><Icon name="lucide:shirt" aria-hidden="true" /></span><div><strong>{{ t('meetCampus.appearance.onboardingTitle') }}</strong><small>{{ t('meetCampus.appearance.onboardingHint') }}</small></div><Icon name="lucide:chevron-right" aria-hidden="true" /></button>
         <label>{{ t('meetCampus.onboarding.nameLabel') }}<input v-model="onboarding.residentName" maxlength="20" required :placeholder="t('meetCampus.onboarding.namePlaceholder')" /></label>
         <fieldset><legend>{{ t('meetCampus.onboarding.paceLabel') }}</legend><div class="choices"><button v-for="pace in ['slow_warmup','natural','adventurous']" :key="pace" type="button" :class="{active:onboarding.socialPace===pace}" @click="onboarding.socialPace=pace">{{ t(`meetCampus.onboarding.paces.${pace}`) }}</button></div></fieldset>
         <fieldset><legend>{{ t('meetCampus.onboarding.placesLabel') }}</legend><div class="choices"><button v-for="place in ['library','gym','canteen','lakeside']" :key="place" type="button" :class="{active:onboarding.preferredPlaces.includes(place)}" @click="togglePlace(place)">{{ t(`meetCampus.onboarding.places.${place}`) }}</button></div></fieldset>
@@ -105,7 +124,8 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
       </form>
     </div>
 
-    <div v-if="selectedResident" class="sheet-backdrop" @click.self="selectedResident=null"><aside class="resident-sheet"><button type="button" @click="selectedResident=null"><Icon name="lucide:x" /></button><span class="large-avatar"><i></i></span><small>{{ selectedResident.isMine ? t('meetCampus.world.yourCompanion') : t('meetCampus.world.townResident') }}</small><h2>{{ localizeText(selectedResident.name, locale) }}</h2><p>{{ selectedResident.persona.interests?.join(' · ') }}</p><div><Icon name="lucide:map-pin" />{{ localizeText(bootstrap?.snapshot.scenes.find(scene=>scene.id===selectedResident?.state.sceneId)?.name, locale) }}</div></aside></div>
+    <div v-if="selectedResident" class="sheet-backdrop" @click.self="selectedResident=null"><aside class="resident-sheet"><button class="resident-sheet__close" type="button" :aria-label="t('meetCampus.appearance.cancel')" @click="selectedResident=null"><Icon name="lucide:x" /></button><span class="resident-sheet__avatar"><MeetCampusAvatar :appearance="selectedResident.appearance" size="large" animated /></span><small>{{ selectedResident.isMine ? t('meetCampus.world.yourCompanion') : t('meetCampus.world.townResident') }}</small><h2>{{ localizeText(selectedResident.name, locale) }}</h2><p>{{ selectedResident.persona.interests?.join(' · ') }}</p><div class="resident-sheet__location"><Icon name="lucide:map-pin" />{{ localizeText(bootstrap?.snapshot.scenes.find(scene=>scene.id===selectedResident?.state.sceneId)?.name, locale) }}</div><button v-if="selectedResident.isMine" class="resident-sheet__style" type="button" @click="openAppearance('resident')"><Icon name="lucide:shirt" />{{ t('meetCampus.appearance.edit') }}</button></aside></div>
+    <div v-if="appearanceOpen" class="sheet-backdrop appearance-backdrop" @click.self="appearanceOpen=false"><aside class="appearance-sheet" role="dialog" aria-modal="true" :aria-label="t('meetCampus.appearance.title')"><header><div><small>{{ t('meetCampus.appearance.eyebrow') }}</small><h2>{{ t('meetCampus.appearance.title') }}</h2></div><button type="button" :aria-label="t('meetCampus.appearance.cancel')" @click="appearanceOpen=false"><Icon name="lucide:x" /></button></header><MeetCampusAppearanceEditor v-model="appearanceDraft" /><footer><button type="button" class="secondary-action" @click="appearanceOpen=false">{{ t('meetCampus.appearance.cancel') }}</button><button type="button" class="primary-action" :disabled="isSubmitting" @click="saveAppearance"><Icon name="lucide:check" />{{ isSubmitting ? t('meetCampus.appearance.saving') : t('meetCampus.appearance.save') }}</button></footer></aside></div>
     <div v-if="bridgeResult" class="sheet-backdrop" @click.self="bridgeResult=null"><aside class="resident-sheet consent-sheet"><button type="button" @click="bridgeResult=null"><Icon name="lucide:x" /></button><Icon name="lucide:users-round" class="consent-icon" /><small>{{ t('meetCampus.world.bridgePreview') }}</small><h2>{{ t('meetCampus.world.bridgeTitle') }}</h2><p>{{ t('meetCampus.world.bridgeSyntheticDisclosure') }}</p><div><Icon name="lucide:shield-check" />{{ t('meetCampus.world.noContactShared') }}</div></aside></div>
   </main>
 </template>
@@ -116,4 +136,14 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
 @media(max-width:1000px){.mc-world{grid-template-columns:1fr}.mc-panel{min-height:520px}}
 @media(max-width:760px){.mc-shell{max-width:none;padding:14px 0 0}.mc-header{padding:0 14px 12px;margin:0}.mc-header__identity>span{width:42px;height:42px}.mc-header h1{font-size:1.45rem}.mc-header p{display:none}.mc-world{gap:0}.mc-panel{position:relative;z-index:30;min-height:390px;margin-top:-22px;border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(22,45,83,.13)}.companion-chip{left:12px;bottom:38px}.panel-body{padding:18px 16px}.onboarding{padding:0;align-items:end}.onboarding__card{max-height:94dvh;padding:20px 17px;border-radius:22px 22px 0 0}.mc-state{margin:0 14px}.mc-tabs{position:sticky;top:0;z-index:2}.large-avatar{width:60px;height:60px}}
 @media(prefers-reduced-motion:reduce){.loader{animation:none}}
+</style>
+
+<style scoped lang="scss">
+.companion-chip{padding:6px 12px 6px 7px;text-align:left;cursor:pointer}.companion-chip>span{display:flex;min-width:0;flex-direction:column}.companion-chip strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.companion-chip .live-dot{display:block;flex:0 0 auto}
+.relation-avatar{display:grid;width:46px;height:52px;place-items:center;overflow:hidden;border-radius:11px}
+.onboarding__companion{margin-bottom:16px}.onboarding__avatar{display:grid;width:92px;height:100px;flex:0 0 auto;place-items:center;overflow:hidden;border-radius:18px;background:linear-gradient(145deg,var(--surface-secondary),color-mix(in srgb,var(--semantic-purple) 13%,var(--surface-primary)))}
+.appearance-invite{display:flex;align-items:center;gap:11px;width:100%;padding:11px;border:1px solid color-mix(in srgb,var(--interactive-primary) 30%,var(--border-primary));border-radius:13px;color:var(--text-primary);background:color-mix(in srgb,var(--interactive-primary) 5%,var(--surface-primary));text-align:left;cursor:pointer}.appearance-invite>span{display:grid;width:38px;height:38px;flex:0 0 auto;place-items:center;border-radius:10px;color:var(--interactive-active-text);background:var(--surface-primary)}.appearance-invite>div{display:flex;min-width:0;flex:1;flex-direction:column;gap:2px}.appearance-invite strong{font-size:.76rem}.appearance-invite small{color:var(--text-secondary);font-size:.66rem;line-height:1.4}.appearance-invite>svg{color:var(--interactive-primary)}
+.resident-sheet>button.resident-sheet__close{position:absolute;right:13px;top:13px;display:grid;width:34px;height:34px;margin:0;padding:0;place-items:center;border:0;border-radius:9px;color:var(--text-secondary);background:var(--surface-secondary)}.resident-sheet__avatar{display:grid;width:118px;height:128px;margin:0 auto 10px;place-items:center;overflow:hidden;border-radius:22px;background:linear-gradient(145deg,var(--surface-secondary),color-mix(in srgb,var(--semantic-purple) 13%,var(--surface-primary)))}.resident-sheet>div.resident-sheet__location{display:flex}.resident-sheet>button.resident-sheet__style{position:static;display:inline-flex;width:auto;height:auto;min-height:40px;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:8px 13px;border:1px solid var(--border-primary);border-radius:10px;color:var(--interactive-active-text);background:var(--surface-primary);font-size:.72rem;font-weight:800}
+.appearance-sheet{width:min(820px,100%);max-height:calc(100dvh - 36px);overflow:auto;padding:20px;border:1px solid var(--border-primary);border-radius:21px;background:var(--surface-primary);box-shadow:var(--shadow-large)}.appearance-sheet header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}.appearance-sheet header small{color:var(--interactive-active-text);font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.appearance-sheet header h2{margin:3px 0 0;color:var(--text-primary);font-size:1.3rem}.appearance-sheet header button{display:grid;width:36px;height:36px;place-items:center;border:0;border-radius:9px;color:var(--text-secondary);background:var(--surface-secondary);cursor:pointer}.appearance-sheet footer{display:flex;justify-content:flex-end;gap:9px;margin-top:15px}.appearance-sheet footer .primary-action{width:auto;min-width:132px}.secondary-action{min-height:44px;padding:9px 15px;border:1px solid var(--border-primary);border-radius:11px;color:var(--text-secondary);background:var(--surface-primary);font-weight:750;cursor:pointer}
+@media(max-width:760px){.appearance-backdrop{padding:0;align-items:end}.appearance-sheet{max-height:94dvh;padding:18px 16px;border-radius:22px 22px 0 0}.onboarding__avatar{width:76px;height:88px}.onboarding__avatar :deep(.mc-avatar--large){width:70px;height:90px}.appearance-sheet footer{position:sticky;bottom:-18px;margin:15px -16px -18px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--surface-primary);box-shadow:0 -6px 18px color-mix(in srgb,var(--text-primary) 8%,transparent)}.appearance-sheet footer>*{flex:1}.appearance-sheet footer .primary-action{min-width:0}}
 </style>

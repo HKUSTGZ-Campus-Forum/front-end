@@ -1,4 +1,4 @@
-import type { MeetCampusBootstrap, MeetCampusCommandInput, MeetCampusOnboardingInput, MeetCampusScene, MeetCampusStory } from "~/types/meetcampus";
+import type { MeetCampusAppearance, MeetCampusBootstrap, MeetCampusCommandInput, MeetCampusOnboardingInput, MeetCampusScene, MeetCampusStory } from "~/types/meetcampus";
 
 type MeetCampusLoadState = "idle" | "loading" | "ready" | "denied" | "error";
 
@@ -74,6 +74,14 @@ export function useMeetCampus() {
     finally { isSubmitting.value = false; }
   }
 
+  async function updateAppearance(input: MeetCampusAppearance) {
+    isSubmitting.value = true; actionError.value = null;
+    try {
+      bootstrap.value = await request("/api/meetcampus/appearance", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }) as MeetCampusBootstrap;
+    } catch (error) { actionError.value = error instanceof Error ? error.message : "request_failed"; throw error; }
+    finally { isSubmitting.value = false; }
+  }
+
   async function openStory(story: MeetCampusStory) {
     selectedStoryId.value = story.id;
     if (!story.isViewed) {
@@ -90,5 +98,5 @@ export function useMeetCampus() {
   }
 
   onBeforeUnmount(stopRefresh);
-  return { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedStoryId, selectedScene, selectedSceneId, load, refresh, submitOnboarding, sendCommand, openStory, createBridge };
+  return { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedStoryId, selectedScene, selectedSceneId, load, refresh, submitOnboarding, updateAppearance, sendCommand, openStory, createBridge };
 }

@@ -2826,6 +2826,29 @@
       "waking": "Waking up…",
       "begin": "Go live your life"
     },
+    "appearance": {
+      "eyebrow": "Companion wardrobe",
+      "title": "Dress me in a look you love",
+      "livePreview": "Live preview",
+      "previewTitle": "Ready to step outside",
+      "previewHint": "Your choices travel with me through campus, stories, and every new connection.",
+      "onboardingTitle": "Help me choose my first-day look",
+      "onboardingHint": "Pick my hair, skin tone, outfit, and accessories. You can restyle me anytime.",
+      "categories": "Appearance categories",
+      "category": { "skinTone": "Skin", "hairStyle": "Hair", "hairColor": "Color", "outfit": "Outfit", "accessory": "Extras" },
+      "option": {
+        "porcelain": "Porcelain", "warm": "Warm", "tan": "Tan", "deep": "Deep",
+        "crop": "Neat crop", "bob": "Playful bob", "waves": "Long waves", "bun": "High bun", "curly": "Soft curls", "cap": "Campus cap",
+        "ink": "Ink", "chestnut": "Chestnut", "auburn": "Auburn", "plum": "Plum", "ocean": "Ocean blue",
+        "campus_blue": "Campus blue", "mint_cardigan": "Mint cardigan", "sunset_hoodie": "Sunset hoodie", "lavender_knit": "Lavender knit", "sport_green": "Sport green", "lab_coat": "Lab coat",
+        "none": "No extras", "round_glasses": "Round glasses", "headphones": "Headphones", "beret": "Beret", "hairclip": "Star hairclip"
+      },
+      "shuffle": "Surprise me",
+      "edit": "Restyle me",
+      "save": "Wear this look",
+      "saving": "Changing…",
+      "cancel": "Not now"
+    },
     "actions": {
       "aboutBeta": "About this beta",
       "reset": "Start over",

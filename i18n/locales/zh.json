@@ -2826,6 +2826,29 @@
       "waking": "正在醒来…",
       "begin": "好，去生活吧"
     },
+    "appearance": {
+      "eyebrow": "分身衣橱",
+      "title": "把我打扮成你喜欢的样子",
+      "livePreview": "实时预览",
+      "previewTitle": "这就是我出门的样子",
+      "previewHint": "每一种选择都会跟着我走进校园、故事和新的关系里。",
+      "onboardingTitle": "先帮我挑一身出门的样子",
+      "onboardingHint": "发型、肤色、穿搭和配饰都可以自己选，以后也能随时换。",
+      "categories": "形象分类",
+      "category": { "skinTone": "肤色", "hairStyle": "发型", "hairColor": "发色", "outfit": "穿搭", "accessory": "配饰" },
+      "option": {
+        "porcelain": "白皙", "warm": "暖调", "tan": "小麦", "deep": "深色",
+        "crop": "清爽短发", "bob": "俏皮短发", "waves": "自然长卷", "bun": "元气丸子", "curly": "蓬松卷发", "cap": "校园帽",
+        "ink": "墨黑", "chestnut": "栗棕", "auburn": "赤茶", "plum": "梅紫", "ocean": "雾蓝",
+        "campus_blue": "校园蓝", "mint_cardigan": "薄荷开衫", "sunset_hoodie": "落日卫衣", "lavender_knit": "薰衣草针织", "sport_green": "运动绿", "lab_coat": "实验室白袍",
+        "none": "轻装出门", "round_glasses": "圆框眼镜", "headphones": "头戴耳机", "beret": "贝雷帽", "hairclip": "星光发夹"
+      },
+      "shuffle": "帮我灵感搭配",
+      "edit": "重新打扮",
+      "save": "就这样出门",
+      "saving": "正在换装…",
+      "cancel": "先不换"
+    },
     "actions": {
       "aboutBeta": "内测说明",
       "reset": "重新开始",
