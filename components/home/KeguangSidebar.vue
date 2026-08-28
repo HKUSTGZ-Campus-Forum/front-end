@@ -125,7 +125,7 @@ function isCourseActive() {
         </li>
         <li v-if="isLoggedIn && user?.role_name === 'admin'">
           <NuxtLink :to="getLocalePath('/admin')" :class="{ active: isActive('/admin') }">
-            <img src="/icons/sidebar_userlogo.svg" alt="" class="kg-icon" />
+            <img src="/icons/sidebar_adminlogo.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.admin') }}</span>
           </NuxtLink>
         </li>
