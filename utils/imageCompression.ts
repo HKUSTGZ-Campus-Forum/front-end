@@ -3,6 +3,8 @@
  * Reduces image file size while maintaining reasonable quality for web use
  */
 
+import { runUploadPreparation } from '~/utils/uploadPreparation'
+
 export interface CompressionOptions {
   /** Maximum width in pixels (default: 1920) */
   maxWidth?: number
@@ -31,6 +33,11 @@ export interface CompressionResult {
   wasCompressed: boolean
 }
 
+export interface CompressionRuntimeOptions {
+  signal?: AbortSignal
+  timeoutMs?: number
+}
+
 const DEFAULT_OPTIONS: Required<CompressionOptions> = {
   maxWidth: 1920,
   maxHeight: 1080,
@@ -45,7 +52,8 @@ const DEFAULT_OPTIONS: Required<CompressionOptions> = {
  */
 export async function compressImage(
   file: File,
-  options: CompressionOptions = {}
+  options: CompressionOptions = {},
+  runtime: CompressionRuntimeOptions = {},
 ): Promise<CompressionResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options }
   
@@ -54,11 +62,22 @@ export async function compressImage(
     throw new Error('File must be an image')
   }
 
+  return runUploadPreparation(
+    signal => compressImageWithSignal(file, opts, signal),
+    runtime,
+  )
+}
+
+async function compressImageWithSignal(
+  file: File,
+  opts: Required<CompressionOptions>,
+  signal: AbortSignal,
+): Promise<CompressionResult> {
   const originalSize = file.size
 
   // If file is already small enough and within dimensions, return as-is
   if (originalSize <= opts.maxSizeBytes) {
-    const dimensions = await getImageDimensions(file)
+    const dimensions = await getImageDimensions(file, signal)
     if (dimensions.width <= opts.maxWidth && dimensions.height <= opts.maxHeight) {
       return {
         file,
@@ -83,34 +102,31 @@ export async function compressImage(
     // Load image
     const imageUrl = URL.createObjectURL(file)
     
-    await new Promise((resolve, reject) => {
-      img.onload = resolve
-      img.onerror = reject
-      img.src = imageUrl
-    })
+    try {
+      await loadImage(img, imageUrl, signal)
 
-    // Calculate new dimensions
-    const { width: newWidth, height: newHeight } = calculateDimensions(
-      img.width,
-      img.height,
-      opts.maxWidth,
-      opts.maxHeight,
-      opts.maintainAspectRatio
-    )
+      // Calculate new dimensions
+      const { width: newWidth, height: newHeight } = calculateDimensions(
+        img.width,
+        img.height,
+        opts.maxWidth,
+        opts.maxHeight,
+        opts.maintainAspectRatio
+      )
 
-    // Set canvas size
-    canvas.width = newWidth
-    canvas.height = newHeight
+      // Set canvas size
+      canvas.width = newWidth
+      canvas.height = newHeight
 
-    // Apply image smoothing for better quality
-    ctx.imageSmoothingEnabled = true
-    ctx.imageSmoothingQuality = 'high'
+      // Apply image smoothing for better quality
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
 
-    // Draw resized image
-    ctx.drawImage(img, 0, 0, newWidth, newHeight)
-
-    // Clean up
-    URL.revokeObjectURL(imageUrl)
+      // Draw resized image
+      ctx.drawImage(img, 0, 0, newWidth, newHeight)
+    } finally {
+      URL.revokeObjectURL(imageUrl)
+    }
 
     // Convert to blob with compression
     const compressedBlob = await new Promise<Blob>((resolve, reject) => {
@@ -191,22 +207,66 @@ function calculateDimensions(
 /**
  * Get image dimensions without loading the full image
  */
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+async function getImageDimensions(file: File, signal: AbortSignal): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
-    
-    img.onload = () => {
+    const cleanup = () => {
       URL.revokeObjectURL(url)
+      signal.removeEventListener('abort', handleAbort)
+    }
+    const handleAbort = () => {
+      img.onload = null
+      img.onerror = null
+      img.src = ''
+      cleanup()
+      reject(signal.reason)
+    }
+
+    img.onload = () => {
+      cleanup()
       resolve({ width: img.width, height: img.height })
     }
-    
+
     img.onerror = () => {
-      URL.revokeObjectURL(url)
+      cleanup()
       reject(new Error('Failed to load image dimensions'))
     }
-    
+
+    if (signal.aborted) {
+      handleAbort()
+      return
+    }
+    signal.addEventListener('abort', handleAbort, { once: true })
     img.src = url
+  })
+}
+
+async function loadImage(img: HTMLImageElement, imageUrl: string, signal: AbortSignal) {
+  await new Promise<void>((resolve, reject) => {
+    const cleanup = () => signal.removeEventListener('abort', handleAbort)
+    const handleAbort = () => {
+      img.onload = null
+      img.onerror = null
+      img.src = ''
+      cleanup()
+      reject(signal.reason)
+    }
+
+    img.onload = () => {
+      cleanup()
+      resolve()
+    }
+    img.onerror = () => {
+      cleanup()
+      reject(new Error('Failed to load image'))
+    }
+    if (signal.aborted) {
+      handleAbort()
+      return
+    }
+    signal.addEventListener('abort', handleAbort, { once: true })
+    img.src = imageUrl
   })
 }
 

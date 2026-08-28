@@ -1,14 +1,16 @@
 import { computed, ref } from 'vue'
-import type { UploadOptions, UploadUrlResponse, FileRecord, FileType } from '~/types/file'
+import type { UploadOptions, UploadUrlResponse, FileRecord, FileType, UploadPhase } from '~/types/file'
 import { useApi } from './useApi'
 import { compressImage, COMPRESSION_PRESETS, type CompressionOptions, type CompressionResult } from '~/utils/imageCompression'
 import { FileUploadError } from '~/utils/fileUploadError'
 import { mapUploadByteProgress, UPLOAD_PROGRESS_STAGE } from '~/utils/uploadProgress'
+import { UploadPreparationTimeoutError } from '~/utils/uploadPreparation'
 
 export const useCustomFileUpload = () => {
   const activeUploads = ref(0)
   const isUploading = computed(() => activeUploads.value > 0)
   const uploadProgress = ref(0)
+  const uploadPhase = ref<UploadPhase | null>(null)
   const error = ref<Error | null>(null)
   const compressionInfo = ref<CompressionResult | null>(null)
   const { fetchWithAuth } = useApi()
@@ -19,7 +21,7 @@ export const useCustomFileUpload = () => {
   }
 
   const uploadFile = async (options: UploadOptions) => {
-    const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onSuccess, onError, enableCompression, compressionOptions, signal } = options
+    const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onPhase, onSuccess, onError, enableCompression, compressionOptions, signal } = options
     let reportedProgress = 0
 
     const reportProgress = (progress: number) => {
@@ -27,12 +29,18 @@ export const useCustomFileUpload = () => {
       uploadProgress.value = reportedProgress
       onProgress?.(reportedProgress)
     }
+    const reportPhase = (phase: UploadPhase) => {
+      uploadPhase.value = phase
+      onPhase?.(phase)
+    }
     
     try {
       activeUploads.value += 1
       error.value = null
       uploadProgress.value = 0
+      uploadPhase.value = null
       compressionInfo.value = null
+      reportPhase('preparing')
       reportProgress(UPLOAD_PROGRESS_STAGE.started)
 
       // Step 1: Compress image if enabled and file is an image
@@ -66,7 +74,7 @@ export const useCustomFileUpload = () => {
             compressionOpts = { ...compressionOpts, outputFormat: 'image/webp' }
           }
 
-          const compressionResult = await compressImage(file, compressionOpts)
+          const compressionResult = await compressImage(file, compressionOpts, { signal })
           compressionInfo.value = compressionResult
           fileToUpload = compressionResult.file
 
@@ -75,11 +83,19 @@ export const useCustomFileUpload = () => {
             console.log(`Image compressed: ${compressionResult.originalSize} → ${compressionResult.compressedSize} bytes (${Math.round(compressionResult.compressionRatio * 100)}%)`)
           }
         } catch (compressionError) {
-          console.warn('Image compression failed, uploading original file:', compressionError)
+          if (signal?.aborted || (compressionError instanceof DOMException && compressionError.name === 'AbortError')) {
+            throw compressionError
+          }
+          if (compressionError instanceof UploadPreparationTimeoutError) {
+            console.warn('Image preparation timed out, uploading original file')
+          } else {
+            console.warn('Image compression failed, uploading original file:', compressionError)
+          }
           // Continue with original file if compression fails
         }
       }
 
+      reportPhase('signing')
       reportProgress(UPLOAD_PROGRESS_STAGE.prepared)
 
       if (maxUploadBytes != null && fileToUpload.size > maxUploadBytes) {
@@ -129,6 +145,7 @@ export const useCustomFileUpload = () => {
       if (typeof signed_url !== 'string' || !Number.isInteger(file_id)) {
         throw new FileUploadError('signing_failed', 'The upload service returned an invalid response.')
       }
+      reportPhase('uploading')
       reportProgress(UPLOAD_PROGRESS_STAGE.signed)
 
       // Fix Mixed Content issue: Force HTTPS for OSS uploads
@@ -176,6 +193,7 @@ export const useCustomFileUpload = () => {
       } finally {
         signal?.removeEventListener('abort', abortUpload)
       }
+      reportPhase('verifying')
       reportProgress(UPLOAD_PROGRESS_STAGE.verifying)
 
       // Step 3: Authenticated server-side verification against OSS metadata.
@@ -194,6 +212,7 @@ export const useCustomFileUpload = () => {
         )
       }
       const fileRecord = await completionResponse.json() as FileRecord
+      reportPhase('complete')
       reportProgress(UPLOAD_PROGRESS_STAGE.complete)
       onSuccess?.(fileRecord)
       return fileRecord
@@ -232,6 +251,7 @@ export const useCustomFileUpload = () => {
     deleteFile,
     isUploading,
     uploadProgress,
+    uploadPhase,
     error,
     compressionInfo
   }

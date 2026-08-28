@@ -1,4 +1,5 @@
 export type FileType = 'avatar' | 'post_image' | 'post_attachment' | 'comment_attachment' | 'carousel_image' | 'general';
+export type UploadPhase = 'preparing' | 'signing' | 'uploading' | 'verifying' | 'complete';
 
 export interface UploadUrlResponse {
   signed_url: string;
@@ -33,6 +34,7 @@ export interface UploadOptions {
   /** Reject upload if file exceeds this size (bytes), checked after optional image compression. */
   maxUploadBytes?: number;
   onProgress?: (progress: number) => void;
+  onPhase?: (phase: UploadPhase) => void;
   onSuccess?: (file: FileRecord) => void;
   onError?: (error: Error) => void;
   /** Enable automatic image compression (default: true for images) */

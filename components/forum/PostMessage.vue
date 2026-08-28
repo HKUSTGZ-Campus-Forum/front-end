@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UploadImgCallBack } from 'md-editor-v3'
-import type { FileRecord } from '~/types/file'
+import type { FileRecord, UploadPhase } from '~/types/file'
 import type { UserIdentity } from '~/types/identity'
 import { formatFileSize } from '~/utils/imageCompression'
 import {
@@ -22,6 +22,7 @@ interface ComposerAttachment {
   kind: AttachmentKind
   status: AttachmentStatus
   progress: number
+  phase: UploadPhase
   previewUrl?: string
   record?: FileRecord
   error?: string
@@ -131,9 +132,21 @@ const formValid = computed(() => Boolean(
 ))
 const publishButtonLabel = computed(() => {
   if (isPublishing.value) return t('forum.create.actions.publishing')
-  if (isUploading.value) return t('forum.create.actions.uploadingAttachments', { progress: overallUploadProgress.value })
+  if (isUploading.value) {
+    const activeItems = attachments.value.filter(item => item.status === 'queued' || item.status === 'uploading')
+    if (activeItems.some(item => item.phase === 'preparing')) return t('forum.create.actions.processingAttachments')
+    if (activeItems.some(item => item.phase === 'signing')) return t('forum.create.actions.preparingAttachments')
+    if (activeItems.some(item => item.phase === 'verifying')) return t('forum.create.actions.verifyingAttachments')
+    return t('forum.create.actions.uploadingAttachments', { progress: overallUploadProgress.value })
+  }
   return t('forum.create.actions.publish')
 })
+
+const attachmentStatusKey = (item: ComposerAttachment) => {
+  if (item.status === 'queued' || item.status === 'ready') return item.status
+  if (item.status === 'error') return 'failed'
+  return item.phase
+}
 
 const validateTitle = () => {
   const length = title.value.trim().length
@@ -334,6 +347,7 @@ const queueDraftCleanup = (fileId: number) => {
 const uploadAttachment = async (item: ComposerAttachment) => {
   item.status = 'uploading'
   item.progress = 0
+  item.phase = 'preparing'
   item.error = undefined
   item.abortController = new AbortController()
   try {
@@ -345,6 +359,7 @@ const uploadAttachment = async (item: ComposerAttachment) => {
       enableCompression: item.kind === 'image',
       signal: item.abortController.signal,
       onProgress: (progress) => { item.progress = Math.round(progress) },
+      onPhase: (phase) => { item.phase = phase },
     })
     if (item.removed) {
       queueDraftCleanup(record.id)
@@ -378,6 +393,7 @@ const addFiles = async (files: File[]) => {
       kind,
       status: 'queued',
       progress: 0,
+      phase: 'preparing',
       previewUrl: kind === 'image' || kind === 'video' ? URL.createObjectURL(file) : undefined,
     }
     attachments.value.push(item)
@@ -557,9 +573,18 @@ onBeforeUnmount(() => {
           <span v-else class="attachment-file-icon"><Icon name="lucide:file" aria-hidden="true" /></span>
           <div class="attachment-main">
             <div class="attachment-name-row"><span class="attachment-name" :title="item.source.name">{{ item.source.name }}</span><span class="attachment-size">{{ formatFileSize(item.source.size) }}</span></div>
-            <div v-if="item.status === 'uploading' || item.status === 'queued'" class="progress-track" role="progressbar" :aria-valuenow="item.progress" aria-valuemin="0" aria-valuemax="100"><span :style="{ width: `${item.progress}%` }" /></div>
+            <div
+              v-if="item.status === 'uploading' || item.status === 'queued'"
+              class="progress-track"
+              :class="{ 'progress-track--indeterminate': item.phase !== 'uploading' }"
+              role="progressbar"
+              :aria-label="t(`forum.create.upload.status.${attachmentStatusKey(item)}`)"
+              :aria-valuenow="item.phase === 'uploading' ? item.progress : undefined"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ><span :style="item.phase === 'uploading' ? { width: `${item.progress}%` } : undefined" /></div>
             <p v-if="item.status === 'error'" class="attachment-error">{{ item.error }}</p>
-            <span v-else class="attachment-status" :class="`attachment-status--${item.status}`">{{ t(`forum.create.upload.status.${item.status}`, { progress: item.progress }) }}</span>
+            <span v-else class="attachment-status" :class="`attachment-status--${item.status}`">{{ t(`forum.create.upload.status.${attachmentStatusKey(item)}`, { progress: item.progress }) }}</span>
           </div>
           <button v-if="item.status === 'error'" type="button" class="icon-action" :aria-label="t('forum.create.upload.retry')" @click="retryAttachment(item)"><Icon name="lucide:refresh-cw" aria-hidden="true" /></button>
           <button type="button" class="icon-action" :aria-label="t('forum.create.upload.remove', { name: item.source.name })" @click="removeAttachment(item)"><Icon name="lucide:x" aria-hidden="true" /></button>
@@ -675,6 +700,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .attachment-status--ready { color: var(--semantic-success); }
 .progress-track { height: 4px; margin: .4rem 0 .25rem; overflow: hidden; border-radius: 999px; background: var(--surface-secondary); }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--interactive-primary); transition: width .25s cubic-bezier(.22, 1, .36, 1); }
+.progress-track--indeterminate span { width: 38%; animation: upload-progress 1.1s cubic-bezier(.22, 1, .36, 1) infinite alternate; transform-origin: left center; }
 .icon-action { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: .55rem; background: transparent; color: var(--text-muted); cursor: pointer; }
 .icon-action:hover { background: var(--surface-secondary); color: var(--text-primary); }
 .icon-action:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
@@ -696,9 +722,11 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .spin { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes upload-progress { from { transform: translateX(-15%) scaleX(.65); } to { transform: translateX(165%) scaleX(1); } }
 @media (prefers-reduced-motion: reduce) {
   .progress-track span { transition: none; }
-  .spin { animation-duration: 1.5s; }
+  .progress-track--indeterminate span { width: 55%; animation: none; opacity: .72; }
+  .spin { animation: none; }
 }
 @media (max-width: 640px) {
   .composer { gap: 1.25rem; }

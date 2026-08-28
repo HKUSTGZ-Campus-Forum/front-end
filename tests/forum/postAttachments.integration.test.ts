@@ -57,4 +57,23 @@ describe("forum post attachment integration", () => {
     expect(zh.forum.create.upload.addImages).toBeUndefined();
     expect(en.forum.create.upload.addImages).toBeUndefined();
   });
+
+  it("distinguishes local preparation from network upload progress", () => {
+    const postMessage = readSource("components/forum/PostMessage.vue");
+    const zh = JSON.parse(readSource("i18n/locales/zh.json"));
+    const en = JSON.parse(readSource("i18n/locales/en.json"));
+
+    expect(postMessage).toContain("onPhase: (phase)");
+    expect(postMessage).toContain("item.phase === 'preparing'");
+    expect(postMessage).toContain("item.phase === 'uploading' ? item.progress : undefined");
+
+    for (const key of ["processingAttachments", "preparingAttachments", "uploadingAttachments", "verifyingAttachments"]) {
+      expect(zh.forum.create.actions[key]).toBeTruthy();
+      expect(en.forum.create.actions[key]).toBeTruthy();
+    }
+    for (const key of ["queued", "preparing", "signing", "uploading", "verifying", "ready"]) {
+      expect(zh.forum.create.upload.status[key]).toBeTruthy();
+      expect(en.forum.create.upload.status[key]).toBeTruthy();
+    }
+  });
 });
