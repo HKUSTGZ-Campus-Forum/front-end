@@ -196,8 +196,10 @@ front-end/
 - MeetCampus 已独立到私有仓库 `taowenxiang/meetcampus`，由自己的 Nuxt
   前端、Flask API、世界 Worker 和学校服务器发布控制器维护。
 - 不要在 UniKorn 前端重新加入 `/meetcampus` 页面、组件、composable、类型、
-  locale、导航入口或地图资源。学校域名中的 `/meetcampus/` 与
-  `/api/meetcampus/` 由 Nginx 委托给独立服务。
+  MeetCampus 业务 locale 或地图资源。学校域名中的 `/meetcampus/` 与
+  `/api/meetcampus/` 由 Nginx 委托给独立服务。UniKorn 只保留一个对已验证
+  Mount 内测账号可见的侧边栏硬跳转入口及对应的两条导航文案；服务端白名单
+  仍是权限判定的最终依据。
 - MeetCampus 的开发、测试与生产发布全部从独立仓库进行；UniKorn 前端发布
   不应构建、重启或覆盖 MeetCampus。
 

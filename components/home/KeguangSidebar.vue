@@ -3,11 +3,20 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from '#app'
 import { AMWC_RESULTS_URL } from '~/utils/externalLinks'
+import {
+  canSeeMeetCampusNavigation,
+  getMeetCampusHref,
+} from '~/utils/meetcampusNavigation'
 
-const { t } = useI18n()
+const { locale, t } = useI18n()
 const route = useRoute()
 const { user, isLoggedIn } = useAuth()
 const { getLocalePath } = useAppLocale()
+
+const hasMeetCampusBetaAccess = computed(() =>
+  canSeeMeetCampusNavigation(isLoggedIn.value, user.value),
+)
+const meetCampusHref = computed(() => getMeetCampusHref(locale.value))
 
 const props = defineProps<{
   mobileOpen?: boolean
@@ -92,6 +101,14 @@ function isCourseActive() {
             <span class="kg-label">{{ t('nav.teamMatching') }}</span>
           </NuxtLink>
         </li>
+        <ClientOnly>
+          <li v-if="hasMeetCampusBetaAccess">
+            <a :href="meetCampusHref">
+              <Icon name="lucide:map-pinned" class="kg-icon kg-icon--component" aria-hidden="true" />
+              <span class="kg-label">{{ t('nav.meetCampus') }}</span>
+            </a>
+          </li>
+        </ClientOnly>
         <li>
           <NuxtLink
             v-if="isLoggedIn && user?.id"
