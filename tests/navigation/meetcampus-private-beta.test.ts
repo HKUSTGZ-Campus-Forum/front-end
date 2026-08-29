@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  MEETCAMPUS_BETA_EMAIL,
+  MEETCAMPUS_BETA_EMAILS,
   canSeeMeetCampusNavigation,
   getMeetCampusHref,
 } from '../../utils/meetcampusNavigation'
@@ -11,14 +11,20 @@ function source(path: string) {
 }
 
 describe('MeetCampus private-beta navigation', () => {
-  it('shows the entry only to the signed-in, verified Mount account', () => {
+  it('shows the entry only to the two signed-in, verified beta accounts', () => {
+    for (const email of MEETCAMPUS_BETA_EMAILS) {
+      expect(canSeeMeetCampusNavigation(true, {
+        email: `  ${email.toUpperCase()}  `,
+        email_verified: true,
+        is_deleted: false,
+      })).toBe(true)
+    }
+
     const mount = {
-      email: `  ${MEETCAMPUS_BETA_EMAIL.toUpperCase()}  `,
+      email: MEETCAMPUS_BETA_EMAILS[0],
       email_verified: true,
       is_deleted: false,
     }
-
-    expect(canSeeMeetCampusNavigation(true, mount)).toBe(true)
     expect(canSeeMeetCampusNavigation(false, mount)).toBe(false)
     expect(canSeeMeetCampusNavigation(true, { ...mount, email_verified: false })).toBe(false)
     expect(canSeeMeetCampusNavigation(true, { ...mount, is_deleted: true })).toBe(false)
