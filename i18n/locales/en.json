@@ -2884,6 +2884,38 @@
       "bridgeSyntheticDisclosure": "The counterpart is explicitly a synthetic beta resident. This only previews the future consent flow and never fabricates a human response.",
       "noContactShared": "No name, contact details, or real schedule was shared"
     },
+    "runtime": {
+      "perspective": "Debug view",
+      "traceTab": "Runtime",
+      "sameRuntime": "All 20 residents share one runtime",
+      "traceTitle": "How this decision happened",
+      "walking": "Walking across campus",
+      "worldTimedJourney": "World time advances this journey; arrival cannot happen early",
+      "nextBoundary": "It will think again at the next world event or decision boundary",
+      "deepSeek": "DeepSeek selection",
+      "utility": "Parity fallback",
+      "candidates": "valid candidates",
+      "noTraceTitle": "No decision trace yet",
+      "noTraceDescription": "After the next decision boundary, this view shows the observation, valid intents, and world execution result.",
+      "viewAs": "Switch to this perspective",
+      "states": {
+        "arrived": "Just arrived",
+        "observing": "Taking in the surroundings",
+        "reflecting_on_activity": "Reflecting on what just happened",
+        "reconsidering": "Reconsidering the next move",
+        "declined_invitation": "Politely declined an invitation",
+        "invitation_declined": "Received a polite decline",
+        "invitation_expired": "The invitation was missed",
+        "setting_out": "Getting ready to leave",
+        "following_routine": "Following a personal rhythm"
+      }
+    },
+    "homecoming": {
+      "title": "Companion homecoming report",
+      "back": "You're back. I have something to tell you",
+      "listened": "I've heard the story",
+      "close": "Listen later"
+    },
     "onboarding": {
       "title": "Meet your campus companion",
       "firstMeeting": "Our first meeting",

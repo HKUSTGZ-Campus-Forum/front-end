@@ -1,4 +1,4 @@
-import type { MeetCampusAppearance, MeetCampusBootstrap, MeetCampusCommandInput, MeetCampusOnboardingInput, MeetCampusScene, MeetCampusStory } from "~/types/meetcampus";
+import type { MeetCampusAppearance, MeetCampusBootstrap, MeetCampusCommandInput, MeetCampusDecisionTrace, MeetCampusOnboardingInput, MeetCampusScene, MeetCampusStory } from "~/types/meetcampus";
 
 type MeetCampusLoadState = "idle" | "loading" | "ready" | "denied" | "error";
 
@@ -10,6 +10,8 @@ export function useMeetCampus() {
   const actionError = ref<string | null>(null);
   const selectedStoryId = ref<string | null>(null);
   const selectedSceneId = ref<string | null>(null);
+  const decisionTraces = ref<MeetCampusDecisionTrace[]>([]);
+  const perspectiveResidentId = ref<string | null>(null);
   let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
   const myResident = computed(() => bootstrap.value?.snapshot.residents.find(resident => resident.id === bootstrap.value?.myResidentId) ?? null);
@@ -38,9 +40,12 @@ export function useMeetCampus() {
   async function load() {
     loadState.value = "loading";
     try {
-      bootstrap.value = await request("/api/meetcampus/bootstrap") as MeetCampusBootstrap;
+      const query = perspectiveResidentId.value ? `?residentId=${encodeURIComponent(perspectiveResidentId.value)}` : "";
+      bootstrap.value = await request(`/api/meetcampus/bootstrap${query}`) as MeetCampusBootstrap;
+      perspectiveResidentId.value = bootstrap.value.myResidentId;
       selectedSceneId.value = myResident.value?.state.sceneId ?? null;
       loadState.value = "ready";
+      await loadDecisionTraces();
       startRefresh();
     } catch (error) {
       if (loadState.value !== "denied") loadState.value = "error";
@@ -50,12 +55,31 @@ export function useMeetCampus() {
 
   async function refresh() {
     if (loadState.value !== "ready" || isSubmitting.value) return;
-    try { applySnapshot(await request("/api/meetcampus/snapshot")); }
+    const query = perspectiveResidentId.value ? `?residentId=${encodeURIComponent(perspectiveResidentId.value)}` : "";
+    try { applySnapshot(await request(`/api/meetcampus/snapshot${query}`)); await loadDecisionTraces(); }
     catch (error) { console.warn("MeetCampus refresh degraded", error); }
   }
 
   function stopRefresh() { if (refreshTimer) clearInterval(refreshTimer); refreshTimer = null; }
-  function startRefresh() { stopRefresh(); refreshTimer = setInterval(refresh, 45_000); }
+  function startRefresh() { stopRefresh(); refreshTimer = setInterval(refresh, 15_000); }
+
+  async function loadDecisionTraces() {
+    if (!perspectiveResidentId.value) return;
+    try {
+      const payload = await request(`/api/meetcampus/debug/residents/${encodeURIComponent(perspectiveResidentId.value)}/traces`);
+      decisionTraces.value = payload.traces as MeetCampusDecisionTrace[];
+    } catch (error) {
+      decisionTraces.value = [];
+      console.warn("MeetCampus traces degraded", error);
+    }
+  }
+
+  async function switchPerspective(residentId: string) {
+    perspectiveResidentId.value = residentId;
+    selectedStoryId.value = null;
+    selectedSceneId.value = null;
+    await load();
+  }
 
   async function submitOnboarding(input: MeetCampusOnboardingInput) {
     isSubmitting.value = true; actionError.value = null;
@@ -69,7 +93,9 @@ export function useMeetCampus() {
   async function sendCommand(input: MeetCampusCommandInput) {
     isSubmitting.value = true; actionError.value = null;
     try {
-      await request("/api/meetcampus/commands", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+      await request("/api/meetcampus/commands", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...input, residentId: perspectiveResidentId.value }) });
+      await refresh();
+      await loadDecisionTraces();
     } catch (error) { actionError.value = error instanceof Error ? error.message : "request_failed"; throw error; }
     finally { isSubmitting.value = false; }
   }
@@ -98,5 +124,5 @@ export function useMeetCampus() {
   }
 
   onBeforeUnmount(stopRefresh);
-  return { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedStoryId, selectedScene, selectedSceneId, load, refresh, submitOnboarding, updateAppearance, sendCommand, openStory, createBridge };
+  return { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedStoryId, selectedScene, selectedSceneId, decisionTraces, perspectiveResidentId, load, refresh, switchPerspective, loadDecisionTraces, submitOnboarding, updateAppearance, sendCommand, openStory, createBridge };
 }

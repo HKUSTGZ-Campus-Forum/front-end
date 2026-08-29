@@ -7,9 +7,9 @@ import { DEFAULT_MEETCAMPUS_APPEARANCE, normalizeMeetCampusAppearance } from "~/
 import { formatMeetCampusTime, localizeText } from "~/utils/meetcampus";
 
 definePageMeta({ layout: "keguang", middleware: ["auth"] });
-const { t } = useI18n();
+const { t, te } = useI18n();
 const { locale, getLocalePath } = useAppLocale();
-const activeTab = ref<"homecoming" | "relations" | "guide">("homecoming");
+const activeTab = ref<"homecoming" | "relations" | "guide" | "runtime">("homecoming");
 const selectedResident = ref<MeetCampusResident | null>(null);
 const commandText = ref("");
 const commandSent = ref(false);
@@ -19,10 +19,16 @@ const onboardingAppearance = ref<MeetCampusAppearance>({ ...DEFAULT_MEETCAMPUS_A
 const appearanceDraft = ref<MeetCampusAppearance>({ ...DEFAULT_MEETCAMPUS_APPEARANCE });
 const appearanceOpen = ref(false);
 const appearanceContext = ref<"onboarding" | "resident">("onboarding");
+const homecomingOpen = ref(false);
 
-const { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedScene, selectedSceneId, load, refresh, submitOnboarding, updateAppearance, sendCommand, openStory, createBridge } = useMeetCampus();
+const { bootstrap, loadState, isSubmitting, actionError, myResident, currentScene, unreadStories, selectedStory, selectedScene, selectedSceneId, decisionTraces, load, refresh, switchPerspective, submitOnboarding, updateAppearance, sendCommand, openStory, createBridge } = useMeetCampus();
 const showOnboarding = computed(() => bootstrap.value?.onboarding.status !== "completed");
-const activityLabel = computed(() => myResident.value?.state.activity.replaceAll("_", " ") || t("meetCampus.world.waiting"));
+const activityLabel = computed(() => {
+  if (myResident.value?.state.journey) return t("meetCampus.runtime.walking");
+  if (myResident.value?.state.activitySession) return localizeText(myResident.value.state.activitySession.activityName, locale.value);
+  const state = myResident.value?.state.activity;
+  return state && te(`meetCampus.runtime.states.${state}`) ? t(`meetCampus.runtime.states.${state}`) : t("meetCampus.world.waiting");
+});
 
 function togglePlace(slug: string) {
   const index = onboarding.preferredPlaces.indexOf(slug);
@@ -53,8 +59,21 @@ async function submitCommand() {
 async function showStory(story: MeetCampusStory) { activeTab.value = "homecoming"; await openStory(story); }
 async function proposeBridge() { if (selectedStory.value) bridgeResult.value = await createBridge(selectedStory.value.id); }
 function selectResident(id: string) { selectedResident.value = bootstrap.value?.snapshot.residents.find(item => item.id === id) ?? null; }
+async function changePerspective(residentId: string) {
+  selectedResident.value = null;
+  await switchPerspective(residentId);
+  homecomingOpen.value = unreadStories.value.length > 0;
+}
+async function closeHomecoming() {
+  if (selectedStory.value) await openStory(selectedStory.value);
+  homecomingOpen.value = false;
+}
+async function initialize() {
+  await load();
+  homecomingOpen.value = unreadStories.value.length > 0;
+}
 
-onMounted(load);
+onMounted(initialize);
 useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, meta: [{ name: "description", content: t("meetCampus.metaDescription") }] }));
 </script>
 
@@ -62,7 +81,10 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
   <main class="mc-shell">
     <header class="mc-header">
       <div class="mc-header__identity"><span><Icon name="lucide:orbit" /></span><div><div><h1>{{ t('meetCampus.title') }}</h1><em>{{ t('meetCampus.privateBeta') }}</em></div><p>{{ t('meetCampus.subtitle') }}</p></div></div>
-      <button v-if="loadState === 'ready'" class="icon-action" type="button" :aria-label="t('meetCampus.world.refresh')" @click="refresh"><Icon name="lucide:refresh-cw" /></button>
+      <div v-if="loadState === 'ready' && bootstrap" class="mc-header__actions">
+        <label class="perspective-switch"><Icon name="lucide:scan-eye" aria-hidden="true" /><span>{{ t('meetCampus.runtime.perspective') }}</span><select :value="bootstrap.myResidentId" @change="changePerspective(($event.target as HTMLSelectElement).value)"><option v-for="resident in bootstrap.perspective.residents" :key="resident.id" :value="resident.id">{{ localizeText(resident.name, locale) }}</option></select></label>
+        <button class="icon-action" type="button" :aria-label="t('meetCampus.world.refresh')" @click="refresh"><Icon name="lucide:refresh-cw" /></button>
+      </div>
     </header>
 
     <section v-if="loadState === 'idle' || loadState === 'loading'" class="mc-state" aria-live="polite"><span class="loader"></span><h2>{{ t('meetCampus.loading.title') }}</h2><p>{{ t('meetCampus.loading.description') }}</p></section>
@@ -71,7 +93,7 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
 
     <div v-else-if="bootstrap" class="mc-world">
       <div class="mc-world__stage">
-        <MeetCampusMap :scenes="bootstrap.snapshot.scenes" :residents="bootstrap.snapshot.residents" :my-resident-id="bootstrap.myResidentId" :selected-scene-id="selectedScene?.id" @select-scene="selectedSceneId = $event" @select-resident="selectResident" />
+        <MeetCampusMap :scenes="bootstrap.snapshot.scenes" :residents="bootstrap.snapshot.residents" :my-resident-id="bootstrap.myResidentId" :selected-scene-id="selectedScene?.id" :server-time="bootstrap.snapshot.world.serverTime" @select-scene="selectedSceneId = $event" @select-resident="selectResident" />
         <button v-if="myResident" class="companion-chip" type="button" @click="selectResident(myResident.id)">
           <MeetCampusAvatar :appearance="myResident.appearance" size="tiny" animated /><span><small>{{ localizeText(currentScene?.name, locale) }}</small><strong>{{ localizeText(myResident.name, locale) }} · {{ activityLabel }}</strong></span><i class="live-dot"></i>
         </button>
@@ -82,6 +104,7 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
           <button type="button" :class="{active:activeTab==='homecoming'}" @click="activeTab='homecoming'"><Icon name="lucide:book-heart" />{{ t('meetCampus.world.homecoming') }}<b v-if="unreadStories.length">{{ unreadStories.length }}</b></button>
           <button type="button" :class="{active:activeTab==='relations'}" @click="activeTab='relations'"><Icon name="lucide:users" />{{ t('meetCampus.world.relations') }}</button>
           <button type="button" :class="{active:activeTab==='guide'}" @click="activeTab='guide'"><Icon name="lucide:message-circle-more" />{{ t('meetCampus.world.guide') }}</button>
+          <button type="button" :class="{active:activeTab==='runtime'}" @click="activeTab='runtime'"><Icon name="lucide:activity" />{{ t('meetCampus.runtime.traceTab') }}</button>
         </nav>
 
         <section v-if="activeTab === 'homecoming'" class="panel-body">
@@ -98,15 +121,22 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
 
         <section v-else-if="activeTab === 'relations'" class="panel-body">
           <div class="section-heading"><div><span>{{ t('meetCampus.world.livedTogether') }}</span><h2>{{ t('meetCampus.world.relationshipBook') }}</h2></div><Icon name="lucide:heart-handshake" /></div>
-          <div v-if="bootstrap.relationships.length" class="relation-list"><article v-for="relation in bootstrap.relationships" :key="relation.id"><span class="relation-avatar"><MeetCampusAvatar :appearance="relation.resident.appearance" size="tiny" /></span><div><h3>{{ localizeText(relation.resident.name, locale) }}<em v-if="relation.resident.isSynthetic">{{ t('meetCampus.world.synthetic') }}</em></h3><p>{{ localizeText(relation.summary, locale) }}</p><div class="warmth"><span :style="{width:`${relation.warmth}%`}"></span></div></div></article></div>
+          <div v-if="bootstrap.relationships.length" class="relation-list"><article v-for="relation in bootstrap.relationships" :key="relation.id"><span class="relation-avatar"><MeetCampusAvatar :appearance="relation.resident.appearance" size="tiny" /></span><div><h3>{{ localizeText(relation.resident.name, locale) }}</h3><p>{{ localizeText(relation.summary, locale) }}</p><div class="warmth"><span :style="{width:`${relation.warmth}%`}"></span></div></div></article></div>
           <div v-else class="empty"><Icon name="lucide:footprints" /><h3>{{ t('meetCampus.world.noRelationsTitle') }}</h3><p>{{ t('meetCampus.world.noRelationsDescription') }}</p></div>
         </section>
 
-        <section v-else class="panel-body">
+        <section v-else-if="activeTab === 'guide'" class="panel-body">
           <div class="section-heading"><div><span>{{ t('meetCampus.world.notRemoteControl') }}</span><h2>{{ t('meetCampus.world.giveDirection') }}</h2></div><Icon name="lucide:compass" /></div>
           <div class="scene-target"><span><Icon name="lucide:map-pin" /></span><div><small>{{ t('meetCampus.world.currentDestination') }}</small><strong>{{ localizeText(selectedScene?.name, locale) }}</strong></div><button type="button" @click="selectedSceneId = currentScene?.id || null">{{ t('meetCampus.world.clear') }}</button></div>
           <form class="command-box" @submit.prevent="submitCommand"><label for="mc-command">{{ t('meetCampus.world.commandLabel') }}</label><textarea id="mc-command" v-model="commandText" maxlength="280" :placeholder="t('meetCampus.world.commandPlaceholder')"></textarea><div><small>{{ t('meetCampus.world.commandHint') }}</small><button type="submit" :disabled="!commandText.trim() || isSubmitting"><Icon name="lucide:send" />{{ t('meetCampus.world.send') }}</button></div></form>
           <p v-if="commandSent" class="success-note"><Icon name="lucide:check-circle-2" />{{ t('meetCampus.world.commandAccepted') }}</p><p v-if="actionError" class="error-note">{{ t('meetCampus.world.actionFailed') }}</p>
+        </section>
+
+        <section v-else class="panel-body runtime-panel">
+          <div class="section-heading"><div><span>{{ t('meetCampus.runtime.sameRuntime') }}</span><h2>{{ t('meetCampus.runtime.traceTitle') }}</h2></div><Icon name="lucide:binary" /></div>
+          <div class="runtime-status"><span><Icon :name="myResident?.state.journey ? 'lucide:footprints' : myResident?.state.activitySession ? 'lucide:gamepad-2' : 'lucide:brain'" /></span><div><strong>{{ activityLabel }}</strong><small>{{ myResident?.state.journey ? t('meetCampus.runtime.worldTimedJourney') : t('meetCampus.runtime.nextBoundary') }}</small></div></div>
+          <ol v-if="decisionTraces.length" class="trace-list"><li v-for="trace in decisionTraces" :key="trace.id"><div><time>{{ formatMeetCampusTime(trace.createdAt, locale) }}</time><em>{{ trace.source === 'deepseek' ? t('meetCampus.runtime.deepSeek') : t('meetCampus.runtime.utility') }}</em></div><strong>{{ localizeText(trace.selectedIntent.label, locale) }}</strong><p>{{ localizeText(trace.selectedIntent.intention, locale) }}</p><small>{{ trace.candidates.length }} {{ t('meetCampus.runtime.candidates') }} · {{ trace.status }}</small></li></ol>
+          <div v-else class="empty"><Icon name="lucide:clock-3" /><h3>{{ t('meetCampus.runtime.noTraceTitle') }}</h3><p>{{ t('meetCampus.runtime.noTraceDescription') }}</p></div>
         </section>
       </aside>
     </div>
@@ -124,9 +154,10 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
       </form>
     </div>
 
-    <div v-if="selectedResident" class="sheet-backdrop" @click.self="selectedResident=null"><aside class="resident-sheet"><button class="resident-sheet__close" type="button" :aria-label="t('meetCampus.appearance.cancel')" @click="selectedResident=null"><Icon name="lucide:x" /></button><span class="resident-sheet__avatar"><MeetCampusAvatar :appearance="selectedResident.appearance" size="large" animated /></span><small>{{ selectedResident.isMine ? t('meetCampus.world.yourCompanion') : t('meetCampus.world.townResident') }}</small><h2>{{ localizeText(selectedResident.name, locale) }}</h2><p>{{ selectedResident.persona.interests?.join(' · ') }}</p><div class="resident-sheet__location"><Icon name="lucide:map-pin" />{{ localizeText(bootstrap?.snapshot.scenes.find(scene=>scene.id===selectedResident?.state.sceneId)?.name, locale) }}</div><button v-if="selectedResident.isMine" class="resident-sheet__style" type="button" @click="openAppearance('resident')"><Icon name="lucide:shirt" />{{ t('meetCampus.appearance.edit') }}</button></aside></div>
+    <div v-if="selectedResident" class="sheet-backdrop" @click.self="selectedResident=null"><aside class="resident-sheet"><button class="resident-sheet__close" type="button" :aria-label="t('meetCampus.appearance.cancel')" @click="selectedResident=null"><Icon name="lucide:x" /></button><span class="resident-sheet__avatar"><MeetCampusAvatar :appearance="selectedResident.appearance" size="large" animated /></span><small>{{ selectedResident.isMine ? t('meetCampus.world.yourCompanion') : t('meetCampus.world.townResident') }}</small><h2>{{ localizeText(selectedResident.name, locale) }}</h2><p>{{ selectedResident.persona.interests?.join(' · ') }}</p><div class="resident-sheet__location"><Icon name="lucide:map-pin" />{{ localizeText(bootstrap?.snapshot.scenes.find(scene=>scene.id===selectedResident?.state.sceneId)?.name, locale) }}</div><button v-if="selectedResident.id === bootstrap?.ownerResidentId" class="resident-sheet__style" type="button" @click="openAppearance('resident')"><Icon name="lucide:shirt" />{{ t('meetCampus.appearance.edit') }}</button><button v-else-if="!selectedResident.isMine" class="resident-sheet__style" type="button" @click="changePerspective(selectedResident.id)"><Icon name="lucide:scan-eye" />{{ t('meetCampus.runtime.viewAs') }}</button></aside></div>
     <div v-if="appearanceOpen" class="sheet-backdrop appearance-backdrop" @click.self="appearanceOpen=false"><aside class="appearance-sheet" role="dialog" aria-modal="true" :aria-label="t('meetCampus.appearance.title')"><header><div><small>{{ t('meetCampus.appearance.eyebrow') }}</small><h2>{{ t('meetCampus.appearance.title') }}</h2></div><button type="button" :aria-label="t('meetCampus.appearance.cancel')" @click="appearanceOpen=false"><Icon name="lucide:x" /></button></header><MeetCampusAppearanceEditor v-model="appearanceDraft" /><footer><button type="button" class="secondary-action" @click="appearanceOpen=false">{{ t('meetCampus.appearance.cancel') }}</button><button type="button" class="primary-action" :disabled="isSubmitting" @click="saveAppearance"><Icon name="lucide:check" />{{ isSubmitting ? t('meetCampus.appearance.saving') : t('meetCampus.appearance.save') }}</button></footer></aside></div>
     <div v-if="bridgeResult" class="sheet-backdrop" @click.self="bridgeResult=null"><aside class="resident-sheet consent-sheet"><button type="button" @click="bridgeResult=null"><Icon name="lucide:x" /></button><Icon name="lucide:users-round" class="consent-icon" /><small>{{ t('meetCampus.world.bridgePreview') }}</small><h2>{{ t('meetCampus.world.bridgeTitle') }}</h2><p>{{ t('meetCampus.world.bridgeSyntheticDisclosure') }}</p><div><Icon name="lucide:shield-check" />{{ t('meetCampus.world.noContactShared') }}</div></aside></div>
+    <div v-if="homecomingOpen && selectedStory && myResident" class="homecoming" role="dialog" aria-modal="true" :aria-label="t('meetCampus.homecoming.title')"><section class="homecoming__scene"><button type="button" :aria-label="t('meetCampus.homecoming.close')" @click="closeHomecoming"><Icon name="lucide:x" /></button><div class="homecoming__resident"><MeetCampusAvatar :appearance="myResident.appearance" size="hero" animated /></div><div class="homecoming__speech"><small>{{ t('meetCampus.homecoming.back') }}</small><h2>{{ localizeText(selectedStory.title, locale) }}</h2><p>“{{ localizeText(selectedStory.narration, locale) }}”</p><button type="button" @click="closeHomecoming"><Icon name="lucide:book-open-check" />{{ t('meetCampus.homecoming.listened') }}</button></div></section></div>
   </main>
 </template>
 
@@ -136,6 +167,15 @@ useHead(() => ({ title: `${t("meetCampus.title")} - ${t("common.appName")}`, met
 @media(max-width:1000px){.mc-world{grid-template-columns:1fr}.mc-panel{min-height:520px}}
 @media(max-width:760px){.mc-shell{max-width:none;padding:14px 0 0}.mc-header{padding:0 14px 12px;margin:0}.mc-header__identity>span{width:42px;height:42px}.mc-header h1{font-size:1.45rem}.mc-header p{display:none}.mc-world{gap:0}.mc-panel{position:relative;z-index:30;min-height:390px;margin-top:-22px;border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(22,45,83,.13)}.companion-chip{left:12px;bottom:38px}.panel-body{padding:18px 16px}.onboarding{padding:0;align-items:end}.onboarding__card{max-height:94dvh;padding:20px 17px;border-radius:22px 22px 0 0}.mc-state{margin:0 14px}.mc-tabs{position:sticky;top:0;z-index:2}.large-avatar{width:60px;height:60px}}
 @media(prefers-reduced-motion:reduce){.loader{animation:none}}
+</style>
+
+<style scoped lang="scss">
+.mc-header__actions{display:flex;align-items:center;gap:8px}.perspective-switch{display:flex;min-height:42px;align-items:center;gap:7px;padding:0 9px;border:1px solid var(--border-primary);border-radius:11px;color:var(--text-secondary);background:var(--surface-primary);font-size:.68rem;font-weight:750}.perspective-switch svg{width:15px;height:15px;color:var(--interactive-primary)}.perspective-switch select{max-width:132px;border:0;color:var(--text-primary);background:transparent;font:inherit;outline:none}.perspective-switch:focus-within{border-color:var(--interactive-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--interactive-primary) 14%,transparent)}
+.mc-tabs{grid-template-columns:repeat(4,1fr)}
+.runtime-status{display:flex;align-items:center;gap:11px;padding:12px;border-radius:13px;background:var(--surface-secondary)}.runtime-status>span{display:grid;width:38px;height:38px;place-items:center;border-radius:10px;color:var(--interactive-active-text);background:var(--surface-primary)}.runtime-status>div{display:flex;min-width:0;flex-direction:column}.runtime-status strong{color:var(--text-primary);font-size:.78rem}.runtime-status small{margin-top:2px;color:var(--text-secondary);font-size:.64rem}.trace-list{display:flex;flex-direction:column;gap:8px;margin:14px 0 0;padding:0;list-style:none}.trace-list li{padding:11px;border:1px solid var(--border-primary);border-radius:12px}.trace-list li>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.trace-list time,.trace-list small{color:var(--text-tertiary);font-size:.6rem}.trace-list em{padding:2px 6px;border-radius:999px;color:var(--interactive-active-text);background:var(--surface-secondary);font-size:.56rem;font-style:normal;font-weight:800}.trace-list strong{display:block;margin-top:7px;color:var(--text-primary);font-size:.74rem}.trace-list p{margin:3px 0;color:var(--text-secondary);font-size:.68rem;line-height:1.45}.trace-list small{display:block;margin-top:7px}
+.homecoming{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:20px;background:color-mix(in srgb,var(--text-primary) 46%,transparent);backdrop-filter:blur(8px)}.homecoming__scene{position:relative;display:grid;width:min(760px,100%);grid-template-columns:220px minmax(0,1fr);align-items:end;gap:18px;padding:34px;border-radius:16px;background:var(--surface-primary);box-shadow:var(--shadow-large)}.homecoming__scene>button{position:absolute;right:14px;top:14px;display:grid;width:36px;height:36px;place-items:center;border:0;border-radius:9px;color:var(--text-secondary);background:var(--surface-secondary);cursor:pointer}.homecoming__resident{display:grid;min-height:260px;place-items:end center;border-radius:14px;background:var(--surface-secondary)}.homecoming__speech{padding:10px 0 8px}.homecoming__speech small{color:var(--interactive-active-text);font-size:.7rem;font-weight:800}.homecoming__speech h2{margin:7px 0;color:var(--text-primary);font-size:1.45rem;text-wrap:balance}.homecoming__speech p{margin:0;color:var(--text-secondary);font-size:.9rem;line-height:1.75;text-wrap:pretty}.homecoming__speech button{display:inline-flex;min-height:42px;align-items:center;gap:7px;margin-top:20px;padding:9px 13px;border:0;border-radius:10px;color:var(--text-inverse);background:var(--btn-primary-bg);font-weight:800;cursor:pointer}
+@media(max-width:760px){.mc-header__actions{gap:5px}.perspective-switch{padding:0 7px}.perspective-switch>span{display:none}.perspective-switch select{max-width:92px}.mc-tabs button{font-size:.65rem}.homecoming{padding:0;align-items:end}.homecoming__scene{max-height:92dvh;overflow:auto;grid-template-columns:1fr;gap:8px;padding:20px 17px calc(20px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0}.homecoming__resident{min-height:190px}.homecoming__speech h2{font-size:1.22rem}.homecoming__speech p{font-size:.82rem}.homecoming__speech button{width:100%;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.homecoming{backdrop-filter:none}}
 </style>
 
 <style scoped lang="scss">

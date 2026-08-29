@@ -2884,6 +2884,38 @@
       "bridgeSyntheticDisclosure": "当前对方是明确标识的内测合成居民，因此这里只展示未来真实用户的同意流程，不会伪造真人回应。",
       "noContactShared": "未共享姓名、联系方式或现实日程"
     },
+    "runtime": {
+      "perspective": "调试视角",
+      "traceTab": "运行",
+      "sameRuntime": "20 位居民使用同一套运行时",
+      "traceTitle": "它刚才怎样做决定",
+      "walking": "正在校园路上",
+      "worldTimedJourney": "行程由世界时间推进，抵达前不会瞬移",
+      "nextBoundary": "下一次环境变化或决策边界到来时继续思考",
+      "deepSeek": "DeepSeek 选择",
+      "utility": "一致性兜底",
+      "candidates": "个合法候选",
+      "noTraceTitle": "还没有新的决策轨迹",
+      "noTraceDescription": "居民到达下一次决策边界后，这里会显示观察、候选意图和世界执行结果。",
+      "viewAs": "切换到它的视角",
+      "states": {
+        "arrived": "刚刚抵达",
+        "observing": "正在观察周围",
+        "reflecting_on_activity": "正在回味刚才的经历",
+        "reconsidering": "正在重新考虑",
+        "declined_invitation": "刚刚礼貌拒绝了邀请",
+        "invitation_declined": "收到了一次婉拒",
+        "invitation_expired": "邀请暂时错过了",
+        "setting_out": "准备出门",
+        "following_routine": "按自己的节奏生活"
+      }
+    },
+    "homecoming": {
+      "title": "分身归来汇报",
+      "back": "你回来啦，我有事情想告诉你",
+      "listened": "我听完了",
+      "close": "稍后再听"
+    },
     "onboarding": {
       "title": "第一次遇见你的校园分身",
       "firstMeeting": "第一次见面",

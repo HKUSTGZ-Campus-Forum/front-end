@@ -2,12 +2,14 @@
 import MeetCampusAvatar from "~/components/meetcampus/MeetCampusAvatar.vue";
 import type { MeetCampusResident, MeetCampusScene } from "~/types/meetcampus";
 import { localizeText } from "~/utils/meetcampus";
+import { interpolateJourneyPath, journeyProgress } from "~/utils/meetcampusJourney";
 
 const props = defineProps<{
   scenes: MeetCampusScene[];
   residents: MeetCampusResident[];
   myResidentId: string;
   selectedSceneId?: string | null;
+  serverTime: string;
 }>();
 const emit = defineEmits<{ selectScene: [id: string]; selectResident: [id: string] }>();
 const { t } = useI18n();
@@ -15,7 +17,18 @@ const { locale } = useAppLocale();
 
 const topScenes = computed(() => props.scenes.filter(scene => scene.parentSceneId && scene.parentSceneId.endsWith("campus")));
 const sceneById = computed(() => new Map(props.scenes.map(scene => [scene.id, scene])));
+const clientNow = ref(Date.now());
+const serverOffset = ref(Date.parse(props.serverTime) - Date.now());
+let clockTimer: ReturnType<typeof setInterval> | null = null;
+onMounted(() => { clockTimer = setInterval(() => { clientNow.value = Date.now(); }, 1_000); });
+onBeforeUnmount(() => { if (clockTimer) clearInterval(clockTimer); });
+watch(() => props.serverTime, value => { serverOffset.value = Date.parse(value) - Date.now(); });
 const residentPosition = (resident: MeetCampusResident) => {
+  if (resident.state.journey?.path?.length) {
+    const progress = journeyProgress(resident.state.journey.departAt, resident.state.journey.arriveAt, clientNow.value + serverOffset.value);
+    const point = interpolateJourneyPath(resident.state.journey.path, progress);
+    if (point) return { left: `${point.x}%`, top: `${point.y}%` };
+  }
   const scene = sceneById.value.get(resident.state.sceneId);
   const parent = scene?.parentSceneId ? sceneById.value.get(scene.parentSceneId) : null;
   const anchor = parent?.slug === "campus" ? scene : parent ?? scene;
@@ -57,6 +70,7 @@ const sceneIcon = (kind: string) => ({ study: "lucide:book-open", sport: "lucide
       <span class="pixel-person__shadow"></span>
       <MeetCampusAvatar :appearance="resident.appearance" size="map" animated />
       <strong v-if="resident.id === myResidentId">{{ t('meetCampus.world.mine') }}</strong>
+      <i v-if="resident.state.journey" class="pixel-person__walking"><Icon name="lucide:footprints" /></i>
     </button>
     <div class="world-map__legend"><Icon name="lucide:clock-3" />{{ t('meetCampus.world.softRealtime') }}</div>
   </section>
@@ -74,6 +88,7 @@ const sceneIcon = (kind: string) => ({ study: "lucide:book-open", sport: "lucide
 .pixel-person { position:absolute; z-index:7; width:42px; height:56px; padding:0; border:0; background:transparent; transform:translate(-50%,-50%); cursor:pointer; filter:drop-shadow(0 2px 2px rgba(15,35,68,.3)); transition:transform .18s ease; }
 .pixel-person:hover { z-index:10; transform:translate(-50%,-50%) scale(1.18); }.pixel-person--mine { z-index:9; }
 .pixel-person__shadow { display:none }.pixel-person strong { position:absolute; left:50%; top:-15px; transform:translateX(-50%); padding:3px 6px; border-radius:999px; color:var(--text-inverse); background:var(--semantic-purple); font-size:.58rem; white-space:nowrap; }
+.pixel-person__walking{position:absolute;right:-12px;bottom:1px;display:grid;width:19px;height:19px;place-items:center;border-radius:50%;color:var(--interactive-active-text);background:var(--surface-primary);box-shadow:var(--shadow-small)}.pixel-person__walking :deep(svg){width:11px;height:11px}
 @media(max-width:760px){.world-map{min-height:calc(100dvh - 154px);border-radius:0;border-left:0;border-right:0}.world-map__place{max-width:128px;font-size:.65rem}.world-map__status{top:12px;left:12px}.world-map__legend{display:none}.pixel-person{transform:translate(-50%,-50%) scale(.9)}}
 @media(prefers-reduced-motion:reduce){.world-map__place,.pixel-person{transition:none}}
 </style>
