@@ -191,6 +191,16 @@ front-end/
 5. **i18n 漏翻**：新增页面先补 `zh.json`/`en.json` key，跑 `npm run i18n:check`。
 6. **颜色硬编码**：新样式必须用主题 CSS 变量。
 
+## 8. MeetCampus 仓库边界
+
+- MeetCampus 已独立到私有仓库 `taowenxiang/meetcampus`，由自己的 Nuxt
+  前端、Flask API、世界 Worker 和学校服务器发布控制器维护。
+- 不要在 UniKorn 前端重新加入 `/meetcampus` 页面、组件、composable、类型、
+  locale、导航入口或地图资源。学校域名中的 `/meetcampus/` 与
+  `/api/meetcampus/` 由 Nginx 委托给独立服务。
+- MeetCampus 的开发、测试与生产发布全部从独立仓库进行；UniKorn 前端发布
+  不应构建、重启或覆盖 MeetCampus。
+
 ---
 
-*Last updated: 2026-08-22*
+*Last updated: 2026-08-29*

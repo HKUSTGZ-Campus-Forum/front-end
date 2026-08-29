@@ -85,7 +85,6 @@
     "academicMap": "学业进度",
     "activity": "活动",
     "teamMatching": "组队",
-    "meetCampus": "MeetCampus 内测",
     "users": "用户",
     "scheduler": "排课助手",
     "wiki": "HKUST-GZ Wiki",
@@ -1304,7 +1303,7 @@
         "pathStart": "从一门课程开始",
         "mapStart": "从一个学科开始",
         "pathStartHelp": "搜索课程，只查看它之前的直接要求，以及它直接解锁的后续课程。",
-      "mapStartHelp": "选择学科，沿真实先修路径浏览课程网络；没有内部路径的课程会单独收纳。"
+        "mapStartHelp": "选择学科，沿真实先修路径浏览课程网络；没有内部路径的课程会单独收纳。"
       },
       "path": {
         "ariaLabel": "{course} 的直接课程路径",
@@ -1350,21 +1349,21 @@
         "ariaLabel": "{subject} 学科地图",
         "kicker": "课程目录总览",
         "title": "{subject} 学科地图",
-      "description": "按课程等级展开真实先修网络。箭头表示学习方向，跨学科入口和没有内部路径的课程分别收纳。",
+        "description": "按课程等级展开真实先修网络。箭头表示学习方向，跨学科入口和没有内部路径的课程分别收纳。",
         "totalCourses": "课程数",
         "withRelationships": "有关系",
         "independentCourses": "独立课程",
         "externalGateways": "跨学科入口",
-      "externalGatewaysHelp": "汇总相关学科，不把每一条跨越关系都画出来。",
-      "externalCount": "{count} 条关联",
-      "pathStage": "路径阶段 {stage}",
-      "zoomControls": "地图缩放控制",
-      "zoomOut": "缩小地图",
-      "zoomIn": "放大地图",
-      "noInternalPaths": "当前学科没有已知的内部先修路径",
-      "noInternalPathsHelp": "课程仍完整保留在下方目录中；跨学科关系可在进入单门课程后查看。",
-      "independentTitle": "其他课程",
-      "independentHelp": "{count} 门课程没有形成学科内部先修路径，展开后可完整浏览。",
+        "externalGatewaysHelp": "汇总相关学科，不把每一条跨越关系都画出来。",
+        "externalCount": "{count} 条关联",
+        "pathStage": "路径阶段 {stage}",
+        "zoomControls": "地图缩放控制",
+        "zoomOut": "缩小地图",
+        "zoomIn": "放大地图",
+        "noInternalPaths": "当前学科没有已知的内部先修路径",
+        "noInternalPathsHelp": "课程仍完整保留在下方目录中；跨学科关系可在进入单门课程后查看。",
+        "independentTitle": "其他课程",
+        "independentHelp": "{count} 门课程没有形成学科内部先修路径，展开后可完整浏览。",
         "levelCount": "{count} 门课程",
         "levels": {
           "foundation": "基础课程",
@@ -1374,10 +1373,10 @@
           "4000": "4000 级",
           "5000plus": "5000 级以上"
         },
-      "legendRelated": "有结构化关系",
-      "legendIndependent": "暂无已知关系",
-      "legendPrerequisite": "先修方向",
-      "legendCourse": "课程节点",
+        "legendRelated": "有结构化关系",
+        "legendIndependent": "暂无已知关系",
+        "legendPrerequisite": "先修方向",
+        "legendCourse": "课程节点",
         "clickHint": "点击任意课程站点，进入它的直接课程路径。"
       }
     },
@@ -2723,254 +2722,6 @@
       "fri": "周五",
       "sat": "周六",
       "sun": "周日"
-    }
-  },
-  "meetCampus": {
-    "title": "MeetCampus",
-    "privateBeta": "私密内测",
-    "subtitle": "你忙你的生活，你的校园分身也在这里认真生活。",
-    "metaDescription": "MeetCampus 私密内测：一个持续生活、记忆与建立关系的 AI 校园分身世界。",
-    "sandboxBadge": "引导沙盒",
-    "progress": "第 {current} / {total} 步",
-    "map": {
-      "ariaLabel": "MeetCampus 虚拟校园地图",
-      "sandboxAgents": "4 个沙盒 Agent 正在探索",
-      "taskLocation": "当前任务地点",
-      "sandboxLegend": "地图角色为演示状态，不代表真实在线用户"
-    },
-    "phases": {
-      "setup": "设定这次社交意图",
-      "searching": "Agent 正在寻找场景",
-      "encounter": "一次沙盒相遇",
-      "experience": "选择演示故事分支",
-      "story": "查看共享故事",
-      "consent": "运行双向同意演示",
-      "profile": "查看已解锁资料",
-      "planning": "安排线下破冰",
-      "pass": "线下破冰通行证",
-      "feedback": "记录见面感受",
-      "complete": "本次体验完成"
-    },
-    "setup": {
-      "transparency": "当前版本用于验证流程。候选人、匹配理由、故事和回应均为预设内容，不是实时 Agent 决策。",
-      "intentLabel": "你现在想找什么搭子？",
-      "paceLabel": "希望用什么节奏开始？",
-      "paces": {
-        "quiet": "安静陪伴",
-        "easy": "轻松交流",
-        "active": "主动认识"
-      },
-      "paceHint": "节奏会保存在本次体验中，但当前不会改变候选人或故事内容。",
-      "groupLabel": "人数偏好",
-      "oneToOne": "当前沙盒支持一对一",
-      "groupComingSoon": "三人小组暂未开放"
-    },
-    "searching": {
-      "title": "正在前往虚拟校园",
-      "description": "你的 Agent 正在前往{location}，系统随后会载入固定沙盒候选人。",
-      "fixedCandidate": "固定候选人",
-      "noLiveSearch": "没有实时用户搜索"
-    },
-    "encounter": {
-      "title": "你的 Agent 遇见了“{agent}”",
-      "atLocation": "这次沙盒相遇发生在{location}。"
-    },
-    "experience": {
-      "userChoiceDisclosure": "这里由你选择预设故事分支。它用于验证交互，不代表 Agent 自主做出了决定。"
-    },
-    "story": {
-      "sharedStory": "预设共享故事",
-      "myAgent": "我的 Agent 做了什么",
-      "otherAgent": "{agent}做了什么",
-      "commonGround": "一个共同点",
-      "difference": "一个有趣的差异",
-      "icebreaker": "第一条破冰问题"
-    },
-    "consent": {
-      "you": "你的选择",
-      "accepted": "愿意认识对方",
-      "simulatedPending": "等待沙盒回应",
-      "disclosure": "目前没有第二位真实用户。下面的按钮会明确运行一次“对方同意”模拟。"
-    },
-    "profile": {
-      "unlocked": "沙盒资料已解锁"
-    },
-    "planning": {
-      "location": "地点",
-      "duration": "时长",
-      "minutes": "{count} 分钟",
-      "chooseTime": "选择一个演示时间",
-      "disclosure": "时间不会发送给真实用户，也不会读取日历。确认结果由沙盒模拟。"
-    },
-    "pass": {
-      "label": "线下破冰通行证",
-      "time": "时间",
-      "place": "地点",
-      "duration": "预计时长",
-      "task": "共同任务",
-      "icebreaker": "开场问题",
-      "safety": "真实上线后，线下见面应选择公共地点，双方都可以随时取消或离开。当前按钮只推进测试流程。"
-    },
-    "feedback": {
-      "title": "这次模拟见面感觉如何？",
-      "description": "反馈仅保存在当前浏览器，用于观察完整流程，不会训练 Agent。",
-      "options": {
-        "natural": { "label": "很自然", "description": "节奏舒服，愿意再见一次" },
-        "good": { "label": "还不错", "description": "有一点生疏，但整体可以" },
-        "pressure": { "label": "有点压力", "description": "下次需要更慢或更明确的边界" }
-      }
-    },
-    "complete": {
-      "title": "你走完了 MeetCampus 沙盒流程",
-      "description": "从意图、相遇、共享故事到线下反馈，这次测试进度已完整记录。",
-      "memoryLabel": "本地共同记忆",
-      "storageDisclosure": "这条记忆只保存在当前浏览器，不会同步到其他设备，也不会用于模型学习。"
-    },
-    "about": {
-      "title": "这次内测实际验证什么",
-      "description": "当前迁移保留原项目的交互流程，同时把模拟边界和真实能力清楚分开。",
-      "pointOne": "真实 UniKorn 登录与服务端白名单",
-      "pointTwo": "预设候选人、故事与回应",
-      "pointThree": "浏览器本地测试进度"
-    },
-    "loading": {
-      "title": "正在核验内测身份",
-      "description": "系统正在通过 UniKorn 登录状态检查 MeetCampus 私密内测权限。"
-    },
-    "restricted": {
-      "title": "此账号暂未受邀",
-      "description": "MeetCampus 目前只对指定内测账号开放。你的 UniKorn 其他功能不会受影响。"
-    },
-    "error": {
-      "title": "暂时无法载入 MeetCampus",
-      "description": "权限检查或沙盒数据载入失败，请检查网络后重试。"
-    },
-    "world": {
-      "mapAria": "持续运转的 MeetCampus 校园世界",
-      "residentsAlive": "{count} 位居民正在生活",
-      "mine": "我的分身",
-      "softRealtime": "每 30–90 分钟形成一次有意义的行动",
-      "waiting": "在感受周围",
-      "refresh": "刷新世界状态",
-      "panelNav": "分身世界面板",
-      "homecoming": "归来",
-      "relations": "关系",
-      "guide": "指引",
-      "fromCompanion": "来自你的分身",
-      "todayReport": "它想告诉你的事",
-      "new": "新见闻",
-      "takeOffline": "把这次相遇带到线下",
-      "noStoryTitle": "它正在外面生活",
-      "noStoryDescription": "新的经历会在真实发生后出现在这里。你不需要一直守着它。",
-      "livedTogether": "不是匹配分数，是共同经历",
-      "relationshipBook": "关系手册",
-      "synthetic": "内测居民",
-      "noRelationsTitle": "关系会慢慢长出来",
-      "noRelationsDescription": "当分身和别人共同做过事情，这里才会留下痕迹。",
-      "notRemoteControl": "给方向，不是遥控",
-      "giveDirection": "告诉它你期待什么",
-      "currentDestination": "这次想去",
-      "clear": "留给它决定",
-      "commandLabel": "对你的分身说",
-      "commandPlaceholder": "例如：如果遇到也喜欢打羽毛球的人，试着一起打一局。",
-      "commandHint": "它会结合自己的性格和眼前情境判断怎么做。",
-      "send": "告诉它",
-      "commandAccepted": "它听见了，会在接下来的行动里认真考虑。",
-      "actionFailed": "这次没有传达到，请稍后再试。",
-      "yourCompanion": "你的校园分身",
-      "townResident": "小镇居民",
-      "bridgePreview": "线下破冰预览",
-      "bridgeTitle": "这一步需要双方真人同意",
-      "bridgeSyntheticDisclosure": "当前对方是明确标识的内测合成居民，因此这里只展示未来真实用户的同意流程，不会伪造真人回应。",
-      "noContactShared": "未共享姓名、联系方式或现实日程"
-    },
-    "runtime": {
-      "perspective": "调试视角",
-      "traceTab": "运行",
-      "sameRuntime": "20 位居民使用同一套运行时",
-      "traceTitle": "它刚才怎样做决定",
-      "walking": "正在校园路上",
-      "worldTimedJourney": "行程由世界时间推进，抵达前不会瞬移",
-      "nextBoundary": "下一次环境变化或决策边界到来时继续思考",
-      "deepSeek": "DeepSeek 选择",
-      "utility": "一致性兜底",
-      "candidates": "个合法候选",
-      "noTraceTitle": "还没有新的决策轨迹",
-      "noTraceDescription": "居民到达下一次决策边界后，这里会显示观察、候选意图和世界执行结果。",
-      "viewAs": "切换到它的视角",
-      "states": {
-        "arrived": "刚刚抵达",
-        "observing": "正在观察周围",
-        "reflecting_on_activity": "正在回味刚才的经历",
-        "reconsidering": "正在重新考虑",
-        "declined_invitation": "刚刚礼貌拒绝了邀请",
-        "invitation_declined": "收到了一次婉拒",
-        "invitation_expired": "邀请暂时错过了",
-        "setting_out": "准备出门",
-        "following_routine": "按自己的节奏生活"
-      }
-    },
-    "homecoming": {
-      "title": "分身归来汇报",
-      "back": "你回来啦，我有事情想告诉你",
-      "listened": "我听完了",
-      "close": "稍后再听"
-    },
-    "onboarding": {
-      "title": "第一次遇见你的校园分身",
-      "firstMeeting": "第一次见面",
-      "hello": "嗨，我会在这里替你好好生活。",
-      "intro": "不用填一份漫长问卷。告诉我几件真正有用的小事，我会从自己的经历里慢慢认识你。",
-      "nameLabel": "你想怎么叫我？",
-      "namePlaceholder": "给你的分身取个名字",
-      "paceLabel": "我认识新朋友时，可以是什么节奏？",
-      "paces": { "slow_warmup": "先观察，慢慢熟", "natural": "自然一点就好", "adventurous": "可以主动试试看" },
-      "placesLabel": "哪些地方可能让我更像你？最多选三个",
-      "places": { "library": "图书馆", "gym": "体育馆", "canteen": "食堂", "lakeside": "湖边" },
-      "noteLabel": "今天有什么想悄悄告诉我的？",
-      "notePlaceholder": "例如：最近科研有点忙，希望你替我多看看校园。",
-      "promiseTitle": "我会守住边界",
-      "promise": "我可以自主进行低风险的虚拟活动；真实身份、联系方式和线下承诺始终要由你确认。",
-      "waking": "正在醒来…",
-      "begin": "好，去生活吧"
-    },
-    "appearance": {
-      "eyebrow": "分身衣橱",
-      "title": "把我打扮成你喜欢的样子",
-      "livePreview": "实时预览",
-      "previewTitle": "这就是我出门的样子",
-      "previewHint": "每一种选择都会跟着我走进校园、故事和新的关系里。",
-      "onboardingTitle": "先帮我挑一身出门的样子",
-      "onboardingHint": "发型、肤色、穿搭和配饰都可以自己选，以后也能随时换。",
-      "categories": "形象分类",
-      "category": { "skinTone": "肤色", "hairStyle": "发型", "hairColor": "发色", "outfit": "穿搭", "accessory": "配饰" },
-      "option": {
-        "porcelain": "白皙", "warm": "暖调", "tan": "小麦", "deep": "深色",
-        "crop": "清爽短发", "bob": "俏皮短发", "waves": "自然长卷", "bun": "元气丸子", "curly": "蓬松卷发", "cap": "校园帽",
-        "ink": "墨黑", "chestnut": "栗棕", "auburn": "赤茶", "plum": "梅紫", "ocean": "雾蓝",
-        "campus_blue": "校园蓝", "mint_cardigan": "薄荷开衫", "sunset_hoodie": "落日卫衣", "lavender_knit": "薰衣草针织", "sport_green": "运动绿", "lab_coat": "实验室白袍",
-        "none": "轻装出门", "round_glasses": "圆框眼镜", "headphones": "头戴耳机", "beret": "贝雷帽", "hairclip": "星光发夹"
-      },
-      "shuffle": "帮我灵感搭配",
-      "edit": "重新打扮",
-      "save": "就这样出门",
-      "saving": "正在换装…",
-      "cancel": "先不换"
-    },
-    "actions": {
-      "aboutBeta": "内测说明",
-      "reset": "重新开始",
-      "resetConfirm": "确定清除当前 MeetCampus 本地测试进度并重新开始吗？",
-      "dispatchAgent": "派出我的 Agent",
-      "viewEncounter": "查看这次相遇",
-      "requestIntroduction": "愿意认识对方",
-      "runningSimulation": "正在运行模拟…",
-      "simulateConsent": "模拟：对方同意",
-      "planMeetup": "安排一次线下破冰",
-      "simulatePlan": "模拟：对方确认时间",
-      "markMeetupComplete": "模拟：已完成这次见面",
-      "backHome": "返回首页",
-      "retry": "重新载入"
     }
   },
   "adminCharts": {

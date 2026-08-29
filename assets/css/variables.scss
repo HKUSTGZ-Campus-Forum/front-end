@@ -59,24 +59,6 @@
   --semantic-info: #26a4ff;
   --semantic-purple: #7c3aed;
 
-  // MeetCampus map overlays sit on a fixed raster map, so these remain
-  // theme-independent to preserve contrast in both light and dark shells.
-  --meetcampus-map-grass: #6dbd52;
-  --meetcampus-map-overlay: rgba(255, 255, 255, 0.94);
-  --meetcampus-map-ink: #1a2a4a;
-  --meetcampus-map-outline: #ffffff;
-  --meetcampus-map-study: #6d4bd1;
-  --meetcampus-map-study-text: #4f3bad;
-  --meetcampus-map-dining: #f97316;
-  --meetcampus-map-activity: #16a36a;
-  --meetcampus-map-active: #f59e0b;
-  --meetcampus-map-agent-mine: #ef476f;
-  --meetcampus-map-agent-blue: #2563eb;
-  --meetcampus-map-agent-neutral: #45566f;
-  --meetcampus-map-shadow-small: 0 1px 4px rgba(26, 42, 74, 0.14);
-  --meetcampus-map-shadow-medium: 0 2px 8px rgba(26, 42, 74, 0.18);
-  --meetcampus-map-agent-shadow: 0 3px 6px rgba(26, 42, 74, 0.25);
-
   // Scheduler credit levels (per-credit color coding, mirrors the original planner)
   --credit-level-1: #10b981;
   --credit-level-2: #06b6d4;

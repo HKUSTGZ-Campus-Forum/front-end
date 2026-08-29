@@ -85,7 +85,6 @@
     "academicMap": "Degree Progress",
     "activity": "Activities",
     "teamMatching": "Form a team",
-    "meetCampus": "MeetCampus beta",
     "users": "Users",
     "scheduler": "Scheduling Assistant",
     "wiki": "HKUST-GZ Wiki",
@@ -1304,7 +1303,7 @@
         "pathStart": "Start from a course",
         "mapStart": "Start from a subject",
         "pathStartHelp": "Search for a course to see only the direct requirements before it and the courses it unlocks.",
-      "mapStartHelp": "Choose a subject to follow its real prerequisite network. Courses without an internal path remain available in a separate directory."
+        "mapStartHelp": "Choose a subject to follow its real prerequisite network. Courses without an internal path remain available in a separate directory."
       },
       "path": {
         "ariaLabel": "Direct course path for {course}",
@@ -1350,21 +1349,21 @@
         "ariaLabel": "{subject} subject map",
         "kicker": "Catalog overview",
         "title": "{subject} Subject Map",
-      "description": "The real prerequisite network is arranged by course level. Arrows show learning direction; cross-subject gateways and courses without internal paths are kept separate.",
+        "description": "The real prerequisite network is arranged by course level. Arrows show learning direction; cross-subject gateways and courses without internal paths are kept separate.",
         "totalCourses": "Courses",
         "withRelationships": "With relationships",
         "independentCourses": "Independent",
         "externalGateways": "Cross-subject gateways",
-      "externalGatewaysHelp": "Related subjects are summarized instead of drawing every crossing line.",
-      "externalCount": "{count} links",
-      "pathStage": "Path stage {stage}",
-      "zoomControls": "Map zoom controls",
-      "zoomOut": "Zoom out",
-      "zoomIn": "Zoom in",
-      "noInternalPaths": "No known prerequisite path inside this subject",
-      "noInternalPathsHelp": "Every course remains available in the directory below. Open a course to inspect its cross-subject relationships.",
-      "independentTitle": "Other courses",
-      "independentHelp": "{count} courses do not form an internal prerequisite path. Expand to browse the complete set.",
+        "externalGatewaysHelp": "Related subjects are summarized instead of drawing every crossing line.",
+        "externalCount": "{count} links",
+        "pathStage": "Path stage {stage}",
+        "zoomControls": "Map zoom controls",
+        "zoomOut": "Zoom out",
+        "zoomIn": "Zoom in",
+        "noInternalPaths": "No known prerequisite path inside this subject",
+        "noInternalPathsHelp": "Every course remains available in the directory below. Open a course to inspect its cross-subject relationships.",
+        "independentTitle": "Other courses",
+        "independentHelp": "{count} courses do not form an internal prerequisite path. Expand to browse the complete set.",
         "levelCount": "{count} courses",
         "levels": {
           "foundation": "Foundations",
@@ -1374,10 +1373,10 @@
           "4000": "4000 level",
           "5000plus": "5000+ level"
         },
-      "legendRelated": "Has a structured relationship",
-      "legendIndependent": "No known relationship",
-      "legendPrerequisite": "Prerequisite direction",
-      "legendCourse": "Course node",
+        "legendRelated": "Has a structured relationship",
+        "legendIndependent": "No known relationship",
+        "legendPrerequisite": "Prerequisite direction",
+        "legendCourse": "Course node",
         "clickHint": "Select any course stop to open its direct Course Path."
       }
     },
@@ -2723,254 +2722,6 @@
       "fri": "Fri",
       "sat": "Sat",
       "sun": "Sun"
-    }
-  },
-  "meetCampus": {
-    "title": "MeetCampus",
-    "privateBeta": "Private beta",
-    "subtitle": "Live your life while your campus companion lives here, too.",
-    "metaDescription": "MeetCampus private beta: a persistent AI campus companion world with lived events, memory, and relationships.",
-    "sandboxBadge": "Guided sandbox",
-    "progress": "Step {current} of {total}",
-    "map": {
-      "ariaLabel": "MeetCampus virtual campus map",
-      "sandboxAgents": "4 sandbox Agents are exploring",
-      "taskLocation": "Current task location",
-      "sandboxLegend": "Map characters are demos, not real online users"
-    },
-    "phases": {
-      "setup": "Set a social intention",
-      "searching": "Agent is finding a scene",
-      "encounter": "A sandbox encounter",
-      "experience": "Choose a demo story branch",
-      "story": "Read the shared story",
-      "consent": "Run the mutual-consent demo",
-      "profile": "View the unlocked profile",
-      "planning": "Plan an offline icebreaker",
-      "pass": "Offline icebreaker pass",
-      "feedback": "Record how it felt",
-      "complete": "Experience complete"
-    },
-    "setup": {
-      "transparency": "This version validates the flow. Candidates, match reasons, stories, and responses are preset content, not live Agent decisions.",
-      "intentLabel": "Who would you like to meet right now?",
-      "paceLabel": "How should the interaction begin?",
-      "paces": {
-        "quiet": "Quiet company",
-        "easy": "Easy conversation",
-        "active": "Meet proactively"
-      },
-      "paceHint": "The pace is saved with this session, but it does not change the candidate or story yet.",
-      "groupLabel": "Group preference",
-      "oneToOne": "The current sandbox supports one-to-one meetings",
-      "groupComingSoon": "Three-person groups are not available yet"
-    },
-    "searching": {
-      "title": "Entering the virtual campus",
-      "description": "Your Agent is heading to {location}. A fixed sandbox candidate will load next.",
-      "fixedCandidate": "Fixed candidate",
-      "noLiveSearch": "No live user search"
-    },
-    "encounter": {
-      "title": "Your Agent met “{agent}”",
-      "atLocation": "This sandbox encounter takes place at {location}."
-    },
-    "experience": {
-      "userChoiceDisclosure": "You choose a preset story branch here. This validates the interaction and does not represent an autonomous Agent decision."
-    },
-    "story": {
-      "sharedStory": "Preset shared story",
-      "myAgent": "What my Agent did",
-      "otherAgent": "What {agent} did",
-      "commonGround": "One thing in common",
-      "difference": "One interesting difference",
-      "icebreaker": "First icebreaker question"
-    },
-    "consent": {
-      "you": "Your choice",
-      "accepted": "Open to meeting",
-      "simulatedPending": "Waiting for a sandbox response",
-      "disclosure": "There is no second real user yet. The button below explicitly runs a simulated acceptance."
-    },
-    "profile": {
-      "unlocked": "Sandbox profile unlocked"
-    },
-    "planning": {
-      "location": "Location",
-      "duration": "Duration",
-      "minutes": "{count} min",
-      "chooseTime": "Choose a demo time",
-      "disclosure": "This time is not sent to a real user and no calendar is read. Confirmation is simulated."
-    },
-    "pass": {
-      "label": "Offline icebreaker pass",
-      "time": "Time",
-      "place": "Place",
-      "duration": "Duration",
-      "task": "Shared task",
-      "icebreaker": "Opening question",
-      "safety": "In a real release, meet in a public place and remember that either person can cancel or leave at any time. This button only advances the test flow."
-    },
-    "feedback": {
-      "title": "How did the simulated meetup feel?",
-      "description": "Feedback stays in this browser to complete the flow. It does not train an Agent.",
-      "options": {
-        "natural": { "label": "Very natural", "description": "The pace felt comfortable and I would meet again" },
-        "good": { "label": "Pretty good", "description": "A little unfamiliar, but positive overall" },
-        "pressure": { "label": "A bit pressured", "description": "Next time should be slower or have clearer boundaries" }
-      }
-    },
-    "complete": {
-      "title": "You completed the MeetCampus sandbox",
-      "description": "Your test journey from intention and encounter to shared story and offline feedback is complete.",
-      "memoryLabel": "Local shared memory",
-      "storageDisclosure": "This memory stays in this browser. It does not sync to other devices or train a model."
-    },
-    "about": {
-      "title": "What this private beta actually validates",
-      "description": "This migration keeps the original interaction flow while separating simulated behavior from real capabilities.",
-      "pointOne": "Real UniKorn login and server-side allowlist",
-      "pointTwo": "Preset candidates, stories, and responses",
-      "pointThree": "Browser-local test progress"
-    },
-    "loading": {
-      "title": "Checking private-beta access",
-      "description": "UniKorn is checking your signed-in identity before loading MeetCampus."
-    },
-    "restricted": {
-      "title": "This account is not invited yet",
-      "description": "MeetCampus is currently limited to selected beta accounts. Your other UniKorn features are unaffected."
-    },
-    "error": {
-      "title": "MeetCampus could not be loaded",
-      "description": "The access check or sandbox data failed to load. Check your connection and try again."
-    },
-    "world": {
-      "mapAria": "The persistent MeetCampus world",
-      "residentsAlive": "{count} residents are living here",
-      "mine": "My companion",
-      "softRealtime": "One meaningful action every 30–90 minutes",
-      "waiting": "taking in the surroundings",
-      "refresh": "Refresh world state",
-      "panelNav": "Companion world panel",
-      "homecoming": "Return",
-      "relations": "Bonds",
-      "guide": "Guide",
-      "fromCompanion": "From your companion",
-      "todayReport": "What it wants to tell you",
-      "new": "New",
-      "takeOffline": "Bring this encounter offline",
-      "noStoryTitle": "It is out there living",
-      "noStoryDescription": "New accounts appear only after something really happens. You do not need to keep watching.",
-      "livedTogether": "Shared life, not a match score",
-      "relationshipBook": "Relationship book",
-      "synthetic": "Beta resident",
-      "noRelationsTitle": "Relationships take time",
-      "noRelationsDescription": "A trace appears here only after companions have actually done something together.",
-      "notRemoteControl": "Direction, not remote control",
-      "giveDirection": "Tell it what you hope for",
-      "currentDestination": "Destination",
-      "clear": "Let it decide",
-      "commandLabel": "Say something to your companion",
-      "commandPlaceholder": "For example: if you meet someone who likes badminton, try playing a game together.",
-      "commandHint": "It will decide how to act from its character and current situation.",
-      "send": "Tell it",
-      "commandAccepted": "It heard you and will seriously consider this in its next actions.",
-      "actionFailed": "That did not reach your companion. Please try again later.",
-      "yourCompanion": "Your campus companion",
-      "townResident": "Town resident",
-      "bridgePreview": "Offline bridge preview",
-      "bridgeTitle": "Both real people must consent",
-      "bridgeSyntheticDisclosure": "The counterpart is explicitly a synthetic beta resident. This only previews the future consent flow and never fabricates a human response.",
-      "noContactShared": "No name, contact details, or real schedule was shared"
-    },
-    "runtime": {
-      "perspective": "Debug view",
-      "traceTab": "Runtime",
-      "sameRuntime": "All 20 residents share one runtime",
-      "traceTitle": "How this decision happened",
-      "walking": "Walking across campus",
-      "worldTimedJourney": "World time advances this journey; arrival cannot happen early",
-      "nextBoundary": "It will think again at the next world event or decision boundary",
-      "deepSeek": "DeepSeek selection",
-      "utility": "Parity fallback",
-      "candidates": "valid candidates",
-      "noTraceTitle": "No decision trace yet",
-      "noTraceDescription": "After the next decision boundary, this view shows the observation, valid intents, and world execution result.",
-      "viewAs": "Switch to this perspective",
-      "states": {
-        "arrived": "Just arrived",
-        "observing": "Taking in the surroundings",
-        "reflecting_on_activity": "Reflecting on what just happened",
-        "reconsidering": "Reconsidering the next move",
-        "declined_invitation": "Politely declined an invitation",
-        "invitation_declined": "Received a polite decline",
-        "invitation_expired": "The invitation was missed",
-        "setting_out": "Getting ready to leave",
-        "following_routine": "Following a personal rhythm"
-      }
-    },
-    "homecoming": {
-      "title": "Companion homecoming report",
-      "back": "You're back. I have something to tell you",
-      "listened": "I've heard the story",
-      "close": "Listen later"
-    },
-    "onboarding": {
-      "title": "Meet your campus companion",
-      "firstMeeting": "Our first meeting",
-      "hello": "Hi. I will build a life here alongside yours.",
-      "intro": "No long questionnaire. Tell me a few useful things and I will get to know you through my own experiences.",
-      "nameLabel": "What would you like to call me?",
-      "namePlaceholder": "Name your companion",
-      "paceLabel": "How should I approach new people?",
-      "paces": { "slow_warmup": "Observe and warm up", "natural": "Keep it natural", "adventurous": "Try things proactively" },
-      "placesLabel": "Where might I feel most like you? Choose up to three",
-      "places": { "library": "Library", "gym": "Gym", "canteen": "Canteen", "lakeside": "Lakeside" },
-      "noteLabel": "Anything you want to tell me quietly today?",
-      "notePlaceholder": "For example: research is busy, so look around campus for me.",
-      "promiseTitle": "I will respect the boundary",
-      "promise": "I can autonomously take low-risk virtual actions. Real identity, contact details, and offline commitments always require your confirmation.",
-      "waking": "Waking up…",
-      "begin": "Go live your life"
-    },
-    "appearance": {
-      "eyebrow": "Companion wardrobe",
-      "title": "Dress me in a look you love",
-      "livePreview": "Live preview",
-      "previewTitle": "Ready to step outside",
-      "previewHint": "Your choices travel with me through campus, stories, and every new connection.",
-      "onboardingTitle": "Help me choose my first-day look",
-      "onboardingHint": "Pick my hair, skin tone, outfit, and accessories. You can restyle me anytime.",
-      "categories": "Appearance categories",
-      "category": { "skinTone": "Skin", "hairStyle": "Hair", "hairColor": "Color", "outfit": "Outfit", "accessory": "Extras" },
-      "option": {
-        "porcelain": "Porcelain", "warm": "Warm", "tan": "Tan", "deep": "Deep",
-        "crop": "Neat crop", "bob": "Playful bob", "waves": "Long waves", "bun": "High bun", "curly": "Soft curls", "cap": "Campus cap",
-        "ink": "Ink", "chestnut": "Chestnut", "auburn": "Auburn", "plum": "Plum", "ocean": "Ocean blue",
-        "campus_blue": "Campus blue", "mint_cardigan": "Mint cardigan", "sunset_hoodie": "Sunset hoodie", "lavender_knit": "Lavender knit", "sport_green": "Sport green", "lab_coat": "Lab coat",
-        "none": "No extras", "round_glasses": "Round glasses", "headphones": "Headphones", "beret": "Beret", "hairclip": "Star hairclip"
-      },
-      "shuffle": "Surprise me",
-      "edit": "Restyle me",
-      "save": "Wear this look",
-      "saving": "Changing…",
-      "cancel": "Not now"
-    },
-    "actions": {
-      "aboutBeta": "About this beta",
-      "reset": "Start over",
-      "resetConfirm": "Clear your local MeetCampus test progress and start over?",
-      "dispatchAgent": "Send my Agent",
-      "viewEncounter": "View this encounter",
-      "requestIntroduction": "I am open to meeting",
-      "runningSimulation": "Running simulation…",
-      "simulateConsent": "Simulate: candidate accepts",
-      "planMeetup": "Plan an offline icebreaker",
-      "simulatePlan": "Simulate: candidate confirms time",
-      "markMeetupComplete": "Simulate: meetup completed",
-      "backHome": "Back to home",
-      "retry": "Reload"
     }
   },
   "adminCharts": {
