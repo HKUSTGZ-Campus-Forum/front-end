@@ -29,3 +29,9 @@ Do not run the old full production workflow or restart CoursePlan.
 Validation: browser inspection at 1440px, 390px, and 320px; no horizontal
 overflow; both restriction notices absent; actual 10-second navigation to
 the school site verified. The temporary localhost:3000 server was stopped.
+
+Published on 2026-08-31 (Asia/Shanghai), with public response bytes matching
+the checked-in HTML and desktop/mobile redirect checks passing:
+[deployment record](https://github.com/HKUSTGZ-Campus-Forum/front-end/actions/runs/33327910918).
+After this publication, the one-time workflow was changed to manual-only
+so later branch pushes cannot publish another update automatically.

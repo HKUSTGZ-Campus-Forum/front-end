@@ -1,9 +1,7 @@
 name: Update legacy migration notice
 
 on:
-  push:
-    branches: [agent/legacy-notice-public-access]
-    paths: [.github/workflows/legacy-notice.yml]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,6 +12,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/agent/legacy-notice-public-access'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     environment: production
