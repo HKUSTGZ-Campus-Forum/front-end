@@ -1,4 +1,4 @@
-name: Inspect legacy migration notice
+name: Update legacy migration notice
 
 on:
   push:
@@ -13,13 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  inspect:
+  deploy:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Inspect only the old domain's migration notice
+      - name: Publish verified notice without changing Nginx or databases
         env:
           DEPLOY_HOST: ${{ secrets.PROD_SSH_HOST }}
           DEPLOY_USER: ${{ secrets.PROD_SSH_USER }}
@@ -34,26 +34,13 @@ jobs:
           trap 'rm -rf "$ssh_dir"' EXIT
           install -m 0600 /dev/null "$ssh_dir/key"
           printf '%s\n' "$DEPLOY_PRIVATE_KEY" > "$ssh_dir/key"
+          notice_base64=$(base64 -w0 deploy/legacy-notice/index.html)
           ssh -i "$ssh_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes \
             -o StrictHostKeyChecking=yes -o HostKeyAlias=unikorn.axfff.com \
             -o UserKnownHostsFile=deploy/ssh_known_hosts -o ConnectTimeout=20 \
-            "$DEPLOY_USER@$DEPLOY_HOST" python3 -u - <<'PY'
-          import json, subprocess
-          from pathlib import Path
-          root = Path('/data/prod_unikorn/front-end/_incoming/legacy-notice-20260823T162500Z')
-          for name in ('legacy-notice-server.mjs', 'deploy-old-site-notice-pm2.sh'):
-              print('source:', root / name)
-              print((root / name).read_text())
-          current = Path('/data/prod_unikorn/front-end/current').resolve()
-          print('current:', current)
-          for path in current.glob('*'):
-              print('current_file:', path)
-          result = subprocess.run(['bash', '-lc', 'pm2 jlist'], capture_output=True, text=True)
-          print('pm2_exit:', result.returncode)
-          if result.returncode == 0:
-              for process in json.loads(result.stdout):
-                  env = process.get('pm2_env', {})
-                  print('process:', process.get('name'), 'id:', process.get('pm_id'),
-                        'script:', env.get('pm_exec_path'), 'cwd:', env.get('pm_cwd'),
-                        'status:', env.get('status'))
-          PY
+            "$DEPLOY_USER@$DEPLOY_HOST" python3 - "$notice_base64" < deploy/legacy-notice/deploy.py
+      - name: Verify public response
+        run: |
+          curl --fail --silent --show-error --retry 3 --max-time 20 \
+            https://unikorn.axfff.com/ -o /tmp/legacy-notice-live.html
+          cmp deploy/legacy-notice/index.html /tmp/legacy-notice-live.html
