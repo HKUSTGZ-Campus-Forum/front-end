@@ -1,0 +1,63 @@
+name: Inspect legacy migration notice
+
+on:
+  push:
+    branches: [agent/legacy-notice-public-access]
+    paths: [.github/workflows/legacy-notice.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Inspect only the old domain's migration notice
+        env:
+          DEPLOY_HOST: ${{ secrets.PROD_SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.PROD_SSH_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.PROD_SSH_KEY }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9._:-]+$ ]]
+          [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]]
+          ssh_dir="$RUNNER_TEMP/legacy-notice-ssh"
+          install -d -m 0700 "$ssh_dir"
+          trap 'rm -rf "$ssh_dir"' EXIT
+          install -m 0600 /dev/null "$ssh_dir/key"
+          printf '%s\n' "$DEPLOY_PRIVATE_KEY" > "$ssh_dir/key"
+          ssh -i "$ssh_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o HostKeyAlias=unikorn.axfff.com \
+            -o UserKnownHostsFile=deploy/ssh_known_hosts -o ConnectTimeout=20 \
+            "$DEPLOY_USER@$DEPLOY_HOST" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          print('effective_uid:', os.geteuid())
+          roots = (Path('/etc/nginx/sites-enabled'), Path('/etc/nginx/conf.d'))
+          for root in roots:
+              for path in root.glob('*'):
+                  if not path.is_file():
+                      continue
+                  try:
+                      content = path.read_text()
+                  except PermissionError:
+                      continue
+                  if 'unikorn.axfff.com' not in content or 'dev.unikorn.axfff.com' in content:
+                      continue
+                  stat = path.stat()
+                  print('config:', path, 'resolved:', path.resolve(), 'uid:', stat.st_uid,
+                        'writable:', os.access(path, os.W_OK),
+                        'inline_notice:', 'network-notice' in content)
+                  for line in content.splitlines():
+                      stripped = line.strip()
+                      if stripped.startswith(('root ', 'alias ', 'include ')):
+                          print(stripped)
+          PY
