@@ -41,23 +41,27 @@ jobs:
           import os
           from pathlib import Path
           print('effective_uid:', os.geteuid())
-          roots = (Path('/etc/nginx/sites-enabled'), Path('/etc/nginx/conf.d'))
-          for root in roots:
-              for path in root.glob('*'):
-                  if not path.is_file():
+          path = Path('/etc/nginx/sites-available/prod-unikorn')
+          for line in path.read_text().splitlines():
+              s = line.strip()
+              if s.startswith(('include ', 'root ', 'alias ', 'location ', 'return ', 'proxy_pass ', 'server_name ')):
+                  print(s if not s.startswith('return ') else s[:120])
+          for root in (Path('/etc/nginx'), Path('/data/prod_unikorn')):
+              for path in root.rglob('*'):
+                  if any(x in path.parts for x in ('.git', 'node_modules', 'venv', 'backups', 'releases', 'back-end')):
+                      continue
+                  if not path.is_file() or path.suffix not in ('.html', '.conf'):
                       continue
                   try:
+                      if path.stat().st_size > 100000:
+                          continue
                       content = path.read_text()
-                  except PermissionError:
+                  except (PermissionError, UnicodeError):
                       continue
-                  if 'unikorn.axfff.com' not in content or 'dev.unikorn.axfff.com' in content:
-                      continue
-                  stat = path.stat()
-                  print('config:', path, 'resolved:', path.resolve(), 'uid:', stat.st_uid,
-                        'writable:', os.access(path, os.W_OK),
-                        'inline_notice:', 'network-notice' in content)
-                  for line in content.splitlines():
-                      stripped = line.strip()
-                      if stripped.startswith(('root ', 'alias ', 'include ')):
-                          print(stripped)
+                  if 'network-notice' in content or 'UniKorn has moved' in content:
+                      stat = path.stat()
+                      print('notice_file:', path, 'uid:', stat.st_uid,
+                            'writable:', os.access(path, os.W_OK),
+                            'parent_writable:', os.access(path.parent, os.W_OK),
+                            'bytes:', stat.st_size)
           PY
