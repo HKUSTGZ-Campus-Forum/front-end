@@ -38,29 +38,22 @@ jobs:
             -o StrictHostKeyChecking=yes -o HostKeyAlias=unikorn.axfff.com \
             -o UserKnownHostsFile=deploy/ssh_known_hosts -o ConnectTimeout=20 \
             "$DEPLOY_USER@$DEPLOY_HOST" python3 -u - <<'PY'
-          import os, subprocess
+          import json, subprocess
           from pathlib import Path
-          for directory in ('/data/prod_unikorn/front-end/_incoming/legacy-notice-20260823T162500Z', '/data/prod_unikorn/front-end'):
-              for path in Path(directory).iterdir():
-                  print('entry:', path, 'symlink:', path.is_symlink())
-          for path in Path('/etc/nginx').rglob('*'):
-              if not path.is_file():
-                  continue
-              try:
-                  text = path.read_text()
-              except (OSError, UnicodeError):
-                  continue
-              if any(word in text for word in ('old-site-notice', 'network-notice', 'Refresh', 'refresh')):
-                  print('notice_config:', path)
-                  for line in text.splitlines():
-                      if any(word in line for word in ('old-site', 'root ', 'alias ', 'include ', 'return ', 'Refresh', 'refresh')):
-                          print(line[:200])
-          result = subprocess.run(['sudo', '-n', 'nginx', '-T'], capture_output=True, text=True)
-          print('nginx_inspect_exit:', result.returncode)
-          for line in result.stdout.splitlines():
-              if any(word in line for word in ('old-site', 'network-notice', 'Refresh', 'refresh', 'migration-notice')):
-                  print('active_config:', line[:200])
-          for port in (80, 3000):
-              result = subprocess.run(['curl', '-sS', '--max-time', '5', '-H', 'Host: unikorn.axfff.com', 'http://127.0.0.1:'+str(port)+'/'], capture_output=True, text=True)
-              print('local_port:', port, 'notice:', 'network-notice' in result.stdout)
+          root = Path('/data/prod_unikorn/front-end/_incoming/legacy-notice-20260823T162500Z')
+          for name in ('legacy-notice-server.mjs', 'deploy-old-site-notice-pm2.sh'):
+              print('source:', root / name)
+              print((root / name).read_text())
+          current = Path('/data/prod_unikorn/front-end/current').resolve()
+          print('current:', current)
+          for path in current.glob('*'):
+              print('current_file:', path)
+          result = subprocess.run(['bash', '-lc', 'pm2 jlist'], capture_output=True, text=True)
+          print('pm2_exit:', result.returncode)
+          if result.returncode == 0:
+              for process in json.loads(result.stdout):
+                  env = process.get('pm2_env', {})
+                  print('process:', process.get('name'), 'id:', process.get('pm_id'),
+                        'script:', env.get('pm_exec_path'), 'cwd:', env.get('pm_cwd'),
+                        'status:', env.get('status'))
           PY
