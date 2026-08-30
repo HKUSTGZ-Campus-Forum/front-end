@@ -37,8 +37,9 @@ jobs:
           ssh -i "$ssh_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes \
             -o StrictHostKeyChecking=yes -o HostKeyAlias=unikorn.axfff.com \
             -o UserKnownHostsFile=deploy/ssh_known_hosts -o ConnectTimeout=20 \
-            "$DEPLOY_USER@$DEPLOY_HOST" python3 - <<'PY'
+            "$DEPLOY_USER@$DEPLOY_HOST" python3 -u - <<'PY'
           import os
+          import re
           from pathlib import Path
           print('effective_uid:', os.geteuid())
           path = Path('/etc/nginx/sites-available/prod-unikorn')
@@ -47,21 +48,22 @@ jobs:
               if s.startswith(('include ', 'root ', 'alias ', 'location ', 'return ', 'proxy_pass ', 'server_name ')):
                   print(s if not s.startswith('return ') else s[:120])
           for root in (Path('/etc/nginx'), Path('/data/prod_unikorn')):
-              for path in root.rglob('*'):
-                  if any(x in path.parts for x in ('.git', 'node_modules', 'venv', 'backups', 'releases', 'back-end')):
-                      continue
-                  if not path.is_file() or path.suffix not in ('.html', '.conf'):
-                      continue
-                  try:
-                      if path.stat().st_size > 100000:
+              for directory, dirs, files in os.walk(root):
+                  dirs[:] = [d for d in dirs if d not in ('.git', 'node_modules', 'venv', 'backups', 'releases', 'back-end', 'incoming')]
+                  for name in files:
+                      path = Path(directory) / name
+                      if path.suffix not in ('.html', '.conf'):
                           continue
-                      content = path.read_text()
-                  except (PermissionError, UnicodeError):
-                      continue
-                  if 'network-notice' in content or 'UniKorn has moved' in content:
-                      stat = path.stat()
-                      print('notice_file:', path, 'uid:', stat.st_uid,
-                            'writable:', os.access(path, os.W_OK),
-                            'parent_writable:', os.access(path.parent, os.W_OK),
-                            'bytes:', stat.st_size)
+                      try:
+                          if path.stat().st_size > 100000:
+                              continue
+                          content = path.read_text()
+                      except (OSError, UnicodeError):
+                          continue
+                      if 'network-notice' in content or 'UniKorn has moved' in content:
+                          stat = path.stat()
+                          print('notice_file:', path, 'uid:', stat.st_uid,
+                                'writable:', os.access(path, os.W_OK),
+                                'parent_writable:', os.access(path.parent, os.W_OK),
+                                'bytes:', stat.st_size, flush=True)
           PY
