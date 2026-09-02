@@ -7,13 +7,13 @@ const source = () => readFileSync(
 )
 
 describe('Keguang sidebar TeamUp entry', () => {
-  it('hard-navigates to the separately deployed app behind a runtime flag', () => {
+  it('uses the native Nuxt route behind a runtime flag', () => {
     const sidebar = source()
 
-    expect(sidebar).toContain('<a href="/teamup/">')
+    expect(sidebar).toContain("<NuxtLink :to=\"getLocalePath('/teamup')\"")
+    expect(sidebar).toContain("active: isActive('/teamup')")
     expect(sidebar).toContain('v-if="teamupEnabled"')
     expect(sidebar).toContain('config.public.teamupEnabled === true')
     expect(sidebar).toContain("t('nav.teamup')")
-    expect(sidebar).not.toContain("getLocalePath('/teamup')")
   })
 })

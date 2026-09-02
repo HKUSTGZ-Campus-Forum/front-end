@@ -104,10 +104,10 @@ function isCourseActive() {
           </NuxtLink>
         </li>
         <li v-if="teamupEnabled">
-          <a href="/teamup/">
+          <NuxtLink :to="getLocalePath('/teamup')" :class="{ active: isActive('/teamup') }">
             <img src="/icons/sidebar_teamup.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.teamup') }}</span>
-          </a>
+          </NuxtLink>
         </li>
         <ClientOnly>
           <li v-if="hasMeetCampusBetaAccess">
