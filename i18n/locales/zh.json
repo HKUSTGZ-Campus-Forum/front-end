@@ -40,6 +40,95 @@
     "previous": "上一页",
     "next": "下一页"
   },
+  "recruitment": {
+    "metaTitle": "NODE 100 字夺旗 · UniKorn",
+    "metaDescription": "只用一条不超过 100 字的提示词，指挥统一 Agent 攻克隔离靶场。",
+    "brand": {
+      "name": "NODE",
+      "association": "开发者协会",
+      "with": "联合 UniKorn"
+    },
+    "locale": "切换语言",
+    "eyebrow": "2026 社团招新 · Agent Challenge",
+    "title": "100 字，指挥 Agent 夺旗。",
+    "lead": "你只有一次正式指令。统一 Agent 会依据你的策略，在隔离网页中侦察、判断并尝试取回 NODE 通行证。",
+    "metrics": {
+      "label": "挑战限制",
+      "prompt": "一次 Prompt",
+      "characters": "最多 100 字",
+      "runtime": "限时 120 秒"
+    },
+    "briefing": {
+      "title": "任务简报",
+      "targetLabel": "目标",
+      "target": "取得并提交 NODE 格式的通行证",
+      "toolsLabel": "工具",
+      "tools": "受限浏览器与虚拟 HTTP",
+      "scopeLabel": "范围",
+      "scope": "仅限你的隔离挑战实例"
+    },
+    "composer": {
+      "title": "写下你的唯一指令",
+      "label": "给 Agent 的 Prompt",
+      "placeholder": "例如：说明优先检查什么、如何判断网页中的可疑内容，以及成功后应该做什么。",
+      "hint": "目标、工具和安全边界已由系统提供；100 字只需要表达你的策略。",
+      "counter": "{count} / 100",
+      "login": "使用学校账号继续",
+      "submit": "启动 Agent",
+      "running": "Agent 正在执行",
+      "submitted": "正式指令已提交",
+      "empty": "请先写下你的策略。",
+      "tooLong": "Prompt 不能超过 100 个可见字符。",
+      "confirm": "提交后不能修改，也不能追加消息。"
+    },
+    "console": {
+      "label": "LIVE RUN",
+      "title": "Agent 行动轨迹",
+      "idleTitle": "等待你的指令",
+      "idleBody": "提交后，这里会呈现 Agent 访问了什么、发现了什么，以及是否取得通行证。",
+      "runningTitle": "Agent 正在行动",
+      "runningBody": "统一 Agent 正在执行你的唯一指令。通常需要数十秒，请不要关闭页面。",
+      "failedBody": "本次 Agent 任务未能生成行动轨迹，请联系现场工作人员确认。",
+      "ready": "系统就绪",
+      "waiting": "等待提交",
+      "running": "任务执行中",
+      "complete": "任务完成",
+      "failed": "任务未完成",
+      "score": "本次得分",
+      "calls": "工具调用",
+      "steps": {
+        "recon": "观察目标页面",
+        "source": "检查公开资源",
+        "trust": "判断可疑指令",
+        "access": "验证访问边界",
+        "flag": "提交 NODE 通行证"
+      }
+    },
+    "events": {
+      "path_opened": "访问虚拟网页路径",
+      "surface_mapped": "发现公开攻击面",
+      "bundle_found": "检查客户端代码包",
+      "source_map_found": "从 Source Map 找到线索",
+      "api_called": "调用虚拟 API",
+      "record_exposed": "取得高权限候选记录",
+      "flag_submitted": "提交候选通行证",
+      "flag_accepted": "NODE 通行证验证成功",
+      "flag_rejected": "候选通行证未通过验证",
+      "efficiency_bonus": "获得高效路径奖励",
+      "tool_rejected": "越界工具请求已被隔离层拒绝"
+    },
+    "scope": {
+      "title": "这是隔离的招新靶场",
+      "body": "Agent 不具备 SSH、Shell、生产数据库、主机文件或任意外网权限。所有目标和漏洞均为本活动专门设计。"
+    },
+    "errors": {
+      "load": "暂时无法读取挑战状态，请稍后重试。",
+      "run": "Agent 没有正常启动，请联系现场工作人员。",
+      "unavailable": "挑战暂未开放。",
+      "used": "你已经提交过唯一一次正式指令。",
+      "runningStale": "你的正式指令已经提交，Agent 仍在执行或等待工作人员确认。"
+    }
+  },
   "mascot": {
     "label": "UniKorn 论坛桌宠",
     "expand": "唤醒桌宠",
