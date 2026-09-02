@@ -10,8 +10,10 @@ import {
 
 const { locale, t } = useI18n()
 const route = useRoute()
+const config = useRuntimeConfig()
 const { user, isLoggedIn } = useAuth()
 const { getLocalePath } = useAppLocale()
+const teamupEnabled = computed(() => config.public.teamupEnabled === true)
 
 const hasMeetCampusBetaAccess = computed(() =>
   canSeeMeetCampusNavigation(isLoggedIn.value, user.value),
@@ -100,6 +102,12 @@ function isCourseActive() {
             <img src="/icons/sidebar_matching.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.teamMatching') }}</span>
           </NuxtLink>
+        </li>
+        <li v-if="teamupEnabled">
+          <a href="/teamup/">
+            <img src="/icons/sidebar_teamup.svg" alt="" class="kg-icon" />
+            <span class="kg-label">{{ t('nav.teamup') }}</span>
+          </a>
         </li>
         <ClientOnly>
           <li v-if="hasMeetCampusBetaAccess">
