@@ -207,6 +207,7 @@ export default defineNuxtConfig({
       appVersion: pkg.version,
       appBuildVersion,
       apiBaseUrl,
+      teamupEnabled: process.env.NUXT_PUBLIC_TEAMUP_ENABLED === "true",
       mascotEnabled,
       mascotModelUrl,
       mascotScale,

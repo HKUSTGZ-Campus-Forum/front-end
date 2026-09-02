@@ -161,6 +161,15 @@
 - **理由**：运营配置不再依赖发版，语言投放规则在服务端收口且可审计；同源图片地址避免签名过期和暴露存储信息；内置容灾保证后端短暂不可用时首页仍有可用入口，同时不会恢复原有语言串台问题。
 - **相关文档**：`docs/plans/2026-08-28-home-carousel-admin-design.md`、`pages/admin/carousel.vue`、`components/home/CarouselBanner.vue`、后端 `app/routes/home_carousel.py`
 
+## ADR-017：课程组队以独立接入应用提供，主站只拥有入口
+
+- **日期**：2026-09
+- **状态**：已采纳
+- **背景**：课程组队由外部维护者在独立前后端仓库持续更新；维护者不应因此获得 UniKorn 主仓库、学校服务器、生产数据或部署凭据访问权。
+- **决策**：组队业务页面、API、数据、CI 和发布资产留在外部仓库；主站仅增加由运行时开关控制、指向同源 `/teamup/` 的双语硬导航。接入应用使用 UniKorn JWT 和只读用户身份投影，但独立运行于 `/teamup/` 与 `/api/teamup/`，并通过平台审批的精确 SHA 发布。
+- **理由**：既保持外部维护自主权和最小主站耦合，也让 UniKorn 控制同源代码信任、入口、路由与 production 发布门禁。
+- **相关文档**：工作区 `docs/integrations/README.md`、`docs/integrations/apps/teamup.json`
+
 ---
 
 *模板（新决策追加时使用）：*
