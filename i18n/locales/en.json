@@ -40,6 +40,95 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "recruitment": {
+    "metaTitle": "NODE 100-Character Heist · UniKorn",
+    "metaDescription": "Use one prompt of up to 100 characters to guide a shared agent through an isolated web challenge.",
+    "brand": {
+      "name": "NODE",
+      "association": "Developers Association",
+      "with": "with UniKorn"
+    },
+    "locale": "Switch language",
+    "eyebrow": "2026 RECRUITMENT · AGENT CHALLENGE",
+    "title": "100 characters. One agent heist.",
+    "lead": "You get one official instruction. A shared agent follows your strategy to explore an isolated site, make its call, and recover the NODE access pass.",
+    "metrics": {
+      "label": "Challenge limits",
+      "prompt": "One prompt",
+      "characters": "100 characters",
+      "runtime": "120 seconds"
+    },
+    "briefing": {
+      "title": "Mission briefing",
+      "targetLabel": "Goal",
+      "target": "Find and submit the NODE access pass",
+      "toolsLabel": "Tools",
+      "tools": "Restricted browser and virtual HTTP",
+      "scopeLabel": "Scope",
+      "scope": "Your isolated challenge instance only"
+    },
+    "composer": {
+      "title": "Write your one instruction",
+      "label": "Prompt for the agent",
+      "placeholder": "Describe what to inspect first, how to treat suspicious page content, and what to do after success.",
+      "hint": "The goal, tools, and safety boundary are provided by the system. Use your 100 characters for strategy.",
+      "counter": "{count} / 100",
+      "login": "Continue with school account",
+      "submit": "Launch agent",
+      "running": "Agent is running",
+      "submitted": "Official prompt submitted",
+      "empty": "Write your strategy first.",
+      "tooLong": "Your prompt cannot exceed 100 visible characters.",
+      "confirm": "You cannot edit it or send another message after submission."
+    },
+    "console": {
+      "label": "LIVE RUN",
+      "title": "Agent activity",
+      "idleTitle": "Waiting for your instruction",
+      "idleBody": "After submission, this panel shows what the agent visits, what it discovers, and whether it recovers the pass.",
+      "runningTitle": "Agent in motion",
+      "runningBody": "The shared agent is carrying out your one instruction. This normally takes a few dozen seconds; keep this page open.",
+      "failedBody": "This run did not produce an activity trail. Please ask an event host to check it.",
+      "ready": "System ready",
+      "waiting": "Waiting",
+      "running": "Mission running",
+      "complete": "Mission complete",
+      "failed": "Mission incomplete",
+      "score": "Score",
+      "calls": "Tool calls",
+      "steps": {
+        "recon": "Observe target page",
+        "source": "Inspect public resources",
+        "trust": "Judge suspicious instructions",
+        "access": "Test access boundary",
+        "flag": "Submit NODE access pass"
+      }
+    },
+    "events": {
+      "path_opened": "Opened a virtual site path",
+      "surface_mapped": "Mapped the public attack surface",
+      "bundle_found": "Inspected the client bundle",
+      "source_map_found": "Recovered a source-map clue",
+      "api_called": "Called the virtual API",
+      "record_exposed": "Exposed a privileged candidate record",
+      "flag_submitted": "Submitted a candidate pass",
+      "flag_accepted": "NODE access pass accepted",
+      "flag_rejected": "Candidate pass rejected",
+      "efficiency_bonus": "Earned the efficient-route bonus",
+      "tool_rejected": "The isolation layer rejected an out-of-scope tool"
+    },
+    "scope": {
+      "title": "An isolated recruitment range",
+      "body": "The agent has no SSH, shell, production database, host-file, or arbitrary internet access. Every target and flaw exists only for this event."
+    },
+    "errors": {
+      "load": "The challenge status is temporarily unavailable. Please try again.",
+      "run": "The agent did not start correctly. Please ask an event host for help.",
+      "unavailable": "The challenge is not open yet.",
+      "used": "You have already submitted your one official instruction.",
+      "runningStale": "Your instruction has been submitted. The agent is still running or awaiting host confirmation."
+    }
+  },
   "mascot": {
     "label": "UniKorn forum mascot",
     "expand": "Wake mascot",
