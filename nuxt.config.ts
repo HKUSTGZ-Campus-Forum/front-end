@@ -22,6 +22,7 @@ const mascotPositionX = Number(
 const mascotPositionY = Number(
   process.env.NUXT_PUBLIC_MASCOT_POSITION_Y || "-0.32"
 );
+const agentEnabled = process.env.NUXT_PUBLIC_AGENT_ENABLED === "true";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-03-24",
@@ -221,6 +222,7 @@ export default defineNuxtConfig({
       mascotScale,
       mascotPositionX,
       mascotPositionY,
+      agentEnabled,
     },
   },
   ssr: true,

@@ -39,6 +39,7 @@ jobs:
           NUXT_PUBLIC_MASCOT_SCALE: "1.35"
           NUXT_PUBLIC_MASCOT_POSITION_X: "0"
           NUXT_PUBLIC_MASCOT_POSITION_Y: "-0.32"
+          NUXT_PUBLIC_AGENT_ENABLED: "true"
 
       - name: Verify built readiness endpoint
         env:

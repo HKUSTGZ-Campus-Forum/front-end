@@ -139,7 +139,7 @@
 - **日期**：2026-08
 - **状态**：提议
 - **背景**：论坛需要一个跨路由常驻、可折叠且不侵入页面业务的站娘/桌宠原型；后续可能由 Agent、TTS 和论坛上下文驱动情绪、动作与口型。直接使用完整看板娘 widget 会把固定定位、提示策略和模型生命周期绑在第三方 UI 中，也容易与 PWA 提示和弹窗层级冲突。
-- **决策**：根应用只挂载一个 client-only 的全局悬浮壳层，模型渲染由 `L2dMascotRenderer` 封装 `l2d`，通过动态 import 避开 SSR，并暴露动作、表情和归一化嘴型参数控制。共享开发部署显式启用固定版本的 Live2D 官方 `Hiyori` 示例模型，并放大、偏移成上半身构图；其他构建默认关闭，模型 URL、缩放和内部位置分别通过 `NUXT_PUBLIC_MASCOT_MODEL_URL`、`NUXT_PUBLIC_MASCOT_SCALE`、`NUXT_PUBLIC_MASCOT_POSITION_X/Y` 替换。桌宠位于普通内容之上、模态框和系统级提示之下，移动端与减少动态效果偏好默认收起。
+- **决策**：根应用只挂载一个 client-only 的全局悬浮壳层，模型渲染由 `L2dMascotRenderer` 封装 `l2d`，通过动态 import 避开 SSR，并暴露动作、表情和归一化嘴型参数控制。共享开发部署显式启用固定版本的 Live2D 官方 `Hiyori` 示例模型，并放大、偏移成上半身构图；其他构建默认关闭，模型 URL、缩放和内部位置分别通过 `NUXT_PUBLIC_MASCOT_MODEL_URL`、`NUXT_PUBLIC_MASCOT_SCALE`、`NUXT_PUBLIC_MASCOT_POSITION_X/Y` 替换。桌宠位于普通内容之上、模态框和系统级提示之下，移动端与减少动态效果偏好默认收起。用户悬停或键盘聚焦桌宠时显示圆形快捷菜单；个人模型 URL 只保存在浏览器 localStorage，保存后重新挂载渲染器，不进入后端或公共构建配置。
 - **理由**：渲染器与壳层解耦后可以在不改页面和 Agent 策略的情况下替换自有 Live2D、静态图或其他运行时；参数驱动口型可先用文本节奏验证，未来再接 TTS 音频振幅。开发环境限定第三方演示素材，避免未经许可的模型进入学校正式发布。
 - **相关文档**：`components/mascot/Overlay.client.vue`、`utils/mascotL2d.ts`、`.github/workflows/deploy.yml`
 
@@ -169,6 +169,15 @@
 - **决策**：组队业务页面、API、数据、CI 和发布资产留在外部仓库；主站仅增加由运行时开关控制、指向同源 `/teamup/` 的双语硬导航。接入应用使用 UniKorn JWT 和只读用户身份投影，但独立运行于 `/teamup/` 与 `/api/teamup/`，并通过平台审批的精确 SHA 发布。
 - **理由**：既保持外部维护自主权和最小主站耦合，也让 UniKorn 控制同源代码信任、入口、路由与 production 发布门禁。
 - **相关文档**：工作区 `docs/integrations/README.md`、`docs/integrations/apps/teamup.json`
+
+## ADR-018：论坛助手采用后端模型代理与用户级持久化会话
+
+- **日期**：2026-08
+- **状态**：提议
+- **背景**：论坛需要先验证一个跨页面可用、能保留历史记录的 AI 对话入口，后续再接网站知识库和桌宠语音；Sub2API 的地址和 Key 不能进入浏览器或 Nuxt 公共运行时配置。
+- **决策**：根应用挂载独立的 client-only 对话框，登录用户通过 `useApi().fetchWithAuth` 调用后端 `/api/agent/*`；后端负责供应商调用、上下文裁剪、频率与输出上限，并按用户隔离持久化会话和消息。前端只通过 `NUXT_PUBLIC_AGENT_ENABLED` 控制入口是否展示，共享 dev 显式开启、其他构建默认关闭。Agent 回复复用 `MascotOverlay.speak` 驱动当前文字气泡与参数口型。知识库检索留在后端模型调用前扩展，禁止前端直接拼接私密内容或供应商凭证。
+- **理由**：服务端代理保护 Key 并集中控制成本和提示词；数据库历史可跨设备恢复且不依赖 localStorage；聊天 UI 与 Live2D 渲染解耦，后续加入 RAG、TTS 或流式输出时不需要重写页面和模型生命周期。
+- **相关文档**：`components/assistant/AgentChat.client.vue`、`composables/useAgentChat.ts`、后端 `docs/agent-assistant-api.md`
 
 ---
 

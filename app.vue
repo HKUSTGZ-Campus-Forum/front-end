@@ -2,18 +2,30 @@
   <NuxtLayout>
     <NuxtPage />
     <AppUpdateToast />
-    <MascotOverlay />
+    <MascotOverlay ref="mascotRef" @open-chat-history="handleOpenChatHistory" />
+    <AgentChat ref="agentChatRef" @assistant-message="handleAssistantMessage" />
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import AppUpdateToast from "~/components/pwa/AppUpdateToast.vue";
 import MascotOverlay from "~/components/mascot/Overlay.client.vue";
+import AgentChat from "~/components/assistant/AgentChat.client.vue";
 import { useAuth } from "~/composables/useAuth";
 import { useHead, useI18n } from "#imports";
 
 const { init } = useAuth();
 const { t } = useI18n();
+const mascotRef = ref<{ speak: (text: string) => void } | null>(null);
+const agentChatRef = ref<{ openHistory: () => Promise<void> | void } | null>(null);
+
+function handleAssistantMessage(text: string): void {
+  mascotRef.value?.speak(text.slice(0, 120));
+}
+
+function handleOpenChatHistory(): void {
+  agentChatRef.value?.openHistory();
+}
 
 onMounted(() => {
   if (process.client) {
