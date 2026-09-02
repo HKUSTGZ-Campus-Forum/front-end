@@ -40,6 +40,15 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "teamupIntegration": {
+    "metaTitle": "Course TeamUp - UniKorn",
+    "metaDescription": "Discover, create, and manage course-project teams in UniKorn.",
+    "frameTitle": "Course TeamUp workspace",
+    "loading": "Loading Course TeamUp…",
+    "loadErrorTitle": "Course TeamUp is temporarily unavailable",
+    "loadErrorBody": "The service may be updating. Try again shortly; other UniKorn features are unaffected.",
+    "retry": "Reload TeamUp"
+  },
   "recruitment": {
     "metaTitle": "NODE 100-Character Heist · UniKorn",
     "metaDescription": "Use one prompt of up to 100 characters to guide a shared agent through an isolated web challenge.",

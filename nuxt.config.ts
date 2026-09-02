@@ -167,6 +167,14 @@ export default defineNuxtConfig({
     // 匹配 /api 后会把剩余路径拼到 target 上；target 必须带上 /api，
     // 否则 /api/auth/oidc/status 会变成上游 /auth/oidc/status 导致 404。
     devProxy: {
+      "/teamup/app/": {
+        target: "http://127.0.0.1:3200/teamup/app/",
+        changeOrigin: false,
+      },
+      "/api/teamup": {
+        target: "http://127.0.0.1:8200/api",
+        changeOrigin: false,
+      },
       "/api": {
         target: `${apiBaseUrl}/api`,
         changeOrigin: true,

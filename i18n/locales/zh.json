@@ -40,6 +40,15 @@
     "previous": "上一页",
     "next": "下一页"
   },
+  "teamupIntegration": {
+    "metaTitle": "课程组队 - UniKorn 科广汇",
+    "metaDescription": "在 UniKorn 中发现、创建和管理课程任务队伍。",
+    "frameTitle": "课程组队功能区",
+    "loading": "正在加载课程组队…",
+    "loadErrorTitle": "课程组队暂时无法加载",
+    "loadErrorBody": "服务可能正在更新，请稍后重试。UniKorn 的其他功能不受影响。",
+    "retry": "重新加载"
+  },
   "recruitment": {
     "metaTitle": "NODE 100 字夺旗 · UniKorn",
     "metaDescription": "只用一条不超过 100 字的提示词，指挥统一 Agent 攻克隔离靶场。",
