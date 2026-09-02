@@ -22,7 +22,7 @@
 
             <div class="agent-header-actions">
               <button
-                v-if="view === 'history'"
+                v-if="view !== 'chat'"
                 type="button"
                 class="agent-icon-button"
                 :aria-label="t('assistant.backToChat')"
@@ -32,7 +32,7 @@
                 <Icon name="lucide:arrow-left" aria-hidden="true" />
               </button>
               <button
-                v-else
+                v-if="view === 'chat'"
                 type="button"
                 class="agent-icon-button"
                 :aria-label="t('assistant.history')"
@@ -40,6 +40,16 @@
                 @click="showHistory"
               >
                 <Icon name="lucide:history" aria-hidden="true" />
+              </button>
+              <button
+                v-if="view !== 'settings'"
+                type="button"
+                class="agent-icon-button"
+                :aria-label="t('assistant.settings')"
+                :title="t('assistant.settings')"
+                @click="openSettings"
+              >
+                <Icon name="lucide:settings-2" aria-hidden="true" />
               </button>
               <button
                 type="button"
@@ -81,14 +91,99 @@
             <span>{{ t("assistant.loading") }}</span>
           </div>
 
-          <div v-else-if="status && !status.enabled" class="agent-state">
+          <div v-else-if="status && !available" class="agent-state">
             <Icon name="lucide:cloud-off" class="agent-state-icon" aria-hidden="true" />
             <strong>{{ t("assistant.unavailable") }}</strong>
+            <button type="button" class="agent-command" @click="openSettings">
+              <Icon name="lucide:settings-2" aria-hidden="true" />
+              {{ t("assistant.provider.configure") }}
+            </button>
             <button type="button" class="agent-command agent-command--secondary" @click="initialize">
               <Icon name="lucide:refresh-cw" aria-hidden="true" />
               {{ t("common.retry") }}
             </button>
           </div>
+
+          <template v-else-if="view === 'settings'">
+            <form class="agent-settings" @submit.prevent="saveProviderSettings">
+              <div class="agent-settings-heading">
+                <Icon name="lucide:plug-zap" aria-hidden="true" />
+                <div>
+                  <strong>{{ t("assistant.provider.title") }}</strong>
+                  <span>{{ t("assistant.provider.description") }}</span>
+                </div>
+              </div>
+
+              <label class="agent-toggle-row">
+                <input v-model="providerDraft.enabled" type="checkbox" />
+                <span>{{ t("assistant.provider.enableCustom") }}</span>
+              </label>
+
+              <label class="agent-field">
+                <span>{{ t("assistant.provider.baseUrl") }}</span>
+                <input
+                  v-model="providerDraft.baseUrl"
+                  type="url"
+                  inputmode="url"
+                  autocomplete="url"
+                  :placeholder="t('assistant.provider.baseUrlPlaceholder')"
+                  :disabled="!providerDraft.enabled"
+                />
+              </label>
+
+              <label class="agent-field">
+                <span>{{ t("assistant.provider.apiKey") }}</span>
+                <input
+                  v-model="providerDraft.apiKey"
+                  type="password"
+                  autocomplete="off"
+                  :placeholder="t('assistant.provider.apiKeyPlaceholder')"
+                  :disabled="!providerDraft.enabled"
+                />
+              </label>
+
+              <label class="agent-field">
+                <span>{{ t("assistant.provider.model") }}</span>
+                <input
+                  v-model="providerDraft.model"
+                  type="text"
+                  autocomplete="off"
+                  :placeholder="t('assistant.provider.modelPlaceholder')"
+                  :disabled="!providerDraft.enabled"
+                />
+              </label>
+
+              <p class="agent-settings-note">
+                <Icon name="lucide:shield-check" aria-hidden="true" />
+                <span>{{ t("assistant.provider.localOnly") }}</span>
+              </p>
+
+              <p v-if="providerSettingsErrorKey" class="agent-error agent-error--inline" role="alert">
+                <Icon name="lucide:circle-alert" aria-hidden="true" />
+                <span>{{ t(providerSettingsErrorKey) }}</span>
+              </p>
+
+              <p v-if="providerSettingsSaved" class="agent-success" role="status">
+                <Icon name="lucide:circle-check" aria-hidden="true" />
+                <span>{{ t("assistant.provider.saved") }}</span>
+              </p>
+
+              <div class="agent-settings-actions">
+                <button
+                  type="button"
+                  class="agent-command agent-command--secondary"
+                  @click="clearProviderSettings"
+                >
+                  <Icon name="lucide:eraser" aria-hidden="true" />
+                  {{ t("assistant.provider.clear") }}
+                </button>
+                <button type="submit" class="agent-command">
+                  <Icon name="lucide:save" aria-hidden="true" />
+                  {{ t("assistant.provider.save") }}
+                </button>
+              </div>
+            </form>
+          </template>
 
           <template v-else-if="view === 'history'">
             <div class="agent-history-heading">
@@ -215,18 +310,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n, useRuntimeConfig } from "#imports";
 import {
   AgentApiError,
   type AgentConversation,
   type AgentMessage,
+  type AgentProviderPayload,
   type AgentStatus,
   useAgentChat,
 } from "~/composables/useAgentChat";
 import {
+  AGENT_PROVIDER_STORAGE_KEY,
+  emptyAgentProviderSettings,
   agentErrorI18nKey,
   canSendAgentMessage,
+  isAgentProviderReady,
+  normalizeAgentProviderSettings,
+  toAgentProviderPayload,
+  type AgentProviderSettings,
 } from "~/utils/agentChat";
 
 const emit = defineEmits<{
@@ -240,12 +342,16 @@ const api = useAgentChat();
 
 const enabled = computed(() => String(config.public.agentEnabled) === "true");
 const open = ref(false);
-const view = ref<"chat" | "history">("chat");
+const view = ref<"chat" | "history" | "settings">("chat");
 const status = ref<AgentStatus | null>(null);
 const conversations = ref<AgentConversation[]>([]);
 const activeConversationId = ref<string | null>(null);
 const messages = ref<AgentMessage[]>([]);
 const draft = ref("");
+const providerSettings = ref<AgentProviderSettings>(emptyAgentProviderSettings());
+const providerDraft = ref<AgentProviderSettings>(emptyAgentProviderSettings());
+const providerSettingsErrorKey = ref("");
+const providerSettingsSaved = ref(false);
 const initializing = ref(false);
 const historyLoading = ref(false);
 const conversationLoading = ref(false);
@@ -254,13 +360,18 @@ const deletingId = ref<string | null>(null);
 const errorKey = ref("");
 const messageListRef = ref<HTMLElement | null>(null);
 
-const available = computed(() => Boolean(status.value?.enabled));
+const customProviderReady = computed(() => isAgentProviderReady(providerSettings.value));
+const activeProvider = computed<AgentProviderPayload | null>(() =>
+  customProviderReady.value ? toAgentProviderPayload(providerSettings.value) : null
+);
+const available = computed(() => Boolean(status.value?.enabled) || customProviderReady.value);
 const canSend = computed(() =>
   canSendAgentMessage(draft.value, sending.value, available.value)
 );
 const statusText = computed(() => {
   if (!isLoggedIn.value) return t("assistant.loginRequiredShort");
   if (initializing.value) return t("assistant.loading");
+  if (customProviderReady.value) return t("assistant.provider.customReady");
   return available.value ? t("assistant.ready") : t("assistant.unavailableShort");
 });
 
@@ -298,6 +409,15 @@ async function showHistory(): Promise<void> {
   } finally {
     historyLoading.value = false;
   }
+}
+
+async function openSettings(): Promise<void> {
+  open.value = true;
+  providerDraft.value = { ...providerSettings.value };
+  providerSettingsErrorKey.value = "";
+  providerSettingsSaved.value = false;
+  view.value = "settings";
+  if (isLoggedIn.value && status.value === null) await initialize();
 }
 
 async function openHistory(): Promise<void> {
@@ -365,7 +485,11 @@ async function submitMessage(): Promise<void> {
   await scrollToBottom();
 
   try {
-    const payload = await api.sendMessage(content, activeConversationId.value);
+    const payload = await api.sendMessage(
+      content,
+      activeConversationId.value,
+      activeProvider.value
+    );
     activeConversationId.value = payload.conversation.id;
     const index = messages.value.findIndex((item) => item.id === optimisticId);
     if (index >= 0) messages.value.splice(index, 1, payload.user_message);
@@ -404,6 +528,44 @@ function handleError(error: unknown): void {
   errorKey.value = agentErrorI18nKey(code);
 }
 
+function loadProviderSettings(): void {
+  try {
+    const raw = localStorage.getItem(AGENT_PROVIDER_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    providerSettings.value = normalizeAgentProviderSettings(parsed);
+    providerDraft.value = { ...providerSettings.value };
+  } catch {
+    localStorage.removeItem(AGENT_PROVIDER_STORAGE_KEY);
+  }
+}
+
+function saveProviderSettings(): void {
+  const normalized = normalizeAgentProviderSettings(providerDraft.value);
+  providerSettingsErrorKey.value = "";
+  providerSettingsSaved.value = false;
+  if (normalized.enabled && !isAgentProviderReady(normalized)) {
+    providerSettingsErrorKey.value = "assistant.provider.invalid";
+    return;
+  }
+  providerSettings.value = normalized;
+  localStorage.setItem(AGENT_PROVIDER_STORAGE_KEY, JSON.stringify(normalized));
+  providerDraft.value = { ...normalized };
+  providerSettingsSaved.value = true;
+  if (customProviderReady.value && status.value && !status.value.enabled) {
+    errorKey.value = "";
+  }
+}
+
+function clearProviderSettings(): void {
+  const empty = emptyAgentProviderSettings();
+  providerSettings.value = empty;
+  providerDraft.value = { ...empty };
+  providerSettingsErrorKey.value = "";
+  providerSettingsSaved.value = false;
+  localStorage.removeItem(AGENT_PROVIDER_STORAGE_KEY);
+}
+
 async function scrollToBottom(): Promise<void> {
   await nextTick();
   const element = messageListRef.value;
@@ -426,7 +588,11 @@ function goToLogin(): void {
   navigateTo(locale.value === "en" ? "/en/login" : "/login");
 }
 
-defineExpose({ openPanel, openHistory });
+defineExpose({ openPanel, openHistory, openSettings });
+
+onMounted(() => {
+  loadProviderSettings();
+});
 
 watch(isLoggedIn, (loggedIn) => {
   if (loggedIn && open.value) initialize();
@@ -682,6 +848,124 @@ watch(isLoggedIn, (loggedIn) => {
   height: 17px;
 }
 
+.agent-settings {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.agent-settings-heading {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.agent-settings-heading :deep(svg) {
+  width: 34px;
+  height: 34px;
+  padding: 8px;
+  border-radius: 50%;
+  color: var(--text-on-interactive);
+  background: var(--interactive-primary);
+}
+
+.agent-settings-heading strong,
+.agent-field span,
+.agent-toggle-row span {
+  font-size: 0.86rem;
+}
+
+.agent-settings-heading span,
+.agent-settings-note {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.agent-field {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.agent-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  outline: none;
+  color: var(--text-primary);
+  background: var(--surface-primary);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.agent-field input:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.agent-field input:focus {
+  border-color: var(--border-focus);
+}
+
+.agent-toggle-row {
+  min-height: 38px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 6px;
+  background: var(--surface-secondary);
+}
+
+.agent-toggle-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--interactive-primary);
+}
+
+.agent-settings-note,
+.agent-success {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.agent-settings-note :deep(svg),
+.agent-success :deep(svg) {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.agent-success {
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--semantic-success) 28%, transparent);
+  border-radius: 6px;
+  color: var(--semantic-success);
+  background: var(--success-background);
+  font-size: 0.78rem;
+}
+
+.agent-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
 .agent-composer {
   padding: 10px;
   display: grid;
@@ -731,6 +1015,11 @@ watch(isLoggedIn, (loggedIn) => {
   color: var(--semantic-error);
   background: var(--error-background);
   font-size: 0.78rem;
+}
+
+.agent-error--inline {
+  border: 1px solid color-mix(in srgb, var(--semantic-error) 30%, transparent);
+  border-radius: 6px;
 }
 
 .agent-error :deep(svg) {

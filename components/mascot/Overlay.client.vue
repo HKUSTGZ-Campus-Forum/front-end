@@ -21,7 +21,6 @@
 
         <div
           class="mascot-quick-actions"
-          :class="{ 'is-open': modelSettingsOpen }"
           :aria-label="t('mascot.quickActions')"
         >
           <button
@@ -29,7 +28,7 @@
             class="mascot-action-button"
             :aria-label="t('mascot.configureModel')"
             :title="t('mascot.configureModel')"
-            @click.stop="openModelSettings"
+            @click.stop="openAgentSettings"
           >
             <Icon name="lucide:settings-2" aria-hidden="true" />
           </button>
@@ -68,53 +67,6 @@
             {{ message }}
           </p>
         </Transition>
-
-        <Transition name="mascot-panel">
-          <form
-            v-if="modelSettingsOpen"
-            class="mascot-model-panel"
-            @submit.prevent="saveModelSettings"
-          >
-            <header>
-              <strong>{{ t("mascot.modelSettingsTitle") }}</strong>
-              <button
-                type="button"
-                class="mascot-panel-close"
-                :aria-label="t('common.close')"
-                :title="t('common.close')"
-                @click="closeModelSettings"
-              >
-                <Icon name="lucide:x" aria-hidden="true" />
-              </button>
-            </header>
-            <label>
-              <span>{{ t("mascot.modelUrlLabel") }}</span>
-              <input
-                v-model="modelUrlDraft"
-                type="text"
-                inputmode="url"
-                :placeholder="t('mascot.modelUrlPlaceholder')"
-              />
-            </label>
-            <p v-if="modelSettingsError" class="mascot-panel-error" role="alert">
-              {{ modelSettingsError }}
-            </p>
-            <div class="mascot-panel-actions">
-              <button
-                type="button"
-                class="mascot-panel-button"
-                @click="resetModelSettings"
-              >
-                <Icon name="lucide:rotate-ccw" aria-hidden="true" />
-                <span>{{ t("mascot.resetModel") }}</span>
-              </button>
-              <button type="submit" class="mascot-panel-button is-primary">
-                <Icon name="lucide:check" aria-hidden="true" />
-                <span>{{ t("mascot.saveModel") }}</span>
-              </button>
-            </div>
-          </form>
-        </Transition>
       </div>
 
       <button
@@ -139,32 +91,24 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n, useRuntimeConfig } from "#imports";
 import { L2dMascotRenderer } from "~/utils/mascotL2d";
-import {
-  isMascotModelUrlCandidate,
-  normalizeMascotModelUrl,
-} from "~/utils/mascotModelUrl";
 
 type MascotStatus = "idle" | "loading" | "ready" | "error";
 
 const STORAGE_KEY = "unikorn_mascot_collapsed";
-const MODEL_STORAGE_KEY = "unikorn_mascot_model_url";
 const config = useRuntimeConfig();
 const { t } = useI18n();
 const emit = defineEmits<{
+  "open-agent-settings": [];
   "open-chat-history": [];
 }>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const collapsed = ref(true);
 const status = ref<MascotStatus>("idle");
 const message = ref("");
-const customModelUrl = ref("");
-const modelUrlDraft = ref("");
-const modelSettingsOpen = ref(false);
-const modelSettingsError = ref("");
 const renderer = new L2dMascotRenderer();
 const enabled = computed(() => String(config.public.mascotEnabled) === "true");
 const defaultModelUrl = computed(() => String(config.public.mascotModelUrl || ""));
-const modelUrl = computed(() => customModelUrl.value || defaultModelUrl.value);
+const modelUrl = computed(() => defaultModelUrl.value);
 const modelScale = computed(() => Number(config.public.mascotScale));
 const modelPosition = computed<[number, number]>(() => [
   Number(config.public.mascotPositionX),
@@ -217,6 +161,11 @@ function openChatHistory(): void {
   showMessage(t("mascot.historyOpening"));
 }
 
+function openAgentSettings(): void {
+  emit("open-agent-settings");
+  showMessage(t("mascot.modelSettingsOpening"));
+}
+
 async function loadMascot(): Promise<void> {
   if (!enabled.value || !canvasRef.value || !modelUrl.value || disposed) return;
   status.value = "loading";
@@ -245,7 +194,6 @@ function rememberCollapsed(value: boolean): void {
 
 function collapse(): void {
   collapsed.value = true;
-  modelSettingsOpen.value = false;
   message.value = "";
   clearSpeechTimers();
   rememberCollapsed(true);
@@ -264,48 +212,6 @@ async function toggleCollapsed(): Promise<void> {
   else collapse();
 }
 
-function openModelSettings(): void {
-  modelUrlDraft.value = customModelUrl.value || defaultModelUrl.value;
-  modelSettingsError.value = "";
-  modelSettingsOpen.value = true;
-}
-
-function closeModelSettings(): void {
-  modelSettingsOpen.value = false;
-  modelSettingsError.value = "";
-}
-
-async function applyModelUrl(value: string): Promise<void> {
-  customModelUrl.value = value;
-  if (value) localStorage.setItem(MODEL_STORAGE_KEY, value);
-  else localStorage.removeItem(MODEL_STORAGE_KEY);
-  clearSpeechTimers();
-  message.value = "";
-  status.value = "idle";
-  renderer.dispose();
-  modelSettingsOpen.value = false;
-  await nextTick();
-  if (!collapsed.value) await loadMascot();
-}
-
-async function saveModelSettings(): Promise<void> {
-  const nextUrl = normalizeMascotModelUrl(modelUrlDraft.value);
-  if (nextUrl && !isMascotModelUrlCandidate(nextUrl)) {
-    modelSettingsError.value = t("mascot.modelUrlInvalid");
-    return;
-  }
-  const usesDefault = !nextUrl || nextUrl === defaultModelUrl.value;
-  await applyModelUrl(usesDefault ? "" : nextUrl);
-  showMessage(t(usesDefault ? "mascot.modelReset" : "mascot.modelSaved"));
-}
-
-async function resetModelSettings(): Promise<void> {
-  modelUrlDraft.value = "";
-  modelSettingsError.value = "";
-  await applyModelUrl("");
-  showMessage(t("mascot.modelReset"));
-}
-
 function setMouthOpen(value: number): boolean {
   return renderer.setMouthOpen(value);
 }
@@ -319,14 +225,6 @@ defineExpose({ playReaction, setMouthOpen, speak });
 
 onMounted(async () => {
   if (!enabled.value) return;
-  const storedModelUrl = normalizeMascotModelUrl(
-    localStorage.getItem(MODEL_STORAGE_KEY) || ""
-  );
-  if (storedModelUrl && isMascotModelUrlCandidate(storedModelUrl)) {
-    customModelUrl.value = storedModelUrl;
-  } else if (storedModelUrl) {
-    localStorage.removeItem(MODEL_STORAGE_KEY);
-  }
   const stored = localStorage.getItem(STORAGE_KEY);
   const compactByDefault = window.matchMedia(
     "(max-width: 720px), (prefers-reduced-motion: reduce)"

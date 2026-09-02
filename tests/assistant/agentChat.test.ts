@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  emptyAgentProviderSettings,
   agentErrorI18nKey,
   canSendAgentMessage,
+  isAgentProviderReady,
+  normalizeAgentProviderSettings,
+  toAgentProviderPayload,
 } from "../../utils/agentChat";
 
 
@@ -14,6 +18,9 @@ describe("forum assistant UI helpers", () => {
     expect(agentErrorI18nKey("rate_limited")).toBe(
       "assistant.errors.rateLimited"
     );
+    expect(agentErrorI18nKey("invalid_provider")).toBe(
+      "assistant.errors.invalidProvider"
+    );
     expect(agentErrorI18nKey("unknown")).toBe("assistant.errors.generic");
   });
 
@@ -22,6 +29,37 @@ describe("forum assistant UI helpers", () => {
     expect(canSendAgentMessage("   ", false, true)).toBe(false);
     expect(canSendAgentMessage("question", true, true)).toBe(false);
     expect(canSendAgentMessage("question", false, false)).toBe(false);
+  });
+
+  it("normalizes and validates bring-your-own model settings", () => {
+    expect(emptyAgentProviderSettings()).toEqual({
+      enabled: false,
+      baseUrl: "",
+      apiKey: "",
+      model: "",
+    });
+    const settings = normalizeAgentProviderSettings({
+      enabled: true,
+      baseUrl: " https://llm.example/v1/ ",
+      apiKey: " test-key ",
+      model: " qwen-plus ",
+    });
+
+    expect(settings).toEqual({
+      enabled: true,
+      baseUrl: "https://llm.example/v1",
+      apiKey: "test-key",
+      model: "qwen-plus",
+    });
+    expect(isAgentProviderReady(settings)).toBe(true);
+    expect(toAgentProviderPayload(settings)).toEqual({
+      base_url: "https://llm.example/v1",
+      api_key: "test-key",
+      model: "qwen-plus",
+    });
+    expect(
+      isAgentProviderReady({ ...settings, baseUrl: "ftp://llm.example/v1" })
+    ).toBe(false);
   });
 
   it("keeps provider credentials out of the global client", () => {
@@ -36,11 +74,16 @@ describe("forum assistant UI helpers", () => {
     const app = readFileSync(new URL("../../app.vue", import.meta.url), "utf8");
 
     expect(component).toContain("lucide:history");
+    expect(component).toContain("lucide:settings-2");
+    expect(component).toContain("openSettings");
+    expect(component).toContain("providerDraft");
     expect(component).toContain("openConversation");
     expect(component).toContain("openHistory");
     expect(component).toContain("defineExpose");
     expect(composable).toContain("/api/agent/chat");
+    expect(composable).toContain("provider?: AgentProviderPayload");
     expect(app).toContain("@assistant-message");
+    expect(app).toContain("@open-agent-settings");
     expect(app).toContain("@open-chat-history");
     expect(`${component}${composable}`).not.toMatch(/AGENT_API_KEY|SUB2API_KEY/);
   });

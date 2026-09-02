@@ -25,7 +25,7 @@ describe("mascot overlay controls", () => {
     expect(overlay).toContain("mascot-quick-actions");
     expect(overlay).toContain("lucide:settings-2");
     expect(overlay).toContain("lucide:history");
+    expect(overlay).toContain('"open-agent-settings"');
     expect(overlay).toContain('"open-chat-history"');
-    expect(overlay).toContain("MODEL_STORAGE_KEY");
   });
 });

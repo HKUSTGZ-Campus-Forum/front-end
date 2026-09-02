@@ -2,7 +2,11 @@
   <NuxtLayout>
     <NuxtPage />
     <AppUpdateToast />
-    <MascotOverlay ref="mascotRef" @open-chat-history="handleOpenChatHistory" />
+    <MascotOverlay
+      ref="mascotRef"
+      @open-agent-settings="handleOpenAgentSettings"
+      @open-chat-history="handleOpenChatHistory"
+    />
     <AgentChat ref="agentChatRef" @assistant-message="handleAssistantMessage" />
   </NuxtLayout>
 </template>
@@ -17,7 +21,10 @@ import { useHead, useI18n } from "#imports";
 const { init } = useAuth();
 const { t } = useI18n();
 const mascotRef = ref<{ speak: (text: string) => void } | null>(null);
-const agentChatRef = ref<{ openHistory: () => Promise<void> | void } | null>(null);
+const agentChatRef = ref<{
+  openHistory: () => Promise<void> | void;
+  openSettings: () => Promise<void> | void;
+} | null>(null);
 
 function handleAssistantMessage(text: string): void {
   mascotRef.value?.speak(text.slice(0, 120));
@@ -25,6 +32,10 @@ function handleAssistantMessage(text: string): void {
 
 function handleOpenChatHistory(): void {
   agentChatRef.value?.openHistory();
+}
+
+function handleOpenAgentSettings(): void {
+  agentChatRef.value?.openSettings();
 }
 
 onMounted(() => {

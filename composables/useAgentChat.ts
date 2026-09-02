@@ -2,6 +2,18 @@ export interface AgentStatus {
   enabled: boolean;
   configured: boolean;
   model: string | null;
+  client_provider_allowed?: boolean;
+  server_provider?: {
+    enabled: boolean;
+    configured: boolean;
+    model: string | null;
+  };
+}
+
+export interface AgentProviderPayload {
+  base_url: string;
+  api_key: string;
+  model: string;
 }
 
 export interface AgentMessage {
@@ -90,18 +102,26 @@ export function useAgentChat() {
 
   function sendMessage(
     message: string,
-    conversationId: string | null
+    conversationId: string | null,
+    provider?: AgentProviderPayload | null
   ): Promise<{
     conversation: AgentConversation;
     user_message: AgentMessage;
     assistant_message: AgentMessage;
   }> {
+    const body: {
+      message: string;
+      conversation_id: string | null;
+      provider?: AgentProviderPayload;
+    } = {
+      message,
+      conversation_id: conversationId,
+    };
+    if (provider) body.provider = provider;
+
     return request("/api/agent/chat", {
       method: "POST",
-      body: {
-        message,
-        conversation_id: conversationId,
-      } as any,
+      body: body as any,
     });
   }
 
