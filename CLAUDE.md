@@ -67,6 +67,9 @@
 - 当前导航组件是 `components/home/KeguangPinned.vue` 与
   `components/home/KeguangSidebar.vue`；Nuxt 自动导入名分别为
   `<HomeKeguangPinned>` 与 `<HomeKeguangSidebar>`。
+- 主侧栏的唯一组队入口保留 `nav.teamMatching` 文案和
+  `sidebar_matching.svg` 图标，但规范路由是 `/teamup`；旧 `/matching` 只作为兼容地址
+  永久重定向，不要重新增加第二个“课程组队”入口。
 - 不要照搬旧文档中的 `<HomePinned>` / `<HomeSidebar>`；这些文件名已经不存在。
 - 登录和首次资料确认使用 `layouts/keguang-auth.vue`，保持轻量顶栏和居中的认证
   卡片体验。
