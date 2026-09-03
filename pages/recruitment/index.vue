@@ -324,6 +324,46 @@ useHead(() => ({
         </section>
       </section>
 
+      <section class="recruitment-guide" aria-labelledby="recruitment-guide-title">
+        <div class="recruitment-guide__intro">
+          <p><Icon name="lucide:signpost" aria-hidden="true" />{{ t("recruitment.guide.eyebrow") }}</p>
+          <h2 id="recruitment-guide-title">{{ t("recruitment.guide.title") }}</h2>
+          <span>{{ t("recruitment.guide.body") }}</span>
+        </div>
+
+        <ol class="recruitment-guide__steps" :aria-label="t('recruitment.guide.stepsLabel')">
+          <li>
+            <span class="recruitment-guide__icon"><Icon name="lucide:message-square-text" aria-hidden="true" /></span>
+            <div>
+              <small aria-hidden="true">01</small>
+              <strong>{{ t("recruitment.guide.steps.prompt.title") }}</strong>
+              <p>{{ t("recruitment.guide.steps.prompt.body") }}</p>
+            </div>
+          </li>
+          <li>
+            <span class="recruitment-guide__icon"><Icon name="lucide:bot" aria-hidden="true" /></span>
+            <div>
+              <small aria-hidden="true">02</small>
+              <strong>{{ t("recruitment.guide.steps.agent.title") }}</strong>
+              <p>{{ t("recruitment.guide.steps.agent.body") }}</p>
+            </div>
+          </li>
+          <li>
+            <span class="recruitment-guide__icon"><Icon name="lucide:gauge" aria-hidden="true" /></span>
+            <div>
+              <small aria-hidden="true">03</small>
+              <strong>{{ t("recruitment.guide.steps.score.title") }}</strong>
+              <p>{{ t("recruitment.guide.steps.score.body") }}</p>
+            </div>
+          </li>
+        </ol>
+
+        <p class="recruitment-guide__tip">
+          <Icon name="lucide:lightbulb" aria-hidden="true" />
+          <span><strong>{{ t("recruitment.guide.tipLabel") }}</strong>{{ t("recruitment.guide.tip") }}</span>
+        </p>
+      </section>
+
       <section class="recruitment-composer" aria-labelledby="composer-title">
         <div class="recruitment-composer__intro">
           <p>{{ t("recruitment.eyebrow") }}</p>
@@ -876,11 +916,124 @@ useHead(() => ({
   pointer-events: none;
 }
 
+.recruitment-guide {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.62fr) minmax(0, 1.38fr);
+  gap: 28px 42px;
+  margin-top: 72px;
+  padding: 34px;
+  border: 1px solid var(--border-primary);
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+  box-shadow: var(--shadow-small);
+}
+
+.recruitment-guide__intro {
+  p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 13px;
+    color: var(--interactive-active-text);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    max-width: 460px;
+    margin: 0;
+    font-size: clamp(1.7rem, 2.5vw, 2.6rem);
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+
+  span {
+    display: block;
+    max-width: 520px;
+    margin-top: 16px;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    line-height: 1.7;
+  }
+}
+
+.recruitment-guide__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-content: start;
+    gap: 13px;
+    padding: 18px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 18px;
+    background: var(--surface-secondary);
+  }
+
+  small {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+  }
+
+  strong {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  p {
+    margin: 7px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    line-height: 1.6;
+  }
+}
+
+.recruitment-guide__icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--interactive-active-text);
+  background: color-mix(in srgb, var(--interactive-primary) 12%, transparent);
+}
+
+.recruitment-guide__tip {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -10px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.6;
+
+  > svg { flex: 0 0 auto; color: var(--semantic-warning); }
+  strong { margin-right: 8px; color: var(--text-primary); }
+}
+
 .recruitment-composer {
   display: grid;
   grid-template-columns: minmax(260px, 0.55fr) minmax(0, 1.45fr);
   gap: 46px;
-  margin-top: 82px;
+  margin-top: 24px;
   padding: 38px;
   border: 1px solid var(--border-primary);
   border-radius: 30px;
@@ -1033,6 +1186,7 @@ useHead(() => ({
   .recruitment-copy { max-width: 800px; }
   .recruitment-console { min-height: 590px; }
   .recruitment-console__body { min-height: 532px; }
+  .recruitment-guide { grid-template-columns: 1fr; }
   .recruitment-composer { grid-template-columns: 1fr; gap: 28px; }
 }
 
@@ -1068,7 +1222,10 @@ useHead(() => ({
   .recruitment-console__empty { width: 76%; padding: 14px; }
   .recruitment-console__mascot { width: 144px; height: 330px; right: -12px; }
 
-  .recruitment-composer { margin-top: 46px; padding: 24px 18px; border-radius: 22px; }
+  .recruitment-guide { margin-top: 46px; padding: 24px 18px; border-radius: 22px; }
+  .recruitment-guide__steps { grid-template-columns: 1fr; }
+  .recruitment-guide__tip { align-items: flex-start; margin-top: -4px; }
+  .recruitment-composer { margin-top: 18px; padding: 24px 18px; border-radius: 22px; }
   .recruitment-composer__footer { flex-direction: column; }
   .recruitment-composer__footer button { width: 100%; }
   .recruitment-footer { min-height: 64px; }
