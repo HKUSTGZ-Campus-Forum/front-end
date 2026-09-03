@@ -97,17 +97,15 @@ function isCourseActive() {
             <span class="kg-label">{{ t('nav.courses') }}</span>
           </NuxtLink>
         </li>
-        <li>
-          <NuxtLink :to="getLocalePath('/matching')" :class="{ active: isActive('/matching') }">
+        <li v-if="teamupEnabled">
+          <a
+            :href="getLocalePath('/teamup')"
+            :class="{ active: isActive('/teamup') }"
+            @click.stop
+          >
             <img src="/icons/sidebar_matching.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.teamMatching') }}</span>
-          </NuxtLink>
-        </li>
-        <li v-if="teamupEnabled">
-          <NuxtLink :to="getLocalePath('/teamup')" :class="{ active: isActive('/teamup') }">
-            <img src="/icons/sidebar_teamup.svg" alt="" class="kg-icon" />
-            <span class="kg-label">{{ t('nav.teamup') }}</span>
-          </NuxtLink>
+          </a>
         </li>
         <ClientOnly>
           <li v-if="hasMeetCampusBetaAccess">
