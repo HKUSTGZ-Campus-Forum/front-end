@@ -185,6 +185,7 @@
     "unavailableShort": "Unavailable",
     "loginRequired": "Log in to start a conversation",
     "loginRequiredShort": "Login required",
+    "historyLoginRequired": "Log in to view conversation history",
     "login": "Go to login",
     "assistantLabel": "Assistant",
     "userLabel": "You",
@@ -204,7 +205,8 @@
       "clear": "Clear settings",
       "saved": "Model service settings saved.",
       "invalid": "Enter a valid Base URL, API Key, and model name.",
-      "customReady": "Using custom model"
+      "customReady": "Using custom model",
+      "guestReady": "Temporary custom model chat"
     },
     "errors": {
       "unavailable": "The assistant has not been configured yet.",
@@ -215,6 +217,7 @@
       "tooLong": "That message is too long. Please shorten it.",
       "rateLimited": "Messages are being sent too quickly. Please wait.",
       "notFound": "That conversation no longer exists.",
+      "loginRequired": "Log in, or configure your own model service first.",
       "generic": "The request failed. Please try again later."
     }
   },

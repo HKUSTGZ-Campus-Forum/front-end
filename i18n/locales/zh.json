@@ -185,6 +185,7 @@
     "unavailableShort": "暂不可用",
     "loginRequired": "登录后开始对话",
     "loginRequiredShort": "需要登录",
+    "historyLoginRequired": "历史对话需要登录",
     "login": "前往登录",
     "assistantLabel": "助手",
     "userLabel": "你",
@@ -204,7 +205,8 @@
       "clear": "清除设置",
       "saved": "模型服务设置已保存。",
       "invalid": "请填写有效的 Base URL、API Key 和模型名。",
-      "customReady": "使用自定义模型"
+      "customReady": "使用自定义模型",
+      "guestReady": "自定义模型临时会话"
     },
     "errors": {
       "unavailable": "助手尚未完成配置。",
@@ -212,11 +214,12 @@
       "invalidProvider": "模型服务配置无效，请检查地址、API Key 和模型名。",
       "privateProvider": "该模型地址不能从服务器访问，请使用公网 HTTP(S) 地址。",
       "providerDisabled": "当前环境暂未开放自定义模型服务。",
-      "tooLong": "消息太长，请缩短后重试。",
-      "rateLimited": "发送得有点快，请稍后再试。",
-      "notFound": "这段对话已经不存在。",
-      "generic": "请求失败，请稍后重试。"
-    }
+        "tooLong": "消息太长，请缩短后重试。",
+        "rateLimited": "发送得有点快，请稍后再试。",
+        "notFound": "这段对话已经不存在。",
+        "loginRequired": "请登录，或先配置自己的模型服务。",
+        "generic": "请求失败，请稍后重试。"
+      }
   },
   "actions": {
     "login": "登录",

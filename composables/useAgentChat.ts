@@ -24,6 +24,11 @@ export interface AgentMessage {
   pending?: boolean;
 }
 
+export interface AgentContextMessage {
+  role: AgentMessage["role"];
+  content: string;
+}
+
 export interface AgentConversation {
   id: string;
   title: string;
@@ -53,10 +58,28 @@ export class AgentApiError extends Error {
 }
 
 export function useAgentChat() {
-  const { fetchWithAuth } = useApi();
+  const { fetchWithAuth, fetchPublic } = useApi();
 
-  async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetchWithAuth(url, options);
+  function publicJsonOptions(options: RequestInit): RequestInit {
+    const headers = {
+      "Content-Type": "application/json",
+      ...((options.headers as Record<string, string>) || {}),
+    };
+    const processedOptions = { ...options, headers };
+    if (options.body && typeof options.body === "object") {
+      processedOptions.body = JSON.stringify(options.body);
+    }
+    return processedOptions;
+  }
+
+  async function request<T>(
+    url: string,
+    options: RequestInit = {},
+    authenticated = true
+  ): Promise<T> {
+    const response = authenticated
+      ? await fetchWithAuth(url, options)
+      : await fetchPublic(url, publicJsonOptions(options));
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new AgentApiError(
@@ -69,7 +92,7 @@ export function useAgentChat() {
   }
 
   function getStatus(): Promise<AgentStatus> {
-    return request<AgentStatus>("/api/agent/status");
+    return request<AgentStatus>("/api/agent/status", {}, false);
   }
 
   async function listConversations(): Promise<AgentConversation[]> {
@@ -103,7 +126,9 @@ export function useAgentChat() {
   function sendMessage(
     message: string,
     conversationId: string | null,
-    provider?: AgentProviderPayload | null
+    provider?: AgentProviderPayload | null,
+    contextMessages?: AgentContextMessage[] | null,
+    authenticated = true
   ): Promise<{
     conversation: AgentConversation;
     user_message: AgentMessage;
@@ -113,16 +138,18 @@ export function useAgentChat() {
       message: string;
       conversation_id: string | null;
       provider?: AgentProviderPayload;
+      context_messages?: AgentContextMessage[];
     } = {
       message,
       conversation_id: conversationId,
     };
     if (provider) body.provider = provider;
+    if (contextMessages?.length) body.context_messages = contextMessages;
 
     return request("/api/agent/chat", {
       method: "POST",
       body: body as any,
-    });
+    }, authenticated);
   }
 
   return {

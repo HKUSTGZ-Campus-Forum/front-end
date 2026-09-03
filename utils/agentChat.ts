@@ -16,6 +16,8 @@ export function agentErrorI18nKey(code: string | undefined): string {
       return "assistant.errors.rateLimited";
     case "conversation_not_found":
       return "assistant.errors.notFound";
+    case "login_required":
+      return "assistant.errors.loginRequired";
     default:
       return "assistant.errors.generic";
   }

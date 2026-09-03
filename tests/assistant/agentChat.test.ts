@@ -21,6 +21,9 @@ describe("forum assistant UI helpers", () => {
     expect(agentErrorI18nKey("invalid_provider")).toBe(
       "assistant.errors.invalidProvider"
     );
+    expect(agentErrorI18nKey("login_required")).toBe(
+      "assistant.errors.loginRequired"
+    );
     expect(agentErrorI18nKey("unknown")).toBe("assistant.errors.generic");
   });
 
@@ -76,12 +79,18 @@ describe("forum assistant UI helpers", () => {
     expect(component).toContain("lucide:history");
     expect(component).toContain("lucide:settings-2");
     expect(component).toContain("openSettings");
+    expect(component).toContain("!authInitialized && view !== 'settings'");
+    expect(component).toContain("!isLoggedIn && view !== 'settings' && !customProviderReady");
+    expect(component).toContain("historyLoginRequired");
     expect(component).toContain("providerDraft");
+    expect(component).toContain("currentContextMessages");
     expect(component).toContain("openConversation");
     expect(component).toContain("openHistory");
     expect(component).toContain("defineExpose");
+    expect(composable).toContain("fetchPublic");
     expect(composable).toContain("/api/agent/chat");
     expect(composable).toContain("provider?: AgentProviderPayload");
+    expect(composable).toContain("context_messages");
     expect(app).toContain("@assistant-message");
     expect(app).toContain("@open-agent-settings");
     expect(app).toContain("@open-chat-history");

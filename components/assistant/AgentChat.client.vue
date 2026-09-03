@@ -72,14 +72,18 @@
             </div>
           </header>
 
-          <div v-if="!authInitialized" class="agent-state" role="status">
+          <div v-if="!authInitialized && view !== 'settings'" class="agent-state" role="status">
             <span class="agent-spinner" aria-hidden="true" />
             <span>{{ t("assistant.loading") }}</span>
           </div>
 
-          <div v-else-if="!isLoggedIn" class="agent-state">
+          <div v-else-if="!isLoggedIn && view !== 'settings' && !customProviderReady" class="agent-state">
             <Icon name="lucide:log-in" class="agent-state-icon" aria-hidden="true" />
             <strong>{{ t("assistant.loginRequired") }}</strong>
+            <button type="button" class="agent-command" @click="openSettings">
+              <Icon name="lucide:settings-2" aria-hidden="true" />
+              {{ t("assistant.provider.configure") }}
+            </button>
             <button type="button" class="agent-command" @click="goToLogin">
               <Icon name="lucide:log-in" aria-hidden="true" />
               {{ t("assistant.login") }}
@@ -184,6 +188,15 @@
               </div>
             </form>
           </template>
+
+          <div v-else-if="view === 'history' && !isLoggedIn" class="agent-state">
+            <Icon name="lucide:history" class="agent-state-icon" aria-hidden="true" />
+            <strong>{{ t("assistant.historyLoginRequired") }}</strong>
+            <button type="button" class="agent-command" @click="openSettings">
+              <Icon name="lucide:settings-2" aria-hidden="true" />
+              {{ t("assistant.provider.configure") }}
+            </button>
+          </div>
 
           <template v-else-if="view === 'history'">
             <div class="agent-history-heading">
@@ -314,6 +327,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n, useRuntimeConfig } from "#imports";
 import {
   AgentApiError,
+  type AgentContextMessage,
   type AgentConversation,
   type AgentMessage,
   type AgentProviderPayload,
@@ -364,14 +378,20 @@ const customProviderReady = computed(() => isAgentProviderReady(providerSettings
 const activeProvider = computed<AgentProviderPayload | null>(() =>
   customProviderReady.value ? toAgentProviderPayload(providerSettings.value) : null
 );
-const available = computed(() => Boolean(status.value?.enabled) || customProviderReady.value);
+const available = computed(() =>
+  customProviderReady.value || (isLoggedIn.value && Boolean(status.value?.enabled))
+);
 const canSend = computed(() =>
   canSendAgentMessage(draft.value, sending.value, available.value)
 );
 const statusText = computed(() => {
-  if (!isLoggedIn.value) return t("assistant.loginRequiredShort");
   if (initializing.value) return t("assistant.loading");
-  if (customProviderReady.value) return t("assistant.provider.customReady");
+  if (customProviderReady.value) {
+    return isLoggedIn.value
+      ? t("assistant.provider.customReady")
+      : t("assistant.provider.guestReady");
+  }
+  if (!isLoggedIn.value) return t("assistant.loginRequiredShort");
   return available.value ? t("assistant.ready") : t("assistant.unavailableShort");
 });
 
@@ -471,6 +491,7 @@ async function removeConversation(conversation: AgentConversation): Promise<void
 async function submitMessage(): Promise<void> {
   if (!canSend.value) return;
   const content = draft.value.trim();
+  const anonymousContext = !isLoggedIn.value ? currentContextMessages() : null;
   const optimisticId = `pending-${Date.now()}`;
   messages.value.push({
     id: optimisticId,
@@ -488,7 +509,9 @@ async function submitMessage(): Promise<void> {
     const payload = await api.sendMessage(
       content,
       activeConversationId.value,
-      activeProvider.value
+      activeProvider.value,
+      anonymousContext,
+      isLoggedIn.value
     );
     activeConversationId.value = payload.conversation.id;
     const index = messages.value.findIndex((item) => item.id === optimisticId);
@@ -516,6 +539,21 @@ async function submitMessage(): Promise<void> {
     sending.value = false;
     await scrollToBottom();
   }
+}
+
+function currentContextMessages(): AgentContextMessage[] {
+  return messages.value
+    .filter(
+      (message) =>
+        !message.pending &&
+        (message.role === "user" || message.role === "assistant") &&
+        message.content.trim().length > 0
+    )
+    .slice(-12)
+    .map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
 }
 
 function upsertConversation(conversation: AgentConversation): void {
