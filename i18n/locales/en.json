@@ -76,6 +76,28 @@
       "scopeLabel": "Scope",
       "scope": "Your isolated challenge instance only"
     },
+    "guide": {
+      "eyebrow": "Newcomer guide · Escape-room analogy",
+      "title": "Think of it as guiding a robot through an escape room",
+      "body": "No coding experience is needed. In 100 characters, tell the robot where to look first, what not to trust, and where to deliver the pass.",
+      "stepsLabel": "How it works in three steps",
+      "steps": {
+        "prompt": {
+          "title": "You write one message",
+          "body": "That is the prompt: the robot's action brief."
+        },
+        "agent": {
+          "title": "The agent takes action",
+          "body": "It follows your instruction to inspect the site, find clues, and try steps."
+        },
+        "score": {
+          "title": "The system scores the run",
+          "body": "The closer and more efficiently it reaches the goal, the higher the score."
+        }
+      },
+      "tipLabel": "Quick tip",
+      "tip": "Skip the jargon. Make the goal, order, and decision rules clear."
+    },
     "composer": {
       "title": "Write your one instruction",
       "label": "Prompt for the agent",
