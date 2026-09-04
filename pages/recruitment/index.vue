@@ -4,6 +4,7 @@ import {
   RECRUITMENT_PROMPT_LIMIT,
   countRecruitmentPromptCharacters,
   isRecruitmentPromptValid,
+  isRecruitmentPromptWithinLimit,
 } from "~/utils/recruitment";
 
 definePageMeta({ layout: false });
@@ -54,7 +55,10 @@ const leaderboardLoading = ref(false);
 const leaderboardError = ref(false);
 let leaderboardTimer: ReturnType<typeof setInterval> | null = null;
 const promptCount = computed(() => countRecruitmentPromptCharacters(prompt.value));
-const promptTooLong = computed(() => promptCount.value > RECRUITMENT_PROMPT_LIMIT);
+const promptTooLong = computed(() => (
+  prompt.value.trim().length > 0 && !isRecruitmentPromptWithinLimit(prompt.value)
+));
+const promptCountText = computed(() => formatPromptCount(promptCount.value));
 const canSubmit = computed(() => isRecruitmentPromptValid(prompt.value));
 const hasAttempted = computed(() => attempt.value !== null);
 const primaryEnabled = computed(() => (
@@ -98,6 +102,14 @@ const timelineSteps = computed(() => [
 function eventTitle(code: string) {
   const key = `recruitment.events.${code}`;
   return t(key);
+}
+
+// The weighted count is a multiple of 0.1; show it with a single decimal and
+// drop a trailing ".0" so whole values read plainly (e.g. 30 not 30.0).
+function formatPromptCount(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  const text = rounded.toFixed(1);
+  return text.endsWith(".0") ? text.slice(0, -2) : text;
 }
 
 function localizeApiError(code?: string) {
@@ -423,7 +435,11 @@ useHead(() => ({
         <div class="recruitment-composer__form">
           <div class="recruitment-composer__label-row">
             <label for="recruitment-prompt">{{ t("recruitment.composer.label") }}</label>
-            <span :class="{ danger: promptTooLong }">{{ t("recruitment.composer.counter", { count: promptCount }) }}</span>
+            <span
+              id="recruitment-count"
+              :class="{ danger: promptTooLong }"
+              :aria-live="promptTooLong ? 'assertive' : 'off'"
+            >{{ t("recruitment.composer.counter", { count: promptCountText, limit: RECRUITMENT_PROMPT_LIMIT }) }}</span>
           </div>
           <textarea
             id="recruitment-prompt"
@@ -431,9 +447,13 @@ useHead(() => ({
             rows="4"
             :placeholder="t('recruitment.composer.placeholder')"
             :aria-invalid="promptTooLong"
-            :aria-describedby="localError ? 'recruitment-error recruitment-confirm' : 'recruitment-confirm'"
+            :aria-describedby="localError ? 'recruitment-error recruitment-confirm recruitment-rule' : 'recruitment-confirm recruitment-rule'"
             :disabled="isRunning || (hasAttempted && !repeatable)"
           />
+          <p id="recruitment-rule" class="recruitment-composer__rule">
+            <Icon name="lucide:scale" aria-hidden="true" />
+            {{ t("recruitment.composer.rule", { cjk: 1, other: 0.3, limit: RECRUITMENT_PROMPT_LIMIT }) }}
+          </p>
           <div class="recruitment-composer__footer">
             <div>
               <p id="recruitment-confirm"><Icon name="lucide:refresh-cw" aria-hidden="true" />{{ t("recruitment.composer.confirm") }}</p>
@@ -1276,6 +1296,18 @@ useHead(() => ({
   }
   &[aria-invalid="true"] { border-color: var(--semantic-error); }
   &:disabled { opacity: var(--opacity-medium); cursor: not-allowed; }
+}
+
+.recruitment-composer__rule {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 0 -3px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+
+  > svg { flex: 0 0 auto; color: var(--interactive-primary); }
 }
 
 .recruitment-composer__footer {

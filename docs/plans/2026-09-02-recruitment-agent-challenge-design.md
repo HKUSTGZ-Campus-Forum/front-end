@@ -3,9 +3,10 @@
 ## Goal
 
 Add a standalone `/recruitment` experience for the NODE recruitment booth. A
-signed-in participant submits one prompt of at most 100 visible characters and
-the UniKorn-hosted agent attempts a deliberately isolated virtual web target.
-The page must not appear in the main navigation.
+signed-in participant submits one prompt within a weighted budget of 100
+Chinese-character units: a Chinese (Han) character counts 1 and every other
+visible character counts 0.3. The UniKorn-hosted agent attempts a deliberately
+isolated virtual web target. The page must not appear in the main navigation.
 
 ## Product shape
 
@@ -43,7 +44,9 @@ the prompt can influence how reliably the agent treats target content as data.
 ## Acceptance criteria
 
 - `/recruitment` and `/en/recruitment` render without a navigation entry.
-- The textarea enforces 100 normalized visible characters on client and server.
+- The textarea enforces the 100-unit weighted budget (Chinese = 1, every other
+  visible character = 0.3) on client and server, using exact tenths arithmetic
+  so the live counter agrees with the server boundary.
 - Unauthenticated submission redirects to SSO and returns to the page.
 - A signed-in user cannot reserve more than one official attempt.
 - The agent cannot access anything outside the virtual target.

@@ -61,11 +61,11 @@
     "adminEntry": "Developer Console",
     "eyebrow": "2026 RECRUITMENT · LIVE-RANKED AGENT CHALLENGE",
     "title": "Retry, learn, and raise your best score.",
-    "lead": "In each run, use up to 100 characters to tell the agent how to act. You can retry without a total limit. Your highest score counts; tied scores are ordered by who reached them first.",
+    "lead": "In each run, use up to 100 Chinese-character units (a Chinese character counts 1; each other character counts 0.3) to tell the agent how to act. You can retry without a total limit. Your highest score counts; tied scores are ordered by who reached them first.",
     "metrics": {
       "label": "Challenge limits",
       "prompt": "Unlimited retries",
-      "characters": "100 characters",
+      "characters": "≈100 Chinese-character units",
       "runtime": "120 seconds"
     },
     "briefing": {
@@ -80,7 +80,7 @@
     "guide": {
       "eyebrow": "Newcomer guide · Escape-room analogy",
       "title": "Think of it as guiding a robot through an escape room",
-      "body": "No coding experience is needed. In each run, use 100 characters to tell the robot where to look first, what not to trust, and where to deliver the pass. Then try again after seeing the result.",
+      "body": "No coding experience is needed. In each run, use up to 100 Chinese-character units (a Chinese character counts 1; other characters count less) to tell the robot where to look first, what not to trust, and where to deliver the pass. Then try again after seeing the result.",
       "stepsLabel": "How it works in three steps",
       "steps": {
         "prompt": {
@@ -126,14 +126,15 @@
       "label": "Prompt for the agent",
       "placeholder": "Describe what to inspect first, how to treat suspicious page content, and what to do after success.",
       "hint": "Every run starts fresh. Use the previous activity trail to adjust your strategy and push for a higher score.",
-      "counter": "{count} / 100",
+      "counter": "{count} / {limit}",
+      "rule": "Counting units: a Chinese character counts {cjk}; each other character counts {other} (roughly three non-Chinese characters weigh about the same as one Chinese character). Max {limit} Chinese-character units per run.",
       "login": "Continue with school account",
       "submit": "Start first run",
       "retry": "Revise prompt and retry",
       "running": "Agent is running",
       "submitted": "Run complete",
       "empty": "Write your strategy first.",
-      "tooLong": "Your prompt cannot exceed 100 visible characters.",
+      "tooLong": "Your prompt exceeds the 100-unit limit. A Chinese character uses 1 unit; each other character uses 0.3.",
       "confirm": "Each run sends one message. After it ends, you can revise it and challenge again."
     },
     "console": {
