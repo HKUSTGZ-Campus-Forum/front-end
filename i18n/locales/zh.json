@@ -52,6 +52,8 @@
   "recruitment": {
     "metaTitle": "NODE Agent 夺旗排行榜 · UniKorn",
     "metaDescription": "用不超过 100 字的 Prompt 反复挑战 Agent，刷新个人最高分和实时排名。",
+    "homeEntry": "招新挑战",
+    "carouselAlt": "进入 NODE 开发者协会提示词夺旗挑战",
     "brand": {
       "name": "NODE",
       "association": "开发者协会",

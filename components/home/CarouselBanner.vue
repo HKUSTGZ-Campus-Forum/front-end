@@ -132,23 +132,31 @@ const sourceSlides = computed(() => {
   return carouselData.value?.slides || []
 })
 
-const slides = computed<BannerSlide[]>(() => sourceSlides.value.map((slide) => ({
-  id: slide.id,
-  image: slide.image_url,
-  alt: slide.alt_text || (
-    slide.presentation_variant === 'scheduler'
-      ? t('homePage.carousel.slides.schedulerAlt')
-      : localeCode.value === 'en'
-        ? t('homePage.carousel.slides.welcomeEnAlt')
-        : t('homePage.carousel.slides.welcomeZhAlt')
-  ),
-  href: localizeCarouselHref(slide.href, localePath) || '',
-  variant: slide.presentation_variant === 'scheduler' ? 'scheduler' : undefined,
-  eyebrow: t('homePage.carousel.slides.schedulerEyebrow'),
-  title: t('homePage.carousel.slides.schedulerTitle'),
-  description: t('homePage.carousel.slides.schedulerDescription'),
-  cta: t('homePage.carousel.slides.schedulerCta'),
-})))
+const slides = computed<BannerSlide[]>(() => [
+  {
+    id: -10,
+    image: '/image/banner/recruitment-challenge-v1.jpg',
+    alt: t('recruitment.carouselAlt'),
+    href: localePath('/recruitment'),
+  },
+  ...sourceSlides.value.map((slide) => ({
+    id: slide.id,
+    image: slide.image_url,
+    alt: slide.alt_text || (
+      slide.presentation_variant === 'scheduler'
+        ? t('homePage.carousel.slides.schedulerAlt')
+        : localeCode.value === 'en'
+          ? t('homePage.carousel.slides.welcomeEnAlt')
+          : t('homePage.carousel.slides.welcomeZhAlt')
+    ),
+    href: localizeCarouselHref(slide.href, localePath) || '',
+    variant: slide.presentation_variant === 'scheduler' ? 'scheduler' : undefined,
+    eyebrow: t('homePage.carousel.slides.schedulerEyebrow'),
+    title: t('homePage.carousel.slides.schedulerTitle'),
+    description: t('homePage.carousel.slides.schedulerDescription'),
+    cta: t('homePage.carousel.slides.schedulerCta'),
+  })),
+])
 
 function isExternalHref(url: string) {
   return /^https?:\/\//i.test(url);

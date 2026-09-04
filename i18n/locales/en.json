@@ -52,6 +52,8 @@
   "recruitment": {
     "metaTitle": "NODE Agent Heist Rankings · UniKorn",
     "metaDescription": "Retry the agent challenge with prompts up to 100 characters and climb the live best-score ranking.",
+    "homeEntry": "Recruitment",
+    "carouselAlt": "Enter the NODE Developers Association prompt capture challenge",
     "brand": {
       "name": "NODE",
       "association": "Developers Association",

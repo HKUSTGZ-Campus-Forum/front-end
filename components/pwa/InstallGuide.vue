@@ -1,5 +1,12 @@
 <template>
   <div v-if="showGuide" class="install-guide-container">
+    <NuxtLink
+      v-if="!isExpanded && showRecruitmentEntry"
+      :to="localePath('/recruitment')"
+      class="install-float-btn recruitment-float-btn"
+    >
+      {{ t("recruitment.homeEntry") }}
+    </NuxtLink>
     <div 
       v-if="!isExpanded && showGuide" 
       class="install-float-btn"
@@ -77,12 +84,18 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const route = useRoute()
 const isExpanded = ref(false)
 const canInstall = ref(false)
 const selectedPlatform = ref('chrome')
 const dontShowAgain = ref(false)
 const deferredPrompt = ref<any>(null)
+
+const showRecruitmentEntry = computed(() => {
+  const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/'
+  return normalizePath(route.path) === normalizePath(localePath('/'))
+})
 
 const showGuide = computed(() => {
   if (process.server) return false
@@ -226,6 +239,11 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 700;
   border: 1px solid color-mix(in srgb, var(--text-inverse) 10%, transparent);
+  box-sizing: border-box;
+  justify-content: center;
+  min-height: 44px;
+  text-decoration: none;
+  width: 132px;
 }
 
 .install-float-btn:hover {
@@ -236,6 +254,10 @@ onUnmounted(() => {
 
 .install-icon {
   font-size: 16px;
+}
+
+.recruitment-float-btn {
+  bottom: 136px;
 }
 
 /* Install Guide Card */
@@ -502,6 +524,10 @@ onUnmounted(() => {
     right: 16px;
     padding: 10px 14px;
     font-size: 13px;
+  }
+
+  .recruitment-float-btn {
+    bottom: 136px;
   }
   
   .install-guide-card {
