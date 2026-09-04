@@ -50,8 +50,8 @@
     "retry": "Reload TeamUp"
   },
   "recruitment": {
-    "metaTitle": "NODE 100-Character Heist · UniKorn",
-    "metaDescription": "Use one prompt of up to 100 characters to guide a shared agent through an isolated web challenge.",
+    "metaTitle": "NODE Agent Heist Rankings · UniKorn",
+    "metaDescription": "Retry the agent challenge with prompts up to 100 characters and climb the live best-score ranking.",
     "brand": {
       "name": "NODE",
       "association": "Developers Association",
@@ -59,12 +59,12 @@
     },
     "locale": "Switch language",
     "adminEntry": "Developer Console",
-    "eyebrow": "2026 RECRUITMENT · AGENT CHALLENGE",
-    "title": "100 characters. One agent heist.",
-    "lead": "You get one official instruction. A shared agent follows your strategy to explore an isolated site, make its call, and recover the NODE access pass.",
+    "eyebrow": "2026 RECRUITMENT · LIVE-RANKED AGENT CHALLENGE",
+    "title": "Retry, learn, and raise your best score.",
+    "lead": "In each run, use up to 100 characters to tell the agent how to act. You can retry without a total limit. Your highest score counts; tied scores are ordered by who reached them first.",
     "metrics": {
       "label": "Challenge limits",
-      "prompt": "One prompt",
+      "prompt": "Unlimited retries",
       "characters": "100 characters",
       "runtime": "120 seconds"
     },
@@ -73,53 +73,76 @@
       "targetLabel": "Goal",
       "target": "Find and submit the NODE access pass",
       "toolsLabel": "Tools",
-      "tools": "Restricted browser and virtual HTTP",
+      "tools": "Page-viewing tools and simulated actions",
       "scopeLabel": "Scope",
       "scope": "Your isolated challenge instance only"
     },
     "guide": {
       "eyebrow": "Newcomer guide · Escape-room analogy",
       "title": "Think of it as guiding a robot through an escape room",
-      "body": "No coding experience is needed. In 100 characters, tell the robot where to look first, what not to trust, and where to deliver the pass.",
+      "body": "No coding experience is needed. In each run, use 100 characters to tell the robot where to look first, what not to trust, and where to deliver the pass. Then try again after seeing the result.",
       "stepsLabel": "How it works in three steps",
       "steps": {
         "prompt": {
-          "title": "You write one message",
-          "body": "That is the prompt: the robot's action brief."
+          "title": "Write one strategy",
+          "body": "That is the prompt: the robot's brief for this run."
         },
         "agent": {
           "title": "The agent takes action",
           "body": "It follows your instruction to inspect the site, find clues, and try steps."
         },
         "score": {
-          "title": "The system scores the run",
-          "body": "The closer and more efficiently it reaches the goal, the higher the score."
+          "title": "Your best score is ranked",
+          "body": "The system keeps your highest score and updates the ranking immediately."
         }
       },
       "tipLabel": "Quick tip",
-      "tip": "Skip the jargon. Make the goal, order, and decision rules clear."
+      "tip": "A missed run is useful. Read the activity trail, adjust the goal, order, or decision rules, and try again."
+    },
+    "leaderboard": {
+      "eyebrow": "LIVE RANKING · UPDATES EVERY 10S",
+      "title": "Live leaderboard",
+      "rule": "Each username is ranked by its highest score. For ties, whoever first reached that score ranks higher.",
+      "participants": "{count} participants",
+      "updated": "Updated {time}",
+      "loginTitle": "Sign in to view the leaderboard",
+      "loginBody": "Use your school account to see every participant's username, best score, and rank.",
+      "loading": "Loading the latest ranking…",
+      "loadError": "The leaderboard is temporarily unavailable.",
+      "retry": "Try again",
+      "emptyTitle": "Waiting for the first challenger",
+      "emptyBody": "Complete one run and your username and best score will appear here.",
+      "rank": "Rank",
+      "username": "Username",
+      "score": "Best score",
+      "achieved": "First achieved",
+      "you": "You",
+      "mine": "You are currently #{rank} with a best score of {score}.",
+      "notAvailable": "—"
     },
     "composer": {
-      "title": "Write your one instruction",
+      "eyebrow": "START A NEW RUN",
+      "title": "Write this run's instruction",
       "label": "Prompt for the agent",
       "placeholder": "Describe what to inspect first, how to treat suspicious page content, and what to do after success.",
-      "hint": "The goal, tools, and safety boundary are provided by the system. Use your 100 characters for strategy.",
+      "hint": "Every run starts fresh. Use the previous activity trail to adjust your strategy and push for a higher score.",
       "counter": "{count} / 100",
       "login": "Continue with school account",
-      "submit": "Launch agent",
+      "submit": "Start first run",
+      "retry": "Revise prompt and retry",
       "running": "Agent is running",
-      "submitted": "Official prompt submitted",
+      "submitted": "Run complete",
       "empty": "Write your strategy first.",
       "tooLong": "Your prompt cannot exceed 100 visible characters.",
-      "confirm": "You cannot edit it or send another message after submission."
+      "confirm": "Each run sends one message. After it ends, you can revise it and challenge again."
     },
     "console": {
       "label": "LIVE RUN",
       "title": "Agent activity",
       "idleTitle": "Waiting for your instruction",
-      "idleBody": "After submission, this panel shows what the agent visits, what it discovers, and whether it recovers the pass.",
+      "idleBody": "After a run starts, this panel shows what the agent visits, what it discovers, and whether it recovers the pass.",
       "runningTitle": "Agent in motion",
-      "runningBody": "The shared agent is carrying out your one instruction. This normally takes a few dozen seconds; keep this page open.",
+      "runningBody": "The shared agent is carrying out this run's instruction. This normally takes a few dozen seconds; keep this page open.",
       "failedBody": "This run did not produce an activity trail. Please ask an event host to check it.",
       "ready": "System ready",
       "waiting": "Waiting",
@@ -157,8 +180,8 @@
       "load": "The challenge status is temporarily unavailable. Please try again.",
       "run": "The agent did not start correctly. Please ask an event host for help.",
       "unavailable": "The challenge is not open yet.",
-      "used": "You have already submitted your one official instruction.",
-      "runningStale": "Your instruction has been submitted. The agent is still running or awaiting host confirmation."
+      "used": "This account cannot start another run right now.",
+      "runningStale": "Your previous run is still active. Wait for its result before trying again."
     },
     "admin": {
       "metaTitle": "Recruitment Developer Console · NODE",
@@ -180,7 +203,7 @@
       "leaderboard": {
         "eyebrow": "BEST SINGLE RUN",
         "title": "Single-run leaderboard",
-        "note": "Only each account's best run is kept. Ties are ordered by tool calls, duration, then submission time.",
+        "note": "Each account is ranked by its highest score. Ties are ordered by who first reached that score.",
         "rank": "Rank",
         "empty": "No completed challenge runs yet."
       },
