@@ -425,6 +425,46 @@ useHead(() => ({
         </section>
       </section>
 
+      <section class="recruitment-guide" aria-labelledby="recruitment-guide-title">
+        <div class="recruitment-guide__intro">
+          <p><Icon name="lucide:signpost" aria-hidden="true" />{{ t("recruitment.guide.eyebrow") }}</p>
+          <h2 id="recruitment-guide-title">{{ t("recruitment.guide.title") }}</h2>
+          <span>{{ t("recruitment.guide.body") }}</span>
+        </div>
+
+        <ol class="recruitment-guide__steps" :aria-label="t('recruitment.guide.stepsLabel')">
+          <li>
+            <span class="recruitment-guide__icon"><Icon name="lucide:message-square-text" aria-hidden="true" /></span>
+            <div>
+              <small aria-hidden="true">01</small>
+              <strong>{{ t("recruitment.guide.steps.prompt.title") }}</strong>
+              <p>{{ t("recruitment.guide.steps.prompt.body") }}</p>
+            </div>
+          </li>
+          <li>
+            <span class="recruitment-guide__icon"><Icon name="lucide:bot" aria-hidden="true" /></span>
+            <div>
+              <small aria-hidden="true">02</small>
+              <strong>{{ t("recruitment.guide.steps.agent.title") }}</strong>
+              <p>{{ t("recruitment.guide.steps.agent.body") }}</p>
+            </div>
+          </li>
+          <li>
+            <span class="recruitment-guide__icon"><Icon name="lucide:gauge" aria-hidden="true" /></span>
+            <div>
+              <small aria-hidden="true">03</small>
+              <strong>{{ t("recruitment.guide.steps.score.title") }}</strong>
+              <p>{{ t("recruitment.guide.steps.score.body") }}</p>
+            </div>
+          </li>
+        </ol>
+
+        <p class="recruitment-guide__tip">
+          <Icon name="lucide:lightbulb" aria-hidden="true" />
+          <span><strong>{{ t("recruitment.guide.tipLabel") }}</strong>{{ t("recruitment.guide.tip") }}</span>
+        </p>
+      </section>
+
       <section class="recruitment-composer" aria-labelledby="composer-title">
         <div class="recruitment-composer__intro">
           <p>{{ t("recruitment.composer.eyebrow") }}</p>
@@ -540,46 +580,6 @@ useHead(() => ({
         <p v-if="currentLeaderboardEntry" class="recruitment-leaderboard__mine">
           <Icon name="lucide:locate-fixed" aria-hidden="true" />
           {{ t("recruitment.leaderboard.mine", { rank: currentLeaderboardEntry.rank, score: currentLeaderboardEntry.score }) }}
-        </p>
-      </section>
-
-      <section class="recruitment-guide" aria-labelledby="recruitment-guide-title">
-        <div class="recruitment-guide__intro">
-          <p><Icon name="lucide:signpost" aria-hidden="true" />{{ t("recruitment.guide.eyebrow") }}</p>
-          <h2 id="recruitment-guide-title">{{ t("recruitment.guide.title") }}</h2>
-          <span>{{ t("recruitment.guide.body") }}</span>
-        </div>
-
-        <ol class="recruitment-guide__steps" :aria-label="t('recruitment.guide.stepsLabel')">
-          <li>
-            <span class="recruitment-guide__icon"><Icon name="lucide:message-square-text" aria-hidden="true" /></span>
-            <div>
-              <small aria-hidden="true">01</small>
-              <strong>{{ t("recruitment.guide.steps.prompt.title") }}</strong>
-              <p>{{ t("recruitment.guide.steps.prompt.body") }}</p>
-            </div>
-          </li>
-          <li>
-            <span class="recruitment-guide__icon"><Icon name="lucide:bot" aria-hidden="true" /></span>
-            <div>
-              <small aria-hidden="true">02</small>
-              <strong>{{ t("recruitment.guide.steps.agent.title") }}</strong>
-              <p>{{ t("recruitment.guide.steps.agent.body") }}</p>
-            </div>
-          </li>
-          <li>
-            <span class="recruitment-guide__icon"><Icon name="lucide:gauge" aria-hidden="true" /></span>
-            <div>
-              <small aria-hidden="true">03</small>
-              <strong>{{ t("recruitment.guide.steps.score.title") }}</strong>
-              <p>{{ t("recruitment.guide.steps.score.body") }}</p>
-            </div>
-          </li>
-        </ol>
-
-        <p class="recruitment-guide__tip">
-          <Icon name="lucide:lightbulb" aria-hidden="true" />
-          <span><strong>{{ t("recruitment.guide.tipLabel") }}</strong>{{ t("recruitment.guide.tip") }}</span>
         </p>
       </section>
 
