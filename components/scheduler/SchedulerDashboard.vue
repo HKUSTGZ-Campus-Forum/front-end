@@ -411,6 +411,16 @@ const canSaveCurrentPlan = computed(() => (
   && !cart.requiresReload.value
 ))
 
+const canExportCurrentPlan = computed(() => (
+  !props.loading
+  && !props.cartLoadError
+  && !cart.requiresReload.value
+  && currentPlan.value.length > 0
+  && (isRankedMode.value
+    ? optimizerRunState.value === 'complete' && !optimizerStale.value
+    : solverResult.value.status === 'ok')
+))
+
 const maxDayNum = computed(() => getMaxDayNum(courseList.value, currentPlan.value))
 
 const planMessage = computed<{ level: 'info' | 'warning' | 'error'; title: string; description: string } | null>(() => {
@@ -863,6 +873,13 @@ async function startNewPlan() {
             {{ activeSavedPlan?.is_owner ? t('scheduler.savedPlans.saveChanges') : t('scheduler.savedPlans.save') }}
             <span v-if="savedPlanDirty" class="dashboard__dirty" :title="t('scheduler.savedPlans.unsavedChanges')"></span>
           </button>
+          <SchedulerCalendarExport
+            :semester-id="props.semesterId"
+            :courses="courseList"
+            :selections="currentPlan"
+            :name="activeSavedPlan?.name"
+            :disabled="!canExportCurrentPlan"
+          />
           <NuxtLink
             class="dashboard__action"
             :to="getLocalePath({ path: '/courses/planner/plans', query: { fromSemester: props.semesterId } })"
