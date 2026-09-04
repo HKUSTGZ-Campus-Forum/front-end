@@ -2908,6 +2908,33 @@
         "unknown": "Unknown scoring rule"
       }
     },
+    "calendar": {
+      "export": "Export calendar",
+      "title": "Export timetable as an ICS calendar",
+      "hint": "Export only the courses and sections in the plan you are viewing, for calendar apps that support .ics files.",
+      "defaultName": "UniKorn · Semester {semester} timetable",
+      "timezone": "Class times: Guangzhou time (UTC+8)",
+      "summary": "{count} classes · {start} to {end}",
+      "listSeparator": ", ",
+      "fallbackTitle": "Add missing teaching dates",
+      "fallbackHint": "Some meetings for these courses have no teaching dates: {courses}. Confirm a date range for those meetings to repeat weekly. Existing teaching dates are not overwritten. Both endpoints are included; each range can span up to 366 days.",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "untimed": "These sections have no scheduled meeting times and will not generate calendar events: {courses}. Please check their arrangements separately.",
+      "unavailable": "No valid plan is available to export. Finish calculating and make sure the current conditions have not changed.",
+      "download": "Download .ics file",
+      "downloaded": "Download started. Import the .ics file in your calendar app and check the class times.",
+      "downloadFailed": "Could not start the download. Please retry or check your browser's download permissions.",
+      "sourceNotice": "The export uses current course data. Holiday cancellations and rescheduled classes not provided in that data are not added or excluded automatically. Check official notices.",
+      "importNotice": "Import into a separate course calendar. This is a one-time snapshot, not an automatic subscription. When changing plans, remove the old calendar entries first to avoid outdated or duplicate classes.",
+      "errors": {
+        "invalid-date-range": "Invalid teaching dates. Dates must be in 1992 or later, the end cannot precede the start, and each range can span up to 366 days. Refresh or correct the course data if its dates are invalid.",
+        "invalid-lecture": "A course has an invalid weekday or meeting time and cannot be exported safely. Refresh or correct the course data.",
+        "invalid-selection": "A selected section no longer exists or belongs to another semester. Please reload the plan.",
+        "empty": "There are no scheduled classes to export within these dates. Check the date range and course times.",
+        "too-many-events": "This export exceeds 20,000 calendar events. Shorten the date range or select fewer courses."
+      }
+    },
     "savedPlans": {
       "navigation": "Schedule plan navigation",
       "new": "New plan",

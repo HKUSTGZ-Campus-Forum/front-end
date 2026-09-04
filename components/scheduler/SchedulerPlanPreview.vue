@@ -22,7 +22,16 @@ const displayOptions = {
         <p>{{ t('scheduler.savedPlans.preview') }}</p>
         <h2>{{ plan.name }}</h2>
       </div>
-      <SchedulerPlanStatus :availability="plan.availability" />
+      <div class="plan-preview__actions">
+        <SchedulerPlanStatus :availability="plan.availability" />
+        <SchedulerCalendarExport
+          :semester-id="plan.semester_id"
+          :courses="plan.courses || []"
+          :selections="plan.selections || []"
+          :name="plan.name"
+          :disabled="plan.availability === 'unavailable'"
+        />
+      </div>
     </div>
 
     <div class="plan-preview__meta">
@@ -62,7 +71,10 @@ const displayOptions = {
   display: flex;
   gap: 16px;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
+
+.plan-preview__actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
 
 .plan-preview__heading p {
   color: var(--interactive-active);
