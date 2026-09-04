@@ -58,6 +58,7 @@
       "with": "联合 UniKorn"
     },
     "locale": "切换语言",
+    "adminEntry": "开发者后台",
     "eyebrow": "2026 社团招新 · Agent Challenge",
     "title": "100 字，指挥 Agent 夺旗。",
     "lead": "你只有一次正式指令。统一 Agent 会依据你的策略，在隔离网页中侦察、判断并尝试取回 NODE 通行证。",
@@ -158,6 +159,56 @@
       "unavailable": "挑战暂未开放。",
       "used": "你已经提交过唯一一次正式指令。",
       "runningStale": "你的正式指令已经提交，Agent 仍在执行或等待工作人员确认。"
+    },
+    "admin": {
+      "metaTitle": "招新开发者后台 · NODE",
+      "metaDescription": "NODE 招新 Agent 挑战的专属记录与排行榜后台。",
+      "eyebrow": "PRIVATE EVENT CONSOLE",
+      "title": "开发者后台",
+      "description": "查看从本功能上线后产生的全部 Prompt、单次得分和 Agent 反馈。数据仅对指定账号开放。",
+      "back": "返回挑战页面",
+      "refresh": "刷新数据",
+      "loading": "正在读取活动数据…",
+      "loadError": "暂时无法读取后台数据，请稍后重试。",
+      "summaryLabel": "活动概况",
+      "summary": {
+        "participants": "参与账号",
+        "attempts": "总尝试次数",
+        "average": "平均得分",
+        "perfect": "满分次数"
+      },
+      "leaderboard": {
+        "eyebrow": "BEST SINGLE RUN",
+        "title": "单次得分排行榜",
+        "note": "每个账号只保留历史最佳的一次；同分时依次比较调用次数、完成用时和提交时间。",
+        "rank": "排名",
+        "empty": "还没有已完成的挑战记录。"
+      },
+      "attempts": {
+        "eyebrow": "PROMPT ARCHIVE",
+        "title": "全部提交记录",
+        "count": "共 {count} 次尝试",
+        "empty": "还没有 Prompt 记录。"
+      },
+      "account": "账号",
+      "score": "得分",
+      "calls": "调用次数",
+      "duration": "完成用时",
+      "time": "提交时间",
+      "status": "状态",
+      "model": "Agent 模型",
+      "prompt": "收到的 Prompt",
+      "feedback": "Agent 反馈",
+      "noFeedback": "本次没有产生行动反馈。",
+      "notAvailable": "—",
+      "durationValue": "{seconds} 秒",
+      "pagination": "提交记录分页",
+      "page": "第 {page} / {pages} 页",
+      "states": {
+        "running": "执行中",
+        "complete": "已完成",
+        "failed": "未完成"
+      }
     }
   },
   "mascot": {
