@@ -63,7 +63,7 @@
     "adminEntry": "Developer Console",
     "eyebrow": "2026 RECRUITMENT · LIVE-RANKED AGENT CHALLENGE",
     "title": "Retry, learn, and raise your best score.",
-    "lead": "In each run, use up to 100 Chinese-character units (a Chinese character counts 1; each other character counts 0.3) to tell the agent how to act. You can retry without a total limit. Your highest score counts; tied scores are ordered by who reached them first.",
+    "lead": "In each run, use up to 100 Chinese-character units (a Chinese character counts 1; each other character counts 0.3) to tell the agent how to act. The agent only performs steps you explicitly describe and will not fill in the strategy for you. You can retry without a total limit. Your highest score counts; tied scores are ordered by who reached them first.",
     "metrics": {
       "label": "Challenge limits",
       "prompt": "Unlimited retries",
@@ -82,7 +82,7 @@
     "guide": {
       "eyebrow": "Newcomer guide · Escape-room analogy",
       "title": "Think of it as guiding a robot through an escape room",
-      "body": "No coding experience is needed. In each run, use up to 100 Chinese-character units (a Chinese character counts 1; other characters count less) to tell the robot where to look first, what not to trust, and where to deliver the pass. Then try again after seeing the result.",
+      "body": "No coding experience is needed. Within the 100 Chinese-character-unit limit, tell the robot where to look first, which clues to inspect next, what information to read, and where to deliver the pass. It will not complete steps that you leave out.",
       "stepsLabel": "How it works in three steps",
       "steps": {
         "prompt": {
@@ -173,6 +173,8 @@
       "flag_accepted": "NODE access pass accepted",
       "flag_rejected": "Candidate pass rejected",
       "efficiency_bonus": "Earned the efficient-route bonus",
+      "strategy_too_vague": "The strategy needs a concrete first action",
+      "strategy_blocked": "An action omitted from the prompt was stopped",
       "tool_rejected": "The isolation layer rejected an out-of-scope tool"
     },
     "scope": {
