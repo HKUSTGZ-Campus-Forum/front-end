@@ -50,8 +50,8 @@
     "retry": "重新加载"
   },
   "recruitment": {
-    "metaTitle": "NODE 100 字夺旗 · UniKorn",
-    "metaDescription": "只用一条不超过 100 字的提示词，指挥统一 Agent 攻克隔离靶场。",
+    "metaTitle": "NODE Agent 夺旗排行榜 · UniKorn",
+    "metaDescription": "用不超过 100 字的 Prompt 反复挑战 Agent，刷新个人最高分和实时排名。",
     "brand": {
       "name": "NODE",
       "association": "开发者协会",
@@ -59,12 +59,12 @@
     },
     "locale": "切换语言",
     "adminEntry": "开发者后台",
-    "eyebrow": "2026 社团招新 · Agent Challenge",
-    "title": "100 字，指挥 Agent 夺旗。",
-    "lead": "你只有一次正式指令。统一 Agent 会依据你的策略，在隔离网页中侦察、判断并尝试取回 NODE 通行证。",
+    "eyebrow": "2026 社团招新 · 实时排位 Agent 挑战",
+    "title": "反复尝试，刷新你的最高分。",
+    "lead": "每轮用不超过 100 字告诉 Agent 如何行动。提交次数不限，系统保留你的历史最高分；同分时，先达到这个分数的人排名更高。",
     "metrics": {
       "label": "挑战限制",
-      "prompt": "一次 Prompt",
+      "prompt": "不限提交次数",
       "characters": "最多 100 字",
       "runtime": "限时 120 秒"
     },
@@ -73,53 +73,76 @@
       "targetLabel": "目标",
       "target": "取得并提交 NODE 格式的通行证",
       "toolsLabel": "工具",
-      "tools": "受限浏览器与虚拟 HTTP",
+      "tools": "网页查看工具与模拟操作",
       "scopeLabel": "范围",
       "scope": "仅限你的隔离挑战实例"
     },
     "guide": {
       "eyebrow": "新手引导 · 密室比喻",
       "title": "把它想成：指挥机器人闯密室",
-      "body": "你不需要会写代码。只要用 100 字以内告诉机器人先看哪里、什么信息不要轻信、拿到通行证后交到哪里。",
+      "body": "你不需要会写代码。每轮用 100 字以内告诉机器人先看哪里、什么信息不要轻信、拿到通行证后交到哪里；结果出来后还可以换一种说法再试。",
       "stepsLabel": "玩法三步",
       "steps": {
         "prompt": {
-          "title": "你写一句话",
-          "body": "这就是 Prompt：给机器人的行动说明。"
+          "title": "你写一轮策略",
+          "body": "这就是 Prompt：给机器人的本轮行动说明。"
         },
         "agent": {
           "title": "Agent 去行动",
           "body": "它会照你的话查看网页、寻找线索并尝试操作。"
         },
         "score": {
-          "title": "系统来评分",
-          "body": "越接近目标、步骤越有效，分数越高。"
+          "title": "最高分进入排名",
+          "body": "系统保留你的历史最高分，并立即更新排行榜。"
         }
       },
       "tipLabel": "小提示",
-      "tip": "不必堆术语，把目标、先后顺序和判断方法说清楚就够了。"
+      "tip": "一次没有成功也没关系。查看行动轨迹，调整目标、顺序或判断方法，再试一轮。"
+    },
+    "leaderboard": {
+      "eyebrow": "LIVE RANKING · 10 秒更新",
+      "title": "实时排行榜",
+      "rule": "每个用户名只记录历史最高分；分数相同时，首次达到该分数更早的人排名更高。",
+      "participants": "{count} 位提交者",
+      "updated": "更新于 {time}",
+      "loginTitle": "登录后查看排行榜",
+      "loginBody": "使用学校账号登录，即可查看所有提交者的用户名、最高分和排名。",
+      "loading": "正在读取最新排名…",
+      "loadError": "暂时无法读取排行榜。",
+      "retry": "重新加载",
+      "emptyTitle": "等待第一位挑战者",
+      "emptyBody": "完成一次挑战后，用户名和最高分会出现在这里。",
+      "rank": "排名",
+      "username": "用户名",
+      "score": "最高分",
+      "achieved": "首次达到时间",
+      "you": "你",
+      "mine": "你的当前排名是第 {rank} 名，最高分 {score} 分。",
+      "notAvailable": "—"
     },
     "composer": {
-      "title": "写下你的唯一指令",
+      "eyebrow": "开始新一轮",
+      "title": "写下这一轮的指令",
       "label": "给 Agent 的 Prompt",
       "placeholder": "例如：说明优先检查什么、如何判断网页中的可疑内容，以及成功后应该做什么。",
-      "hint": "目标、工具和安全边界已由系统提供；100 字只需要表达你的策略。",
+      "hint": "每轮独立执行。根据上一轮的轨迹调整策略，逐步逼近更高分。",
       "counter": "{count} / 100",
       "login": "使用学校账号继续",
-      "submit": "启动 Agent",
+      "submit": "开始第一轮",
+      "retry": "换个 Prompt 再试",
       "running": "Agent 正在执行",
-      "submitted": "正式指令已提交",
+      "submitted": "本轮已完成",
       "empty": "请先写下你的策略。",
       "tooLong": "Prompt 不能超过 100 个可见字符。",
-      "confirm": "提交后不能修改，也不能追加消息。"
+      "confirm": "每轮只发送一条信息；本轮结束后可以修改并再次挑战。"
     },
     "console": {
       "label": "LIVE RUN",
       "title": "Agent 行动轨迹",
       "idleTitle": "等待你的指令",
-      "idleBody": "提交后，这里会呈现 Agent 访问了什么、发现了什么，以及是否取得通行证。",
+      "idleBody": "开始一轮后，这里会呈现 Agent 访问了什么、发现了什么，以及是否取得通行证。",
       "runningTitle": "Agent 正在行动",
-      "runningBody": "统一 Agent 正在执行你的唯一指令。通常需要数十秒，请不要关闭页面。",
+      "runningBody": "统一 Agent 正在执行你这一轮的指令。通常需要数十秒，请不要关闭页面。",
       "failedBody": "本次 Agent 任务未能生成行动轨迹，请联系现场工作人员确认。",
       "ready": "系统就绪",
       "waiting": "等待提交",
@@ -157,8 +180,8 @@
       "load": "暂时无法读取挑战状态，请稍后重试。",
       "run": "Agent 没有正常启动，请联系现场工作人员。",
       "unavailable": "挑战暂未开放。",
-      "used": "你已经提交过唯一一次正式指令。",
-      "runningStale": "你的正式指令已经提交，Agent 仍在执行或等待工作人员确认。"
+      "used": "当前账号暂时不能开始新一轮。",
+      "runningStale": "上一轮仍在执行，请等待结果后再试。"
     },
     "admin": {
       "metaTitle": "招新开发者后台 · NODE",
@@ -180,7 +203,7 @@
       "leaderboard": {
         "eyebrow": "BEST SINGLE RUN",
         "title": "单次得分排行榜",
-        "note": "每个账号只保留历史最佳的一次；同分时依次比较调用次数、完成用时和提交时间。",
+        "note": "每个账号只保留历史最高分；同分时，首次达到该分数更早的人排名更高。",
         "rank": "排名",
         "empty": "还没有已完成的挑战记录。"
       },

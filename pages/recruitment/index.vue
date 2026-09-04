@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   RECRUITMENT_PROMPT_LIMIT,
   countRecruitmentPromptCharacters,
@@ -30,14 +30,29 @@ type RecruitmentAttempt = {
   error?: string;
 };
 
+type RecruitmentLeaderboardEntry = {
+  rank: number;
+  username: string;
+  score: number;
+  achieved_at: string | null;
+  is_current_user: boolean;
+};
+
 const prompt = ref("");
 const localError = ref("");
 const challengeEnabled = ref(false);
 const configLoaded = ref(false);
 const statusLoaded = ref(false);
 const isRunning = ref(false);
+const repeatable = ref(false);
 const canViewAdmin = ref(false);
 const attempt = ref<RecruitmentAttempt | null>(null);
+const leaderboard = ref<RecruitmentLeaderboardEntry[]>([]);
+const leaderboardParticipants = ref(0);
+const leaderboardUpdatedAt = ref<string | null>(null);
+const leaderboardLoading = ref(false);
+const leaderboardError = ref(false);
+let leaderboardTimer: ReturnType<typeof setInterval> | null = null;
 const promptCount = computed(() => countRecruitmentPromptCharacters(prompt.value));
 const promptTooLong = computed(() => promptCount.value > RECRUITMENT_PROMPT_LIMIT);
 const canSubmit = computed(() => isRecruitmentPromptValid(prompt.value));
@@ -47,7 +62,10 @@ const primaryEnabled = computed(() => (
   && configLoaded.value
   && challengeEnabled.value
   && !isRunning.value
-  && !hasAttempted.value
+  && (repeatable.value || !hasAttempted.value)
+));
+const currentLeaderboardEntry = computed(() => (
+  leaderboard.value.find((entry) => entry.is_current_user) ?? null
 ));
 
 const consoleState = computed(() => {
@@ -83,6 +101,7 @@ function eventTitle(code: string) {
 }
 
 function localizeApiError(code?: string) {
+  if (code === "attempt_in_progress") return t("recruitment.errors.runningStale");
   if (code === "attempt_already_used") return t("recruitment.errors.used");
   if (code === "challenge_unavailable") return t("recruitment.errors.unavailable");
   if (code === "prompt_too_long") return t("recruitment.composer.tooLong");
@@ -96,6 +115,7 @@ async function loadConfig() {
     if (!response.ok) throw new Error("config");
     const payload = await response.json();
     challengeEnabled.value = Boolean(payload?.data?.enabled);
+    repeatable.value = Boolean(payload?.data?.repeatable);
     if (!challengeEnabled.value) localError.value = t("recruitment.errors.unavailable");
   } catch {
     challengeEnabled.value = false;
@@ -112,6 +132,7 @@ async function loadStatus() {
     if (!response.ok) throw new Error("status");
     const payload = await response.json();
     canViewAdmin.value = Boolean(payload?.data?.can_view_admin);
+    repeatable.value = Boolean(payload?.data?.unlimited_attempts);
     attempt.value = payload?.data?.attempt ?? null;
     if (attempt.value?.state === "running") {
       localError.value = t("recruitment.errors.runningStale");
@@ -123,6 +144,51 @@ async function loadStatus() {
   } finally {
     statusLoaded.value = true;
   }
+}
+
+function formatLeaderboardTime(value: string | null) {
+  if (!value) return t("recruitment.leaderboard.notAvailable");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return t("recruitment.leaderboard.notAvailable");
+  return new Intl.DateTimeFormat(locale.value === "zh" ? "zh-CN" : "en-GB", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+async function loadLeaderboard() {
+  if (!isLoggedIn.value || leaderboardLoading.value) return;
+  leaderboardLoading.value = true;
+  leaderboardError.value = false;
+  try {
+    const response = await fetchWithAuth("/api/recruitment/leaderboard", { cache: "no-store" });
+    if (!response.ok) throw new Error("leaderboard");
+    const payload = await response.json();
+    leaderboard.value = Array.isArray(payload?.data?.entries) ? payload.data.entries : [];
+    leaderboardParticipants.value = Number(payload?.data?.participants ?? leaderboard.value.length);
+    leaderboardUpdatedAt.value = payload?.data?.updated_at ?? null;
+  } catch {
+    leaderboardError.value = true;
+  } finally {
+    leaderboardLoading.value = false;
+  }
+}
+
+function stopLeaderboardRefresh() {
+  if (leaderboardTimer !== null) {
+    clearInterval(leaderboardTimer);
+    leaderboardTimer = null;
+  }
+}
+
+function startLeaderboardRefresh() {
+  if (!import.meta.client) return;
+  stopLeaderboardRefresh();
+  leaderboardTimer = setInterval(() => {
+    if (!document.hidden) loadLeaderboard();
+  }, 10_000);
 }
 
 async function handlePrimaryAction() {
@@ -153,7 +219,7 @@ async function handlePrimaryAction() {
     localError.value = t("recruitment.errors.unavailable");
     return;
   }
-  if (hasAttempted.value) {
+  if (hasAttempted.value && !repeatable.value) {
     localError.value = t("recruitment.errors.used");
     return;
   }
@@ -168,6 +234,8 @@ async function handlePrimaryAction() {
     if (payload?.data?.attempt) attempt.value = payload.data.attempt;
     if (response.ok && payload?.success && import.meta.client) {
       sessionStorage.removeItem(RECRUITMENT_DRAFT_KEY);
+      prompt.value = "";
+      await loadLeaderboard();
     }
     if (!response.ok || !payload?.success) {
       localError.value = localizeApiError(payload?.error);
@@ -185,8 +253,18 @@ onMounted(() => {
   loadConfig();
 });
 watch(isLoggedIn, (loggedIn) => {
-  if (loggedIn) loadStatus();
+  if (loggedIn) {
+    loadStatus();
+    loadLeaderboard();
+    startLeaderboardRefresh();
+  } else {
+    stopLeaderboardRefresh();
+    leaderboard.value = [];
+    leaderboardParticipants.value = 0;
+    leaderboardUpdatedAt.value = null;
+  }
 }, { immediate: true });
+onBeforeUnmount(stopLeaderboardRefresh);
 
 useHead(() => ({
   title: t("recruitment.metaTitle"),
@@ -331,9 +409,118 @@ useHead(() => ({
               </div>
             </div>
 
-            <img class="recruitment-console__mascot" src="/recruitment/mascot.png" alt="" aria-hidden="true" />
           </div>
         </section>
+      </section>
+
+      <section class="recruitment-composer" aria-labelledby="composer-title">
+        <div class="recruitment-composer__intro">
+          <p>{{ t("recruitment.composer.eyebrow") }}</p>
+          <h2 id="composer-title">{{ t("recruitment.composer.title") }}</h2>
+          <span>{{ t("recruitment.composer.hint") }}</span>
+        </div>
+
+        <div class="recruitment-composer__form">
+          <div class="recruitment-composer__label-row">
+            <label for="recruitment-prompt">{{ t("recruitment.composer.label") }}</label>
+            <span :class="{ danger: promptTooLong }">{{ t("recruitment.composer.counter", { count: promptCount }) }}</span>
+          </div>
+          <textarea
+            id="recruitment-prompt"
+            v-model="prompt"
+            rows="4"
+            :placeholder="t('recruitment.composer.placeholder')"
+            :aria-invalid="promptTooLong"
+            :aria-describedby="localError ? 'recruitment-error recruitment-confirm' : 'recruitment-confirm'"
+            :disabled="isRunning || (hasAttempted && !repeatable)"
+          />
+          <div class="recruitment-composer__footer">
+            <div>
+              <p id="recruitment-confirm"><Icon name="lucide:refresh-cw" aria-hidden="true" />{{ t("recruitment.composer.confirm") }}</p>
+              <p v-if="localError" id="recruitment-error" class="recruitment-composer__error" role="alert">{{ localError }}</p>
+            </div>
+            <button type="button" :disabled="isLoggedIn ? !primaryEnabled : promptTooLong" @click="handlePrimaryAction">
+              <span>{{
+                !isLoggedIn
+                  ? t("recruitment.composer.login")
+                  : isRunning
+                    ? t("recruitment.composer.running")
+                    : hasAttempted && repeatable
+                      ? t("recruitment.composer.retry")
+                      : hasAttempted
+                        ? t("recruitment.composer.submitted")
+                        : t("recruitment.composer.submit")
+              }}</span>
+              <Icon name="lucide:arrow-up-right" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="recruitment-leaderboard" aria-labelledby="leaderboard-title">
+        <div class="recruitment-leaderboard__heading">
+          <div>
+            <p><span aria-hidden="true" />{{ t("recruitment.leaderboard.eyebrow") }}</p>
+            <h2 id="leaderboard-title">{{ t("recruitment.leaderboard.title") }}</h2>
+            <div>{{ t("recruitment.leaderboard.rule") }}</div>
+          </div>
+          <div v-if="isLoggedIn" class="recruitment-leaderboard__meta">
+            <strong>{{ t("recruitment.leaderboard.participants", { count: leaderboardParticipants }) }}</strong>
+            <span v-if="leaderboardUpdatedAt">{{ t("recruitment.leaderboard.updated", { time: formatLeaderboardTime(leaderboardUpdatedAt) }) }}</span>
+          </div>
+        </div>
+
+        <div v-if="!isLoggedIn" class="recruitment-leaderboard__state">
+          <Icon name="lucide:lock-keyhole" aria-hidden="true" />
+          <div>
+            <strong>{{ t("recruitment.leaderboard.loginTitle") }}</strong>
+            <p>{{ t("recruitment.leaderboard.loginBody") }}</p>
+          </div>
+        </div>
+        <div v-else-if="leaderboardLoading && !leaderboard.length" class="recruitment-leaderboard__state" role="status">
+          <Icon class="is-spinning" name="lucide:loader-circle" aria-hidden="true" />
+          <strong>{{ t("recruitment.leaderboard.loading") }}</strong>
+        </div>
+        <div v-else-if="leaderboardError && !leaderboard.length" class="recruitment-leaderboard__state is-error" role="alert">
+          <Icon name="lucide:circle-alert" aria-hidden="true" />
+          <strong>{{ t("recruitment.leaderboard.loadError") }}</strong>
+          <button type="button" @click="loadLeaderboard()">{{ t("recruitment.leaderboard.retry") }}</button>
+        </div>
+        <div v-else-if="leaderboard.length" class="recruitment-leaderboard__table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ t("recruitment.leaderboard.rank") }}</th>
+                <th>{{ t("recruitment.leaderboard.username") }}</th>
+                <th>{{ t("recruitment.leaderboard.score") }}</th>
+                <th>{{ t("recruitment.leaderboard.achieved") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="entry in leaderboard" :key="`${entry.rank}-${entry.username}`" :class="{ 'is-current': entry.is_current_user }">
+                <td><strong class="recruitment-rank">{{ entry.rank }}</strong></td>
+                <td>
+                  <strong>{{ entry.username }}</strong>
+                  <span v-if="entry.is_current_user">{{ t("recruitment.leaderboard.you") }}</span>
+                </td>
+                <td><strong class="recruitment-score">{{ entry.score }}</strong><small>/ 100</small></td>
+                <td>{{ formatLeaderboardTime(entry.achieved_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="recruitment-leaderboard__state">
+          <Icon name="lucide:trophy" aria-hidden="true" />
+          <div>
+            <strong>{{ t("recruitment.leaderboard.emptyTitle") }}</strong>
+            <p>{{ t("recruitment.leaderboard.emptyBody") }}</p>
+          </div>
+        </div>
+
+        <p v-if="currentLeaderboardEntry" class="recruitment-leaderboard__mine">
+          <Icon name="lucide:locate-fixed" aria-hidden="true" />
+          {{ t("recruitment.leaderboard.mine", { rank: currentLeaderboardEntry.rank, score: currentLeaderboardEntry.score }) }}
+        </p>
       </section>
 
       <section class="recruitment-guide" aria-labelledby="recruitment-guide-title">
@@ -374,48 +561,6 @@ useHead(() => ({
           <Icon name="lucide:lightbulb" aria-hidden="true" />
           <span><strong>{{ t("recruitment.guide.tipLabel") }}</strong>{{ t("recruitment.guide.tip") }}</span>
         </p>
-      </section>
-
-      <section class="recruitment-composer" aria-labelledby="composer-title">
-        <div class="recruitment-composer__intro">
-          <p>{{ t("recruitment.eyebrow") }}</p>
-          <h2 id="composer-title">{{ t("recruitment.composer.title") }}</h2>
-          <span>{{ t("recruitment.composer.hint") }}</span>
-        </div>
-
-        <div class="recruitment-composer__form">
-          <div class="recruitment-composer__label-row">
-            <label for="recruitment-prompt">{{ t("recruitment.composer.label") }}</label>
-            <span :class="{ danger: promptTooLong }">{{ t("recruitment.composer.counter", { count: promptCount }) }}</span>
-          </div>
-          <textarea
-            id="recruitment-prompt"
-            v-model="prompt"
-            rows="4"
-            :placeholder="t('recruitment.composer.placeholder')"
-            :aria-invalid="promptTooLong"
-            :aria-describedby="localError ? 'recruitment-error recruitment-confirm' : 'recruitment-confirm'"
-            :disabled="isRunning || hasAttempted"
-          />
-          <div class="recruitment-composer__footer">
-            <div>
-              <p id="recruitment-confirm"><Icon name="lucide:lock-keyhole" aria-hidden="true" />{{ t("recruitment.composer.confirm") }}</p>
-              <p v-if="localError" id="recruitment-error" class="recruitment-composer__error" role="alert">{{ localError }}</p>
-            </div>
-            <button type="button" :disabled="isLoggedIn ? !primaryEnabled : promptTooLong" @click="handlePrimaryAction">
-              <span>{{
-                !isLoggedIn
-                  ? t("recruitment.composer.login")
-                  : isRunning
-                    ? t("recruitment.composer.running")
-                    : hasAttempted
-                      ? t("recruitment.composer.submitted")
-                      : t("recruitment.composer.submit")
-              }}</span>
-              <Icon name="lucide:arrow-up-right" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
       </section>
 
       <aside class="recruitment-scope">
@@ -576,8 +721,8 @@ useHead(() => ({
 
 .recruitment-hero {
   display: grid;
-  grid-template-columns: minmax(0, 0.87fr) minmax(600px, 1.13fr);
-  align-items: center;
+  grid-template-columns: minmax(0, 0.82fr) minmax(540px, 1.18fr);
+  align-items: start;
   gap: clamp(48px, 6vw, 96px);
 }
 
@@ -701,7 +846,7 @@ useHead(() => ({
 }
 
 .recruitment-console {
-  min-height: 650px;
+  min-height: 560px;
   border: 1px solid color-mix(in srgb, var(--border-primary) 78%, transparent);
   border-radius: 30px;
   background: var(--surface-primary);
@@ -770,8 +915,12 @@ useHead(() => ({
 }
 
 .recruitment-console__body {
-  min-height: 592px;
+  min-height: 502px;
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.82fr) minmax(260px, 1.18fr);
+  align-content: start;
+  gap: 0 32px;
   padding: 32px 36px;
   background:
     linear-gradient(var(--border-secondary) 1px, transparent 1px),
@@ -781,6 +930,7 @@ useHead(() => ({
 }
 
 .recruitment-console__heading {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -803,7 +953,7 @@ useHead(() => ({
 }
 
 .recruitment-timeline {
-  width: min(70%, 420px);
+  width: 100%;
   display: grid;
   gap: 0;
   padding: 0;
@@ -871,7 +1021,7 @@ useHead(() => ({
 }
 
 .recruitment-console__empty {
-  width: min(78%, 480px);
+  width: 100%;
   display: flex;
   gap: 14px;
   margin-top: 22px;
@@ -892,7 +1042,7 @@ useHead(() => ({
 }
 
 .recruitment-console__results {
-  width: min(78%, 480px);
+  width: 100%;
   margin-top: 22px;
   padding: 17px;
   border: 1px solid var(--border-primary);
@@ -941,23 +1091,11 @@ useHead(() => ({
   line-height: 1.6;
 }
 
-.recruitment-console__mascot {
-  width: 218px;
-  height: 420px;
-  position: absolute;
-  right: 4px;
-  bottom: -16px;
-  object-fit: contain;
-  object-position: bottom;
-  filter: drop-shadow(0 18px 18px color-mix(in srgb, var(--text-primary) 12%, transparent));
-  pointer-events: none;
-}
-
 .recruitment-guide {
   display: grid;
   grid-template-columns: minmax(240px, 0.62fr) minmax(0, 1.38fr);
   gap: 28px 42px;
-  margin-top: 72px;
+  margin-top: 24px;
   padding: 34px;
   border: 1px solid var(--border-primary);
   border-radius: 30px;
@@ -1070,7 +1208,7 @@ useHead(() => ({
   display: grid;
   grid-template-columns: minmax(260px, 0.55fr) minmax(0, 1.45fr);
   gap: 46px;
-  margin-top: 24px;
+  margin-top: 34px;
   padding: 38px;
   border: 1px solid var(--border-primary);
   border-radius: 30px;
@@ -1182,6 +1320,158 @@ useHead(() => ({
 
 .recruitment-composer__error { color: var(--semantic-error) !important; }
 
+.recruitment-leaderboard {
+  margin-top: 24px;
+  padding: 34px;
+  border: 1px solid var(--border-primary);
+  border-radius: 30px;
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-medium);
+}
+
+.recruitment-leaderboard__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-secondary);
+
+  p {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 11px;
+    color: var(--interactive-active-text);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+
+    span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--semantic-success);
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--semantic-success) 12%, transparent);
+      animation: recruitment-pulse 1.8s ease-in-out infinite;
+    }
+  }
+
+  h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.7vw, 2.8rem);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+  }
+
+  > div:first-child > div {
+    max-width: 720px;
+    margin-top: 13px;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    line-height: 1.65;
+  }
+}
+
+.recruitment-leaderboard__meta {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+
+  strong { color: var(--text-primary); font-size: 0.82rem; }
+}
+
+.recruitment-leaderboard__table-wrap {
+  max-height: 560px;
+  overflow: auto;
+  margin-top: 18px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 18px;
+}
+
+.recruitment-leaderboard table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 13px 18px;
+    color: var(--text-muted);
+    background: var(--surface-secondary);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 15px 18px;
+    border-top: 1px solid var(--border-secondary);
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr.is-current { background: color-mix(in srgb, var(--interactive-primary) 9%, transparent); }
+  td:nth-child(2) strong { color: var(--text-primary); }
+  td:nth-child(2) span { margin-left: 9px; color: var(--interactive-active-text); font-size: 0.7rem; font-weight: 800; }
+  td:nth-child(3) small { margin-left: 5px; color: var(--text-muted); }
+}
+
+.recruitment-rank {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--interactive-active-text);
+  background: color-mix(in srgb, var(--interactive-primary) 12%, transparent);
+}
+
+.recruitment-score {
+  color: var(--interactive-active-text);
+  font-size: 1.35rem;
+}
+
+.recruitment-leaderboard__state {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  margin-top: 18px;
+  padding: 24px;
+  border: 1px dashed var(--border-primary);
+  border-radius: 18px;
+  color: var(--text-secondary);
+  background: var(--surface-secondary);
+
+  > svg { flex: 0 0 auto; color: var(--interactive-primary); }
+  strong { color: var(--text-primary); font-size: 0.9rem; }
+  p { margin: 6px 0 0; font-size: 0.78rem; line-height: 1.6; }
+  button { border: 0; color: var(--interactive-active-text); background: transparent; font: inherit; font-weight: 800; cursor: pointer; }
+  &.is-error > svg { color: var(--semantic-error); }
+  .is-spinning { animation: recruitment-spin 1s linear infinite; }
+}
+
+.recruitment-leaderboard__mine {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 16px 0 0;
+  color: var(--interactive-active-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .recruitment-scope {
   display: flex;
   align-items: flex-start;
@@ -1215,14 +1505,16 @@ useHead(() => ({
 
 @media (prefers-reduced-motion: reduce) {
   .recruitment-console__empty.is-running > svg,
-  .recruitment-console__status.is-running i { animation: none; }
+  .recruitment-console__status.is-running i,
+  .recruitment-leaderboard__heading p span,
+  .recruitment-leaderboard__state .is-spinning { animation: none; }
 }
 
 @media (max-width: 1120px) {
   .recruitment-hero { grid-template-columns: 1fr; }
   .recruitment-copy { max-width: 800px; }
-  .recruitment-console { min-height: 590px; }
-  .recruitment-console__body { min-height: 532px; }
+  .recruitment-console { min-height: 540px; }
+  .recruitment-console__body { min-height: 482px; }
   .recruitment-guide { grid-template-columns: 1fr; }
   .recruitment-composer { grid-template-columns: 1fr; gap: 28px; }
 }
@@ -1257,17 +1549,20 @@ useHead(() => ({
   .recruitment-console { min-height: 560px; border-radius: 22px; }
   .recruitment-console__topbar { grid-template-columns: 1fr auto; padding: 0 16px; }
   .recruitment-console__label { display: none; }
-  .recruitment-console__body { min-height: 502px; padding: 24px 20px; }
-  .recruitment-timeline { width: 72%; }
-  .recruitment-console__empty { width: 76%; padding: 14px; }
-  .recruitment-console__mascot { width: 144px; height: 330px; right: -12px; }
+  .recruitment-console__body { min-height: 502px; grid-template-columns: 1fr; gap: 0; padding: 24px 20px; }
+  .recruitment-timeline { width: 100%; }
+  .recruitment-console__empty { width: 100%; padding: 14px; }
 
-  .recruitment-guide { margin-top: 46px; padding: 24px 18px; border-radius: 22px; }
+  .recruitment-guide { margin-top: 18px; padding: 24px 18px; border-radius: 22px; }
   .recruitment-guide__steps { grid-template-columns: 1fr; }
   .recruitment-guide__tip { align-items: flex-start; margin-top: -4px; }
-  .recruitment-composer { margin-top: 18px; padding: 24px 18px; border-radius: 22px; }
+  .recruitment-composer { margin-top: 24px; padding: 24px 18px; border-radius: 22px; }
   .recruitment-composer__footer { flex-direction: column; }
   .recruitment-composer__footer button { width: 100%; }
+  .recruitment-leaderboard { margin-top: 18px; padding: 24px 18px; border-radius: 22px; }
+  .recruitment-leaderboard__heading { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .recruitment-leaderboard__meta { justify-items: start; }
+  .recruitment-leaderboard__table-wrap { margin-inline: -4px; }
   .recruitment-footer { min-height: 64px; }
 }
 
