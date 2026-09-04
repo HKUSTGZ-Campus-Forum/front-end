@@ -44,6 +44,18 @@ describe('AMWC external navigation contract', () => {
     expect(existsSync(schedulerPoster)).toBe(true)
   })
 
+  it('keeps the recruitment challenge as the first localized home banner', () => {
+    const carousel = source('../../components/home/CarouselBanner.vue')
+    const poster = new URL(
+      '../../public/image/banner/recruitment-challenge-v1.jpg',
+      import.meta.url,
+    )
+
+    expect(carousel).toContain("image: '/image/banner/recruitment-challenge-v1.jpg'")
+    expect(carousel).toContain("href: localePath('/recruitment')")
+    expect(existsSync(poster)).toBe(true)
+  })
+
   it('keeps the existing contest participant and admin page available', () => {
     const contestPage = source('../../pages/contest/index.vue')
 
