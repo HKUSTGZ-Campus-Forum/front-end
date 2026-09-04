@@ -36,6 +36,7 @@ const challengeEnabled = ref(false);
 const configLoaded = ref(false);
 const statusLoaded = ref(false);
 const isRunning = ref(false);
+const canViewAdmin = ref(false);
 const attempt = ref<RecruitmentAttempt | null>(null);
 const promptCount = computed(() => countRecruitmentPromptCharacters(prompt.value));
 const promptTooLong = computed(() => promptCount.value > RECRUITMENT_PROMPT_LIMIT);
@@ -110,6 +111,7 @@ async function loadStatus() {
     const response = await fetchWithAuth("/api/recruitment/status", { cache: "no-store" });
     if (!response.ok) throw new Error("status");
     const payload = await response.json();
+    canViewAdmin.value = Boolean(payload?.data?.can_view_admin);
     attempt.value = payload?.data?.attempt ?? null;
     if (attempt.value?.state === "running") {
       localError.value = t("recruitment.errors.runningStale");
@@ -210,16 +212,26 @@ useHead(() => ({
         <img class="recruitment-brand__unikorn" src="/icons/topbar_logo.svg" alt="UniKorn" />
       </div>
 
-      <div class="recruitment-locales" :aria-label="t('recruitment.locale')">
-        <button
-          v-for="item in availableLocales"
-          :key="item.code"
-          type="button"
-          :class="['recruitment-locales__button', { active: locale === item.code }]"
-          @click="switchToLocale(item.code)"
+      <div class="recruitment-header__actions">
+        <NuxtLink
+          v-if="canViewAdmin"
+          class="recruitment-admin-link"
+          :to="getLocalePath('/recruitment/admin')"
         >
-          {{ t(`common.locale.${item.code}`) }}
-        </button>
+          <Icon name="lucide:layout-dashboard" aria-hidden="true" />
+          {{ t("recruitment.adminEntry") }}
+        </NuxtLink>
+        <div class="recruitment-locales" :aria-label="t('recruitment.locale')">
+          <button
+            v-for="item in availableLocales"
+            :key="item.code"
+            type="button"
+            :class="['recruitment-locales__button', { active: locale === item.code }]"
+            @click="switchToLocale(item.code)"
+          >
+            {{ t(`common.locale.${item.code}`) }}
+          </button>
+        </div>
       </div>
     </header>
 
@@ -500,6 +512,31 @@ useHead(() => ({
 .recruitment-brand__unikorn {
   width: 134px;
   height: auto;
+}
+
+.recruitment-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recruitment-admin-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 14px;
+  color: var(--text-primary);
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-small);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+
+  &:hover { color: var(--interactive-active-text); border-color: var(--border-focus); }
+  &:focus-visible { outline: 3px solid color-mix(in srgb, var(--interactive-primary) 35%, transparent); outline-offset: 2px; }
 }
 
 .recruitment-locales {
@@ -1205,6 +1242,9 @@ useHead(() => ({
   .recruitment-brand__copy span { font-size: 0.62rem; margin-top: 4px; }
   .recruitment-brand__divider,
   .recruitment-brand__unikorn { display: none; }
+  .recruitment-header__actions { gap: 7px; }
+  .recruitment-admin-link { width: 40px; min-height: 40px; justify-content: center; padding: 0; font-size: 0; }
+  .recruitment-admin-link svg { width: 18px; height: 18px; }
   .recruitment-locales__button { min-width: 44px; min-height: 34px; padding: 5px 9px; }
 
   .recruitment-main { padding: 30px 0 48px; }

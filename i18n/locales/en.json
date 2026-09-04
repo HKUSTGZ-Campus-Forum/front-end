@@ -58,6 +58,7 @@
       "with": "with UniKorn"
     },
     "locale": "Switch language",
+    "adminEntry": "Developer Console",
     "eyebrow": "2026 RECRUITMENT · AGENT CHALLENGE",
     "title": "100 characters. One agent heist.",
     "lead": "You get one official instruction. A shared agent follows your strategy to explore an isolated site, make its call, and recover the NODE access pass.",
@@ -158,6 +159,56 @@
       "unavailable": "The challenge is not open yet.",
       "used": "You have already submitted your one official instruction.",
       "runningStale": "Your instruction has been submitted. The agent is still running or awaiting host confirmation."
+    },
+    "admin": {
+      "metaTitle": "Recruitment Developer Console · NODE",
+      "metaDescription": "Private attempt archive and leaderboard for the NODE recruitment agent challenge.",
+      "eyebrow": "PRIVATE EVENT CONSOLE",
+      "title": "Developer Console",
+      "description": "Review every prompt, single-run score, and agent response recorded after this console launched. Access is limited to the designated account.",
+      "back": "Back to challenge",
+      "refresh": "Refresh",
+      "loading": "Loading event data…",
+      "loadError": "The console data is temporarily unavailable. Please try again.",
+      "summaryLabel": "Event summary",
+      "summary": {
+        "participants": "Accounts",
+        "attempts": "Total attempts",
+        "average": "Average score",
+        "perfect": "Perfect runs"
+      },
+      "leaderboard": {
+        "eyebrow": "BEST SINGLE RUN",
+        "title": "Single-run leaderboard",
+        "note": "Only each account's best run is kept. Ties are ordered by tool calls, duration, then submission time.",
+        "rank": "Rank",
+        "empty": "No completed challenge runs yet."
+      },
+      "attempts": {
+        "eyebrow": "PROMPT ARCHIVE",
+        "title": "All submissions",
+        "count": "{count} attempts",
+        "empty": "No prompt records yet."
+      },
+      "account": "Account",
+      "score": "Score",
+      "calls": "Calls",
+      "duration": "Duration",
+      "time": "Submitted",
+      "status": "Status",
+      "model": "Agent model",
+      "prompt": "Prompt received",
+      "feedback": "Agent feedback",
+      "noFeedback": "This run produced no activity feedback.",
+      "notAvailable": "—",
+      "durationValue": "{seconds}s",
+      "pagination": "Submission pages",
+      "page": "Page {page} of {pages}",
+      "states": {
+        "running": "Running",
+        "complete": "Complete",
+        "failed": "Failed"
+      }
     }
   },
   "mascot": {
