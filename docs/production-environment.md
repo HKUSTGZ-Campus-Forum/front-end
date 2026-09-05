@@ -1,5 +1,7 @@
 # UniKorn environment and production boundary
 
+> Source/runbook contract reconciled 2026-09-05. Host state, controller installation, current flags and successful deployments were not rechecked in this documentation task. Inspect the target before operations.
+
 This document is the frontend-facing environment reference. The executable
 school-host runbook lives in the backend repository at
 [`deploy/school/README.md`](https://github.com/HKUSTGZ-Campus-Forum/back-end/blob/main/deploy/school/README.md).
@@ -84,4 +86,4 @@ Do not record a mutable "current production SHA" in this file. Inspect
 `/srv/unikorn/current/release.json`, `/health`, and both repositories' current
 `origin/main` whenever exact deployed versions matter.
 
-Last reconciled: 2026-08-23.
+Documentation routing reconciled: 2026-09-05. Historical host/version observations above retain their original dates.

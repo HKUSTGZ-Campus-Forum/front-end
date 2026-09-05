@@ -33,6 +33,8 @@
 
 ### Changed
 
+- Reconstructed developer/agent documentation around task indexes, source/page maps, current feature contracts and same-change documentation updates; unified Claude instructions through `AGENTS.md` and preserved prior docs under `docs/archive-20260905`.
+
 - **招新挑战页面与赛制重构**：Prompt 输入区前移到主要任务区之后，新增每 10 秒更新、显示全部参赛用户名与最佳分数的排行榜及个人排名提示；移除行动面板中的卡通人物，改为双栏行动轨迹与结果布局，并重写原“一人一次”相关的中英文说明。
 - **排课热度 badge 改造与迷你历史趋势**：课程卡片热度 badge 由文字"购物车 人数"改为 `lucide:flame` 火焰图标 + 人数（少样本统一显示 `<5`）。悬浮 badge 时，在解释浮层内按需拉取该课程近 7 天历史（受 `canShowPopularityHistory` 权限门控），内嵌"关注中/正在排课"两条线的迷你趋势图（复用历史图表组件，启用迷你模式：限高、隐藏坐标轴标题与数据点 tooltip、以自定义图例代替），数据不足时显示"暂无趋势数据"；浮层内提供"查看完整趋势"入口，可打开全屏历史表。修复悬浮窗被拉得过高/图表被撑大裁半、鼠标移到浮层即消失点不到按钮、图标与数字不对齐等问题。
 - **排课热度统计隐私收敛**：课程卡片仅展示按已验证校内邮箱去重的购物车人数，不再统计私密、仅链接或公开的已保存方案；少于 5 人的小样本统一显示“少量”，原生浏览器提示改为支持键盘、手机和深色主题的站内信息浮层。

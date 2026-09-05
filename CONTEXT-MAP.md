@@ -1,7 +1,3 @@
-# UniKorn Context Map
+# UniKorn context map
 
-## Contexts
-
-- [Course Planning](./CONTEXT.md) — builds, saves, and shares semester timetables.
-
-## Relationships
+Use [the documentation index](docs/README.md) to enter any feature and [the source map](docs/source-map.md) to trace its implementation. [Architecture](docs/architecture.md) describes the relationships and external service boundaries.

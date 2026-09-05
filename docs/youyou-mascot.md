@@ -1,5 +1,7 @@
 # Original Youyou Mascot
 
+Sources: [overlay](../components/mascot/Overlay.client.vue), [renderer](../utils/mascotYouyou.ts), [math](../utils/mascot/rigMath.ts), [tests](../tests/mascot). See [integration guide](features/integrations.md).
+
 ## Runtime
 
 The default model is `/mascot/youyou/v1/youyou.model.json`: 20 independent cropped
@@ -9,7 +11,7 @@ blinks, mouth crossfades, bounded gaze, head/body movement and damped hair tips.
 It is a layered 2.5D rig, not a Cubism moc3. Explicit Live2D model URLs retain the
 existing `l2d` adapter. Loading errors show the existing retry UI; no sample fallback.
 
-`NUXT_PUBLIC_MASCOT_ENABLED` remains opt-in. Shared dev enables it; school production
+`NUXT_PUBLIC_MASCOT_ENABLED` remains opt-in. The historical release record below reports shared-dev enablement; verify current flags before assuming visibility. School production
 continues to use its existing release manifest and flags. Scale/position environment
 options continue to apply to the Live2D adapter; the original rig fits its own bounds
 with motion padding to the responsive canvas.
@@ -48,7 +50,7 @@ See `public/mascot/THIRD_PARTY_NOTICES.txt` for software attribution and the sep
 character-art ownership notice. Generic closed-eye templates are MIT-licensed;
 the mouth cavity is authored locally.
 
-## Verification
+## Historical release verification (2026-09-05)
 
 The first shared dev release is feature commit `c727b1e`, deployed successfully by
 Actions run `33969389421`. Public `/health` returned its exact SHA. The public
@@ -57,8 +59,10 @@ cover desktop/mobile, both circular controls, tracking, automatic blinking,
 expressions, transparent canvas borders, pause/dispose, simulated assistant replies
 and errors, bubble expiry and recovery after forced WebGL context loss.
 
-All 470 frontend tests pass in an isolated Linux copy. i18n checks (2387 keys),
+The release record reports that all 470 frontend tests passed in an isolated Linux copy. i18n checks (2387 keys),
 strict TypeScript checks for the renderer/math, and Nuxt production build pass.
 Windows-only Bash/drive-path failures were verified in Linux without changing
 deployment code. No new frontend dependencies or provider-secret handling were
 introduced. QA evidence and the final editable 20-layer PSD remain in the workshop.
+
+These are retained release observations, not checks rerun during documentation reconstruction. The external workshop and editable PSD were not available for this source review.
