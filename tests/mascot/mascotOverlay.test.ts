@@ -28,4 +28,19 @@ describe("mascot overlay controls", () => {
     expect(overlay).toContain('"open-agent-settings"');
     expect(overlay).toContain('"open-chat-history"');
   });
+
+  it("pauses the original rig on collapse and supports assistant state changes", () => {
+    expect(overlay).toContain("new YouyouMascotRenderer()");
+    expect(overlay).toContain("new L2dMascotRenderer()");
+    expect(overlay).toContain("renderer.setPaused?.(true)");
+    expect(overlay).toContain("renderer.setPaused?.(false)");
+    expect(overlay).toContain("renderer.setActivity?.(value)");
+    expect(overlay).toContain('if (value !== "speaking") stopMouthTimers()');
+    expect(overlay).toContain('document.removeEventListener("visibilitychange", handleVisibility)');
+    const app = readFileSync(new URL("../../app.vue", import.meta.url), "utf8");
+    expect(app).toContain('@assistant-state="handleAssistantState"');
+    const chat = readFileSync(new URL("../../components/assistant/AgentChat.client.vue", import.meta.url), "utf8");
+    expect(chat).toContain('emit("assistant-state", "thinking")');
+    expect(chat).toContain('emit("assistant-state", "error")');
+  });
 });

@@ -181,6 +181,15 @@
 
 ---
 
+## ADR-019：原创站娘采用离线分层与同源轻量 WebGL 模型
+
+- **日期**：2026-09
+- **状态**：已采纳
+- **决策**：以用户批准的柚柚 v5 原图为准，在独立制作环境使用 See-through 完成初始身体分层，恢复原图头部并修复五官与发梢；使用 Anime2.5DRig 的 MIT 绑定规则和裁剪机制，离线导出版本化 JSON 与透明 WebP。浏览器不加载 PSD 解析器、推理权重或远程示例角色。`.model3.json` 显式配置继续走原 Live2D 适配器。
+- **控制**：助手组件通过状态事件驱动思考/回复/错误表情，Overlay 保留两个圆形入口，提供六种命名表情、greeting/nod 动作与口型接口。渲染器负责页面可见性、减少动态效果、暂停、取消加载及 GPU 资源释放。
+- **边界**：本模型为分层 2.5D，不宣称是 Cubism moc3。共享 dev 显式启用；其他环境继续遵循原开关与学校成对 release 机制。素材版权与 MIT 软件授权分别说明。
+- **相关文档**：`docs/youyou-mascot.md`、`docs/plans/2026-09-05-youyou-mascot-design.md`、`public/mascot/THIRD_PARTY_NOTICES.txt`
+
 *模板（新决策追加时使用）：*
 
 ```markdown

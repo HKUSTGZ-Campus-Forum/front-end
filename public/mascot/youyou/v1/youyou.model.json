@@ -1,0 +1,378 @@
+{
+  "format": "unikorn-rig",
+  "version": 1,
+  "name": "Youyou",
+  "canvas": {
+    "w": 1280,
+    "h": 1280
+  },
+  "bounds": {
+    "x0": 365,
+    "x1": 907,
+    "y0": 47,
+    "y1": 1235
+  },
+  "anchors": {
+    "face": {
+      "x0": 605,
+      "x1": 716,
+      "y0": 121,
+      "y1": 245,
+      "cx": 658,
+      "cy": 192
+    },
+    "eyeL": {
+      "x0": 612,
+      "x1": 644,
+      "y0": 164,
+      "y1": 185,
+      "icx": 629.4828575984692,
+      "icy": 175.67665444107797,
+      "closeY": 177.02
+    },
+    "eyeR": {
+      "x0": 678,
+      "x1": 709,
+      "y0": 179,
+      "y1": 196,
+      "icx": 688.6001687200127,
+      "icy": 186.9201216190091,
+      "closeY": 189.54
+    },
+    "mouth": {
+      "x0": 648,
+      "x1": 662,
+      "y0": 215,
+      "y1": 225,
+      "cx": 655.0005321979777,
+      "cy": 220.0945674867974
+    },
+    "neckPivot": {
+      "cx": 651,
+      "cy": 274
+    },
+    "neckTop": 220,
+    "neckBottom": 302,
+    "bodyPivot": {
+      "cx": 650,
+      "cy": 1200
+    },
+    "faceScale": 0.46,
+    "hairRootY": 114
+  },
+  "layers": [
+    {
+      "name": "legwear",
+      "x": 553,
+      "y": 628,
+      "w": 194,
+      "h": 443,
+      "depth": 1,
+      "group": "body",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "00-legwear.webp"
+    },
+    {
+      "name": "footwear",
+      "x": 538,
+      "y": 1029,
+      "w": 214,
+      "h": 200,
+      "depth": 1,
+      "group": "body",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "01-footwear.webp"
+    },
+    {
+      "name": "handwear",
+      "x": 375,
+      "y": 288,
+      "w": 522,
+      "h": 385,
+      "depth": 0.86,
+      "group": "body",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "02-handwear.webp"
+    },
+    {
+      "name": "bottomwear",
+      "x": 512,
+      "y": 483,
+      "w": 281,
+      "h": 237,
+      "depth": 0.88,
+      "group": "body",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "03-bottomwear.webp"
+    },
+    {
+      "name": "neck",
+      "x": 600,
+      "y": 196,
+      "w": 92,
+      "h": 115,
+      "depth": 0.95,
+      "group": "body",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "04-neck.webp"
+    },
+    {
+      "name": "topwear",
+      "x": 534,
+      "y": 250,
+      "w": 232,
+      "h": 248,
+      "depth": 0.9,
+      "group": "body",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "05-topwear.webp"
+    },
+    {
+      "name": "face",
+      "x": 539,
+      "y": 52,
+      "w": 233,
+      "h": 270,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": null,
+      "side": null,
+      "strands": null,
+      "texture": "06-face.webp"
+    },
+    {
+      "name": "eyewhite_l",
+      "x": 610,
+      "y": 162,
+      "w": 37,
+      "h": 26,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeOpen",
+      "side": "L",
+      "strands": null,
+      "texture": "07-eyewhite_l.webp"
+    },
+    {
+      "name": "eyewhite_r",
+      "x": 676,
+      "y": 177,
+      "w": 36,
+      "h": 22,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeOpen",
+      "side": "R",
+      "strands": null,
+      "texture": "08-eyewhite_r.webp"
+    },
+    {
+      "name": "irides_l",
+      "x": 618,
+      "y": 165,
+      "w": 24,
+      "h": 23,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeOpen",
+      "side": "L",
+      "strands": null,
+      "texture": "09-irides_l.webp"
+    },
+    {
+      "name": "irides_r",
+      "x": 678,
+      "y": 177,
+      "w": 23,
+      "h": 22,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeOpen",
+      "side": "R",
+      "strands": null,
+      "texture": "10-irides_r.webp"
+    },
+    {
+      "name": "eyelash_l",
+      "x": 603,
+      "y": 156,
+      "w": 49,
+      "h": 24,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeOpen",
+      "side": "L",
+      "strands": null,
+      "texture": "11-eyelash_l.webp"
+    },
+    {
+      "name": "eyelash_r",
+      "x": 674,
+      "y": 172,
+      "w": 44,
+      "h": 20,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeOpen",
+      "side": "R",
+      "strands": null,
+      "texture": "12-eyelash_r.webp"
+    },
+    {
+      "name": "eye_close_l",
+      "x": 611,
+      "y": 168,
+      "w": 35,
+      "h": 17,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeClose",
+      "side": "L",
+      "strands": null,
+      "synthetic": true,
+      "texture": "13-eye_close_l.webp"
+    },
+    {
+      "name": "eye_close_r",
+      "x": 677,
+      "y": 183,
+      "w": 34,
+      "h": 12,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "eyeClose",
+      "side": "R",
+      "strands": null,
+      "synthetic": true,
+      "texture": "14-eye_close_r.webp"
+    },
+    {
+      "name": "eyebrow_l",
+      "x": 629,
+      "y": 143,
+      "w": 28,
+      "h": 17,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": null,
+      "side": "L",
+      "strands": null,
+      "texture": "15-eyebrow_l.webp"
+    },
+    {
+      "name": "eyebrow_r",
+      "x": 680,
+      "y": 154,
+      "w": 19,
+      "h": 14,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": null,
+      "side": "R",
+      "strands": null,
+      "texture": "16-eyebrow_r.webp"
+    },
+    {
+      "name": "mouth_close",
+      "x": 645,
+      "y": 214,
+      "w": 19,
+      "h": 12,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "mouthClose",
+      "side": null,
+      "strands": null,
+      "texture": "17-mouth_close.webp"
+    },
+    {
+      "name": "mouth_open",
+      "x": 646,
+      "y": 213,
+      "w": 19,
+      "h": 15,
+      "depth": 1,
+      "group": "head",
+      "phys": null,
+      "fade": "mouthOpen",
+      "side": null,
+      "strands": null,
+      "texture": "18-mouth_open.webp"
+    },
+    {
+      "name": "front hair",
+      "x": 564,
+      "y": 234,
+      "w": 199,
+      "h": 85,
+      "depth": 1,
+      "group": "head",
+      "phys": "hair",
+      "fade": null,
+      "side": null,
+      "strands": [
+        {
+          "x": 604,
+          "tipY": 298,
+          "rootY": 238
+        },
+        {
+          "x": 613,
+          "tipY": 307,
+          "rootY": 238
+        },
+        {
+          "x": 623,
+          "tipY": 314,
+          "rootY": 238
+        },
+        {
+          "x": 699,
+          "tipY": 281,
+          "rootY": 238
+        },
+        {
+          "x": 717,
+          "tipY": 280,
+          "rootY": 238
+        },
+        {
+          "x": 730,
+          "tipY": 277,
+          "rootY": 238
+        }
+      ],
+      "texture": "19-front-hair.webp"
+    }
+  ]
+}

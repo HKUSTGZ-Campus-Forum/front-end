@@ -8,6 +8,7 @@
     >
       <div v-show="!collapsed" class="mascot-stage">
         <canvas
+          :key="canvasGeneration"
           ref="canvasRef"
           class="mascot-canvas"
           width="280"
@@ -91,6 +92,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n, useRuntimeConfig } from "#imports";
 import { L2dMascotRenderer } from "~/utils/mascotL2d";
+import { isYouyouModelUrl, YouyouMascotRenderer } from "~/utils/mascotYouyou";
+import type { MascotActivity, MascotExpression, MascotMotion, MascotRenderer } from "~/types/mascot";
 
 type MascotStatus = "idle" | "loading" | "ready" | "error";
 
@@ -102,13 +105,15 @@ const emit = defineEmits<{
   "open-chat-history": [];
 }>();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const canvasGeneration = ref(0);
 const collapsed = ref(true);
 const status = ref<MascotStatus>("idle");
 const message = ref("");
-const renderer = new L2dMascotRenderer();
 const enabled = computed(() => String(config.public.mascotEnabled) === "true");
 const defaultModelUrl = computed(() => String(config.public.mascotModelUrl || ""));
 const modelUrl = computed(() => defaultModelUrl.value);
+const renderer: MascotRenderer = isYouyouModelUrl(modelUrl.value)
+  ? new YouyouMascotRenderer() : new L2dMascotRenderer();
 const modelScale = computed(() => Number(config.public.mascotScale));
 const modelPosition = computed<[number, number]>(() => [
   Number(config.public.mascotPositionX),
@@ -120,15 +125,35 @@ let mouthTimer: ReturnType<typeof setInterval> | undefined;
 let mouthStopTimer: ReturnType<typeof setTimeout> | undefined;
 let resizeObserver: ResizeObserver | undefined;
 let disposed = false;
+let activity: MascotActivity = "idle";
 
-function clearSpeechTimers(): void {
-  clearTimeout(messageTimer);
+function setActivity(value: MascotActivity): void {
+  activity = value;
+  if (value !== "speaking") stopMouthTimers();
+  renderer.setActivity?.(value);
+}
+
+function setExpression(value: MascotExpression): void {
+  renderer.setExpression?.(value);
+}
+
+function playMotion(value: MascotMotion): boolean {
+  return renderer.playMotion?.(value) ?? false;
+}
+
+function stopMouthTimers(): void {
   clearInterval(mouthTimer);
   clearTimeout(mouthStopTimer);
   renderer.setMouthOpen(0);
 }
 
+function clearSpeechTimers(): void {
+  clearTimeout(messageTimer);
+  stopMouthTimers();
+}
+
 function animateSpeech(text: string): void {
+  if (collapsed.value || document.hidden) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   clearInterval(mouthTimer);
   clearTimeout(mouthStopTimer);
@@ -138,15 +163,18 @@ function animateSpeech(text: string): void {
   mouthStopTimer = window.setTimeout(() => {
     clearInterval(mouthTimer);
     renderer.setMouthOpen(0);
+    if (activity === "speaking") setActivity("idle");
   }, Math.min(2600, Math.max(900, text.length * 110)));
 }
 
 function showMessage(text: string): void {
+  if (collapsed.value || disposed || document.hidden) return;
   clearTimeout(messageTimer);
   message.value = text;
   animateSpeech(text);
   messageTimer = window.setTimeout(() => {
     message.value = "";
+    if (activity === "speaking") setActivity("idle");
   }, 4800);
 }
 
@@ -167,9 +195,19 @@ function openAgentSettings(): void {
 }
 
 async function loadMascot(): Promise<void> {
-  if (!enabled.value || !canvasRef.value || !modelUrl.value || disposed) return;
+  if (!enabled.value || !canvasRef.value || !modelUrl.value || disposed || status.value === "loading") return;
+  const retrying = status.value === "error";
   status.value = "loading";
   message.value = "";
+
+  if (retrying) {
+    renderer.dispose();
+    resizeObserver?.disconnect();
+    canvasGeneration.value++;
+    await nextTick();
+    if (disposed || !canvasRef.value) return;
+    resizeObserver?.observe(canvasRef.value);
+  }
 
   try {
     await renderer.mount(canvasRef.value, {
@@ -177,10 +215,13 @@ async function loadMascot(): Promise<void> {
       scale: modelScale.value,
       position: modelPosition.value,
       onTap: playReaction,
+      onError: () => { status.value = "error"; clearSpeechTimers(); },
     });
     if (disposed) return;
     status.value = "ready";
     renderer.resize();
+    renderer.setActivity?.(activity);
+    renderer.setPaused?.(collapsed.value);
     showMessage(t("mascot.greeting"));
   } catch (error) {
     console.error("Failed to load the forum mascot", error);
@@ -189,13 +230,14 @@ async function loadMascot(): Promise<void> {
 }
 
 function rememberCollapsed(value: boolean): void {
-  localStorage.setItem(STORAGE_KEY, String(value));
+  try { localStorage.setItem(STORAGE_KEY, String(value)); } catch { /* Storage may be disabled. */ }
 }
 
 function collapse(): void {
   collapsed.value = true;
   message.value = "";
   clearSpeechTimers();
+  renderer.setPaused?.(true);
   rememberCollapsed(true);
 }
 
@@ -205,6 +247,7 @@ async function expand(): Promise<void> {
   await nextTick();
   if (!renderer.isMounted && status.value !== "loading") await loadMascot();
   else renderer.resize();
+  renderer.setPaused?.(false);
 }
 
 async function toggleCollapsed(): Promise<void> {
@@ -217,15 +260,26 @@ function setMouthOpen(value: number): boolean {
 }
 
 function speak(text: string): void {
-  if (!text.trim()) return;
+  if (!text.trim() || collapsed.value || document.hidden) return;
+  setActivity("speaking");
   showMessage(text.trim());
 }
 
-defineExpose({ playReaction, setMouthOpen, speak });
+function handleVisibility(): void {
+  if (document.hidden) {
+    clearSpeechTimers();
+    message.value = "";
+    if (activity === "speaking") setActivity("idle");
+  }
+}
+
+defineExpose({ playReaction, setMouthOpen, speak, setActivity, setExpression, playMotion });
 
 onMounted(async () => {
   if (!enabled.value) return;
-  const stored = localStorage.getItem(STORAGE_KEY);
+  document.addEventListener("visibilitychange", handleVisibility);
+  let stored: string | null = null;
+  try { stored = localStorage.getItem(STORAGE_KEY); } catch { /* Use responsive defaults. */ }
   const compactByDefault = window.matchMedia(
     "(max-width: 720px), (prefers-reduced-motion: reduce)"
   ).matches;
@@ -242,6 +296,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   disposed = true;
   clearSpeechTimers();
+  document.removeEventListener("visibilitychange", handleVisibility);
   resizeObserver?.disconnect();
   renderer.dispose();
 });
@@ -424,7 +479,7 @@ onBeforeUnmount(() => {
 .mascot-message {
   position: absolute;
   left: 46px;
-  bottom: 14px;
+  bottom: calc(100% + 8px);
   max-width: 210px;
   margin: 0;
   padding: 9px 11px;

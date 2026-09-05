@@ -7,7 +7,7 @@
       @open-agent-settings="handleOpenAgentSettings"
       @open-chat-history="handleOpenChatHistory"
     />
-    <AgentChat ref="agentChatRef" @assistant-message="handleAssistantMessage" />
+    <AgentChat ref="agentChatRef" @assistant-message="handleAssistantMessage" @assistant-state="handleAssistantState" />
   </NuxtLayout>
 </template>
 
@@ -17,10 +17,14 @@ import MascotOverlay from "~/components/mascot/Overlay.client.vue";
 import AgentChat from "~/components/assistant/AgentChat.client.vue";
 import { useAuth } from "~/composables/useAuth";
 import { useHead, useI18n } from "#imports";
+import type { MascotActivity } from "~/types/mascot";
 
 const { init } = useAuth();
 const { t } = useI18n();
-const mascotRef = ref<{ speak: (text: string) => void } | null>(null);
+const mascotRef = ref<{
+  speak: (text: string) => void;
+  setActivity: (activity: MascotActivity) => void;
+} | null>(null);
 const agentChatRef = ref<{
   openHistory: () => Promise<void> | void;
   openSettings: () => Promise<void> | void;
@@ -32,6 +36,10 @@ function handleAssistantMessage(text: string): void {
 
 function handleOpenChatHistory(): void {
   agentChatRef.value?.openHistory();
+}
+
+function handleAssistantState(activity: MascotActivity): void {
+  mascotRef.value?.setActivity(activity);
 }
 
 function handleOpenAgentSettings(): void {

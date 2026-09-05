@@ -347,6 +347,7 @@ import {
 
 const emit = defineEmits<{
   "assistant-message": [text: string];
+  "assistant-state": [state: "idle" | "thinking" | "error"];
 }>();
 
 const config = useRuntimeConfig();
@@ -502,6 +503,7 @@ async function submitMessage(): Promise<void> {
   });
   draft.value = "";
   sending.value = true;
+  emit("assistant-state", "thinking");
   errorKey.value = "";
   await scrollToBottom();
 
@@ -518,6 +520,7 @@ async function submitMessage(): Promise<void> {
     if (index >= 0) messages.value.splice(index, 1, payload.user_message);
     messages.value.push(payload.assistant_message);
     upsertConversation(payload.conversation);
+    emit("assistant-state", "idle");
     emit("assistant-message", payload.assistant_message.content);
   } catch (error) {
     if (error instanceof AgentApiError) {
@@ -537,6 +540,7 @@ async function submitMessage(): Promise<void> {
     handleError(error);
   } finally {
     sending.value = false;
+    if (errorKey.value) emit("assistant-state", "error");
     await scrollToBottom();
   }
 }
