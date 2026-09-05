@@ -47,3 +47,18 @@ Workshop: `E:/Code/Project/Live2d`.
 See `public/mascot/THIRD_PARTY_NOTICES.txt` for software attribution and the separate
 character-art ownership notice. Generic closed-eye templates are MIT-licensed;
 the mouth cavity is authored locally.
+
+## Verification
+
+The first shared dev release is feature commit `c727b1e`, deployed successfully by
+Actions run `33969389421`. Public `/health` returned its exact SHA. The public
+manifest and hashes of all 20 textures match the local release. Browser checks
+cover desktop/mobile, both circular controls, tracking, automatic blinking,
+expressions, transparent canvas borders, pause/dispose, simulated assistant replies
+and errors, bubble expiry and recovery after forced WebGL context loss.
+
+All 470 frontend tests pass in an isolated Linux copy. i18n checks (2387 keys),
+strict TypeScript checks for the renderer/math, and Nuxt production build pass.
+Windows-only Bash/drive-path failures were verified in Linux without changing
+deployment code. No new frontend dependencies or provider-secret handling were
+introduced. QA evidence and the final editable 20-layer PSD remain in the workshop.
