@@ -57,3 +57,9 @@
   .maker-guide > section { padding-left: 58px; }
   .maker-guide > section::before { left: 18px; top: 20px; }
 }
+
+.maker-overview { display: flex; align-items: flex-start; gap: 24px; }
+.maker-overview > .maker-cover { width: min(30%, 240px); flex: none; }
+.maker-overview-body { flex: 1; min-width: 0; }
+.maker-overview .maker-actions { padding-top: 0; }
+@media(max-width:640px) { .maker-overview { flex-direction: column; gap: 16px; } .maker-overview > .maker-cover { width: 100%; } .maker-overview-body { width: 100%; } }

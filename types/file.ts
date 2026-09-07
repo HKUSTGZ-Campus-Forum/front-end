@@ -1,4 +1,4 @@
-export type FileType = 'avatar' | 'post_image' | 'post_attachment' | 'comment_attachment' | 'carousel_image' | 'general';
+export type FileType = 'avatar' | 'post_image' | 'post_attachment' | 'comment_attachment' | 'carousel_image' | 'maker_cover' | 'general';
 export type UploadPhase = 'preparing' | 'signing' | 'uploading' | 'verifying' | 'complete';
 
 export interface UploadUrlResponse {

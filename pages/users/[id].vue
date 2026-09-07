@@ -8,7 +8,7 @@ import AvatarUpload from "~/components/user/AvatarUpload.vue";
 import IdentityBadge from "~/components/identity/IdentityBadge.vue";
 import type { UserIdentity } from "~/types/identity";
 
-definePageMeta({ layout: 'keguang' });
+definePageMeta({ layout: 'keguang', key: route => String(route.params.id) });
 
 const { isLoggedIn, user, updateLocalUserData } = useAuth();
 const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
@@ -293,6 +293,8 @@ useHead({
           </div>
         </div>
       </div>
+
+      <MakerspaceProfileSpaces v-if="userInfo.id" :user-id="userInfo.id" />
 
       <div class="kg-card kg-posts-card">
         <h2 class="kg-section-title">{{ t("userProfile.recentPosts.title") }}</h2>
