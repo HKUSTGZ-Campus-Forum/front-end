@@ -17,6 +17,7 @@ This is the authoritative entry point for engineering in this repository. Claude
 - Use theme variables, Chinese/English locale keys and locale-aware routes. Verify both `keguang-blue` and `deep-dark`. Preserve Nuxt names such as `<HomeKeguangPinned>` and `<HomeKeguangSidebar>`.
 - Keep guest cart state separate from authenticated state. Preserve scheduler solver, section/bundle semantics, saved-plan privacy and calendar date/time rules.
 - TeamUp is hosted through its independent `/teamup/app/` runtime; old `/matching` routes redirect. MeetCampus is independent and only has an allowlisted navigation bridge here. Do not recreate either external runtime inside this application.
+- Ordinary external creator repositories default to [MakerSpace](docs/features/makerspace.md). Preserve private previews, exact-version independent review and both browser/server sandbox boundaries. Do not copy creator runtime code into this repository or infer deployment from a plan.
 - Keep changes small and relevant. Do not invent dependencies or compatibility layers. Never place provider/SSO secrets in public runtime configuration, logs or docs.
 
 ## Verify and hand off

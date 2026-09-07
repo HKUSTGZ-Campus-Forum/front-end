@@ -82,6 +82,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Private creator sessions must reach the authorization gateway on every
+  // request, including navigations. Never substitute cached/offline content.
+  if (url.pathname.startsWith("/api/makerspace/")) {
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(handleNavigationRequest(request));
     return;

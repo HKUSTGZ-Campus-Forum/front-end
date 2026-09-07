@@ -13,6 +13,7 @@ Current implementation references, reconciled against frontend `2c886f8` and bac
 | Admin or contests | [administration](features/administration.md) | Admin routes/composables; backend guards |
 | Assistant, recruitment, mascot, TeamUp, MeetCampus | [integrations](features/integrations.md) | Integration tests and service boundaries |
 | Deploy or change runtime configuration | [production boundaries](production-environment.md) | [dev/legacy deployment](../deploy/README.md), backend school runbook |
+| Creative spaces and private external repositories | [MakerSpace](features/makerspace.md) | Creator ownership, isolation, builds and publication review |
 | Historical plans or rationale | [history](history.md) | Git archive retrieval |
 
 Read feature docs with their source and tests. The existence of a page file is not proof that navigation reaches it: middleware redirects and external proxy ownership matter. The [source map](source-map.md) includes remaining legacy surfaces and helper directories.

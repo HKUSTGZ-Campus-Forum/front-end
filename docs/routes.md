@@ -43,6 +43,11 @@ Static file inventory at `2c886f8`, 2026-09-05. Nuxt derives routes from these f
 | [pages/help/rules.vue](../pages/help/rules.vue) | help |
 | [pages/index.vue](../pages/index.vue) | index |
 | [pages/login/index.vue](../pages/login/index.vue) | login |
+| [pages/makerspace/index.vue](../pages/makerspace/index.vue) | MakerSpace catalog and owned spaces |
+| [pages/makerspace/new.vue](../pages/makerspace/new.vue) | Create a private space |
+| [pages/makerspace/guide.vue](../pages/makerspace/guide.vue) | Private repository connection guide |
+| [pages/makerspace/review.vue](../pages/makerspace/review.vue) | Independent administrator review |
+| [pages/makerspace/[slug]/index.vue](../pages/makerspace/[slug]/index.vue) | Stable entry, owner settings and sandbox preview |
 | [pages/matching/applications.vue](../pages/matching/applications.vue) | Legacy entry; inspect redirects |
 | [pages/matching/discover.vue](../pages/matching/discover.vue) | Legacy entry; inspect redirects |
 | [pages/matching/index.vue](../pages/matching/index.vue) | Legacy entry; inspect redirects |

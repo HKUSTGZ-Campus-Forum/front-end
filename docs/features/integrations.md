@@ -16,6 +16,10 @@ The 100-unit prompt limit counts Han characters as 1 and other visible character
 
 [Overlay](../../components/mascot/Overlay.client.vue) owns visibility, interaction and quick actions. The default `/mascot/youyou/v1/youyou.model.json` asset uses [Youyou renderer](../../utils/mascotYouyou.ts) and [rig math](../../utils/mascot/rigMath.ts); explicitly configured Live2D models follow [mascotL2d](../../utils/mascotL2d.ts). See [Youyou asset guide](../youyou-mascot.md) for asset format/ownership. Do not call the default rig a compiled Live2D model. Preserve reduced-motion, hit areas, small-screen behavior and resource cleanup.
 
+## MakerSpace
+
+Ordinary creator repositories use [MakerSpace](makerspace.md), reached from the main sidebar. It owns discovery and private/review flows; it does not replace the independent TeamUp runtime.
+
 ## TeamUp
 
 [TeamUpHostPage](../../components/teamup/TeamUpHostPage.vue) embeds the independent runtime below `/teamup/app/` within the UniKorn shell. It checks `/teamup/app/health`, then coordinates `teamup:ready`, height and navigate messages with host locale/theme/path messages. Message handling validates both origin and the iframe window; preserve those boundaries and loading/error recovery.

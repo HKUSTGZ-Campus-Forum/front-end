@@ -39,3 +39,7 @@ Source baseline `2c886f8`, reconciled 2026-09-05. Use [the task index](README.md
 - [deploy](../deploy/README.md), [workflows](../.github/workflows), [Dockerfile](../Dockerfile): development/legacy atomic releases, CI and container; school releases are backend-owned.
 
 Remaining `pages/test-*` are development surfaces, not evidence of complete production acceptance. Legacy `/schedule` and matching files need their redirect behavior checked before edits. Existing `components/matching/` and backend matching services should not be mistaken for TeamUp's independently served application.
+
+## MakerSpace
+
+The `/makerspace` catalog replaces the TeamUp sidebar entry. Read [the feature contract](features/makerspace.md) for the creator, review and isolated runtime flows; the existing `/teamup/` service remains an approved external entry.

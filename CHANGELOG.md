@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+### MakerSpace
+
+- Added the bilingual creator workshop with private repository connections, bounded isolated previews, independent exact-version review and a published catalog. The sidebar opens MakerSpace and retains TeamUp through its existing integration. Platform attribution, secrets, session revocation and deployment gates are documented in `docs/features/makerspace.md`; this entry does not imply production activation.
+
+
 ### Added
 
 - **原创站娘柚柚**：共享 dev 默认改用经确认的原创分层 2.5D 模型，支持眼睛/头部跟随、眨眼、口型、发梢与身体动作、六种表情及助手思考/回复/错误联动；保留模型设置和会话历史圆形入口，并在折叠或隐藏页面时停止动画。

@@ -6,19 +6,13 @@ const source = () => readFileSync(
   'utf8',
 )
 
-describe('Keguang sidebar team entry', () => {
-  it('replaces the legacy matching entry with the TeamUp route', () => {
+describe('Keguang sidebar creative spaces entry', () => {
+  it('opens MakerSpace and keeps TeamUp within the active section', () => {
     const sidebar = source()
-
-    expect(sidebar).toContain(":href=\"getLocalePath('/teamup')\"")
-    expect(sidebar).toContain("active: isActive('/teamup')")
-    expect(sidebar).toContain('@click.stop')
-    expect(sidebar).toContain('v-if="teamupEnabled"')
-    expect(sidebar).toContain('config.public.teamupEnabled === true')
-    expect(sidebar).toContain('/icons/sidebar_matching.svg')
-    expect(sidebar).toContain("t('nav.teamMatching')")
-    expect(sidebar).not.toContain("getLocalePath('/matching')")
-    expect(sidebar).not.toContain('/icons/sidebar_teamup.svg')
-    expect(sidebar).not.toContain("t('nav.teamup')")
+    expect(sidebar).toContain(":to=\"getLocalePath('/makerspace')\"")
+    expect(sidebar).toContain("isActive('/makerspace') || isActive('/teamup')")
+    expect(sidebar).toContain("t('nav.makerspace')")
+    expect(sidebar).not.toContain("t('nav.teamMatching')")
+    expect(sidebar).not.toContain('v-if="teamupEnabled"')
   })
 })

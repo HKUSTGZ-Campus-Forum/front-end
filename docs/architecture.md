@@ -38,3 +38,7 @@ Both `keguang-blue` and `deep-dark` use the same layout and CSS variable system.
 `main` deploys shared dev through the frontend's atomic release workflow. School production uses the backend's paired revision/controller pipeline. Historical standalone frontend production instructions do not authorize school releases.
 
 For architecture changes, update this current view and the relevant feature reference in the same change. Add a dated decision with rationale/alternatives when necessary; keep new proposed plans explicitly labeled until verified against implementation.
+
+## MakerSpace boundary (2026-09-07)
+
+[MakerSpace](features/makerspace.md) owns catalog, verified creator attribution and approval of exact source/artifact versions. Independent repositories retain their business code. Creator documents remain opaque-origin sandboxes behind browser-bound resource sessions, and untrusted builds/runtime use the dedicated gVisor worker with enforced quotas. Preview data and public data are separate. Historical trusted integrations retain their existing identity and release boundaries.
