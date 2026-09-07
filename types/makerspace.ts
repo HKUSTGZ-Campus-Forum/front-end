@@ -34,6 +34,11 @@ export interface MakerSpace extends MakerDraft {
   id: string
   kind: 'hosted' | 'external'
   status: string
+  cover_url?: string | null
+  likes_count?: number
+  favorites_count?: number
+  is_liked?: boolean
+  is_favorited?: boolean
   is_owner: boolean
   owner: { id: number; username: string } | null
   public_key?: string

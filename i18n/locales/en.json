@@ -3226,7 +3226,9 @@
       "invalid_environment": "Invalid environment variables or limit exceeded.",
       "reserved_environment_name": "This environment variable name is reserved.",
       "review_version_changed": "The review version changed. Refresh and inspect it again.",
-      "start_command_required": "Enter a start command for this runtime."
+      "start_command_required": "Enter a start command for this runtime.",
+      "invalid_cover": "Choose a JPEG, PNG or WebP image up to 5 MB.",
+      "cover_unavailable": "Cover unavailable"
     },
     "steps": {
       "prepare": {
@@ -3249,6 +3251,33 @@
         "title": "Keep creating and release each update",
         "body": "Continue working in your own repository. New versions first enter private preview while the current public version remains available. Only a newly approved version replaces it. Do not reference automatically changing remote scripts."
       }
+    },
+    "social": {
+      "like": "Like",
+      "liked": "Liked",
+      "favorite": "Save",
+      "favorited": "Saved"
+    },
+    "cover": {
+      "alt": "Preview of {title}",
+      "edit": "Edit cover image",
+      "hint": "Upload a screenshot or preview, ideally in 16:9. JPEG, PNG or WebP, up to 5 MB. Covers update immediately; unpublished covers are visible only to the owner and authorized reviewers.",
+      "select": "Upload cover image",
+      "remove": "Remove cover",
+      "uploading": "Saving cover · {progress}%",
+      "saved": "Cover updated",
+      "invalid": "Choose a JPEG, PNG or WebP image up to 5 MB.",
+      "unavailable": "Cover unavailable"
+    },
+    "profile": {
+      "title": "MakerSpace projects",
+      "createdMine": "My creations",
+      "created": "Created projects",
+      "favorites": "Saved projects",
+      "favoritesHint": "Only you can see this list. Unpublished or removed projects are hidden.",
+      "privateHint": "Only you can see unpublished projects. Other visitors see published projects only.",
+      "emptyFavorites": "No saved projects yet. Visit MakerSpace to save tools you like.",
+      "emptyCreated": "No projects to show yet."
     }
   }
 }

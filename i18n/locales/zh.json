@@ -3226,7 +3226,9 @@
       "invalid_environment": "环境变量格式或数量超出限制。",
       "reserved_environment_name": "这个环境变量名由平台保留。",
       "review_version_changed": "审核版本已变化，请刷新后重新检查。",
-      "start_command_required": "请填写动态服务的启动命令。"
+      "start_command_required": "请填写动态服务的启动命令。",
+      "invalid_cover": "请选择不超过 5 MB 的 JPEG、PNG 或 WebP 图片。",
+      "cover_unavailable": "封面暂时无法显示"
     },
     "steps": {
       "prepare": {
@@ -3249,6 +3251,33 @@
         "title": "继续创作，逐次发布",
         "body": "后续仍在自己的仓库创作。每个新版本先进入私有预览，审核期间已发布版本继续可用；只有新的审核通过版本才会替换公开版本。不要在源码中引用会自动变化的远程脚本。"
       }
+    },
+    "social": {
+      "like": "点赞",
+      "liked": "已点赞",
+      "favorite": "收藏",
+      "favorited": "已收藏"
+    },
+    "cover": {
+      "alt": "{title}的作品示意图",
+      "edit": "编辑作品封面",
+      "hint": "上传作品截图或示意图，建议比例 16:9。支持 JPEG、PNG、WebP，最大 5 MB。保存后立即更新，未公开作品的封面仍仅作者和获授权的审核者可见。",
+      "select": "上传封面图片",
+      "remove": "移除封面",
+      "uploading": "正在保存封面 · {progress}%",
+      "saved": "封面已更新",
+      "invalid": "请选择不超过 5 MB 的 JPEG、PNG 或 WebP 图片。",
+      "unavailable": "封面暂时无法显示"
+    },
+    "profile": {
+      "title": "创意空间作品",
+      "createdMine": "我开发的作品",
+      "created": "开发的作品",
+      "favorites": "我收藏的作品",
+      "favoritesHint": "收藏列表仅你可见，已下架或未公开的作品不会展示。",
+      "privateHint": "未公开作品仅你可见。其他人访问主页时只能看到已公开作品。",
+      "emptyFavorites": "还没有收藏作品，可以到创意空间收藏感兴趣的工具。",
+      "emptyCreated": "暂时没有可展示的作品。"
     }
   }
 }

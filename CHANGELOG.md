@@ -12,6 +12,8 @@
 
 ### MakerSpace
 
+- Owner-uploaded covers, linked creator names, persistent likes/favorites and profile work collections; MakerSpace now uses the same 22px white sidebar icon treatment as adjacent links.
+
 - Unified public and copied URLs under `/makerspace/<slug>`, including TeamUp and its nested pages. Creation shows the fixed school prefix; legacy TeamUp URLs redirect while preserving queries.
 
 - Added the bilingual creator workshop with private repository connections, bounded isolated previews, independent exact-version review and a published catalog. The sidebar opens MakerSpace and retains TeamUp through its existing integration. Platform attribution, secrets, session revocation and deployment gates are documented in `docs/features/makerspace.md`; this entry does not imply production activation.

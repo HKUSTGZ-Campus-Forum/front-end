@@ -97,7 +97,7 @@ function isCourseActive() {
         </li>
         <li>
           <NuxtLink :to="getLocalePath('/makerspace')" :class="{ active: isActive('/makerspace') || isActive('/teamup') }">
-            <Icon name="lucide:blocks" class="kg-icon" aria-hidden="true" />
+            <img src="/icons/sidebar_makerspace.svg" alt="" class="kg-icon" />
             <span class="kg-label">{{ t('nav.makerspace') }}</span>
           </NuxtLink>
         </li>
