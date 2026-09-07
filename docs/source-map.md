@@ -43,3 +43,5 @@ Remaining `pages/test-*` are development surfaces, not evidence of complete prod
 ## MakerSpace
 
 The `/makerspace` catalog replaces the TeamUp sidebar entry. Read [the feature contract](features/makerspace.md) for the creator, review and isolated runtime flows; the existing `/teamup/` service remains an approved external entry.
+
+`components/makerspace/SyncPanel.vue` owns resource/direction approval requests, admin review, scoped credential controls and audit. `SpacePage.vue` hosts the opaque iframe and exchanges public display preferences only.

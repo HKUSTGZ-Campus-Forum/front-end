@@ -12,6 +12,8 @@
 
 ### MakerSpace
 
+- Added bilingual directional data-exchange requests, independent admin approval, one-time backend credentials, revocation and metadata-only audit. Hosted frames receive display preferences and a fixed login bridge without host tokens. Production activation remains gated by the reviewed migration and closed runtime.
+
 - Removed the duplicate overview card from the TeamUp workspace page so its title leads directly to the team browser; catalog/profile reactions remain available.
 
 - Owner-uploaded covers, linked creator names, persistent likes/favorites and profile work collections; MakerSpace now uses the same 22px white sidebar icon treatment as adjacent links.
