@@ -6,7 +6,7 @@ The main sidebar links to `/makerspace`, replacing its standalone TeamUp entry. 
 
 - [Catalog](../../pages/makerspace/index.vue): approved discovery, search/categories, owner spaces and administrator review navigation.
 - [Create](../../pages/makerspace/new.vue) and [space form](../../components/makerspace/SpaceForm.vue): bilingual metadata, immutable slug, GitHub repository/branch and static/Node/Python build settings.
-- [Space detail](../../pages/makerspace/[slug]/index.vue): public launch, private owner settings, per-space read-only deploy key, one-time webhook secret, encrypted environment management, build logs, preview, submit/withdraw and archive.
+- [Space detail](../../components/makerspace/SpacePage.vue): public launch, private owner settings, per-space read-only deploy key, one-time webhook secret, encrypted environment management, build logs, preview, submit/withdraw and archive.
 - [Review](../../pages/makerspace/review.vue): exact commit and artifact digest, authenticated source download, preview link, independent approval/rejection. The backend enforces identity and state, not just disabled buttons.
 - [Creator guide](../../pages/makerspace/guide.vue): private repository deploy key/webhook setup, relative paths, runtime constraints and publication workflow.
 - [API composable](../../composables/useMakerSpace.ts), [DTOs](../../types/makerspace.ts), and [theme styles](../../assets/css/makerspace.scss): shared API/error handling, typed contracts and Keguang blue/deep-dark/mobile presentation.
