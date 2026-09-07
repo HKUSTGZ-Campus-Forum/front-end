@@ -193,3 +193,9 @@
 - **理由**：<为什么这样选，代价与收益>
 - **相关文档**：<链接>
 ```
+
+## 2026-09-07：设备通知授权与订阅归属
+
+只在用户点击后请求权限，同时校验浏览器和当前账号的服务端订阅。每条后台推送必须显示通知，已读角标由前台更新；Worker 不接收 JWT，点击仅允许主站通知目标。退出时限时撤销当前设备订阅。实现与验收见 [iPhone push design](plans/2026-09-07-iphone-push-design.md)。
+
+Permission requires an explicit user gesture and an active subscription for the current account. Every background push is visible; foreground reads update badges. The worker receives no JWT and restricts click destinations to the main site. Logout revokes the current device subscription with bounded cleanup.

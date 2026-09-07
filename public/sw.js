@@ -201,7 +201,7 @@ self.addEventListener("sync", (event) => {
   if (event.tag === "background-sync") {
     event.waitUntil(doBackgroundSync());
   } else if (event.tag === "update-badge") {
-    event.waitUntil(updateUnreadBadge());
+    event.waitUntil(notifyClients({ type: "NOTIFICATION_RECEIVED" }));
   }
 });
 
@@ -212,105 +212,56 @@ async function doBackgroundSync() {
   return Promise.all(keys.map((key) => apiCache.delete(key)));
 }
 
-// Handle push notifications
+// Every push displays a visible notification, including malformed/legacy payloads.
 self.addEventListener("push", (event) => {
-  let notificationData = {
-    title: "UniKorn Forum",
-    body: "You have a new notification",
-    icon: "/image/uniKorn.png",
-    badge: "/image/uniKorn.png",
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: "1",
-      url: "/notifications",
-    },
-    actions: [
-      {
-        action: "view",
-        title: "查看",
-        icon: "/image/uniKorn.png",
-      },
-      {
-        action: "dismiss",
-        title: "关闭",
-      },
-    ],
-    requireInteraction: false,
-    tag: "default-notification",
+  let payload = {};
+  try { payload = event.data?.json() || {}; } catch { /* Use a safe fallback. */ }
+  if (!payload || typeof payload !== "object") payload = {};
+  const title = typeof payload.title === "string" && payload.title.trim() ? payload.title : "UniKorn";
+  const body = typeof payload.body === "string" && payload.body.trim()
+    ? payload.body : "你有一条新通知 / You have a new notification";
+  const options = {
+    body, icon: "/image/uniKorn.png", badge: "/image/uniKorn.png",
+    tag: typeof payload.tag === "string" ? payload.tag : "unikorn-notification",
+    data: { url: safeNotificationUrl(payload.data?.url) },
   };
-
-  if (event.data) {
-    try {
-      const pushData = event.data.json();
-      notificationData = {
-        ...notificationData,
-        ...pushData,
-      };
-
-      if (pushData.unread_count !== undefined) {
-        updateAppBadge(pushData.unread_count);
-      }
-    } catch (error) {
-      console.error("[SW] Error parsing push data:", error);
-      notificationData.body = event.data.text() || notificationData.body;
-    }
-  }
-
-  event.waitUntil(self.registration.showNotification(notificationData.title, notificationData));
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(title, options),
+    updateAppBadge(payload.unread_count),
+    notifyClients({ type: "NOTIFICATION_RECEIVED" }),
+  ]));
 });
+
+function safeNotificationUrl(value) {
+  try {
+    if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "/notifications";
+    const url = new URL(value, self.location.origin);
+    if (url.origin !== self.location.origin) return "/notifications";
+    // Only notification destinations owned by the main application.
+    if (!/^\/(en\/)?(notifications\/?$|forum\/posts\/\d+\/?$|feedback(?:\/merge-requests)?\/\d+\/?$|admin\/feedback\/?$)/.test(url.pathname)) return "/notifications";
+    return url.pathname + url.search + url.hash;
+  } catch { return "/notifications"; }
+}
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
-  let urlToOpen = "/notifications";
-
-  if (event.notification.data && event.notification.data.url) {
-    urlToOpen = event.notification.data.url;
-  }
-
-  if (event.action === "dismiss") {
-    return;
-  }
-
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && "focus" in client) {
-          client.navigate(urlToOpen);
-          return client.focus();
-        }
-      }
-
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-
-      return undefined;
-    }),
-  );
+  if (event.action === "dismiss") return;
+  const target = new URL(safeNotificationUrl(event.notification.data?.url), self.location.origin).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const existing = windows.find(client => client.url === target);
+    if (existing) return existing.focus();
+    // Opening a new destination preserves drafts in other open windows.
+    return self.clients.openWindow(target);
+  })());
 });
 
-// Handle messages from the main app
 self.addEventListener("message", (event) => {
-  if (!event.data) {
-    return;
-  }
-
-  if (event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-    return;
-  }
-
-  if (event.data.type === "UPDATE_BADGE") {
-    updateAppBadge(event.data.count);
-  } else if (event.data.type === "CLEAR_BADGE") {
-    updateAppBadge(0);
-  } else if (event.data.type === "REFRESH_BADGE") {
-    updateUnreadBadge();
-  } else if (event.data.type === "GET_AUTH_TOKEN") {
-    event.ports[0]?.postMessage({ token: null });
-  }
+  if (!event.data) return;
+  if (event.data.type === "SKIP_WAITING") event.waitUntil(self.skipWaiting());
+  else if (event.data.type === "UPDATE_BADGE") event.waitUntil(updateAppBadge(event.data.count));
+  else if (event.data.type === "CLEAR_BADGE") event.waitUntil(updateAppBadge(0));
+  else if (event.data.type === "REFRESH_BADGE") event.waitUntil(notifyClients({ type: "NOTIFICATION_RECEIVED" }));
 });
 
 function notifyClients(message) {
@@ -324,59 +275,11 @@ function notifyClients(message) {
     });
 }
 
-// Helper function to update app badge
-function updateAppBadge(count) {
-  if ("setAppBadge" in self.navigator) {
-    if (count > 0) {
-      self.navigator.setAppBadge(count).catch((error) => {
-        console.error("[SW] Error setting app badge:", error);
-      });
-    } else {
-      self.navigator.clearAppBadge().catch((error) => {
-        console.error("[SW] Error clearing app badge:", error);
-      });
-    }
-  }
-}
-
-// Helper function to fetch and update unread count
-async function updateUnreadBadge() {
+// Keep optional badging inside the push/message event lifetime.
+async function updateAppBadge(count) {
+  if (!Number.isSafeInteger(count) || count < 0) return;
   try {
-    const windowClients = await self.clients.matchAll({ type: "window" });
-    if (windowClients.length === 0) {
-      updateAppBadge(0);
-      return;
-    }
-
-    const token = await new Promise((resolve) => {
-      const messageChannel = new MessageChannel();
-      messageChannel.port1.onmessage = (event) => {
-        resolve(event.data.token);
-      };
-      windowClients[0].postMessage({ type: "GET_AUTH_TOKEN" }, [messageChannel.port2]);
-
-      setTimeout(() => resolve(null), 5000);
-    });
-
-    if (!token) {
-      updateAppBadge(0);
-      return;
-    }
-
-    const response = await fetch(`${self.location.origin}/api/notifications/unread-count`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      updateAppBadge(data.unread_count || 0);
-    } else {
-      console.error("[SW] Failed to fetch unread count:", response.status);
-    }
-  } catch (error) {
-    console.error("[SW] Error updating unread badge:", error);
-  }
+    if (count > 0) await self.navigator.setAppBadge?.(count);
+    else await self.navigator.clearAppBadge?.();
+  } catch { /* Unsupported or denied badges must not prevent visible delivery. */ }
 }
