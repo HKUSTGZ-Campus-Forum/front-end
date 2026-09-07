@@ -34,3 +34,7 @@ Physical iPhone delivery needs a user-owned Home Screen install and permission g
 5. Sign out and confirm this installation stops receiving that account's pushes without affecting another subscribed device.
 
 No delivery guarantee is inferred from a provider-accepted response. The test button targets the current device; legacy no-endpoint API calls still target all of the user's devices.
+
+## Follow-up: automatic inbox read state
+
+Successfully loading the notification center marks all existing notifications for the current account as read through the existing authenticated bulk-read API, including later pages. Manual read buttons and the unread filter are removed. History, pagination, refresh, links and deletion remain available. The shared bell/device badge updates only after a successful write; count responses started before or during the write cannot restore stale unread state. Failed list loads never mark anything; failed read synchronization preserves the list and offers bilingual retry. Reopening uses persisted server read state. No backend or schema changes are required.
