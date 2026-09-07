@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MAKERSPACE_PUBLIC_PREFIX, makerSpaceUrl } from '~/utils/makerspaceUrl'
 import type { MakerDraft } from '~/types/makerspace'
 const model = defineModel<MakerDraft>({ required: true })
 defineProps<{ editing?: boolean; disabled?: boolean }>()
@@ -8,7 +9,7 @@ const { t } = useI18n()
 <template>
   <fieldset :disabled="disabled" style="border: 0; padding: 0; margin: 0; min-width: 0">
     <div class="maker-fields">
-      <label v-if="!editing" class="maker-wide">{{ t('makerspace.form.slug') }}<input v-model="model.slug" required pattern="[a-z][a-z0-9-]{2,39}" maxlength="40" autocomplete="off" /><small>{{ t('makerspace.form.slugHint') }}</small></label>
+      <label v-if="!editing" class="maker-wide">{{ t('makerspace.form.slug') }}<small>{{ MAKERSPACE_PUBLIC_PREFIX }}/</small><input v-model="model.slug" required pattern="[a-z][a-z0-9-]{2,39}" maxlength="40" autocomplete="off" /><small>{{ t('makerspace.form.slugHint') }}</small><output class="maker-url-preview">{{ makerSpaceUrl(model.slug || t('makerspace.form.slugExample')) }}</output></label>
       <label>{{ t('makerspace.form.titleZh') }}<input v-model="model.title_zh" required maxlength="100" lang="zh" /></label>
       <label>{{ t('makerspace.form.titleEn') }}<input v-model="model.title_en" required maxlength="100" lang="en" /></label>
       <label>{{ t('makerspace.form.descriptionZh') }}<textarea v-model="model.description_zh" required maxlength="3000" lang="zh" /></label>
@@ -25,3 +26,7 @@ const { t } = useI18n()
     </div>
   </fieldset>
 </template>
+
+<style scoped>
+.maker-url-preview { overflow-wrap: anywhere; font-size: 0.875rem; line-height: 1.5; color: var(--text-secondary); }
+</style>

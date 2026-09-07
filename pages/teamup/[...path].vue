@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import TeamUpHostPage from '~/components/teamup/TeamUpHostPage.vue'
-
+import { TEAMUP_SPACE_PATH, teamUpInnerPath } from '~/utils/makerspaceUrl'
 definePageMeta({ layout: 'keguang' })
-
-const { t } = useI18n()
-useSeoMeta({
-  title: () => t('teamupIntegration.metaTitle'),
-  description: () => t('teamupIntegration.metaDescription'),
-})
+const route = useRoute()
+const { getLocalePath } = useAppLocale()
+const inner = teamUpInnerPath(route.path, '/teamup')
+await navigateTo({ path: getLocalePath(`${TEAMUP_SPACE_PATH}${inner === '/' ? '' : inner}`), query: route.query, hash: route.hash }, { redirectCode: 308, replace: true })
 </script>
 
-<template>
-  <TeamUpHostPage />
-</template>
+<template><div /></template>

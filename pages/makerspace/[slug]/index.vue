@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TeamUpHostPage from '~/components/teamup/TeamUpHostPage.vue'
+import { makerSpaceUrl } from '~/utils/makerspaceUrl'
 import type { MakerCapabilities, MakerDeployment, MakerDraft, MakerSpace } from '~/types/makerspace'
 definePageMeta({ layout: 'keguang' })
 const route = useRoute()
@@ -8,6 +10,7 @@ const { isLoggedIn, authInitialized, user } = useAuth()
 const { request, errorMessage, title, description } = useMakerSpace()
 const slug = computed(() => encodeURIComponent(String(route.params.slug)))
 const space = ref<MakerSpace | null>(null)
+const isTeamUp = computed(() => space.value?.slug === 'teamup' && space.value.kind === 'external' && space.value.status === 'published')
 const capability = ref<MakerCapabilities | null>(null)
 const loading = ref(true)
 const busy = ref(false)
@@ -57,12 +60,11 @@ async function copy(value: string) {
   try { await navigator.clipboard.writeText(value); notice.value = t('makerspace.copied') }
   catch { notice.value = t('makerspace.copyManually') }
 }
-function copyLink() { if (space.value) copy(window.location.origin + getLocalePath(`/makerspace/${space.value.slug}`)) }
+function copyLink() { if (space.value) copy(makerSpaceUrl(space.value.slug)) }
 async function launch(item?: MakerDeployment) {
   busy.value = true; error.value = ''; frame.value = ''
   try {
     const result = await request<{ url: string }>(`/${slug.value}/launch`, 'POST', item ? { deployment_id: item.id } : {})
-    if (result.url === '/teamup/') { window.location.assign(result.url); return }
     if (!/^\/api\/makerspace\/run\/[a-f0-9]{48}\/$/.test(result.url)) throw new Error('request_failed')
     frameLoading.value = true; frame.value = result.url
   } catch (cause) { error.value = errorMessage(cause) }
@@ -104,7 +106,8 @@ useHead({ title: computed(() => space.value ? title(space.value) : t('makerspace
     <div v-if="loading" class="maker-card" role="status">{{ t('makerspace.loading') }}</div>
     <template v-if="space">
       <section v-if="user?.role_name === 'admin' && !space.is_owner && space.deployments?.length" class="maker-card"><h2>{{ t('makerspace.review') }}</h2><div v-for="item in space.deployments.filter(value => value.review_status === 'pending')" :key="item.id" class="maker-actions"><code>{{ item.source_sha }}</code><button class="maker-button" :disabled="busy" @click="launch(item)">{{ t('makerspace.preview') }}</button><NuxtLink class="maker-button" :to="getLocalePath('/makerspace/review')">{{ t('makerspace.review') }}</NuxtLink></div></section>
-      <section class="maker-card"><div class="maker-card-top"><span class="maker-badge">{{ t(`makerspace.states.${space.status}`) }}</span><span class="maker-meta">{{ t(`makerspace.categories.${space.category}`) }}</span></div><p>{{ description(space) }}</p><div class="maker-actions"><button v-if="space.status === 'published'" class="maker-button maker-button--primary" :disabled="busy" @click="launch()">{{ t('makerspace.open') }}<Icon name="lucide:arrow-up-right" /></button><button v-if="space.is_owner && space.kind === 'hosted'" class="maker-button" :disabled="busy || locked" @click="editing = !editing">{{ t(editing ? 'makerspace.cancel' : 'makerspace.edit') }}</button><button class="maker-button" @click="copyLink">{{ t('makerspace.copyLink') }}</button></div></section>
+      <section class="maker-card"><div class="maker-card-top"><span class="maker-badge">{{ t(`makerspace.states.${space.status}`) }}</span><span class="maker-meta">{{ t(`makerspace.categories.${space.category}`) }}</span></div><p>{{ description(space) }}</p><div class="maker-actions"><button v-if="space.status === 'published' && !isTeamUp" class="maker-button maker-button--primary" :disabled="busy" @click="launch()">{{ t('makerspace.open') }}<Icon name="lucide:arrow-up-right" /></button><button v-if="space.is_owner && space.kind === 'hosted'" class="maker-button" :disabled="busy || locked" @click="editing = !editing">{{ t(editing ? 'makerspace.cancel' : 'makerspace.edit') }}</button><button class="maker-button" @click="copyLink">{{ t('makerspace.copyLink') }}</button></div></section>
+      <TeamUpHostPage v-if="isTeamUp" />
       <section v-if="frame" class="maker-card"><div class="maker-header"><div><h2>{{ t('makerspace.running') }}</h2><p>{{ t('makerspace.sessionHint') }}</p></div><button class="maker-button" @click="frame = ''">{{ t('makerspace.close') }}</button></div><p v-if="frameLoading" role="status">{{ t('makerspace.loading') }}</p><iframe class="maker-frame" :src="frame" :title="title(space)" sandbox="allow-scripts allow-forms allow-downloads" referrerpolicy="no-referrer" @load="frameLoading = false" /></section>
       <div v-if="space.is_owner && space.kind === 'external'" class="maker-notice">{{ t('makerspace.externalOwner') }} <NuxtLink :to="getLocalePath('/makerspace/guide')">{{ t('makerspace.guide') }}</NuxtLink></div>
       <template v-if="space.is_owner && space.kind === 'hosted'">

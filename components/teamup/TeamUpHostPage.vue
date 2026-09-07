@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { TEAMUP_SPACE_PATH, teamUpInnerPath } from '~/utils/makerspaceUrl'
 
 type TeamUpMessage =
   | { type: 'teamup:ready'; path?: string }
@@ -21,12 +22,7 @@ const loadError = ref('')
 let readyTimer: ReturnType<typeof setTimeout> | undefined
 
 const innerPath = computed(() => {
-  const localizedPrefix = locale.value === 'en' ? '/en/teamup' : '/teamup'
-  let path = route.path.startsWith(localizedPrefix)
-    ? route.path.slice(localizedPrefix.length)
-    : route.path.replace(/^\/en(?=\/)/, '').replace(/^\/teamup/, '')
-  if (!path) path = '/'
-  if (!path.startsWith('/')) path = `/${path}`
+  const path = teamUpInnerPath(route.path)
   const query = new URLSearchParams()
   for (const [key, value] of Object.entries(route.query)) {
     for (const item of Array.isArray(value) ? value : [value]) {
@@ -84,7 +80,7 @@ async function loadFrame() {
 async function navigateFromFrame(path: string) {
   const parsed = new URL(path, window.location.origin)
   const suffix = parsed.pathname === '/' ? '' : parsed.pathname
-  const localizedPath = getLocalePath(`/teamup${suffix}`)
+  const localizedPath = getLocalePath(`${TEAMUP_SPACE_PATH}${suffix}`)
   const query = Object.fromEntries(parsed.searchParams.entries())
   if (route.path !== localizedPath || JSON.stringify(route.query) !== JSON.stringify(query)) {
     await router.replace({ path: localizedPath, query })
