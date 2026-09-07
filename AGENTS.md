@@ -207,3 +207,7 @@ front-end/
 ---
 
 *Last updated: 2026-08-29*
+
+## MakerSpace
+
+New creator repositories connect through `/makerspace`. Read `docs/features/makerspace.md` for private repository setup, author-only previews, independent administrator review and the opaque sandbox boundary. Keep Chinese/English and mobile/dark mode support.

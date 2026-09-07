@@ -193,3 +193,7 @@
 - **理由**：<为什么这样选，代价与收益>
 - **相关文档**：<链接>
 ```
+
+## MakerSpace
+
+The catalog, owner settings and review UI live under `/makerspace`. Creator code runs in an opaque iframe with HTTP sandbox enforcement and cookie-bound sessions; it cannot access host storage. See [MakerSpace](features/makerspace.md). The existing TeamUp runtime stays independently deployed.

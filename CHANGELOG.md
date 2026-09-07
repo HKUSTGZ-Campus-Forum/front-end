@@ -10,6 +10,11 @@
 
 ## [Unreleased]
 
+### MakerSpace
+
+- Added the bilingual creator workshop with private repository connections, bounded isolated previews, independent exact-version review and a published catalog. The sidebar opens MakerSpace and retains TeamUp through its existing integration. Platform attribution, secrets, session revocation and deployment gates are documented in `docs/features/makerspace.md`; this entry does not imply production activation.
+
+
 ### Added
 
 - **NODE 招新开发者后台恢复**：在保留当前招新页面全部内容的前提下，恢复指定校园账号可见的“开发者后台”入口与独立后台页面，用于查看全部 Prompt、单次得分、Agent 反馈、活动概况和每账号最佳单次成绩排行榜；入口显示和数据读取继续由服务端白名单双重保护。
