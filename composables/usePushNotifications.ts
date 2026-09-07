@@ -1,336 +1,144 @@
-// composables/usePushNotifications.ts
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useApi } from './useApi'
 import { useAuth } from './useAuth'
-
-export interface PushSubscription {
-  id: number
-  user_id: number
-  endpoint: string
-  keys: {
-    p256dh: string
-    auth: string
-  }
-  is_active: boolean
-  created_at: string
-  updated_at: string
-  last_used_at: string | null
-}
+import { fromBase64Url, pushEnvironment, toBase64Url, withPushTimeout } from '../utils/pushNotifications'
 
 export const usePushNotifications = () => {
-  const { fetchWithAuth } = useApi()
-  const { isLoggedIn } = useAuth()
-  
+  const { fetchWithAuth, fetchPublic } = useApi()
+  const { isLoggedIn, user } = useAuth()
   const isSupported = ref(false)
+  const needsInstall = ref(false)
   const isSubscribed = ref(false)
-  const isSubscribing = ref(false)
+  const hasBrowserSubscription = ref(false)
   const permission = ref<NotificationPermission>('default')
-  const subscription = ref<PushSubscription | null>(null)
+  const busy = ref(false)
+  const initialized = ref(false)
   const error = ref<string | null>(null)
-  const vapidPublicKey = ref<string | null>(null)
-  
-  // Check if push notifications are supported
-  const checkSupport = () => {
-    isSupported.value = 
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window
-    
-    if (isSupported.value) {
-      permission.value = Notification.permission
-    }
-    
-    return isSupported.value
+  const testSent = ref(false)
+  let deviceSubscription: PushSubscription | null = null
+
+  const detect = () => {
+    const env = pushEnvironment()
+    isSupported.value = env.supported
+    needsInstall.value = env.needsInstall
+    permission.value = env.supported ? Notification.permission : 'default'
   }
-  
-  // Get VAPID public key from server
-  const getVapidPublicKey = async () => {
-    try {
-      const response = await fetchWithAuth('/api/push/vapid-public-key')
-      const data = await response.json()
-      
-      if (response.ok) {
-        vapidPublicKey.value = data.vapid_public_key
-        return vapidPublicKey.value
-      } else {
-        throw new Error(data.error || 'Failed to get VAPID public key')
-      }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error'
-      throw err
-    }
+  const api = async (path: string, options: RequestInit = {}, isPublic = false) => {
+    const response = await (isPublic ? fetchPublic : fetchWithAuth)(path, {
+      ...options, signal: AbortSignal.timeout(12000),
+    })
+    if (!response.ok) throw new Error('server')
+    return response.json()
   }
-  
-  // Request notification permission
-  const requestPermission = async (): Promise<NotificationPermission> => {
-    if (!isSupported.value) {
-      throw new Error('Push notifications are not supported')
-    }
-    
-    try {
-      permission.value = await Notification.requestPermission()
-      return permission.value
-    } catch (err) {
-      error.value = 'Failed to request notification permission'
-      throw err
-    }
+  const registration = () => withPushTimeout(navigator.serviceWorker.ready)
+  const reportError = (err: unknown) => {
+    error.value = err instanceof Error && ['timeout', 'server', 'permission', 'account'].includes(err.message)
+      ? err.message : 'failed'
   }
-  
-  // Subscribe to push notifications
-  const subscribe = async () => {
-    if (!isLoggedIn.value) {
-      throw new Error('Must be logged in to subscribe to notifications')
-    }
-    
-    if (!isSupported.value) {
-      throw new Error('Push notifications are not supported')
-    }
-    
-    if (permission.value !== 'granted') {
-      const newPermission = await requestPermission()
-      if (newPermission !== 'granted') {
-        throw new Error('Notification permission denied')
-      }
-    }
-    
-    isSubscribing.value = true
+  const refresh = async () => {
+    if (busy.value) return
+    detect()
     error.value = null
-    
+    isSubscribed.value = false
+    if (!isSupported.value || needsInstall.value || !isLoggedIn.value) {
+      initialized.value = true
+      return
+    }
+    busy.value = true
     try {
-      // Get VAPID public key
-      if (!vapidPublicKey.value) {
-        await getVapidPublicKey()
+      const owner = user.value?.id
+      const worker = await registration()
+      deviceSubscription = await withPushTimeout(worker.pushManager.getSubscription())
+      hasBrowserSubscription.value = !!deviceSubscription
+      if (deviceSubscription && permission.value === 'granted') {
+        const data = await api('/api/push/subscriptions')
+        isSubscribed.value = owner === user.value?.id && data.subscriptions.some(
+          (sub: { endpoint: string; is_active: boolean }) =>
+            sub.endpoint === deviceSubscription?.endpoint && sub.is_active,
+        )
       }
-      
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.ready
-      
-      // Subscribe to push notifications
-      const pushSubscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey.value!)
-      })
-      
-      // Send subscription to server
-      const subscriptionData = {
-        endpoint: pushSubscription.endpoint,
-        keys: {
-          p256dh: arrayBufferToBase64(pushSubscription.getKey('p256dh')!),
-          auth: arrayBufferToBase64(pushSubscription.getKey('auth')!)
-        }
+    } catch (err) { reportError(err) }
+    finally { busy.value = false; initialized.value = true }
+  }
+
+  // Must be called directly by a click. No fetch/worker wait precedes permission.
+  const subscribe = async () => {
+    if (busy.value || !isLoggedIn.value) return
+    detect()
+    if (!isSupported.value || needsInstall.value) return
+    busy.value = true
+    error.value = null
+    testSent.value = false
+    const owner = user.value?.id
+    try {
+      if (permission.value !== 'granted') {
+        permission.value = await Notification.requestPermission()
       }
-      
-      const response = await fetchWithAuth('/api/push/subscribe', {
+      if (permission.value !== 'granted') throw new Error('permission')
+      const data = await api('/api/push/vapid-public-key', {}, true)
+      const worker = await registration()
+      deviceSubscription = await withPushTimeout(worker.pushManager.getSubscription())
+      const key = fromBase64Url(data.vapid_public_key)
+      const oldKey = deviceSubscription?.options?.applicationServerKey
+      if (deviceSubscription && oldKey && toBase64Url(oldKey) !== toBase64Url(key.buffer)) {
+        await withPushTimeout(deviceSubscription.unsubscribe())
+        deviceSubscription = null
+      }
+      deviceSubscription ||= await withPushTimeout(worker.pushManager.subscribe({
+        userVisibleOnly: true, applicationServerKey: key,
+      }))
+      hasBrowserSubscription.value = true
+      if (!isLoggedIn.value || owner !== user.value?.id) {
+        await deviceSubscription.unsubscribe()
+        throw new Error('account')
+      }
+      await api('/api/push/subscribe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(subscriptionData)
+        body: JSON.stringify({ endpoint: deviceSubscription.endpoint, keys: {
+          p256dh: toBase64Url(deviceSubscription.getKey('p256dh')!),
+          auth: toBase64Url(deviceSubscription.getKey('auth')!),
+        } }),
       })
-      
-      const data = await response.json()
-      
-      if (response.ok) {
-        subscription.value = data.subscription
-        isSubscribed.value = true
-        return subscription.value
-      } else {
-        throw new Error(data.error || 'Failed to save subscription')
-      }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to subscribe'
-      throw err
-    } finally {
-      isSubscribing.value = false
-    }
+      isSubscribed.value = owner === user.value?.id && isLoggedIn.value
+    } catch (err) { isSubscribed.value = false; reportError(err) }
+    finally { busy.value = false }
   }
-  
-  // Unsubscribe from push notifications
   const unsubscribe = async () => {
-    if (!isSupported.value) return
-    
+    if (busy.value) return
+    busy.value = true
+    error.value = null
+    testSent.value = false
     try {
-      const registration = await navigator.serviceWorker.ready
-      const pushSubscription = await registration.pushManager.getSubscription()
-      
-      if (pushSubscription) {
-        // Unsubscribe from push manager
-        await pushSubscription.unsubscribe()
-        
-        // Notify server
-        if (isLoggedIn.value) {
-          await fetchWithAuth('/api/push/unsubscribe', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              endpoint: pushSubscription.endpoint
-            })
-          })
-        }
+      const worker = await registration()
+      deviceSubscription = await withPushTimeout(worker.pushManager.getSubscription())
+      if (deviceSubscription) {
+        // Retain the endpoint for a retry if the server is offline.
+        await api('/api/push/unsubscribe', {
+          method: 'POST', body: JSON.stringify({ endpoint: deviceSubscription.endpoint }),
+        })
+        await withPushTimeout(deviceSubscription.unsubscribe())
       }
-      
+      deviceSubscription = null
       isSubscribed.value = false
-      subscription.value = null
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to unsubscribe'
-      throw err
-    }
+      hasBrowserSubscription.value = false
+    } catch (err) { reportError(err) }
+    finally { busy.value = false }
   }
-  
-  // Check current subscription status
-  const checkSubscription = async () => {
-    if (!isSupported.value || !isLoggedIn.value) return false
-    
+  const sendTestNotification = async (locale: string) => {
+    if (busy.value || !isSubscribed.value || !deviceSubscription) return
+    busy.value = true
+    error.value = null
+    testSent.value = false
     try {
-      const registration = await navigator.serviceWorker.ready
-      const pushSubscription = await registration.pushManager.getSubscription()
-      
-      isSubscribed.value = !!pushSubscription
-      return isSubscribed.value
-    } catch (err) {
-      console.error('Failed to check subscription:', err)
-      return false
-    }
+      await api('/api/push/test', { method: 'POST', body: JSON.stringify({
+        endpoint: deviceSubscription.endpoint, locale,
+      }) })
+      testSent.value = true
+    } catch (err) { reportError(err) }
+    finally { busy.value = false }
   }
-  
-  // Send test notification
-  const sendTestNotification = async () => {
-    try {
-      const response = await fetchWithAuth('/api/push/test', {
-        method: 'POST'
-      })
-      
-      const data = await response.json()
-      
-      if (response.ok) {
-        return data
-      } else {
-        throw new Error(data.error || 'Failed to send test notification')
-      }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to send test notification'
-      throw err
-    }
-  }
-  
-  // Update app badge count
-  const updateBadge = (count: number) => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'UPDATE_BADGE',
-        count
-      })
-    }
-  }
-
-  // Clear app badge
-  const clearBadge = () => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'CLEAR_BADGE'
-      })
-    }
-  }
-
-  // Refresh badge from server
-  const refreshBadge = () => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'REFRESH_BADGE'
-      })
-    }
-  }
-
-  // Initialize push notifications
-  const init = async () => {
-    checkSupport()
-    
-    if (isSupported.value && isLoggedIn.value) {
-      await checkSubscription()
-      if (!vapidPublicKey.value) {
-        try {
-          await getVapidPublicKey()
-        } catch (err) {
-          console.warn('Failed to get VAPID public key:', err)
-        }
-      }
-    }
-
-    // Setup service worker message handling for auth tokens
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'GET_AUTH_TOKEN') {
-          const { getAuthToken } = useAuth()
-          const token = getAuthToken()
-          event.ports[0].postMessage({ token })
-        }
-      })
-    }
-  }
-  
-  // Computed properties
-  const canSubscribe = computed(() => 
-    isSupported.value && 
-    isLoggedIn.value && 
-    !isSubscribed.value && 
-    permission.value !== 'denied'
-  )
-  
-  const needsPermission = computed(() => 
-    isSupported.value && permission.value === 'default'
-  )
-  
-  return {
-    // State
-    isSupported,
-    isSubscribed,
-    isSubscribing,
-    permission,
-    subscription,
-    error,
-    vapidPublicKey,
-    
-    // Computed
-    canSubscribe,
-    needsPermission,
-    
-    // Methods
-    checkSupport,
-    requestPermission,
-    subscribe,
-    unsubscribe,
-    checkSubscription,
-    sendTestNotification,
-    init,
-    updateBadge,
-    clearBadge,
-    refreshBadge
-  }
-}
-
-// Utility functions
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4)
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
-
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i)
-  }
-  return outputArray
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return window.btoa(binary)
+  const canSubscribe = computed(() => initialized.value && isSupported.value &&
+    !needsInstall.value && isLoggedIn.value && !isSubscribed.value && permission.value !== 'denied')
+  return { isSupported, needsInstall, isSubscribed, hasBrowserSubscription, permission,
+    busy, initialized, error, testSent, canSubscribe, refresh, subscribe, unsubscribe, sendTestNotification }
 }
