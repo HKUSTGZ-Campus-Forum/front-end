@@ -32,7 +32,15 @@ Rollout limitation: pages already running the retired plugin still have its unco
 
 Navigations use network with offline fallback; only selected public GET APIs/assets are cache candidates. Authorization and private/no-store responses must not become shared offline data. Range requests and non-GET requests bypass fetch interception.
 
-[Push composable](../../composables/usePushNotifications.ts) registers subscriptions; the service worker displays notifications, handles click navigation and updates badges when supported. Browser permissions, VAPID configuration and actual delivery need environment testing. Installing the PWA does not imply every page or private conversation works offline.
+The authenticated top bar now mounts [NotificationBell](../../components/ui/NotificationBell.vue), a link with a shared unread count to `/notifications` (or `/en/notifications`). It refreshes while visible, on focus and on worker messages, and clears state across account changes. The center hides the floating install overlay because its inline instructions already cover installation and the overlay obscures mobile actions. The bilingual notification center supports filters, paging, mark-read, delete confirmation and error/empty/loading states.
+
+[Push settings](../../components/notifications/PushSettings.vue) is the only permission/subscribe entry. iPhone/iPad browser tabs show Safari → Share → Add to Home Screen instructions; iOS 16.4+ Home Screen apps can opt in. **Never auto-request notification permission on mount**: the click handler requests permission before any network await. Denied permissions link the user conceptually to system/browser settings; unsupported, timed-out and server-error states remain retryable.
+
+[Push composable](../../composables/usePushNotifications.ts) sends Base64URL keys through authenticated APIs, checks browser AND server subscription state, reuses browser subscriptions after a failed save, and supports current-device disable and localized test delivery. A successful test means the provider accepted the request, not that the phone displayed it. Disabling retains a retryable endpoint if the server is offline. Logout first revokes the browser subscription and best-effort removes it server-side using bounded cleanup, closes delivered notifications and clears badges.
+
+The worker always displays visible push content, awaits optional badge work, notifies open clients to refresh their counts, and restricts notification clicks to main-site notification destinations. It focuses an exact existing destination or opens another window rather than navigating an unrelated draft. JWTs are never passed to the worker. Mark-read updates badges from the foreground; the backend no longer sends silent badge-only pushes, which Safari does not support. Other closed devices refresh their badge on the next visible push or app visit.
+
+No schema migration or bulk data update is introduced. Roll out with the paired backend push changes: `/api/push/test` accepts optional `endpoint` (must be owned and active) and `locale`, the server deactivates an old account's same-device subscription on explicit registration, and provider 404/410 responses deactivate expired subscriptions. Installing the PWA does not imply private pages work offline. Real VAPID/APNs/iPhone delivery still needs environment testing.
 
 ## Verification
 

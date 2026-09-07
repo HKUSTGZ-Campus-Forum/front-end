@@ -90,6 +90,7 @@ const handleMenuLogout = async () => {
       <div class="kg-topnav__brand-logo">
         <img src="/icons/topbar_logo.svg" alt="uniKorn" class="kg-topnav__logo kg-topnav__logo--light" />
         <img src="/icons/topbar_logo_w.svg" alt="uniKorn" class="kg-topnav__logo kg-topnav__logo--dark" />
+        <img src="/favicon-white.ico" alt="UniKorn" class="kg-topnav__logo--compact" />
       </div>
     </NuxtLink>
 
@@ -199,6 +200,8 @@ const handleMenuLogout = async () => {
         </div>
       </div>
 
+      <UiNotificationBell v-if="isLoggedIn" />
+
       <div class="kg-topnav__user">
         <div v-if="isLoggedIn && user" class="kg-topnav__user-menu">
           <NuxtLink :to="getLocalePath(`/users/${user.id}`)" class="kg-topnav__avatar-link">
@@ -304,6 +307,7 @@ const handleMenuLogout = async () => {
   // The colored logo is unreadable on the dark topbar. Both variants are
   // rendered and toggled via the document-level data-theme attribute (set
   // before first paint by the FOUC script), so no JS/SSR flash occurs.
+  .kg-topnav__logo--compact,
   .kg-topnav__logo--dark {
     display: none;
   }
@@ -923,6 +927,20 @@ const handleMenuLogout = async () => {
     img {
       height: 100%;
     }
+  }
+}
+// Keep all account/notification controls visible on the narrowest phones.
+@media (max-width: 360px) {
+  .kg-topnav .kg-topnav__brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+  .kg-topnav .kg-topnav__brand-logo .kg-topnav__logo { display: none; }
+  .kg-topnav .kg-topnav__brand-logo .kg-topnav__logo--compact {
+    display: block;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
   }
 }
 </style>

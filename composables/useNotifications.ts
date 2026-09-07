@@ -1,6 +1,8 @@
 // composables/useNotifications.ts
 import { ref, computed } from 'vue'
 import { useApi } from './useApi'
+import { useAuth } from './useAuth'
+import { setNotificationBadge } from '../utils/pushNotifications'
 
 export interface Notification {
   id: number
@@ -55,7 +57,8 @@ export const useNotifications = () => {
   const { fetchWithAuth } = useApi()
   
   const notifications = ref<Notification[]>([])
-  const unreadCount = ref(0)
+  const unreadCount = useState<number>('notification-unread-count', () => 0)
+  const { user } = useAuth()
   const loading = ref(false)
   const error = ref<string | null>(null)
   
@@ -71,6 +74,7 @@ export const useNotifications = () => {
     error.value = null
     
     try {
+      const owner = user.value?.id
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
@@ -78,11 +82,13 @@ export const useNotifications = () => {
       })
       
       const response = await fetchWithAuth(`/api/notifications?${params}`)
-      const data: NotificationResponse = await response.json()
+      const data = await response.json()
       
       if (response.ok) {
+        if (owner !== user.value?.id) return data as NotificationResponse
         notifications.value = data.notifications
         unreadCount.value = data.unread_count
+        void setNotificationBadge(unreadCount.value)
         return data
       } else {
         throw new Error(data.error || 'Failed to fetch notifications')
@@ -98,11 +104,15 @@ export const useNotifications = () => {
   // Fetch unread count only
   const fetchUnreadCount = async () => {
     try {
+      const owner = user.value?.id
       const response = await fetchWithAuth('/api/notifications/unread-count')
       const data = await response.json()
       
       if (response.ok) {
-        unreadCount.value = data.unread_count
+        if (owner === user.value?.id) {
+          unreadCount.value = data.unread_count
+          void setNotificationBadge(unreadCount.value)
+        }
         return data.unread_count
       } else {
         throw new Error(data.error || 'Failed to fetch unread count')
@@ -127,6 +137,7 @@ export const useNotifications = () => {
           notification.read = true
           unreadCount.value = Math.max(0, unreadCount.value - 1)
         }
+        void setNotificationBadge(unreadCount.value)
         return true
       } else {
         const data = await response.json()
@@ -149,6 +160,7 @@ export const useNotifications = () => {
         // Update local state
         notifications.value.forEach(n => n.read = true)
         unreadCount.value = 0
+        void setNotificationBadge(unreadCount.value)
         return true
       } else {
         const data = await response.json()
@@ -177,6 +189,7 @@ export const useNotifications = () => {
           }
           notifications.value.splice(index, 1)
         }
+        void setNotificationBadge(unreadCount.value)
         return true
       } else {
         const data = await response.json()

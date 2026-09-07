@@ -18,7 +18,7 @@ School OIDC is the only login method. The backend callback provides a one-time t
 
 Restore authentication before loading user-owned carts or applying auth-dependent navigation. New SSO users confirm their public username and optionally avatar according to server `onboarding_required`; local storage is not the authority for completion. Preserve safe locale-aware return destinations and access to rules/privacy while onboarding.
 
-Logout revokes/clears the UniKorn session and returns to the localized site home. Current frontend behavior does not navigate to the school's end-session URL; a subsequent SSO attempt may reuse the school session. Keep this distinction when explaining account state.
+Logout first attempts bounded current-device push revocation (browser unsubscribe plus authenticated server removal, with no recursive token refresh), closes delivered notifications and clears the badge. Other device subscriptions remain active. It then revokes/clears the UniKorn session and returns to the localized site home. Current frontend behavior does not navigate to the school's end-session URL; a subsequent SSO attempt may reuse the school session. Keep this distinction when explaining account state.
 
 ## Public identity and settings
 
