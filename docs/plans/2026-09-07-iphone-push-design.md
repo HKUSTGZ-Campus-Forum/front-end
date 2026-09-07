@@ -34,3 +34,9 @@ Physical iPhone delivery needs a user-owned Home Screen install and permission g
 5. Sign out and confirm this installation stops receiving that account's pushes without affecting another subscribed device.
 
 No delivery guarantee is inferred from a provider-accepted response. The test button targets the current device; legacy no-endpoint API calls still target all of the user's devices.
+
+## Production-compatible release lineage
+
+School production was verified by its active release symlink and frontend health version as backend `5732d34c2b0dd0b6911b5d2123e535fffc70ee99` / frontend `ff65d6bc4a1921be39abc3b43245dfd916185184`. Publishing the latest main pair would also introduce unrelated agent-chat schema migrations. The notification-only candidates instead descend directly from the active production pair: backend `d3c4e5d8bb2c2442c93d27b5f47b239057cf3f4c` / frontend `4aa0b78317d4739940c0b837bffc3026d2b9c2ac`. They contain the notification changes only and no database or product-data changes. Both candidates are merged into main to satisfy release ancestry without removing newer main features. The production controller still validates the actual transition and requires `database_change.approved=false`.
+
+The main implementation passed CI and deployed to shared dev. Public notification/push endpoints and unauthenticated write guards passed checks; dev reports OIDC disabled, so authenticated flows are covered by local isolated browser fixtures rather than a live dev SSO session. Physical iPhone receipt remains a user-device acceptance step.
