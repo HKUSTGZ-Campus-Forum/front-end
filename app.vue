@@ -1,7 +1,6 @@
 <template>
   <NuxtLayout>
     <NuxtPage />
-    <AppUpdateToast />
     <MascotOverlay
       ref="mascotRef"
       @open-agent-settings="handleOpenAgentSettings"
@@ -12,7 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import AppUpdateToast from "~/components/pwa/AppUpdateToast.vue";
 import MascotOverlay from "~/components/mascot/Overlay.client.vue";
 import AgentChat from "~/components/assistant/AgentChat.client.vue";
 import { useAuth } from "~/composables/useAuth";

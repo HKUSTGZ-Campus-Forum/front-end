@@ -33,6 +33,8 @@
 
 ### Changed
 
+- **前端自动更新**：取消反复出现的“发现新前端版本”确认弹窗，改为后台检查真实部署版本并自动生效；稳定 Service Worker 注册地址、构建时写入缓存版本，并增加跨刷新防循环、离线重试和编辑/上传/排课工作区保护。旧客户端首次迁移仍可能发生一次自动刷新，后续使用新保护机制。
+
 - Reconstructed developer/agent documentation around task indexes, source/page maps, current feature contracts and same-change documentation updates; unified Claude instructions through `AGENTS.md` and preserved prior docs under `docs/archive-20260905`.
 
 - **招新挑战页面与赛制重构**：Prompt 输入区前移到主要任务区之后，新增每 10 秒更新、显示全部参赛用户名与最佳分数的排行榜及个人排名提示；移除行动面板中的卡通人物，改为双栏行动轨迹与结果布局，并重写原“一人一次”相关的中英文说明。

@@ -1,6 +1,6 @@
 // UniKorn Campus Forum Service Worker
-const VERSION_PARAM = new URL(self.location.href).searchParams.get("v");
-const CACHE_VERSION = VERSION_PARAM || "dev";
+// The production build stamps this literal; legacy ?v parameters are ignored.
+const CACHE_VERSION = "__UNIKORN_BUILD_VERSION__";
 const STATIC_CACHE = `unikorn-static-${CACHE_VERSION}`;
 const API_CACHE = `unikorn-api-${CACHE_VERSION}`;
 const CACHE_PREFIXES = ["unikorn-static-", "unikorn-api-"];
@@ -25,18 +25,9 @@ self.addEventListener("install", (event) => {
     (async () => {
       const cache = await caches.open(STATIC_CACHE);
       await cache.addAll(PRECACHE_ASSETS);
-
-      const clientList = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      });
-
-      if (clientList.length > 0) {
-        notifyClients({
-          type: "NEW_VERSION_READY",
-          version: CACHE_VERSION,
-        });
-      }
+      // Existing clients must migrate without clicking the retired update toast.
+      // New clients decide safe page reloads independently using frontend health.
+      await self.skipWaiting();
     })(),
   );
 });
@@ -50,14 +41,15 @@ self.addEventListener("activate", (event) => {
         cacheNames
           .filter((cacheName) =>
             CACHE_PREFIXES.some(
-              (prefix) => cacheName.startsWith(prefix) && !cacheName.endsWith(CACHE_VERSION),
+              (prefix) => cacheName.startsWith(prefix) &&
+                cacheName !== STATIC_CACHE && cacheName !== API_CACHE,
             ),
           )
           .map((cacheName) => caches.delete(cacheName)),
       );
 
       await self.clients.claim();
-      notifyClients({
+      await notifyClients({
         type: "SW_ACTIVATED",
         version: CACHE_VERSION,
       });
@@ -298,7 +290,7 @@ self.addEventListener("message", (event) => {
   }
 
   if (event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
+    event.waitUntil(self.skipWaiting());
     return;
   }
 
@@ -314,7 +306,7 @@ self.addEventListener("message", (event) => {
 });
 
 function notifyClients(message) {
-  self.clients
+  return self.clients
     .matchAll({ type: "window", includeUncontrolled: true })
     .then((clientList) => {
       clientList.forEach((client) => client.postMessage(message));

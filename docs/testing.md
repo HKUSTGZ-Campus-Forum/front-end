@@ -30,6 +30,7 @@ CI additionally builds a Linux amd64 container and checks its user and healthche
 | Forum, uploads, search, HTML rendering | `tests/forum/`, `tests/file-upload/`, `tests/search/`, `tests/security/` |
 | UI and integrations | `tests/theme/`, `tests/home/`, `tests/navigation/`, `tests/teamup/`, `tests/assistant/`, `tests/recruitment/`, `tests/mascot/` |
 | Deployment / server | `tests/deploy/`, `tests/server/` |
+| Automatic frontend updates / PWA | `tests/pwa/`, `tests/server/health.test.ts`; production-build A → B browser update/deferral and emitted worker identity/headers |
 
 For UI changes, check affected routes in both languages, both themes and narrow/wide viewports. Exercise keyboard/focus behavior for dialogs and navigation; verify guest and authenticated states when permissions or persistence differ. Include loading, empty and error states when changing async flows. Some tests inspect source wiring; a passing source assertion does not replace a browser interaction check.
 

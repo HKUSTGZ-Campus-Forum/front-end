@@ -1219,15 +1219,6 @@
     }
   },
   "pwa": {
-    "update": {
-      "badge": "New version",
-      "title": "A new frontend version is available",
-      "description": "Update now to switch to the latest page without clearing cache or forcing a refresh.",
-      "versionLabel": "Version: {version}",
-      "apply": "Update now",
-      "updating": "Updating...",
-      "later": "Later"
-    },
     "install": {
       "floatButton": "Install app",
       "title": "Install the UniKorn app",

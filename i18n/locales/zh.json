@@ -1219,15 +1219,6 @@
     }
   },
   "pwa": {
-    "update": {
-      "badge": "新版本",
-      "title": "发现新前端版本",
-      "description": "点击更新即可切换到最新页面，不需要手动清缓存或强制刷新。",
-      "versionLabel": "版本标识：{version}",
-      "apply": "立即更新",
-      "updating": "更新中...",
-      "later": "稍后"
-    },
     "install": {
       "floatButton": "安装应用",
       "title": "安装 UniKorn 应用",

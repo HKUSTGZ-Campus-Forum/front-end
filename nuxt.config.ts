@@ -1,4 +1,7 @@
 import pkg from "./package.json";
+import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { embedServiceWorkerBuildVersion } from "./utils/serviceWorkerBuild";
 
 const appBuildVersion =
   process.env.NUXT_PUBLIC_APP_BUILD_VERSION ||
@@ -139,6 +142,7 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    "/sw.js": { headers: { "Cache-Control": "no-cache, must-revalidate" } },
     "/register": { redirect: "/login" },
     "/forgot-password": { redirect: "/login" },
     "/reset-password": { redirect: "/login" },
@@ -149,6 +153,15 @@ export default defineNuxtConfig({
     "/admin/**": { ssr: false, prerender: false },
     "/en/admin": { ssr: false, prerender: false },
     "/en/admin/**": { ssr: false, prerender: false },
+  },
+  hooks: {
+    async "nitro:build:public-assets"(nitro) {
+      // Stamp only the copied build output. A stable worker URL must still
+      // produce different script bytes for each frontend release.
+      const workerPath = join(nitro.options.output.publicDir, "sw.js");
+      const source = await readFile(workerPath, "utf8");
+      await writeFile(workerPath, embedServiceWorkerBuildVersion(source, appBuildVersion));
+    },
   },
   css: [
     "~/assets/css/variables.scss",
