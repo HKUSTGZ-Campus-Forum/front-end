@@ -3,7 +3,8 @@ import TeamUpHostPage from '~/components/teamup/TeamUpHostPage.vue'
 import { makerSpaceUrl } from '~/utils/makerspaceUrl'
 import type { MakerCapabilities, MakerDeployment, MakerDraft, MakerSpace } from '~/types/makerspace'
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const themeStore = useThemeStore()
 const { getLocalePath } = useAppLocale()
 const { isLoggedIn, authInitialized, user } = useAuth()
 const { request, errorMessage, title, description } = useMakerSpace()
@@ -21,6 +22,19 @@ const credential = ref<{ public_key: string; webhook_secret: string; webhook_pat
 const rotateConfirmed = ref(false)
 const archiveConfirmed = ref(false)
 const frame = ref('')
+const frameElement = ref<HTMLIFrameElement | null>(null)
+function sendFrameContext() {
+  // Public display preferences only; opaque-origin frames require '*'.
+  frameElement.value?.contentWindow?.postMessage({ type: 'unikorn:makerspace:state', locale: locale.value, theme: themeStore.currentTheme }, '*')
+}
+watch([locale, () => themeStore.currentTheme], sendFrameContext)
+function onFrameMessage(event: MessageEvent) {
+  if (event.origin !== 'null' || event.source !== frameElement.value?.contentWindow || !frame.value) return
+  if (event.data?.type === 'makerspace:ready') sendFrameContext()
+  if (event.data?.type === 'makerspace:login') {
+    navigateTo(getLocalePath('/login') + '?redirect=' + encodeURIComponent(getLocalePath(`/makerspace/${space.value?.slug || ''}`)))
+  }
+}
 const frameLoading = ref(false)
 const environmentName = ref('')
 const environmentValue = ref('')
@@ -83,6 +97,7 @@ async function archive() {
   finally { busy.value = false }
 }
 onMounted(async () => {
+  window.addEventListener('message', onFrameMessage)
   if (authInitialized.value) await load()
   capability.value = await request<MakerCapabilities>('/capabilities').catch(() => null)
   timer = setInterval(() => { if (locked.value && !busy.value && !editing.value) load() }, 10000)
@@ -93,7 +108,7 @@ watch([authInitialized, isLoggedIn, slug], () => {
   rotateConfirmed.value = false; archiveConfirmed.value = false
   if (authInitialized.value) load()
 })
-onBeforeUnmount(() => { if (timer) clearInterval(timer) })
+onBeforeUnmount(() => { window.removeEventListener('message', onFrameMessage); if (timer) clearInterval(timer) })
 useHead({ title: computed(() => space.value ? title(space.value) : t('makerspace.title')) })
 </script>
 
@@ -108,7 +123,8 @@ useHead({ title: computed(() => space.value ? title(space.value) : t('makerspace
       <section v-if="!isTeamUp" class="maker-card maker-overview"><MakerspaceSpaceCover v-if="space.cover_url" :url="space.cover_url" :title="title(space)" :private="space.status !== 'published'" /><div class="maker-overview-body"><div class="maker-card-top"><span class="maker-badge">{{ t(`makerspace.states.${space.status}`) }}</span><span class="maker-meta">{{ t(`makerspace.categories.${space.category}`) }}</span></div><p>{{ description(space) }}</p><div class="maker-actions"><button v-if="space.status === 'published' && !isTeamUp" class="maker-button maker-button--primary" :disabled="busy" @click="launch()">{{ t('makerspace.open') }}<Icon name="lucide:arrow-up-right" /></button><button v-if="space.is_owner && space.kind === 'hosted'" class="maker-button" :disabled="busy || locked" @click="editing = !editing">{{ t(editing ? 'makerspace.cancel' : 'makerspace.edit') }}</button><button class="maker-button" @click="copyLink">{{ t('makerspace.copyLink') }}</button><MakerspaceSpaceActions :space="space" @updated="space = $event" /></div></div></section>
       <MakerspaceCoverEditor v-if="space.is_owner" :space="space" @updated="url => { if (space) space.cover_url = url }" />
       <TeamUpHostPage v-if="isTeamUp" />
-      <section v-if="frame" class="maker-card"><div class="maker-header"><div><h2>{{ t('makerspace.running') }}</h2><p>{{ t('makerspace.sessionHint') }}</p></div><button class="maker-button" @click="frame = ''">{{ t('makerspace.close') }}</button></div><p v-if="frameLoading" role="status">{{ t('makerspace.loading') }}</p><iframe class="maker-frame" :src="frame" :title="title(space)" sandbox="allow-scripts allow-forms allow-downloads" referrerpolicy="no-referrer" @load="frameLoading = false" /></section>
+      <section v-if="frame" class="maker-card"><div class="maker-header"><div><h2>{{ t('makerspace.running') }}</h2><p>{{ t('makerspace.sessionHint') }}</p></div><button class="maker-button" @click="frame = ''">{{ t('makerspace.close') }}</button></div><p v-if="frameLoading" role="status">{{ t('makerspace.loading') }}</p><iframe ref="frameElement" class="maker-frame" :src="frame" :title="title(space)" sandbox="allow-scripts allow-forms allow-downloads" referrerpolicy="no-referrer" @load="frameLoading = false; sendFrameContext()" /></section>
+      <MakerspaceSyncPanel v-if="space.is_owner" :slug="space.slug" :hosted="space.kind === 'hosted'" />
       <div v-if="space.is_owner && space.kind === 'external'" class="maker-notice">{{ t('makerspace.externalOwner') }} <NuxtLink :to="getLocalePath('/makerspace/guide')">{{ t('makerspace.guide') }}</NuxtLink></div>
       <template v-if="space.is_owner && space.kind === 'hosted'">
         <form v-if="editing" class="maker-card" @submit.prevent="save"><h2>{{ t('makerspace.edit') }}</h2><MakerspaceSpaceForm v-model="draft" editing :disabled="busy || locked" /><button class="maker-button maker-button--primary" :disabled="busy || locked">{{ t('makerspace.save') }}</button></form>

@@ -42,3 +42,9 @@ Only the owner sees `CoverEditor`, including the owner of historical TeamUp. Use
 Reactions wait for auth restoration and use idempotent PUT/DELETE requests. Guests are sent to login with a return path. Counts and pressed states change only after API confirmation; failures retain prior state. All new labels, loading/error/empty states and image alternatives are Chinese/English. Sidebar images share the existing `img.kg-icon` 22px size and white filter.
 
 Local validation on 2026-09-07: real browser UI against a disposable Flask database and local storage adapter exercised upload, creator links, likes/favorites persistence, private profile tabs and favorite removal. Desktop 1440px and mobile 390px, Chinese/English and light/dark were inspected. This is not production OSS or school deployment evidence. The backend migration plan is `deploy/makerspace/social-migration-plan.md`.
+
+## Directional exchange candidate
+
+`SyncPanel.vue` adds bilingual owner requests and independent administrator review for each resource/direction. The approved deployment/artifact and typed fields are immutable; credentials appear only once and can be rotated/revoked. Audit views contain counts/actions, not student payloads. The platform checks the runtime adapter contract before approval. See `docs/features/makerspace-sync.md` in the corresponding backend release for the protocol.
+
+Opaque hosted frames receive only locale/theme and can ask the parent to open its fixed local login flow. The iframe source and null origin are checked before handling messages; host tokens are never sent. TeamUp uses the generic sandbox after its separately approved database/runtime cutover. Existing `external` registrations retain their historical path until migrated; code presence does not establish live isolation.
