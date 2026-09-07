@@ -17,6 +17,8 @@
 
 ### Added
 
+- **iPhone 设备通知**：顶栏新增通知入口，通知中心提供中英文主屏幕安装指引、主动授权、订阅状态校验、此设备测试及关闭功能；修正 Base64URL 密钥编码，退出账号时清理设备推送，后台通知使用安全站内跳转并保留其他窗口草稿。
+
 - **原创站娘柚柚**：共享 dev 默认改用经确认的原创分层 2.5D 模型，支持眼睛/头部跟随、眨眼、口型、发梢与身体动作、六种表情及助手思考/回复/错误联动；保留模型设置和会话历史圆形入口，并在折叠或隐藏页面时停止动画。
 
 - **排课日历导出**：固定课程、候选优选及已保存方案预览支持下载 `.ics`，按真实教学日期展开所有所选班别；缺日期时显式补充、无时间班别提示，导出前预览课次数量与日期范围，并补齐中英文、时区和重复日期/文本转义校验。
@@ -37,6 +39,8 @@
 - **发帖标签推荐与搜索**：发帖页新增常用 `club` 快捷标签和动态标签建议，支持鼠标与键盘选择；标签搜索失败时仍可自由输入，活动入口会自动锁定规范化的 `club` 标签，确保活动帖进入社团活动列表。
 
 ### Changed
+
+- **前端自动更新**：取消反复出现的“发现新前端版本”确认弹窗，改为后台检查真实部署版本并自动生效；稳定 Service Worker 注册地址、构建时写入缓存版本，并增加跨刷新防循环、离线重试和编辑/上传/排课工作区保护。旧客户端首次迁移仍可能发生一次自动刷新，后续使用新保护机制。
 
 - Reconstructed developer/agent documentation around task indexes, source/page maps, current feature contracts and same-change documentation updates; unified Claude instructions through `AGENTS.md` and preserved prior docs under `docs/archive-20260905`.
 

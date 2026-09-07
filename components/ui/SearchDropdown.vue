@@ -170,6 +170,7 @@ onUnmounted(() => {
     <div class="search-input-container">
       <input
         ref="searchInput"
+        data-auto-update-disposable
         v-model="inputValue"
         type="text"
         class="search-input"

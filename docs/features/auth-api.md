@@ -8,7 +8,7 @@
 
 [Nuxt development proxy](../../nuxt.config.ts) sends `/api` to the configured base plus `/api`. Backend `run.py` strips that prefix locally; school Nginx strips it before Flask. Server-side production requests use the documented internal bridge. Changing one side requires checking all three: caller, proxy and registered Flask path.
 
-Exceptions to the helper are established auth internals (to avoid recursion), signed direct OSS uploads, and independent runtime health requests such as TeamUp. They do not authorize arbitrary direct calls to protected backend endpoints.
+Exceptions to the helper are established auth internals (to avoid recursion), signed direct OSS uploads, and independent runtime health requests such as TeamUp and the frontend's same-origin `/health` automatic-version check. They do not authorize arbitrary direct calls to protected backend endpoints.
 
 ## Login, restoration and onboarding
 
@@ -18,7 +18,7 @@ School OIDC is the only login method. The backend callback provides a one-time t
 
 Restore authentication before loading user-owned carts or applying auth-dependent navigation. New SSO users confirm their public username and optionally avatar according to server `onboarding_required`; local storage is not the authority for completion. Preserve safe locale-aware return destinations and access to rules/privacy while onboarding.
 
-Logout revokes/clears the UniKorn session and returns to the localized site home. Current frontend behavior does not navigate to the school's end-session URL; a subsequent SSO attempt may reuse the school session. Keep this distinction when explaining account state.
+Logout first attempts bounded current-device push revocation (browser unsubscribe plus authenticated server removal, with no recursive token refresh), closes delivered notifications and clears the badge. Other device subscriptions remain active. It then revokes/clears the UniKorn session and returns to the localized site home. Current frontend behavior does not navigate to the school's end-session URL; a subsequent SSO attempt may reuse the school session. Keep this distinction when explaining account state.
 
 ## Public identity and settings
 

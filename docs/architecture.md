@@ -42,3 +42,6 @@ For architecture changes, update this current view and the relevant feature refe
 ## MakerSpace boundary (2026-09-07)
 
 [MakerSpace](features/makerspace.md) owns catalog, verified creator attribution and approval of exact source/artifact versions. Independent repositories retain their business code. Creator documents remain opaque-origin sandboxes behind browser-bound resource sessions, and untrusted builds/runtime use the dedicated gVisor worker with enforced quotas. Preview data and public data are separate. Historical trusted integrations retain their existing identity and release boundaries.
+## 2026-09-07: Device push consent and ownership
+
+Notification permission is requested only from the settings button. Browser existence alone is not an enabled subscription: the current account must also have an active server record. Badge-only silent pushes are replaced by foreground badge updates and counts attached to visible pushes. The worker receives no JWT and only opens validated main-site notification destinations. See [community](features/community.md) for lifecycle, cross-device and rollout limitations.

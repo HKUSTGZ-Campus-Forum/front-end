@@ -1134,7 +1134,63 @@
     "viewAll": "查看全部",
     "loading": "加载中...",
     "loadFailed": "加载失败：{error}",
-    "empty": "暂无通知"
+    "empty": "暂无通知",
+    "subtitle": "查看社区动态，管理这台设备的通知。",
+    "unreadLabel": "通知，{count} 条未读",
+    "inbox": "站内通知",
+    "filter": "筛选通知",
+    "all": "全部",
+    "unread": "未读",
+    "refresh": "刷新",
+    "listFailed": "暂时无法加载通知，请检查网络后重试。",
+    "actionFailed": "操作未完成，请稍后重试。",
+    "retry": "重试",
+    "emptyTitle": "还没有通知",
+    "emptyHint": "有人评论、回复或回应你的内容时，通知会显示在这里。",
+    "emptyUnread": "已读完所有通知",
+    "emptyUnreadHint": "新消息到来时会显示在这里。",
+    "visitForum": "浏览社区",
+    "markRead": "标记已读",
+    "delete": "删除",
+    "deleteConfirm": "删除这条通知？",
+    "confirmDelete": "确认删除",
+    "cancel": "取消",
+    "pagination": "通知分页",
+    "previous": "上一页",
+    "next": "下一页",
+    "page": "第 {current} / {total} 页",
+    "push": {
+      "title": "设备通知",
+      "description": "收到评论、回复等消息时，在锁屏和通知中心提醒你。",
+      "status": {
+        "checking": "正在检查",
+        "unavailable": "需要检查",
+        "install": "先添加到主屏幕",
+        "unsupported": "暂不支持",
+        "denied": "权限已关闭",
+        "enabled": "已开启",
+        "disabled": "未开启"
+      },
+      "installSafari": "使用 Safari 打开 UniKorn。需要 iOS 16.4 或更新版本。",
+      "installHome": "打开分享菜单，选择「添加到主屏幕」；如显示「作为网页 App 打开」，请保持开启。",
+      "installOpen": "从主屏幕的 UniKorn 图标进入并登录，在此点击「开启设备通知」，然后选择「允许」。",
+      "unsupported": "当前浏览器无法接收推送。iPhone 请更新到 iOS 16.4 或以上，并从主屏幕打开；电脑可尝试支持通知的浏览器。",
+      "denied": "通知权限已关闭。iPhone 请到「设置 → 通知 → UniKorn」允许通知；其他设备请检查浏览器的网站权限，然后返回此处重新检查。",
+      "enabledHint": "已为当前账号开启此设备通知。退出账号会关闭此设备的推送，其他设备不受影响。",
+      "enable": "开启设备通知",
+      "disable": "关闭此设备通知",
+      "test": "发送测试通知",
+      "checkAgain": "重新检查",
+      "working": "正在处理…",
+      "testSent": "已提交给推送服务，请查看这台设备的通知中心。如未收到，请检查系统通知设置和专注模式。",
+      "errors": {
+        "timeout": "等待浏览器响应超时，请检查网络后重试。",
+        "server": "服务器暂时无法完成通知设置或发送，请稍后重试。",
+        "permission": "尚未获得通知权限。请点击开启并允许通知；如果已拒绝，请先调整系统设置。",
+        "account": "登录账号发生变化，请刷新页面后重新开启通知。",
+        "failed": "未能完成操作，请检查网络和通知权限后重试。"
+      }
+    }
   },
   "imageModal": {
     "defaultAlt": "图片预览",
@@ -1220,15 +1276,6 @@
     }
   },
   "pwa": {
-    "update": {
-      "badge": "新版本",
-      "title": "发现新前端版本",
-      "description": "点击更新即可切换到最新页面，不需要手动清缓存或强制刷新。",
-      "versionLabel": "版本标识：{version}",
-      "apply": "立即更新",
-      "updating": "更新中...",
-      "later": "稍后"
-    },
     "install": {
       "floatButton": "安装应用",
       "title": "安装 UniKorn 应用",

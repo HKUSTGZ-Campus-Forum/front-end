@@ -9,7 +9,7 @@ Current implementation references, reconciled against frontend `2c886f8` and bac
 | API, SSO, onboarding, account settings | [auth and API](features/auth-api.md) | Auth composables, guards, OIDC tests |
 | Theme, layout, localization, accessibility | [UI conventions](features/ui.md) | [theme reference](THEME_SYSTEM.md), [i18n](i18n-guidelines.md), [product](product.md) |
 | Courses, planner, saved plans, calendar, graph | [academic systems](features/academic.md) | Scheduler/course/academic tests |
-| Forum, uploads, search, feedback, push/PWA | [community](features/community.md) | File, forum, security tests |
+| Forum, uploads, search, feedback, push/PWA | [community](features/community.md) | File, forum, security and [automatic-update tests](../tests/pwa) |
 | Admin or contests | [administration](features/administration.md) | Admin routes/composables; backend guards |
 | Assistant, recruitment, mascot, TeamUp, MeetCampus | [integrations](features/integrations.md) | Integration tests and service boundaries |
 | Deploy or change runtime configuration | [production boundaries](production-environment.md) | [dev/legacy deployment](../deploy/README.md), backend school runbook |

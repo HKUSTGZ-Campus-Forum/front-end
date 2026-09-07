@@ -1,3 +1,4 @@
+import { removeDevicePushOnLogout } from '../utils/pushNotifications';
 // composables/useAuth.ts
 import { ref, computed } from "vue";
 import { selectApiBaseUrl } from "../utils/apiBaseUrl";
@@ -153,6 +154,16 @@ async function logout() {
   error.value = null;
 
   try {
+    await removeDevicePushOnLogout(async (endpoint) => {
+      if (!accessToken.value) return;
+      // Auth cleanup deliberately bypasses refresh to avoid recursive logout.
+      await fetch(resolveAuthApiUrl("/api/push/unsubscribe"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken.value}` },
+        body: JSON.stringify({ endpoint }),
+        signal: AbortSignal.timeout(3000),
+      });
+    });
     if (accessToken.value) {
       console.log("📤 Sending logout request to server...");
       await authFetch(resolveAuthApiUrl("/api/auth/logout"), {
