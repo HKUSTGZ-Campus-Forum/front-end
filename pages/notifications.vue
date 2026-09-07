@@ -1,376 +1,167 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useNotifications } from '~/composables/useNotifications'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useNotifications, type Notification } from '~/composables/useNotifications'
 
-definePageMeta({ layout: 'keguang' })
-
-useHead({ title: '通知中心 - UniKorn 科广汇' })
-
-const {
-  notifications,
-  unreadCount,
-  loading,
-  error,
-  hasUnread,
-  fetchNotifications,
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
-  getNotificationUrl,
-  formatNotificationTime
-} = useNotifications()
-
-const router = useRouter()
-
-const goBack = () => {
-  if (window.history.length > 1) router.back()
-  else router.push('/forum')
-}
-
+definePageMeta({ layout: 'keguang', middleware: 'auth' })
+const { t, locale } = useI18n()
+const { getLocalePath } = useAppLocale()
+useHead(() => ({ title: `${t('notifications.title')} - UniKorn` }))
+const { notifications, unreadCount, loading, error, hasUnread, fetchNotifications,
+  markAsRead, markAllAsRead, deleteNotification, getNotificationUrl } = useNotifications()
 const currentFilter = ref<'all' | 'unread'>('all')
 const currentPage = ref(1)
 const totalPages = ref(1)
-const totalCount = ref(0)
-const markingAllRead = ref(false)
+const busy = ref(false)
+const actionError = ref(false)
+const pendingDelete = ref<number | null>(null)
+const isLoading = computed(() => loading.value || busy.value)
 
-const setFilter = (filter: 'all' | 'unread') => {
-  currentFilter.value = filter
+const load = async () => {
+  try {
+    const data = await fetchNotifications(currentPage.value, 20, currentFilter.value === 'unread')
+    totalPages.value = Math.max(1, data.total_pages)
+    if (currentPage.value > totalPages.value) { currentPage.value = totalPages.value; await load() }
+  } catch { /* The inline error provides retry. */ }
+}
+const filter = async (value: 'all' | 'unread') => {
+  if (isLoading.value) return
+  currentFilter.value = value
   currentPage.value = 1
-  loadNotifications()
+  await load()
 }
-
-const loadNotifications = async () => {
-  try {
-    const result = await fetchNotifications(currentPage.value, 20, currentFilter.value === 'unread')
-    totalPages.value = result.total_pages
-    totalCount.value = result.total_count
-  } catch (err) { console.error('Failed to load notifications:', err) }
+const page = async (offset: number) => { currentPage.value += offset; await load() }
+const mutate = async (action: () => Promise<unknown>) => {
+  if (isLoading.value) return
+  busy.value = true
+  actionError.value = false
+  try { await action(); pendingDelete.value = null; await load() }
+  catch { actionError.value = true }
+  finally { busy.value = false }
 }
-
-const previousPage = () => { if (currentPage.value > 1) { currentPage.value--; loadNotifications() } }
-const nextPage = () => { if (currentPage.value < totalPages.value) { currentPage.value++; loadNotifications() } }
-
-const handleMarkAllRead = async () => {
-  if (markingAllRead.value) return
-  markingAllRead.value = true
-  try {
-    await markAllAsRead()
-    if (currentFilter.value === 'unread') await loadNotifications()
-  } catch (err) { console.error('Failed to mark all as read:', err) }
-  finally { markingAllRead.value = false }
-}
-
-const handleMarkAsRead = async (notificationId: number) => {
-  try {
-    await markAsRead(notificationId)
-    if (currentFilter.value === 'unread') await loadNotifications()
-  } catch (err) { console.error('Failed to mark as read:', err) }
-}
-
-const handleDelete = async (notificationId: number) => {
-  if (!confirm('确定要删除这条通知吗？')) return
-  try {
-    await deleteNotification(notificationId)
-    await loadNotifications()
-  } catch (err) { console.error('Failed to delete notification:', err) }
-}
-
-const handleNotificationClick = async (notification: any) => {
+const read = (notification: Notification) => mutate(() => markAsRead(notification.id))
+const remove = (id: number) => mutate(() => deleteNotification(id))
+const open = async (notification: Notification) => {
   if (!notification.read) {
-    try { await markAsRead(notification.id) } catch (err) { }
+    try { await markAsRead(notification.id) } catch { actionError.value = true }
   }
-  router.push(getNotificationUrl(notification))
+  await navigateTo(getLocalePath(getNotificationUrl(notification)))
 }
-
-onMounted(() => { loadNotifications() })
-watch(currentPage, () => { loadNotifications() })
+const time = (value: string) => new Intl.DateTimeFormat(locale.value === 'en' ? 'en' : 'zh-CN', {
+  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+}).format(new Date(value))
+onMounted(() => { void load() })
+watch(locale, () => { pendingDelete.value = null })
 </script>
 
 <template>
-  <div class="kg-notifications">
-    <div class="kg-notif-header">
-      <div class="kg-notif-title-row">
-        <button class="kg-back-btn" @click="goBack">← 返回</button>
-        <h1 class="kg-page-title">通知中心</h1>
-        <span v-if="unreadCount > 0" class="kg-unread-badge">{{ unreadCount }}</span>
+  <main class="notifications-page">
+    <header class="notifications-page__header">
+      <div>
+        <h1>{{ t('notifications.title') }}</h1>
+        <p>{{ t('notifications.subtitle') }}</p>
       </div>
-      <button
-        v-if="hasUnread"
-        class="kg-btn-ghost"
-        :disabled="markingAllRead"
-        @click="handleMarkAllRead"
-      >
-        {{ markingAllRead ? '处理中...' : '全部标为已读' }}
-      </button>
-    </div>
-
-    <div class="kg-filter-tabs">
-      <button :class="['kg-tab', { active: currentFilter === 'all' }]" @click="setFilter('all')">全部</button>
-      <button :class="['kg-tab', { active: currentFilter === 'unread' }]" @click="setFilter('unread')">
-        未读<span v-if="unreadCount > 0" class="kg-tab-count">{{ unreadCount }}</span>
-      </button>
-    </div>
-
-    <div v-if="loading" class="kg-loading">
-      <div class="kg-spinner"></div><span>加载中...</span>
-    </div>
-
-    <div v-else-if="error" class="kg-error">{{ error }}</div>
-
-    <div v-else-if="notifications.length === 0" class="kg-empty">
-      <div class="kg-empty-icon">🔔</div>
-      <p>{{ currentFilter === 'unread' ? '没有未读通知' : '暂无通知' }}</p>
-    </div>
-
-    <div v-else class="kg-notif-list">
-      <div
-        v-for="notif in notifications"
-        :key="notif.id"
-        :class="['kg-notif-item', { 'kg-notif-item--unread': !notif.read }]"
-      >
-        <div class="kg-notif-body" @click="handleNotificationClick(notif)">
-          <div v-if="!notif.read" class="kg-notif-dot"></div>
-          <div class="kg-notif-content">
-            <p class="kg-notif-text">{{ notif.content || notif.message || notif.title }}</p>
-            <span class="kg-notif-time">{{ formatNotificationTime(notif.created_at) }}</span>
+      <button v-if="hasUnread" class="notification-button" :disabled="isLoading" @click="mutate(markAllAsRead)">{{ t('notifications.markAllRead') }}</button>
+    </header>
+    <NotificationsPushSettings />
+    <section class="notification-inbox" :aria-label="t('notifications.inbox')">
+      <div class="notification-inbox__toolbar">
+        <div class="notification-filters" :aria-label="t('notifications.filter')">
+          <button :aria-pressed="currentFilter === 'all'" :disabled="isLoading" @click="filter('all')">{{ t('notifications.all') }}</button>
+          <button :aria-pressed="currentFilter === 'unread'" :disabled="isLoading" @click="filter('unread')">{{ t('notifications.unread') }}<span v-if="unreadCount">{{ unreadCount }}</span></button>
+        </div>
+        <button class="notification-button" :disabled="isLoading" @click="load">{{ t('notifications.refresh') }}</button>
+      </div>
+      <p v-if="actionError" class="notification-message" role="alert">{{ t('notifications.actionFailed') }}</p>
+      <div v-if="error" class="notification-empty" role="alert">
+        <Icon name="lucide:wifi-off" aria-hidden="true" />
+        <p>{{ t('notifications.listFailed') }}</p>
+        <button class="notification-button" :disabled="isLoading" @click="load">{{ t('notifications.retry') }}</button>
+      </div>
+      <div v-else-if="loading" class="notification-skeleton" role="status" :aria-label="t('notifications.loading')">
+        <div v-for="index in 3" :key="index"><span /><span /></div>
+      </div>
+      <div v-else-if="!notifications.length" class="notification-empty">
+        <Icon name="lucide:inbox" aria-hidden="true" />
+        <h2>{{ t(currentFilter === 'unread' ? 'notifications.emptyUnread' : 'notifications.emptyTitle') }}</h2>
+        <p>{{ t(currentFilter === 'unread' ? 'notifications.emptyUnreadHint' : 'notifications.emptyHint') }}</p>
+        <NuxtLink :to="getLocalePath('/forum')" class="notification-button">{{ t('notifications.visitForum') }}</NuxtLink>
+      </div>
+      <ul v-else class="notification-list">
+        <li v-for="notification in notifications" :key="notification.id" :class="{ 'is-unread': !notification.read }">
+          <div class="notification-list__content">
+            <span v-if="!notification.read" class="notification-list__unread">{{ t('notifications.unread') }}</span>
+            <time :datetime="notification.created_at">{{ time(notification.created_at) }}</time>
+            <NuxtLink :to="getLocalePath(getNotificationUrl(notification))" class="notification-list__link" @click.prevent="open(notification)">
+              <h2>{{ notification.title }}</h2>
+              <p>{{ notification.message }}</p>
+            </NuxtLink>
           </div>
-        </div>
-        <div class="kg-notif-actions">
-          <button v-if="!notif.read" class="kg-icon-btn" title="标为已读" @click.stop="handleMarkAsRead(notif.id)">✓</button>
-          <button class="kg-icon-btn kg-icon-btn--danger" title="删除" @click.stop="handleDelete(notif.id)">✕</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="totalPages > 1" class="kg-pagination">
-      <button class="kg-page-btn" :disabled="currentPage <= 1" @click="previousPage">上一页</button>
-      <span class="kg-page-info">{{ currentPage }} / {{ totalPages }}</span>
-      <button class="kg-page-btn" :disabled="currentPage >= totalPages" @click="nextPage">下一页</button>
-    </div>
-  </div>
+          <div class="notification-list__actions">
+            <template v-if="pendingDelete === notification.id">
+              <span>{{ t('notifications.deleteConfirm') }}</span>
+              <button class="notification-button" :disabled="isLoading" @click="remove(notification.id)">{{ t('notifications.confirmDelete') }}</button>
+              <button class="notification-button" :disabled="isLoading" @click="pendingDelete = null">{{ t('notifications.cancel') }}</button>
+            </template>
+            <template v-else>
+              <button v-if="!notification.read" class="notification-button" :disabled="isLoading" @click="read(notification)">{{ t('notifications.markRead') }}</button>
+              <button class="notification-button" :disabled="isLoading" @click="pendingDelete = notification.id">{{ t('notifications.delete') }}</button>
+            </template>
+          </div>
+        </li>
+      </ul>
+      <nav v-if="totalPages > 1" class="notification-pagination" :aria-label="t('notifications.pagination')">
+        <button class="notification-button" :disabled="isLoading || currentPage <= 1" @click="page(-1)">{{ t('notifications.previous') }}</button>
+        <span>{{ t('notifications.page', { current: currentPage, total: totalPages }) }}</span>
+        <button class="notification-button" :disabled="isLoading || currentPage >= totalPages" @click="page(1)">{{ t('notifications.next') }}</button>
+      </nav>
+    </section>
+  </main>
 </template>
 
-<style lang="scss" scoped>
-.kg-notifications {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px 20px 60px;
-}
-
-.kg-notif-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.kg-notif-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.kg-back-btn {
-  background: none;
-  border: none;
-  color: var(--interactive-primary);
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 0;
-  &:hover { text-decoration: underline; }
-}
-
-.kg-page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.kg-unread-badge {
-  background: var(--semantic-error);
-  color: var(--text-inverse);
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 1px 7px;
-}
-
-.kg-btn-ghost {
-  padding: 7px 18px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 14px;
-  background: var(--surface-secondary);
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  &:hover:not(:disabled) { border-color: var(--interactive-primary); color: var(--interactive-primary); }
-  &:disabled { opacity: 0.5; }
-}
-
-.kg-filter-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.kg-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 20px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 16px;
-  background: var(--surface-secondary);
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  &:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
-  &.active { background: var(--btn-primary-bg); border-color: var(--interactive-primary); color: var(--text-inverse); font-weight: 600; }
-}
-
-.kg-tab-count {
-  background: color-mix(in srgb, var(--overlay-text) 35%, transparent);
-  border-radius: 8px;
-  font-size: 0.72rem;
-  padding: 0 5px;
-  font-weight: 700;
-}
-
-.kg-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 60px;
-  color: var(--text-secondary);
-}
-
-.kg-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-primary);
-  border-top-color: var(--interactive-primary);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.kg-error, .kg-empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text-secondary);
-}
-
-.kg-empty { .kg-empty-icon { font-size: 2.5rem; margin-bottom: 8px; } p { margin: 0; } }
-
-.kg-notif-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.kg-notif-item {
-  display: flex;
-  align-items: center;
-  background: var(--surface-secondary);
-  border: 1.5px solid var(--border-primary);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: border-color 0.2s;
-  &:hover { border-color: var(--interactive-primary); }
-  &--unread {
-    background: color-mix(in srgb, var(--interactive-primary) 4%, transparent);
-    border-color: color-mix(in srgb, var(--interactive-primary) 30%, transparent);
-  }
-}
-
-.kg-notif-body {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  cursor: pointer;
-}
-
-.kg-notif-dot {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--btn-primary-bg);
-  margin-top: 6px;
-}
-
-.kg-notif-content { flex: 1; }
-
-.kg-notif-text {
-  margin: 0 0 4px;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  line-height: 1.5;
-}
-
-.kg-notif-time {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.kg-notif-actions {
-  display: flex;
-  gap: 4px;
-  padding: 0 10px;
-  flex-shrink: 0;
-}
-
-.kg-icon-btn {
-  width: 30px;
-  height: 30px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  &:hover { border-color: var(--interactive-primary); color: var(--interactive-primary); }
-  &--danger:hover { border-color: var(--semantic-error); color: var(--semantic-error); }
-}
-
-.kg-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px 0 0;
-}
-
-.kg-page-btn {
-  padding: 7px 20px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 14px;
-  background: var(--surface-secondary);
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  &:hover:not(:disabled) { border-color: var(--interactive-primary); color: var(--interactive-primary); }
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
-}
-
-.kg-page-info {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+<style>
+.notifications-page { width: 100%; max-width: 880px; margin: 0 auto; padding: 28px 20px 48px; color: var(--text-primary); }
+.notifications-page__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.notifications-page__header h1 { margin: 0 0 8px; font-size: 1.75rem; font-weight: 700; }
+.notifications-page__header p { margin: 0; color: var(--text-secondary); line-height: 1.6; }
+.notification-button { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 9px 16px; border: 1px solid var(--border-primary); border-radius: 24px; background: var(--surface-primary); color: var(--text-primary); font: inherit; font-size: 14px; font-weight: 600; line-height: 1.4; text-decoration: none; cursor: pointer; }
+.notification-button:hover:not(:disabled) { background: var(--surface-secondary); border-color: var(--interactive-primary); }
+.notification-button--primary { background: var(--interactive-active); border-color: var(--interactive-active); color: var(--text-on-interactive); }
+.notification-button--primary:hover:not(:disabled) { background: var(--interactive-active); filter: brightness(.94); }
+.notification-button:focus-visible, .notification-filters button:focus-visible, .notification-list__link:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 3px; }
+.notification-button:disabled, .notification-filters button:disabled { opacity: .6; cursor: wait; }
+.notification-inbox { margin-top: 24px; border-radius: 16px; background: var(--surface-primary); overflow: hidden; }
+.notification-inbox__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--border-secondary); }
+.notification-filters { display: flex; gap: 6px; }
+.notification-filters button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 24px; border: 0; background: transparent; color: var(--text-secondary); font: inherit; font-weight: 600; cursor: pointer; }
+.notification-filters button[aria-pressed="true"] { background: var(--surface-secondary); color: var(--text-primary); }
+.notification-filters span { font-size: 12px; }
+.notification-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 44px 20px; }
+.notification-empty > .iconify { font-size: 32px; color: var(--text-secondary); }
+.notification-empty h2 { margin: 0; font-size: 1.125rem; }
+.notification-empty p { max-width: 48ch; margin: 0; line-height: 1.65; color: var(--text-secondary); }
+.notification-message { padding: 12px 20px; margin: 0; color: var(--text-primary); background: var(--surface-secondary); }
+.notification-list { list-style: none; padding: 0; margin: 0; }
+.notification-list > li { padding: 22px; border-bottom: 1px solid var(--border-secondary); }
+.notification-list > li.is-unread { background: var(--surface-secondary); }
+.notification-list__content { overflow-wrap: anywhere; }
+.notification-list time { font-size: 12px; color: var(--text-secondary); }
+.notification-list__unread { font-size: 12px; font-weight: 700; margin-right: 10px; }
+.notification-list__link { display: block; text-decoration: none; color: inherit; border-radius: 4px; }
+.notification-list h2 { font-size: 1rem; line-height: 1.6; margin: 8px 0 4px; }
+.notification-list p { margin: 0; line-height: 1.65; color: var(--text-secondary); }
+.notification-list__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; font-size: 14px; }
+.notification-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 20px; font-size: 14px; }
+.notification-skeleton { padding: 22px; }
+.notification-skeleton > div { padding: 16px 0; }
+.notification-skeleton span { display: block; height: 14px; max-width: 80%; background: var(--surface-secondary); margin: 10px 0; border-radius: 5px; }
+.notification-skeleton span:first-child { max-width: 45%; }
+@media (max-width: 600px) {
+  .notifications-page { padding: 18px 12px 32px; }
+  .notifications-page__header { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .notifications-page__header h1 { font-size: 1.5rem; }
+  .notification-inbox__toolbar { padding: 12px; gap: 6px; }
+  .notification-filters button { padding: 8px 12px; }
+  .notification-list > li { padding: 18px; }
+  .notification-pagination { padding: 16px 10px; gap: 8px; }
 }
 </style>

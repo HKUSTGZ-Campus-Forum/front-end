@@ -100,6 +100,8 @@ const showRecruitmentEntry = computed(() => {
 const showGuide = computed(() => {
   if (process.server) return false
   if (route.path.includes('/courses/planner')) return false
+  // This page already contains accessible, inline Home Screen instructions.
+  if (/^\/(en\/)?notifications\/?$/.test(route.path)) return false
   if (localStorage.getItem('pwa-install-dismissed') === 'true') return false
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false
   if (sessionStorage.getItem('pwa-install-session-dismissed') === 'true') return false
