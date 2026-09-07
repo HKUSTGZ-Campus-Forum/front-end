@@ -3133,7 +3133,7 @@
     "runtimeRules": "适合这里的作品",
     "runtimeRulesText": "支持静态网页、Node.js 和 Python HTTP 应用。页面资源使用相对路径（Vite 可设 base: \"./\"），接口使用相对 fetch。动态服务监听 0.0.0.0:8080，持久文件写入 /data。沙箱不提供主站登录令牌、localStorage、Service Worker、弹出窗口、外部网页嵌入或 WebSocket 代理。",
     "resourceRules": "默认每个运行环境 0.5 CPU、256 MB 内存、256 MB 持久存储；构建最多 5 分钟、1 GB 磁盘，每小时最多 6 次。平台还有总容量限制，满载时构建可能失败或排队。不要运行挖矿、扫描或长时间后台任务。",
-    "privacyRules": "预览与公开版本使用分开的持久存储，测试数据不会自动转入公开版本。若你自行连接外部数据库，需要自行区分测试与正式数据。未审核作品仅作者和处理审核的管理员可见；公开页面使用稳定的 /makerspace/空间名 入口。",
+    "privacyRules": "预览与公开版本使用分开的持久存储，测试数据不会自动转入公开版本。作品运行时禁止主动连接外部数据库或服务；需要与外部后台交换数据时，须按资源、字段和方向分别申请管理员审批。未审核作品仅作者和处理审核的管理员可见；公开入口固定为 /makerspace/空间名。",
     "privateRepoHelp": "私有仓库的访问范围",
     "deployKeyHelp": "每个空间使用单独的仓库只读 Deploy Key。UniKorn 不需要你的个人 token，也不会获得其他仓库权限。构建命令在隔离环境运行，仓库私钥不会进入作品运行环境。",
     "githubGuide": "GitHub Deploy Key 官方说明",
