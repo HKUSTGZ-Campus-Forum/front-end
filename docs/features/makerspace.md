@@ -26,3 +26,7 @@ Repository private keys and saved environment values never return to the fronten
 Required gates: i18n checks, full Vitest suite and Nuxt production build. The navigation contract is in [sidebar tests](../../tests/home/keguang-sidebar-teamup.test.ts). Also inspect guest/owner states, creation, private denial, deployment/review states and logs at desktop/mobile widths in both languages and themes. A compiling interface is not runtime-hosting verification.
 
 Backend source/worker and school activation requirements are documented in its `docs/features/makerspace.md` and `deploy/makerspace/`. The enclosing workspace's `docs/makerspace.md` routes future external-repository onboarding. Local fixtures and a passing build do not prove a school deployment or a real private GitHub repository connection.
+
+## School deployment
+
+MakerSpace was deployed on 2026-09-07 with frontend `49bee6e792f043616745d307defd5887b82c3be2`, backend `96faa515b6a4f266d123d9f3a1ba43af1e425076` and control manifest `c1949dc5b8618e2e6269c895b202c0657bfae413`. Hosting and repository credentials are ready. The approved TeamUp catalog entry belongs to verified creator account 1256 and keeps its independent runtime at `/teamup/`. Production desktop/mobile-width UI, protected API responses, and existing product health were checked. Each new private repository still needs its own Deploy Key installation and real build. See the backend `deploy/makerspace/school-release-20260907.md` for deployment and backup evidence.
