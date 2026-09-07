@@ -58,6 +58,7 @@ export const useNotifications = () => {
   
   const notifications = ref<Notification[]>([])
   const unreadCount = useState<number>('notification-unread-count', () => 0)
+  const readRevision = useState<number>('notification-read-revision', () => 0)
   const { user } = useAuth()
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -75,6 +76,7 @@ export const useNotifications = () => {
     
     try {
       const owner = user.value?.id
+      const revision = readRevision.value
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
@@ -87,8 +89,10 @@ export const useNotifications = () => {
       if (response.ok) {
         if (owner !== user.value?.id) return data as NotificationResponse
         notifications.value = data.notifications
-        unreadCount.value = data.unread_count
-        void setNotificationBadge(unreadCount.value)
+        if (revision === readRevision.value) {
+          unreadCount.value = data.unread_count
+          void setNotificationBadge(unreadCount.value)
+        }
         return data
       } else {
         throw new Error(data.error || 'Failed to fetch notifications')
@@ -105,11 +109,12 @@ export const useNotifications = () => {
   const fetchUnreadCount = async () => {
     try {
       const owner = user.value?.id
+      const revision = readRevision.value
       const response = await fetchWithAuth('/api/notifications/unread-count')
       const data = await response.json()
       
       if (response.ok) {
-        if (owner === user.value?.id) {
+        if (owner === user.value?.id && revision === readRevision.value) {
           unreadCount.value = data.unread_count
           void setNotificationBadge(unreadCount.value)
         }
@@ -151,24 +156,22 @@ export const useNotifications = () => {
   
   // Mark all notifications as read
   const markAllAsRead = async () => {
+    const owner = user.value?.id
+    // Discard count requests started before or during this write.
+    readRevision.value++
     try {
-      const response = await fetchWithAuth('/api/notifications/mark-all-read', {
-        method: 'PUT'
-      })
-      
-      if (response.ok) {
-        // Update local state
-        notifications.value.forEach(n => n.read = true)
-        unreadCount.value = 0
-        void setNotificationBadge(unreadCount.value)
-        return true
-      } else {
+      const response = await fetchWithAuth('/api/notifications/mark-all-read', { method: 'PUT' })
+      if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || 'Failed to mark all notifications as read')
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Unknown error'
-      throw err
+      if (owner !== user.value?.id) return false
+      notifications.value.forEach(n => n.read = true)
+      unreadCount.value = 0
+      void setNotificationBadge(0)
+      return true
+    } finally {
+      readRevision.value++
     }
   }
   
