@@ -1,124 +1,105 @@
-import { useServiceWorkerUpdate } from "~/composables/useServiceWorkerUpdate";
+import { createFrontendEditGuard, createFrontendUpdater, hasActiveFrontendWork } from "../utils/frontendUpdate";
 
-const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
+const UPDATE_CHECK_INTERVAL = 60 * 1000;
+const UPDATE_CHECK_THROTTLE = 15 * 1000;
 
-export default defineNuxtPlugin(() => {
-  if (!("serviceWorker" in navigator)) {
-    return;
-  }
+export default defineNuxtPlugin((nuxtApp) => {
+  // HMR owns development updates. A production worker can leave localhost
+  // tabs with stale assets and interfere with debugging.
+  if (import.meta.dev) return;
 
-  const runtimeConfig = useRuntimeConfig();
-  const buildVersion = runtimeConfig.public.appBuildVersion || runtimeConfig.public.appVersion;
-  const serviceWorkerUrl = `/sw.js?v=${encodeURIComponent(buildVersion)}`;
-  const { setUpdateReady, clearUpdateState } = useServiceWorkerUpdate();
+  const config = useRuntimeConfig();
+  const buildVersion = config.public.appBuildVersion || config.public.appVersion;
+  const edits = createFrontendEditGuard();
+  const recordEdit = (event: Event) => edits.record(event.target);
+  document.addEventListener("input", recordEdit, true);
+  document.addEventListener("change", recordEdit, true);
+  document.addEventListener("drop", recordEdit, true);
+  document.addEventListener("submit", recordEdit, true);
+
+  const updater = createFrontendUpdater({
+    currentVersion: buildVersion,
+    // Same-origin frontend runtime health, not a backend API/authenticated request.
+    async readVersion() {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch("/health", {
+          cache: "no-store",
+          credentials: "same-origin",
+          signal: controller.signal,
+        });
+        if (!response.ok) return null;
+        return await response.json();
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    },
+    canReload: () => navigator.onLine && document.visibilityState === "visible" &&
+      !edits.hasEdits() && !hasActiveFrontendWork(document),
+    // Resolve storage lazily: access itself can throw in restricted browsers.
+    storage: {
+      getItem: key => window.sessionStorage.getItem(key),
+      setItem: (key, value) => window.sessionStorage.setItem(key, value),
+    },
+    reload: () => window.location.reload(),
+  });
 
   let registrationRef: ServiceWorkerRegistration | null = null;
-  let intervalId: number | null = null;
-  let hasReloaded = false;
-
-  const triggerUpdateCheck = () => {
-    registrationRef?.update().catch((error) => {
-      console.warn("[PWA] Failed to check for service worker updates:", error);
-    });
+  let lastCheck = -Infinity;
+  const check = () => {
+    if (!navigator.onLine || document.visibilityState !== "visible") return;
+    if (Date.now() - lastCheck < UPDATE_CHECK_THROTTLE) return;
+    lastCheck = Date.now();
+    void updater.check();
+    void registrationRef?.update().catch(() => { /* Retry on the next check. */ });
   };
 
-  const markUpdateReady = (registration: ServiceWorkerRegistration, version?: string | null) => {
-    if (!registration.waiting) {
-      return;
-    }
-
-    setUpdateReady(registration, version);
+  const activateWaiting = (registration: ServiceWorkerRegistration) => {
+    // Activation does not replace page code. Navigation is governed separately
+    // by /health and edit/reload guards, including in other updated tabs.
+    registration.waiting?.postMessage({ type: "SKIP_WAITING" });
   };
-
-  const watchInstallingWorker = (
-    registration: ServiceWorkerRegistration,
-    worker: ServiceWorker | null,
-  ) => {
-    if (!worker) {
-      return;
-    }
-
+  const watchWorker = (registration: ServiceWorkerRegistration) => {
+    const worker = registration.installing;
+    if (!worker) return;
     worker.addEventListener("statechange", () => {
-      if (worker.state === "installed" && navigator.serviceWorker.controller) {
-        markUpdateReady(registration, buildVersion);
-      }
+      if (worker.state === "installed") activateWaiting(registration);
     });
   };
 
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (hasReloaded) {
-      return;
-    }
-
-    hasReloaded = true;
-    clearUpdateState();
-    window.location.reload();
-  });
-
-  navigator.serviceWorker.addEventListener("message", async (event) => {
-    if (!event.data?.type) {
-      return;
-    }
-
-    if (event.data.type === "NEW_VERSION_READY") {
-      const registration =
-        registrationRef || (await navigator.serviceWorker.getRegistration("/"));
-
-      if (registration?.waiting) {
-        markUpdateReady(registration, event.data.version || buildVersion);
-      }
-    }
-
-    if (event.data.type === "SW_ACTIVATED") {
-      clearUpdateState();
-    }
-  });
-
-  window.addEventListener("focus", triggerUpdateCheck);
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      triggerUpdateCheck();
-    }
-  });
-
-  window.addEventListener("beforeunload", () => {
-    if (intervalId !== null) {
-      window.clearInterval(intervalId);
-    }
-  });
-
-  const registerServiceWorker = async () => {
+  async function start() {
+    check();
+    if (!("serviceWorker" in navigator)) return;
+    // Never reload merely because a controller changed (including first install).
+    navigator.serviceWorker.addEventListener("controllerchange", check);
     try {
-      const registration = await navigator.serviceWorker.register(serviceWorkerUrl, {
+      const registration = await navigator.serviceWorker.register("/sw.js", {
         scope: "/",
+        updateViaCache: "none",
       });
-
       registrationRef = registration;
-
-      if (registration.waiting) {
-        markUpdateReady(registration, buildVersion);
-      }
-
-      watchInstallingWorker(registration, registration.installing);
-
-      registration.addEventListener("updatefound", () => {
-        watchInstallingWorker(registration, registration.installing);
-      });
-
-      triggerUpdateCheck();
-      intervalId = window.setInterval(triggerUpdateCheck, UPDATE_CHECK_INTERVAL);
-    } catch (error) {
-      if (import.meta.dev) {
-        console.error("[PWA] Service worker registration failed:", error);
-      }
+      activateWaiting(registration);
+      watchWorker(registration);
+      registration.addEventListener("updatefound", () => watchWorker(registration));
+    } catch {
+      // Checks still work where service workers are unsupported/blocked.
     }
-  };
-
-  if (document.readyState === "complete") {
-    void registerServiceWorker();
-  } else {
-    window.addEventListener("load", () => {
-      void registerServiceWorker();
-    }, { once: true });
   }
+
+  window.addEventListener("focus", check);
+  window.addEventListener("online", check);
+  document.addEventListener("visibilitychange", check);
+  nuxtApp.hook("page:finish", check);
+  let interval: number | null = window.setInterval(check, UPDATE_CHECK_INTERVAL);
+  window.addEventListener("pagehide", () => {
+    if (interval !== null) window.clearInterval(interval);
+    interval = null;
+  });
+  window.addEventListener("pageshow", () => {
+    if (interval === null) interval = window.setInterval(check, UPDATE_CHECK_INTERVAL);
+    check();
+  });
+  if (document.readyState === "complete") void start();
+  else window.addEventListener("load", () => void start(), { once: true });
 });

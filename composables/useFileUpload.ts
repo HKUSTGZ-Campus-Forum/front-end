@@ -5,6 +5,7 @@ import { compressImage, COMPRESSION_PRESETS, type CompressionOptions, type Compr
 import { FileUploadError } from '~/utils/fileUploadError'
 import { mapUploadByteProgress, UPLOAD_PROGRESS_STAGE } from '~/utils/uploadProgress'
 import { UploadPreparationTimeoutError } from '~/utils/uploadPreparation'
+import { beginFrontendUpdateActivity } from '../utils/frontendUpdate'
 
 export const useCustomFileUpload = () => {
   const activeUploads = ref(0)
@@ -21,6 +22,7 @@ export const useCustomFileUpload = () => {
   }
 
   const uploadFile = async (options: UploadOptions) => {
+    const releaseUpdateProtection = beginFrontendUpdateActivity()
     const { file, fileType, entityType, entityId, maxUploadBytes, onProgress, onPhase, onSuccess, onError, enableCompression, compressionOptions, signal } = options
     let reportedProgress = 0
 
@@ -226,6 +228,7 @@ export const useCustomFileUpload = () => {
       throw uploadError
     } finally {
       activeUploads.value = Math.max(0, activeUploads.value - 1)
+      releaseUpdateProtection()
     }
   }
 

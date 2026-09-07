@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="enabled" class="agent-shell">
+    <div v-if="enabled" class="agent-shell" :data-auto-update-blocked="blocksAutomaticUpdate ? '' : undefined">
       <Transition name="agent-panel">
         <section
           v-if="open"
@@ -374,6 +374,10 @@ const sending = ref(false);
 const deletingId = ref<string | null>(null);
 const errorKey = ref("");
 const messageListRef = ref<HTMLElement | null>(null);
+
+// Closing this persistent panel hides its inputs but does not discard its draft.
+const blocksAutomaticUpdate = computed(() => sending.value || Boolean(draft.value.trim()) ||
+  (view.value === "settings" && JSON.stringify(providerDraft.value) !== JSON.stringify(providerSettings.value)));
 
 const customProviderReady = computed(() => isAgentProviderReady(providerSettings.value));
 const activeProvider = computed<AgentProviderPayload | null>(() =>

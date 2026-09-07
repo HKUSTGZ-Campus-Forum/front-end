@@ -8,7 +8,7 @@
 
 [Nuxt development proxy](../../nuxt.config.ts) sends `/api` to the configured base plus `/api`. Backend `run.py` strips that prefix locally; school Nginx strips it before Flask. Server-side production requests use the documented internal bridge. Changing one side requires checking all three: caller, proxy and registered Flask path.
 
-Exceptions to the helper are established auth internals (to avoid recursion), signed direct OSS uploads, and independent runtime health requests such as TeamUp. They do not authorize arbitrary direct calls to protected backend endpoints.
+Exceptions to the helper are established auth internals (to avoid recursion), signed direct OSS uploads, and independent runtime health requests such as TeamUp and the frontend's same-origin `/health` automatic-version check. They do not authorize arbitrary direct calls to protected backend endpoints.
 
 ## Login, restoration and onboarding
 
