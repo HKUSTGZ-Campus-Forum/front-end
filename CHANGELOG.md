@@ -12,6 +12,8 @@
 
 ### MakerSpace
 
+- Removed the duplicate overview card from the TeamUp workspace page so its title leads directly to the team browser; catalog/profile reactions remain available.
+
 - Owner-uploaded covers, linked creator names, persistent likes/favorites and profile work collections; MakerSpace now uses the same 22px white sidebar icon treatment as adjacent links.
 
 - Unified public and copied URLs under `/makerspace/<slug>`, including TeamUp and its nested pages. Creation shows the fixed school prefix; legacy TeamUp URLs redirect while preserving queries.
