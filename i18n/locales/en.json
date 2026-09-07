@@ -3199,7 +3199,8 @@
     },
     "form": {
       "slug": "Space URL slug",
-      "slugHint": "Use 3–40 lowercase letters, numbers or hyphens, starting with a letter. This cannot be changed later.",
+      "slugHint": "Enter only the final name; the URL prefix is fixed. Use 3–40 lowercase letters, digits or hyphens, starting with a letter. This cannot be changed later.",
+      "slugExample": "space-name",
       "titleZh": "Chinese title",
       "titleEn": "English title",
       "descriptionZh": "Chinese description",
