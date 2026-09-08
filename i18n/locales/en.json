@@ -3370,5 +3370,36 @@
       "approve": "Approve this direction",
       "reject": "Reject request"
     }
+  },
+  "profileVisibility": {
+    "pageTitle": "Account settings",
+    "pageDescription": "Manage your account and what appears on your profile.",
+    "title": "Profile visibility",
+    "description": "Choose what visitors can see on your profile. You can still view hidden sections. No works or posts are deleted.",
+    "loading": "Loading visibility settings…",
+    "loadError": "Could not load your settings. Please try again.",
+    "saveError": "Your settings were not saved. Please try again.",
+    "retry": "Reload settings",
+    "save": "Save settings",
+    "saving": "Saving…",
+    "saved": "Settings saved",
+    "viewProfile": "View my profile",
+    "onlyYou": "Only visible to you",
+    "publicFavorites": "Saved works",
+    "publicFavoritesHint": "Only published works this user has chosen to share are shown here.",
+    "fields": {
+      "favorite_spaces": {
+        "label": "Show saved works",
+        "hint": "Private by default. Enable this to let visitors see the published works you have saved."
+      },
+      "created_spaces": {
+        "label": "Show published works",
+        "hint": "Let visitors see your published creations. Private drafts remain visible only to you."
+      },
+      "recent_posts": {
+        "label": "Show recent posts",
+        "hint": "Show your 10 latest posts on your profile. Hiding this section does not remove posts from the forum."
+      }
+    }
   }
 }
