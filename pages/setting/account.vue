@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import { usePersistHomeStore } from "~/store/modules/home";
 import AccountSettings from "~/components/setting/AccountSettings.vue";
 
 definePageMeta({
@@ -9,20 +7,17 @@ definePageMeta({
   layout: 'keguang',
 });
 
-useHead({
-  title: '账号设置 - UniKorn Campus',
-  meta: [{ name: 'description', content: '管理您的账号信息、密码和邮箱验证' }]
-});
-
-const homeStore = usePersistHomeStore();
+const { t } = useI18n();
+useHead({ title: computed(() => t('profileVisibility.pageTitle')) });
 </script>
 
 <template>
   <div class="kg-settings-page">
     <div class="kg-settings-header">
-      <h1 class="kg-page-title">账号设置</h1>
-      <p class="kg-page-subtitle">管理您的账号信息、密码和邮箱验证</p>
+      <h1 class="kg-page-title">{{ t('profileVisibility.pageTitle') }}</h1>
+      <p class="kg-page-subtitle">{{ t('profileVisibility.pageDescription') }}</p>
     </div>
+    <SettingProfileVisibilitySettings />
     <div class="kg-card">
       <AccountSettings />
     </div>
@@ -52,7 +47,7 @@ const homeStore = usePersistHomeStore();
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
   border-radius: 16px;
-  box-shadow: var(--shadow-medium);
-  padding: 28px 32px;
+  padding: 20px;
+  margin-top: 24px;
 }
 </style>

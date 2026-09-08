@@ -3393,5 +3393,36 @@
       "approve": "批准此方向",
       "reject": "退回申请"
     }
+  },
+  "profileVisibility": {
+    "pageTitle": "账号设置",
+    "pageDescription": "管理账号信息与个人主页展示内容。",
+    "title": "个人主页展示",
+    "description": "选择访客可以在你的主页看到什么。关闭的内容仍可由你本人查看，不会删除作品或帖子。",
+    "loading": "正在加载展示设置…",
+    "loadError": "暂时无法加载设置，请重试。",
+    "saveError": "保存失败，设置尚未更新，请重试。",
+    "retry": "重新加载",
+    "save": "保存设置",
+    "saving": "正在保存…",
+    "saved": "设置已保存",
+    "viewProfile": "查看我的主页",
+    "onlyYou": "仅自己可见",
+    "publicFavorites": "收藏的作品",
+    "publicFavoritesHint": "这里只展示该用户选择公开收藏的已发布作品。",
+    "fields": {
+      "favorite_spaces": {
+        "label": "展示收藏的作品",
+        "hint": "默认仅自己可见。开启后，其他人可以看到你收藏的已公开作品。"
+      },
+      "created_spaces": {
+        "label": "展示已发布的作品",
+        "hint": "让访客在主页看到你创作的已公开作品，私有草稿始终仅自己可见。"
+      },
+      "recent_posts": {
+        "label": "展示最近发布的帖子",
+        "hint": "在主页展示最近 10 篇帖子。关闭后，帖子仍可在论坛中正常访问。"
+      }
+    }
   }
 }

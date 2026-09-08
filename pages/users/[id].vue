@@ -6,16 +6,19 @@ import { useApi } from "~/composables/useApi";
 import UserAvatar from "~/components/user/UserAvatar.vue";
 import AvatarUpload from "~/components/user/AvatarUpload.vue";
 import IdentityBadge from "~/components/identity/IdentityBadge.vue";
+import { parseProfileVisibility, type ProfileVisibility } from "~/types/profileVisibility";
 import type { UserIdentity } from "~/types/identity";
 
 definePageMeta({ layout: 'keguang', key: route => String(route.params.id) });
 
-const { isLoggedIn, user, updateLocalUserData } = useAuth();
+const { isLoggedIn, authInitialized, user, updateLocalUserData } = useAuth();
 const { fetchWithAuth, fetchPublic, getApiUrl } = useApi();
 const route = useRoute();
 const { t, locale } = useI18n();
+const { getLocalePath } = useAppLocale();
 
 interface UserInfo {
+  profile_visibility?: ProfileVisibility;
   id: number; username: string; email?: string; avatar?: string;
   profile_picture_url?: string; bio?: string; createdAt?: string;
   created_at?: string; role_name?: string; identities?: UserIdentity[];
@@ -35,7 +38,7 @@ interface UserPost {
 const userInfo = ref<UserInfo>({ id: 0, username: "" });
 const userStats = ref<UserStats>({ postCount: 0, commentCount: 0, likesReceived: 0, viewCount: 0, totalScore: 0 });
 const userPosts = ref<UserPost[]>([]);
-const isLoading = ref(false);
+const isLoading = ref(true);
 const postsLoading = ref(false);
 const error = ref("");
 const postsError = ref("");
@@ -49,9 +52,15 @@ const isSavingUsername = ref(false);
 const userId = route.params.id;
 
 const isOwnProfile = computed(() => isLoggedIn.value && user.value && String(user.value.id) === String(userId));
+const visibility = computed(() => parseProfileVisibility(userInfo.value.profile_visibility));
+const showPosts = computed(() => isOwnProfile.value || visibility.value.recent_posts);
+let profileSequence = 0;
 const approvedIdentities = computed(() => userInfo.value.identities?.filter(identity => identity.status === 'approved') || []);
 
 const fetchUserInfo = async () => {
+  const sequence = ++profileSequence;
+  userInfo.value = { id: 0, username: "" };
+  userPosts.value = [];
   try {
     isLoading.value = true; error.value = "";
     let response: Response;
@@ -63,15 +72,15 @@ const fetchUserInfo = async () => {
       ]);
     } else {
       [response, statsResponse] = await Promise.all([
-        fetch(getApiUrl(`/api/users/public/${userId}`)),
-        fetch(getApiUrl(`/api/users/${userId}/stats`))
+        fetchPublic(getApiUrl(`/api/users/public/${userId}`)),
+        fetchPublic(getApiUrl(`/api/users/${userId}/stats`))
       ]);
     }
     if (!response.ok) {
       if (response.status === 404) throw new Error(t("userProfile.errors.userNotFound"));
       else if (response.status === 401) {
         if (isLoggedIn.value) {
-          const publicResponse = await fetch(getApiUrl(`/api/users/public/${userId}`));
+          const publicResponse = await fetchPublic(getApiUrl(`/api/users/public/${userId}`));
           if (publicResponse.ok) { response = publicResponse; }
           else throw new Error(t("userProfile.errors.loginRequired"));
         } else throw new Error(t("userProfile.errors.loginRequired"));
@@ -80,8 +89,10 @@ const fetchUserInfo = async () => {
     }
     const data = await response.json();
     const statsData = statsResponse.ok ? await statsResponse.json() : null;
+    if (sequence !== profileSequence) return;
     userInfo.value = {
       id: data.id, username: data.username, email: data.email,
+      profile_visibility: parseProfileVisibility(data.profile_visibility),
       avatar: data.profile_picture_url, profile_picture_url: data.profile_picture_url,
       bio: data.bio, createdAt: data.created_at, created_at: data.created_at,
       role_name: data.role_name, identities: data.identities || [],
@@ -93,9 +104,11 @@ const fetchUserInfo = async () => {
         totalScore: statsData.total_score || 0,
       };
     }
+    if (showPosts.value) await fetchUserPosts(sequence);
   } catch (err: any) {
+    if (sequence !== profileSequence) return;
     error.value = err.message || t("userProfile.errors.loadUserFailed");
-  } finally { isLoading.value = false; }
+  } finally { if (sequence === profileSequence) isLoading.value = false; }
 };
 
 const retry = () => { fetchUserInfo(); };
@@ -118,16 +131,17 @@ const buildPostExcerpt = (content?: string) => {
   return normalized.length > 90 ? `${normalized.slice(0, 90)}...` : normalized;
 };
 
-const fetchUserPosts = async () => {
+const fetchUserPosts = async (sequence: number) => {
   if (!userId || userId === "0") return;
 
   try {
     postsLoading.value = true;
     postsError.value = "";
 
-    const response = await fetchPublic(
-      getApiUrl(`/api/posts?user_id=${userId}&limit=10&sort_by=created_at&sort_order=desc`)
+    const response = await (isLoggedIn.value ? fetchWithAuth : fetchPublic)(
+      getApiUrl(`/api/users/${userId}/profile-posts`)
     );
+    if (sequence !== profileSequence) return;
 
     if (!response.ok) {
       throw new Error(t("userProfile.errors.loadPostsFailedWithStatus", { status: response.status }));
@@ -135,6 +149,7 @@ const fetchUserPosts = async () => {
 
     const data = await response.json();
     const posts = Array.isArray(data) ? data : (data.posts || []);
+    if (sequence !== profileSequence) return;
     userPosts.value = posts.map((post: any) => ({
       id: post.id,
       title: post.title || t("userProfile.recentPosts.untitled"),
@@ -144,10 +159,11 @@ const fetchUserPosts = async () => {
       view_count: post.view_count || 0,
     }));
   } catch (err: any) {
+    if (sequence !== profileSequence) return;
     postsError.value = err.message || t("userProfile.errors.loadPostsFailed");
     userPosts.value = [];
   } finally {
-    postsLoading.value = false;
+    if (sequence === profileSequence) postsLoading.value = false;
   }
 };
 
@@ -196,13 +212,11 @@ const saveUsername = async () => {
   finally { isSavingUsername.value = false; }
 };
 
-onMounted(async () => {
-  if (userId && userId !== "0") {
-    await Promise.all([fetchUserInfo(), fetchUserPosts()]);
-  } else {
-    error.value = t("userProfile.states.invalidUserId");
-  }
+onMounted(() => { if (authInitialized.value) fetchUserInfo(); });
+watch([authInitialized, () => user.value?.id], () => {
+  if (authInitialized.value) fetchUserInfo();
 });
+onBeforeUnmount(() => { profileSequence++; });
 
 useHead({
   title: computed(() => t("userProfile.pageTitle", { username: userInfo.value.username || t("common.user") })),
@@ -294,10 +308,11 @@ useHead({
         </div>
       </div>
 
-      <MakerspaceProfileSpaces v-if="userInfo.id" :user-id="userInfo.id" />
+      <MakerspaceProfileSpaces v-if="userInfo.id" :user-id="userInfo.id" :visibility="visibility" />
 
-      <div class="kg-card kg-posts-card">
+      <div v-if="showPosts" class="kg-card kg-posts-card">
         <h2 class="kg-section-title">{{ t("userProfile.recentPosts.title") }}</h2>
+        <p v-if="isOwnProfile && !visibility.recent_posts">{{ t("profileVisibility.onlyYou") }}</p>
 
         <div v-if="postsLoading" class="kg-posts-state">{{ t("userProfile.recentPosts.loading") }}</div>
         <div v-else-if="postsError" class="kg-posts-state kg-posts-state--error">{{ postsError }}</div>
@@ -307,7 +322,7 @@ useHead({
           <NuxtLink
             v-for="post in userPosts"
             :key="post.id"
-            :to="`/forum/posts/${post.id}`"
+            :to="getLocalePath(`/forum/posts/${post.id}`)"
             class="kg-post-item"
           >
             <p class="kg-post-title">{{ post.title }}</p>

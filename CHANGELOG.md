@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Added bilingual account settings for profile visibility of saved works, published works and recent posts; favorites stay private by default, owners retain access, and the legacy connected-apps panel is removed.
+
 ### MakerSpace
 
 - Added bilingual directional data-exchange requests, independent admin approval, one-time backend credentials, revocation and metadata-only audit. Hosted frames receive display preferences and a fixed login bridge without host tokens. Production activation remains gated by the reviewed migration and closed runtime.
