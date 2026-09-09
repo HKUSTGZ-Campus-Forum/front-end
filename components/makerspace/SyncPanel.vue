@@ -15,8 +15,7 @@ const loading = ref(true), busy = ref(false), error = ref(''), notice = ref(''),
 const creating = ref(false), secret = ref(''), secretGrant = ref('')
 const notes = reactive<Record<string, string>>({}), confirmations = reactive<Record<string, boolean>>({})
 const events = ref<Audit[]>([]), auditGrant = ref('')
-const fields = ref([{ name: '', type: 'string' }])
-const form = reactive({ direction: 'export', resource: '', client_name: '', external_origin: '', purpose: '', record_scope: '', retention_days: 7, deletion_policy: '', conflict_policy: '', expires_at: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) })
+const requestBusy = ref(false)
 let generation = 0
 async function load() {
   const current = ++generation
@@ -34,14 +33,7 @@ async function execute(operation: () => Promise<void>) {
   catch (cause) { error.value = errorMessage(cause) }
   finally { busy.value = false }
 }
-async function submit() {
-  await execute(async () => {
-    const names = fields.value.map(field => field.name.trim())
-    if (new Set(names).size !== names.length || names.some(name => !/^[a-z][a-z0-9_]{0,47}$/.test(name))) throw new Error('sync_invalid_fields')
-    await request(`/${props.slug}/sync`, 'POST', { ...form, fields: Object.fromEntries(fields.value.map((field, index) => [names[index], field.type])), expires_at: new Date(`${form.expires_at}T23:59:00`).toISOString() })
-    creating.value = false; notice.value = t('makerspace.sync.submitted'); await load()
-  })
-}
+async function submitted() { creating.value = false; notice.value = t('makerspace.sync.submitted'); await load() }
 async function review(grant: Grant, decision: string) {
   await execute(async () => {
     await request(`/admin/sync/${grant.id}/review`, 'POST', { decision, policy_digest: grant.policy_digest, note: notes[grant.id] })
@@ -74,35 +66,13 @@ onBeforeUnmount(() => { generation++; secret.value = '' })
 
 <template>
   <section class="maker-card maker-sync" aria-labelledby="sync-heading">
-    <header class="maker-header"><div><h2 id="sync-heading">{{ t('makerspace.sync.title') }}</h2><p>{{ t('makerspace.sync.intro') }}</p></div><button v-if="!admin && hosted" class="maker-button maker-button--primary" :disabled="busy || loading" @click="creating = !creating">{{ t(creating ? 'makerspace.sync.cancel' : 'makerspace.sync.request') }}</button></header>
+    <header class="maker-header"><div><h2 id="sync-heading">{{ t('makerspace.sync.title') }}</h2><p>{{ t('makerspace.sync.intro') }}</p></div><button v-if="!admin && hosted" class="maker-button maker-button--primary" :disabled="busy || requestBusy || loading" @click="creating = !creating">{{ t(creating ? 'makerspace.sync.cancel' : 'makerspace.sync.request') }}</button></header>
     <p v-if="!hosted && !admin" class="maker-notice">{{ t('makerspace.sync.migrationRequired') }}</p>
     <p v-else-if="!loading && !ready" class="maker-notice">{{ t('makerspace.sync.runtimeUnavailable') }}</p>
     <p class="maker-meta">{{ t('makerspace.sync.boundary') }}</p>
     <div v-if="error" class="maker-notice" role="alert">{{ error }} <button class="maker-button" :disabled="busy" @click="load">{{ t('makerspace.retry') }}</button></div>
     <p v-if="notice" class="maker-notice" role="status">{{ notice }}</p>
-    <form v-if="creating" class="maker-sync-form" @submit.prevent="submit">
-      <fieldset :disabled="busy"><legend>{{ t('makerspace.sync.contract') }}</legend>
-        <div class="maker-fields">
-          <label>{{ t('makerspace.sync.direction') }}<select v-model="form.direction"><option value="export">{{ t('makerspace.sync.export') }}</option><option value="import">{{ t('makerspace.sync.import') }}</option></select></label>
-          <label>{{ t('makerspace.sync.clientName') }}<input v-model="form.client_name" required maxlength="100" /></label>
-          <label>{{ t('makerspace.sync.externalOrigin') }}<input v-model="form.external_origin" type="url" required placeholder="https://example.org" maxlength="253" /></label>
-          <label>{{ t('makerspace.sync.resource') }}<input v-model="form.resource" pattern="[a-z][a-z0-9_]{0,47}" required maxlength="48" /></label>
-          <label>{{ t('makerspace.sync.expiry') }}<input v-model="form.expires_at" type="date" required /></label>
-          <label>{{ t('makerspace.sync.retention') }}<input v-model.number="form.retention_days" type="number" min="1" max="90" required /></label>
-        </div>
-        <label>{{ t('makerspace.sync.purpose') }}<textarea v-model="form.purpose" required maxlength="2000" rows="2" /></label>
-        <label>{{ t('makerspace.sync.scope') }}<textarea v-model="form.record_scope" required maxlength="1000" rows="2" /></label>
-        <label>{{ t('makerspace.sync.conflict') }}<textarea v-model="form.conflict_policy" required maxlength="1000" rows="2" /></label>
-        <label>{{ t('makerspace.sync.deletion') }}<textarea v-model="form.deletion_policy" required maxlength="2000" rows="2" /></label>
-        <h3>{{ t('makerspace.sync.fields') }}</h3><p>{{ t('makerspace.sync.fieldsHint') }}</p>
-        <div v-for="(field, index) in fields" :key="index" class="maker-sync-field">
-          <label>{{ t('makerspace.sync.fieldName') }}<input v-model="field.name" pattern="[a-z][a-z0-9_]{0,47}" required maxlength="48" /></label>
-          <label>{{ t('makerspace.sync.fieldType') }}<select v-model="field.type"><option v-for="kind in ['string', 'integer', 'number', 'boolean']" :key="kind" :value="kind">{{ t(`makerspace.sync.types.${kind}`) }}</option></select></label>
-          <button type="button" class="maker-button" :disabled="fields.length === 1" @click="fields.splice(index, 1)">{{ t('makerspace.remove') }}</button>
-        </div>
-        <div class="maker-actions"><button type="button" class="maker-button" :disabled="fields.length >= 24" @click="fields.push({ name: '', type: 'string' })">{{ t('makerspace.sync.addField') }}</button><button class="maker-button maker-button--primary">{{ t('makerspace.sync.submit') }}</button></div>
-      </fieldset>
-    </form>
+    <MakerspaceSyncRequestForm v-if="creating && slug" :slug="slug" :disabled="busy" @submitted="submitted" @busy="requestBusy = $event" />
     <p v-if="loading" role="status">{{ t('makerspace.loading') }}</p>
     <p v-else-if="!error && !grants.length">{{ t('makerspace.sync.empty') }}</p>
     <article v-for="grant in grants" :key="grant.id" class="maker-sync-grant">

@@ -10,6 +10,9 @@
 
 ## [Unreleased]
 
+- MakerSpace sync requests now load published resources and offer field selection, with automatic scope/type binding, protocol guidance and stale-version recovery in Chinese and English.
+
+
 - Added bilingual account settings for profile visibility of saved works, published works and recent posts; favorites stay private by default, owners retain access, and the legacy connected-apps panel is removed.
 
 ### MakerSpace
