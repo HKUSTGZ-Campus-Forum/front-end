@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- MakerSpace: provide bilingual per-grant integration guides with full endpoints, scoped examples, pagination/error recovery and safe copy-for-AI/manual-copy controls.
+
 - MakerSpace: open published works directly from the catalog; reserve preview labels for author/reviewer sessions, with loading, retry and session-expiry recovery.
 
 

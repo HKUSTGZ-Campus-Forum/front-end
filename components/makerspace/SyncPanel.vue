@@ -100,6 +100,7 @@ onBeforeUnmount(() => { generation++; secret.value = '' })
         <div class="maker-actions"><button v-if="!admin && grant.status === 'approved'" class="maker-button" :disabled="busy || (grant.credential_issued && !confirmations[grant.id])" @click="credential(grant)">{{ t(grant.credential_issued ? 'makerspace.sync.rotate' : 'makerspace.sync.issue') }}</button><button class="maker-button" :disabled="busy || !confirmations[grant.id]" @click="revoke(grant)">{{ t('makerspace.sync.revoke') }}</button></div>
       </template>
       <div v-if="secret && secretGrant === grant.id" class="maker-notice"><p>{{ t('makerspace.sync.secretWarning') }}</p><label>{{ t('makerspace.sync.credential') }}<textarea :value="secret" readonly autocomplete="off" spellcheck="false" rows="2" /></label><div class="maker-actions"><button class="maker-button" @click="copySecret">{{ t('makerspace.copy') }}</button><button class="maker-button" @click="secret = ''">{{ t('makerspace.hideSecret') }}</button></div></div>
+      <MakerspaceSyncIntegrationGuide v-if="!admin" :grant="grant" />
       <div class="maker-actions"><button class="maker-button" :disabled="busy" @click="audit(grant)">{{ t('makerspace.sync.audit') }}</button></div>
       <ol v-if="auditGrant === grant.id" class="maker-sync-events"><li v-for="event in events" :key="event.id"><time>{{ new Date(event.created_at).toLocaleString() }}</time> · {{ t(`makerspace.sync.events.${event.action}`) }} · {{ t('makerspace.sync.recordCount', { count: event.record_count }) }}</li></ol>
     </article>
