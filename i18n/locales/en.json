@@ -3271,7 +3271,8 @@
       "sync_direction_denied": "This credential does not authorize that direction.",
       "sync_adapter_rejected": "The application rejected the exchange. Check its business rules and adapter.",
       "sync_response_too_large": "The exchange response exceeds its size limit.",
-      "sync_invalid_response": "The application adapter returned an invalid response."
+      "sync_invalid_response": "The application adapter returned an invalid response.",
+      "sync_catalog_changed": "The published version or sync declaration changed. Reload resources and select fields again before submitting."
     },
     "steps": {
       "prepare": {
@@ -3391,7 +3392,25 @@
       "cancel": "Close request form",
       "reviewNote": "Review note (required)",
       "approve": "Approve this direction",
-      "reject": "Reject request"
+      "reject": "Reject request",
+      "catalogIntro": "Available data comes from your published work’s sync declaration. Choose a resource and fields, then describe how you will use them.",
+      "catalogLoading": "Loading resources and fields from the published version…",
+      "reloadCatalog": "Reload resources",
+      "catalogEmpty": "This version declares no sync resources",
+      "catalogEmptyHint": "Implement the sync declaration in your repository, build and publish a reviewed version, then return here to apply.",
+      "chooseData": "Choose data to exchange",
+      "chooseResource": "Choose a resource",
+      "scopeFromCode": "This scope comes from the work’s declaration and is bound to the request unchanged. Confirm which records it includes.",
+      "selectFieldsHint": "Select only the fields needed for this purpose. Names and types are supplied by the work.",
+      "selectedFields": "{count} fields selected",
+      "protocolFields": "Which protocol fields need no selection?",
+      "exportMetadata": "Exports include record id, update version, deletion flag deleted, and the response-level next_cursor. These are protocol metadata, separate from business fields. Record IDs are scoped to the work and resource.",
+      "importMetadata": "For imports, the external backend supplies record_id, event_id, expected_version and deleted for deletions. These protocol fields do not need business-field approval.",
+      "missingFieldHint": "Need another resource or field? Update your repository’s sync declaration and publish a reviewed version to make it available here.",
+      "describeUse": "Describe use and data handling",
+      "oneDirectionHint": "This request covers only the selected direction. Submit a separate request for the reverse direction to exchange data both ways.",
+      "submitting": "Submitting request…",
+      "catalogVersion": "View the published source for these resources"
     }
   },
   "profileVisibility": {

@@ -3271,7 +3271,8 @@
       "sync_direction_denied": "此凭据未获准用于该同步方向。",
       "sync_adapter_rejected": "作品拒绝本次交换，请检查业务规则和适配器。",
       "sync_response_too_large": "同步响应超出大小限制。",
-      "sync_invalid_response": "作品适配器返回了不符合契约的数据。"
+      "sync_invalid_response": "作品适配器返回了不符合契约的数据。",
+      "sync_catalog_changed": "已发布版本或同步声明已变化，请重新读取资源并选择字段后提交。"
     },
     "steps": {
       "prepare": {
@@ -3391,7 +3392,25 @@
       "cancel": "收起申请",
       "reviewNote": "审核说明（必填）",
       "approve": "批准此方向",
-      "reject": "退回申请"
+      "reject": "退回申请",
+      "catalogIntro": "可申请的数据来自当前已发布作品的同步声明。选择资源和字段后，提交本次使用申请。",
+      "catalogLoading": "正在读取已发布版本的资源和字段…",
+      "reloadCatalog": "重新读取资源",
+      "catalogEmpty": "此版本尚未声明同步资源",
+      "catalogEmptyHint": "请先在自己的作品仓库实现同步声明，完成新版本构建与公开审核，再回到这里申请。",
+      "chooseData": "选择要交换的数据",
+      "chooseResource": "请选择资源",
+      "scopeFromCode": "此范围由作品声明，申请会按原样绑定。请确认它包含哪些记录。",
+      "selectFieldsHint": "只勾选本次用途需要的字段。字段名称和类型由作品提供。",
+      "selectedFields": "已选择 {count} 个字段",
+      "protocolFields": "哪些协议信息不需要申请？",
+      "exportMetadata": "导出响应自动包含记录标识 id、更新版本 version、删除标记 deleted，以及外层的增量游标 next_cursor。它们不占用业务字段选项；记录标识在对应作品和资源内使用。",
+      "importMetadata": "导入时，外部后台按协议提供 record_id、event_id、expected_version，以及删除操作的 deleted。这些信息不需要作为业务字段申请。",
+      "missingFieldHint": "缺少资源或字段？在自己的仓库修改同步声明，发布审核通过的新版本后，这里会读取新选项。",
+      "describeUse": "说明用途与数据处理方式",
+      "oneDirectionHint": "本申请仅覆盖所选方向。需要双向同步时，请再提交反方向申请。",
+      "submitting": "正在提交申请…",
+      "catalogVersion": "查看资源对应的已发布版本"
     }
   },
   "profileVisibility": {
