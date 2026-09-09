@@ -10,6 +10,9 @@
 
 ## [Unreleased]
 
+- MakerSpace: open published works directly from the catalog; reserve preview labels for author/reviewer sessions, with loading, retry and session-expiry recovery.
+
+
 - MakerSpace sync requests now load published resources and offer field selection, with automatic scope/type binding, protocol guidance and stale-version recovery in Chinese and English.
 
 

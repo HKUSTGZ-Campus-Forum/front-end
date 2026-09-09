@@ -21,7 +21,10 @@ const draft = ref<MakerDraft>(emptyMakerDraft())
 const credential = ref<{ public_key: string; webhook_secret: string; webhook_path: string } | null>(null)
 const rotateConfirmed = ref(false)
 const archiveConfirmed = ref(false)
-const frame = ref('')
+const runtime = useMakerRuntime(request)
+const { frame, launching, frameLoading, launchError, expired, slow, previewId } = runtime
+const publicWork = computed(() => space.value?.kind === 'hosted' && space.value.status === 'published')
+let autoLaunchAttempted = false
 const frameElement = ref<HTMLIFrameElement | null>(null)
 function sendFrameContext() {
   // Public display preferences only; opaque-origin frames require '*'.
@@ -35,7 +38,6 @@ function onFrameMessage(event: MessageEvent) {
     navigateTo(getLocalePath('/login') + '?redirect=' + encodeURIComponent(getLocalePath(`/makerspace/${space.value?.slug || ''}`)))
   }
 }
-const frameLoading = ref(false)
 const environmentName = ref('')
 const environmentValue = ref('')
 let timer: ReturnType<typeof setInterval> | undefined
@@ -49,6 +51,10 @@ async function load() {
     if (sequence !== loadSequence) return
     space.value = result
     if (!editing.value) draft.value = structuredClone(result)
+    if (publicWork.value && !autoLaunchAttempted) {
+      autoLaunchAttempted = true
+      void launch()
+    }
   } catch (cause) { if (sequence === loadSequence) error.value = errorMessage(cause) }
   finally { if (sequence === loadSequence) loading.value = false }
 }
@@ -75,13 +81,12 @@ async function copy(value: string) {
 }
 function copyLink() { if (space.value) copy(makerSpaceUrl(space.value.slug)) }
 async function launch(item?: MakerDeployment) {
-  busy.value = true; error.value = ''; frame.value = ''
-  try {
-    const result = await request<{ url: string }>(`/${slug.value}/launch`, 'POST', item ? { deployment_id: item.id } : {})
-    if (!/^\/api\/makerspace\/run\/[a-f0-9]{48}\/$/.test(result.url)) throw new Error('request_failed')
-    frameLoading.value = true; frame.value = result.url
-  } catch (cause) { error.value = errorMessage(cause) }
-  finally { busy.value = false }
+  await runtime.launch(slug.value, item?.id)
+}
+function retryLaunch() { void runtime.launch(slug.value, previewId.value || undefined) }
+function closePreview() {
+  runtime.reset()
+  if (publicWork.value) void launch()
 }
 async function saveEnvironment() {
   await action('/environment', 'PUT', { values: { [environmentName.value]: environmentValue.value } })
@@ -103,12 +108,12 @@ onMounted(async () => {
   timer = setInterval(() => { if (locked.value && !busy.value && !editing.value) load() }, 10000)
 })
 watch([authInitialized, isLoggedIn, slug], () => {
-  loadSequence++; frame.value = ''; space.value = null; credential.value = null
+  loadSequence++; runtime.reset(); autoLaunchAttempted = false; space.value = null; credential.value = null
   editing.value = false; loading.value = true; notice.value = ''; error.value = ''
   rotateConfirmed.value = false; archiveConfirmed.value = false
   if (authInitialized.value) load()
 })
-onBeforeUnmount(() => { window.removeEventListener('message', onFrameMessage); if (timer) clearInterval(timer) })
+onBeforeUnmount(() => { loadSequence++; runtime.reset(); window.removeEventListener('message', onFrameMessage); if (timer) clearInterval(timer) })
 useHead({ title: computed(() => space.value ? title(space.value) : t('makerspace.title')) })
 </script>
 
@@ -119,11 +124,25 @@ useHead({ title: computed(() => space.value ? title(space.value) : t('makerspace
     <div v-if="notice" class="maker-notice" role="status">{{ notice }}</div>
     <div v-if="loading" class="maker-card" role="status">{{ t('makerspace.loading') }}</div>
     <template v-if="space">
-      <section v-if="user?.role_name === 'admin' && !space.is_owner && space.deployments?.length" class="maker-card"><h2>{{ t('makerspace.review') }}</h2><div v-for="item in space.deployments.filter(value => value.review_status === 'pending')" :key="item.id" class="maker-actions"><code>{{ item.source_sha }}</code><button class="maker-button" :disabled="busy" @click="launch(item)">{{ t('makerspace.preview') }}</button><NuxtLink class="maker-button" :to="getLocalePath('/makerspace/review')">{{ t('makerspace.review') }}</NuxtLink></div></section>
-      <section v-if="!isTeamUp" class="maker-card maker-overview"><MakerspaceSpaceCover v-if="space.cover_url" :url="space.cover_url" :title="title(space)" :private="space.status !== 'published'" /><div class="maker-overview-body"><div class="maker-card-top"><span class="maker-badge">{{ t(`makerspace.states.${space.status}`) }}</span><span class="maker-meta">{{ t(`makerspace.categories.${space.category}`) }}</span></div><p>{{ description(space) }}</p><div class="maker-actions"><button v-if="space.status === 'published' && !isTeamUp" class="maker-button maker-button--primary" :disabled="busy" @click="launch()">{{ t('makerspace.open') }}<Icon name="lucide:arrow-up-right" /></button><button v-if="space.is_owner && space.kind === 'hosted'" class="maker-button" :disabled="busy || locked" @click="editing = !editing">{{ t(editing ? 'makerspace.cancel' : 'makerspace.edit') }}</button><button class="maker-button" @click="copyLink">{{ t('makerspace.copyLink') }}</button><MakerspaceSpaceActions :space="space" @updated="space = $event" /></div></div></section>
+      <section v-if="user?.role_name === 'admin' && !space.is_owner && space.deployments?.length" class="maker-card"><h2>{{ t('makerspace.review') }}</h2><div v-for="item in space.deployments.filter(value => value.review_status === 'pending')" :key="item.id" class="maker-actions"><code>{{ item.source_sha }}</code><button class="maker-button" :disabled="busy || launching" @click="launch(item)">{{ t('makerspace.preview') }}</button><NuxtLink class="maker-button" :to="getLocalePath('/makerspace/review')">{{ t('makerspace.review') }}</NuxtLink></div></section>
+      <component :is="publicWork ? 'details' : 'section'" v-if="!isTeamUp" class="maker-card maker-overview" :class="{ 'maker-overview--collapsible': publicWork }"><summary v-if="publicWork">{{ t('makerspace.runtime.about') }}</summary><MakerspaceSpaceCover v-if="space.cover_url" :url="space.cover_url" :title="title(space)" :private="space.status !== 'published'" /><div class="maker-overview-body"><div class="maker-card-top"><span class="maker-badge">{{ t(`makerspace.states.${space.status}`) }}</span><span class="maker-meta">{{ t(`makerspace.categories.${space.category}`) }}</span></div><p>{{ description(space) }}</p><div class="maker-actions"><button v-if="previewId && publicWork" class="maker-button maker-button--primary" :disabled="launching" @click="closePreview">{{ t('makerspace.runtime.returnPublic') }}</button><button v-if="space.is_owner && space.kind === 'hosted'" class="maker-button" :disabled="busy || locked" @click="editing = !editing">{{ t(editing ? 'makerspace.cancel' : 'makerspace.edit') }}</button><button class="maker-button" @click="copyLink">{{ t('makerspace.copyLink') }}</button><MakerspaceSpaceActions :space="space" @updated="space = $event" /></div></div></component>
       <MakerspaceCoverEditor v-if="space.is_owner" :space="space" @updated="url => { if (space) space.cover_url = url }" />
       <TeamUpHostPage v-if="isTeamUp" />
-      <section v-if="frame" class="maker-card"><div class="maker-header"><div><h2>{{ t('makerspace.running') }}</h2><p>{{ t('makerspace.sessionHint') }}</p></div><button class="maker-button" @click="frame = ''">{{ t('makerspace.close') }}</button></div><p v-if="frameLoading" role="status">{{ t('makerspace.loading') }}</p><iframe ref="frameElement" class="maker-frame" :src="frame" :title="title(space)" sandbox="allow-scripts allow-forms allow-downloads" referrerpolicy="no-referrer" @load="frameLoading = false; sendFrameContext()" /></section>
+      <section v-if="publicWork || previewId" class="maker-runtime" :aria-label="title(space)">
+        <div v-if="previewId" class="maker-notice maker-preview-header">
+          <div><strong>{{ t('makerspace.runtime.privatePreview') }}</strong><p>{{ t('makerspace.runtime.previewHint') }}</p></div>
+          <button class="maker-button" :disabled="launching" @click="closePreview">{{ t('makerspace.close') }}</button>
+        </div>
+        <div v-if="launchError" class="maker-notice" role="alert">
+          <p>{{ errorMessage(launchError) }}</p><button class="maker-button maker-button--primary" @click="retryLaunch">{{ t('makerspace.retry') }}</button>
+        </div>
+        <div v-else-if="expired || slow" class="maker-notice" role="status">
+          <p>{{ t(expired ? 'makerspace.runtime.expired' : 'makerspace.runtime.slow') }}</p>
+          <button class="maker-button" @click="retryLaunch">{{ t(previewId ? 'makerspace.runtime.reopenPreview' : 'makerspace.runtime.reopen') }}</button>
+        </div>
+        <p v-if="launching || frameLoading" class="maker-runtime-loading" role="status">{{ t('makerspace.runtime.loading') }}</p>
+        <iframe v-if="frame" ref="frameElement" class="maker-frame" :src="frame" :title="title(space)" sandbox="allow-scripts allow-forms allow-downloads" referrerpolicy="no-referrer" @load="runtime.loaded(); sendFrameContext()" />
+      </section>
       <MakerspaceSyncPanel v-if="space.is_owner" :slug="space.slug" :hosted="space.kind === 'hosted'" />
       <div v-if="space.is_owner && space.kind === 'external'" class="maker-notice">{{ t('makerspace.externalOwner') }} <NuxtLink :to="getLocalePath('/makerspace/guide')">{{ t('makerspace.guide') }}</NuxtLink></div>
       <template v-if="space.is_owner && space.kind === 'hosted'">
@@ -137,7 +156,7 @@ useHead({ title: computed(() => space.value ? title(space.value) : t('makerspace
         </section>
         <section class="maker-card"><div class="maker-header"><div><h2>{{ t('makerspace.deployments') }}</h2><p>{{ t('makerspace.deployIntro') }}</p></div><button class="maker-button maker-button--primary" :disabled="busy || locked || !space.public_key || !capability?.hosting_ready" @click="action('/deployments')">{{ t('makerspace.deploy') }}</button></div>
           <p v-if="!space.deployments?.length">{{ t('makerspace.noDeployments') }}</p>
-          <article v-for="item in space.deployments" :key="item.id" class="maker-card"><div class="maker-meta"><span class="maker-badge">{{ t(`makerspace.states.${item.status}`) }}</span><span>{{ t(`makerspace.states.${item.review_status}`) }}</span><span v-if="item.publication_status !== 'none'">{{ t('makerspace.publication') }} · {{ t(`makerspace.states.${item.publication_status}`) }}</span><time>{{ new Date(item.created_at).toLocaleString() }}</time></div><code>{{ item.source_sha || t('makerspace.resolvingCommit') }}</code><p v-if="item.review_note">{{ item.review_note }}</p><p v-if="item.error_code">{{ errorMessage(new Error(item.error_code)) }}</p><div class="maker-actions"><button v-if="item.status === 'ready'" class="maker-button" :disabled="busy" @click="launch(item)">{{ t('makerspace.preview') }}</button><button v-if="item.status === 'ready' && ['draft', 'rejected', 'withdrawn'].includes(item.review_status)" class="maker-button maker-button--primary" :disabled="busy || space.status === 'suspended'" @click="action(`/deployments/${item.id}/submit`)">{{ t('makerspace.submitReview') }}</button><button v-if="item.review_status === 'approved' && item.publication_status === 'failed'" class="maker-button" :disabled="busy || locked || !capability?.hosting_ready" @click="action(`/deployments/${item.id}/retry-publication`)">{{ t('makerspace.retryPublication') }}</button><button v-if="item.review_status === 'pending'" class="maker-button" :disabled="busy" @click="action(`/deployments/${item.id}/withdraw`)">{{ t('makerspace.withdraw') }}</button></div><details v-if="item.log"><summary>{{ t('makerspace.buildLog') }}</summary><pre>{{ item.log }}</pre></details></article>
+          <article v-for="item in space.deployments" :key="item.id" class="maker-card"><div class="maker-meta"><span class="maker-badge">{{ t(`makerspace.states.${item.status}`) }}</span><span>{{ t(`makerspace.states.${item.review_status}`) }}</span><span v-if="item.publication_status !== 'none'">{{ t('makerspace.publication') }} · {{ t(`makerspace.states.${item.publication_status}`) }}</span><time>{{ new Date(item.created_at).toLocaleString() }}</time></div><code>{{ item.source_sha || t('makerspace.resolvingCommit') }}</code><p v-if="item.review_note">{{ item.review_note }}</p><p v-if="item.error_code">{{ errorMessage(new Error(item.error_code)) }}</p><div class="maker-actions"><button v-if="item.status === 'ready'" class="maker-button" :disabled="busy || launching" @click="launch(item)">{{ t('makerspace.preview') }}</button><button v-if="item.status === 'ready' && ['draft', 'rejected', 'withdrawn'].includes(item.review_status)" class="maker-button maker-button--primary" :disabled="busy || space.status === 'suspended'" @click="action(`/deployments/${item.id}/submit`)">{{ t('makerspace.submitReview') }}</button><button v-if="item.review_status === 'approved' && item.publication_status === 'failed'" class="maker-button" :disabled="busy || locked || !capability?.hosting_ready" @click="action(`/deployments/${item.id}/retry-publication`)">{{ t('makerspace.retryPublication') }}</button><button v-if="item.review_status === 'pending'" class="maker-button" :disabled="busy" @click="action(`/deployments/${item.id}/withdraw`)">{{ t('makerspace.withdraw') }}</button></div><details v-if="item.log"><summary>{{ t('makerspace.buildLog') }}</summary><pre>{{ item.log }}</pre></details></article>
         </section>
         <details class="maker-card"><summary>{{ t('makerspace.environment') }}</summary><p>{{ t('makerspace.environmentHint') }}</p><div class="maker-stack"><div v-for="name in space.environment_names" :key="name" class="maker-actions"><code>{{ name }}</code><button class="maker-button" :disabled="busy || locked" @click="action('/environment', 'PUT', { values: { [name]: null } })">{{ t('makerspace.remove') }}</button></div><form @submit.prevent="saveEnvironment"><div class="maker-fields"><label>{{ t('makerspace.variableName') }}<input v-model="environmentName" required pattern="[A-Z][A-Z0-9_]{0,63}" :disabled="busy || locked" /></label><label>{{ t('makerspace.variableValue') }}<input v-model="environmentValue" type="password" required autocomplete="new-password" :disabled="busy || locked" /></label></div><button class="maker-button" :disabled="busy || locked">{{ t('makerspace.save') }}</button></form></div></details>
         <details class="maker-card"><summary>{{ t('makerspace.archive') }}</summary><p>{{ t('makerspace.archiveHint') }}</p><label class="maker-check"><input v-model="archiveConfirmed" type="checkbox" />{{ t('makerspace.archiveConfirm') }}</label><div class="maker-actions"><button class="maker-button" :disabled="busy || !archiveConfirmed" @click="archive">{{ t('makerspace.archive') }}</button></div></details>

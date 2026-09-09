@@ -63,3 +63,17 @@
 .maker-overview-body { flex: 1; min-width: 0; }
 .maker-overview .maker-actions { padding-top: 0; }
 @media(max-width:640px) { .maker-overview { flex-direction: column; gap: 16px; } .maker-overview > .maker-cover { width: 100%; } .maker-overview-body { width: 100%; } }
+
+.maker-runtime { min-width: 0; margin-bottom: 24px; }
+.maker-runtime > .maker-frame { display: block; height: 78vh; height: 78dvh; min-height: 480px; }
+.maker-runtime-loading { padding: 20px; background: var(--surface-primary); border-radius: 12px; }
+.maker-preview-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.maker-preview-header p { margin: 8px 0 0; }
+@media (max-width: 640px) {
+  .maker-preview-header { flex-direction: column; }
+  .maker-runtime > .maker-frame { min-height: 420px; }
+}
+
+.maker-overview--collapsible { display: block; padding: 10px 20px; }
+.maker-overview--collapsible > summary { min-height: 44px; }
+.maker-overview--collapsible[open] > summary { margin-bottom: 12px; }
