@@ -3093,6 +3093,17 @@
     "edit": "Edit space",
     "cancel": "Cancel editing",
     "copyLink": "Copy space link",
+    "runtime": {
+      "about": "About this work",
+      "returnPublic": "Return to published work",
+      "privatePreview": "Private preview",
+      "previewHint": "Only the author and authorized reviewers can access this version.",
+      "reopenPreview": "Reopen preview",
+      "loading": "Opening work…",
+      "expired": "This session has expired. Reopen the work to continue. Unsaved changes may be lost.",
+      "slow": "The work is taking longer to load. You can try again.",
+      "reopen": "Reopen work"
+    },
     "close": "Close preview",
     "running": "Space is running",
     "sessionHint": "This session expires after one hour. Open the space again to continue. Private preview links work only in the current browser.",
