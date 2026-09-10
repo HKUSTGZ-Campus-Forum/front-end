@@ -91,6 +91,9 @@ const handleMenuLogout = async () => {
         <img src="/icons/topbar_logo.svg" alt="uniKorn" class="kg-topnav__logo kg-topnav__logo--light" />
         <img src="/icons/topbar_logo_w.svg" alt="uniKorn" class="kg-topnav__logo kg-topnav__logo--dark" />
         <img src="/favicon-white.ico" alt="UniKorn" class="kg-topnav__logo--compact" />
+        <!-- Hover glow. Kept as a separate layer whose opacity is animated so
+             the glow color itself never interpolates (see the CSS note). -->
+        <span class="kg-topnav__glow" aria-hidden="true" />
       </div>
     </NuxtLink>
 
@@ -274,21 +277,22 @@ const handleMenuLogout = async () => {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  /* Replicates the CoursePlan header logo hover exactly: the card is taller
-     than the topbar (72px in a 64px bar) so it pokes out below it, and on
-     hover it lifts 4px (translate-y-1) with a soft border and tinted
-     background, raised above the bar via z-index. */
+  /* The brand is 72px tall inside a 64px bar, so it pokes out below it. A
+     framed card (1px border + background fill) read as too heavy here, so the
+     affordance is now a soft glow on the mark, with no movement. */
   height: 72px;
   padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  transition: all 0.2s ease-out;
+  border-radius: 8px;
   z-index: 0;
 
   &:hover {
-    border-color: var(--border-primary);
-    background: var(--surface-secondary);
     z-index: 50;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+    border-radius: 8px;
   }
 
   &-logo {
@@ -296,12 +300,41 @@ const handleMenuLogout = async () => {
     width: auto;
     display: flex;
     align-items: center;
+    position: relative;
 
     img {
       height: 100%;
       width: auto;
       object-fit: contain;
+      position: relative;
+      z-index: 1;
     }
+  }
+
+  // Soft glow carries the hover affordance without drawing a visible frame.
+  // The glow is a separate copy of the mark sitting under the real images, and
+  // only its OPACITY animates.
+  //
+  // Animating `filter` on the mark itself would interpolate the shadow color,
+  // and a color-mix() result computes to color(srgb ...) which the engine
+  // interpolates unpremultiplied — the glow then sweeps through a dark
+  // (near-black) tint before reaching the target blue. Fading an
+  // already-correct color avoids that entirely and stays theme-aware.
+  &-logo .kg-topnav__glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    background-image: url('/icons/topbar_logo.svg');
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--interactive-primary) 45%, transparent));
+  }
+
+  &:hover &-logo .kg-topnav__glow {
+    opacity: 1;
   }
 
   // The colored logo is unreadable on the dark topbar. Both variants are
@@ -320,6 +353,11 @@ const handleMenuLogout = async () => {
 
   .kg-topnav__logo--dark {
     display: block;
+  }
+
+  // The glow mirrors whichever mark is visible in this theme.
+  .kg-topnav__brand-logo .kg-topnav__glow {
+    background-image: url('/icons/topbar_logo_w.svg');
   }
 }
 
@@ -416,6 +454,12 @@ const handleMenuLogout = async () => {
 @media (prefers-reduced-motion: reduce) {
   .kg-topnav__theme-icon-btn * {
     transition: none !important;
+  }
+
+  /* The brand hover is glow-only and already motion-free; drop the fade too so
+     the state change is instant. */
+  .kg-topnav__brand-logo .kg-topnav__glow {
+    transition: none;
   }
 }
 
@@ -940,6 +984,12 @@ const handleMenuLogout = async () => {
     display: block;
     width: 28px;
     height: 28px;
+    border-radius: 50%;
+  }
+  /* Match the round compact mark so the glow does not cast a wide logo shape. */
+  .kg-topnav .kg-topnav__brand-logo .kg-topnav__glow {
+    background-image: url('/favicon-white.ico');
+    background-size: 28px 28px;
     border-radius: 50%;
   }
 }

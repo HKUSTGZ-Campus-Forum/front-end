@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Top navigation: the brand logo hover no longer draws a 1px border and background fill. It now shows a soft glow that follows the mark's shape, with no scale or movement, and it preserves the keyboard focus ring. The glow fades a dedicated layer's opacity instead of transitioning `filter`, which had swept a dark near-black tint before the blue because a `color-mix()` result interpolates unpremultiplied.
+
 - MakerSpace: provide bilingual per-grant integration guides with full endpoints, scoped examples, pagination/error recovery and safe copy-for-AI/manual-copy controls.
 
 - MakerSpace: open published works directly from the catalog; reserve preview labels for author/reviewer sessions, with loading, retry and session-expiry recovery.
