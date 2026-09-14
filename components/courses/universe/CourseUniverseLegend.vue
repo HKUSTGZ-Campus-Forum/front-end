@@ -64,5 +64,5 @@ const items = [
 .is-exclusion { border-top-color: var(--semantic-error); }
 .is-hollow-logic { background: var(--surface-primary); }
 .is-solid-logic { background: var(--text-primary); }
-.is-reference { border-top-style: dotted; border-top-color: var(--text-tertiary); }
+.is-reference { border-top-style: dotted; border-top-color: var(--text-secondary); }
 </style>

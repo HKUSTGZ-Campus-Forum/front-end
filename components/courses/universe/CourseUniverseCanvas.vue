@@ -846,7 +846,7 @@ onBeforeUnmount(() => {
 
 .cu-line.is-reference {
   stroke-dasharray: 2 6;
-  stroke: var(--text-tertiary);
+  stroke: var(--text-secondary);
 }
 
 .cu-line.is-highlighted {
