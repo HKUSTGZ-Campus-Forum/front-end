@@ -1764,7 +1764,8 @@
     },
     "errors": {
       "load": "Course Graph failed to load. Please try again later.",
-      "courseDetail": "Failed to load course detail."
+      "courseDetail": "Failed to load course detail.",
+      "catalogUnavailable": "Official course relationships are not available yet. Please try again later."
     },
     "legendLabel": "Course relationship legend",
     "catalogSource": "Official undergraduate catalog · Term {term} · Synced {date}"

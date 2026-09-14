@@ -66,6 +66,10 @@ async function loadUniverse() {
       getSemesters(),
     ])
 
+    if (graph.metadata.catalog !== 'official' || !graph.courses.length) {
+      errorMessage.value = t('courseUniverse.errors.catalogUnavailable')
+      return
+    }
     components.value = graph.components
     lines.value = graph.lines
     courses.value = graph.courses
