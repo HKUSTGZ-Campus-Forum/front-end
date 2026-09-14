@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- 课程图谱：恢复截图对应的学科标签、关系图例与完整 SVG 画布，使用原排课图谱接口和节点布局；保留课程详情、选课操作及中英文/深浅主题，并补齐手机触控与加载失败重试。仅前端恢复，不修改课程数据库。
+
 - Top navigation: the brand logo hover no longer draws a 1px border and background fill. It now shows a soft glow that follows the mark's shape, with no scale or movement, and it preserves the keyboard focus ring. The glow fades a dedicated layer's opacity instead of transitioning `filter`, which had swept a dark near-black tint before the blue because a `color-mix()` result interpolates unpremultiplied.
 
 - MakerSpace: provide bilingual per-grant integration guides with full endpoints, scoped examples, pagination/error recovery and safe copy-for-AI/manual-copy controls.

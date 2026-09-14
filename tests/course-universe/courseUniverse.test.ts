@@ -743,6 +743,25 @@ describe('course universe helpers', () => {
     })
   })
 
+  it('keeps classic graph nodes and relationship elbows in the same seed coordinate space', () => {
+    const original = structuredClone(graphComponents)
+    const laidOut = layoutCourseUniverseGraphComponents({
+      components: graphComponents,
+      lines: graphLines,
+      layout: 'classic',
+    })
+    const graph = buildCourseUniverseGraph({ components: laidOut, lines: graphLines })
+
+    expect(laidOut.find(component => component.id === 'UCUG1051')).toMatchObject({
+      x_coordinate: 100,
+      y_coordinate: 120,
+    })
+    expect(graph.lines.find(line => line.id === 10)?.path).toBe(
+      `M ${100 + COURSE_UNIVERSE_COURSE_WIDTH},${120 + COURSE_UNIVERSE_COURSE_HEIGHT / 2} H 340 V 150 H 380`,
+    )
+    expect(graphComponents).toEqual(original)
+  })
+
   it('generates arrows and keeps relationship styling distinct', () => {
     const graph = buildCourseUniverseGraph({ components: graphComponents, lines: graphLines })
 

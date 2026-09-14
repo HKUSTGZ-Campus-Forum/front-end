@@ -4,8 +4,9 @@ import {
   type CourseUniverseModeKey,
 } from '~/utils/courseUniverse'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   mode: CourseUniverseModeKey
+  modeOrder?: CourseUniverseModeKey[]
   title?: string
   subtitle?: string
 }>(), {
@@ -15,6 +16,9 @@ withDefaults(defineProps<{
 
 const { t } = useI18n()
 const { getLocalePath } = useAppLocale()
+const orderedModes = computed(() => props.modeOrder
+  ? [...COURSE_UNIVERSE_MODES].sort((a, b) => props.modeOrder!.indexOf(a.key) - props.modeOrder!.indexOf(b.key))
+  : COURSE_UNIVERSE_MODES)
 </script>
 
 <template>
@@ -25,7 +29,7 @@ const { getLocalePath } = useAppLocale()
 
         <nav class="course-tools-header__modes" :aria-label="t('nav.courses')">
           <NuxtLink
-            v-for="item in COURSE_UNIVERSE_MODES"
+            v-for="item in orderedModes"
             :key="item.key"
             :to="getLocalePath(item.path)"
             :class="['course-tools-header__mode', { active: mode === item.key }]"
