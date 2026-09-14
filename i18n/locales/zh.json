@@ -1714,10 +1714,11 @@
       "notTaken": "未修",
       "interested": "想修",
       "prerequisite": "先修关系",
-      "corequisite": "需同一学期修",
+      "corequisite": "共修（可提前或同期修读）",
       "exclusion": "互斥关系",
       "hollowLogic": "任选其一",
-      "solidLogic": "需全部满足"
+      "solidLogic": "需全部满足",
+      "reference": "条件涉及的课程（详见课程页）"
     },
     "statusShort": {
       "completed": "已修",
@@ -1764,7 +1765,9 @@
     "errors": {
       "load": "课程图谱加载失败，请稍后重试。",
       "courseDetail": "课程详情加载失败。"
-    }
+    },
+    "legendLabel": "课程关系图例",
+    "catalogSource": "学校本科课程目录 · 学期 {term} · 同步于 {date}"
   },
   "courses": {
     "title": "课程评价",
@@ -1831,7 +1834,8 @@
       "source": {
         "official": "学校课程目录",
         "fallback": "历史目录备用数据",
-        "version": "目录版本 {version}"
+        "version": "目录版本 {version}",
+        "updated": "同步于 {date}"
       },
       "academicStatusTitle": "我的学业状态",
       "academicStatus": {
@@ -1860,7 +1864,8 @@
       },
       "mapTitle": "回到图谱查看关系",
       "mapCopy": "在课程图谱中查看这门课与先修、共修、互斥课程之间的关系。",
-      "openInMap": "在图谱中查看"
+      "openInMap": "在图谱中查看",
+      "downstreamHint": "以下课程的先修条件涉及本课程；完整条件可能还包括其他课程或专业限制。"
     },
     "offeringMissing": "当前学期不存在或未开设这门课",
     "allOfferings": "全部学期",

@@ -403,6 +403,9 @@ useHead({
                   <span v-if="relationshipDisplayVersion">
                     {{ t('courses.overviewPage.source.version', { version: relationshipDisplayVersion }) }}
                   </span>
+                  <span v-if="relationshipProvenance.imported_at">
+                    {{ t('courses.overviewPage.source.updated', { date: relationshipProvenance.imported_at.slice(0, 10) }) }}
+                  </span>
                 </p>
               </div>
               <NuxtLink :to="courseUniverseTo" class="kg-btn kg-btn--ghost kg-btn--compact">
@@ -414,6 +417,7 @@ useHead({
                 <span>{{ t(`courses.overviewPage.rules.${rule.key}`) }}</span>
                 <div class="kg-rule-row__content">
                   <p v-if="rule.value">{{ rule.value }}</p>
+                  <p v-if="rule.key === 'downstream'">{{ t('courses.overviewPage.downstreamHint') }}</p>
                   <div v-if="rule.courses.length" class="kg-related-courses">
                     <NuxtLink
                       v-for="relatedCourse in rule.courses"
