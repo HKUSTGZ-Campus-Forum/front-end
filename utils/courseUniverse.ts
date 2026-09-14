@@ -522,7 +522,9 @@ export function layoutCourseUniverseGraphComponents(input: {
   components: CourseUniverseMapComponent[]
   lines: CourseUniverseMapLine[]
   visibleComponentIds?: Set<string>
+  layout?: 'classic' | 'compact'
 }): CourseUniverseMapComponent[] {
+  const classic = input.layout === 'classic'
   const visibleIds = getCourseUniverseVisibleIds(input.components, input.visibleComponentIds)
   const degree = getCourseUniverseCourseDegree({
     components: input.components,
@@ -539,7 +541,7 @@ export function layoutCourseUniverseGraphComponents(input: {
     const columnX = getCourseUniverseAlignedColumnX(column)
     const sortedColumn = column
       .sort((a, b) => a.y_coordinate - b.y_coordinate || a.x_coordinate - b.x_coordinate || a.id.localeCompare(b.id))
-    const compactStartY = 80
+    const compactStartY = classic ? sortedColumn[0]?.y_coordinate || 0 : 80
     sortedColumn
       .forEach((component, index) => {
         const next = laidOut.get(component.id)
@@ -561,11 +563,13 @@ export function layoutCourseUniverseGraphComponents(input: {
     const connectedMaxY = visibleLaidOutCourses.length
       ? Math.max(...visibleLaidOutCourses.map(component => component.y_coordinate))
       : Math.min(...isolatedCourses.map(component => component.y_coordinate)) - COURSE_UNIVERSE_COURSE_HEIGHT - 160
-    const columnCount = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(isolatedCourses.length))))
+    const columnCount = classic
+      ? Math.min(10, Math.max(1, Math.ceil(isolatedCourses.length / 3)))
+      : Math.min(4, Math.max(1, Math.ceil(Math.sqrt(isolatedCourses.length))))
     const columnGap = COURSE_UNIVERSE_COURSE_WIDTH + 52
     const rowGap = COURSE_UNIVERSE_COURSE_HEIGHT + 24
     const startX = Math.round(connectedMinX)
-    const startY = visibleLaidOutCourses.length
+    const startY = classic || visibleLaidOutCourses.length
       ? Math.round(connectedMaxY + COURSE_UNIVERSE_COURSE_HEIGHT + 96)
       : 80
 
@@ -631,7 +635,9 @@ export function layoutCourseUniverseGraphComponents(input: {
   }
 
   const visibleComponents = [...laidOut.values()].filter(component => visibleIds.has(component.id))
-  if (visibleComponents.length) {
+  // The classic canvas uses the seed's elbow coordinates for relationship lines.
+  // Keep nodes in that same coordinate space instead of translating only nodes.
+  if (!classic && visibleComponents.length) {
     const minX = Math.min(...visibleComponents.map(component => component.x_coordinate))
     const minY = Math.min(...visibleComponents.map(component => component.y_coordinate))
     const offsetX = 96 - minX

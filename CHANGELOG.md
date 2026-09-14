@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- 课程图谱：恢复截图对应的学科标签、关系图例与完整 SVG 画布，使用原排课图谱接口和节点布局；保留课程详情、选课操作及中英文/深浅主题，并补齐手机触控与加载失败重试。仅前端恢复，不修改课程数据库。
+
 - MakerSpace: provide bilingual per-grant integration guides with full endpoints, scoped examples, pagination/error recovery and safe copy-for-AI/manual-copy controls.
 
 - MakerSpace: open published works directly from the catalog; reserve preview labels for author/reviewer sessions, with loading, retry and session-expiry recovery.

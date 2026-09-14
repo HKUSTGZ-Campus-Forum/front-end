@@ -11,13 +11,13 @@ import {
   buildCourseUniverseCourseDetailPath,
   buildCourseUniverseGraph,
   buildCourseUniverseHighlightSet,
-  buildCourseUniverseRelationshipCourseCodeSet,
-  buildCourseUniverseRelationalComponentSet,
+  buildCourseUniversePrefixOptions,
   buildCourseUniverseSupplementalComponentSet,
   buildCourseUniverseVisibleComponentSet,
   clampCourseUniverseZoom,
   createReadableCourseUniverseViewport,
   fitCourseUniverseViewport,
+  getCourseUniverseBounds,
   getCourseUniverseNodeStatusKey,
   getCourseUniverseNodePrefix,
   getCourseUniverseViewBox,
@@ -32,7 +32,6 @@ const props = defineProps<{
   nodes: CourseUniverseNode[]
   lines: CourseUniverseMapLine[]
   searchQuery: string
-  selectedPrefix: string
 }>()
 
 const emit = defineEmits<{
@@ -53,6 +52,7 @@ const viewport = ref<CourseUniverseViewport>({
 const isDragging = ref(false)
 const didDrag = ref(false)
 const hoveredId = ref('')
+const selectedPrefix = ref('')
 const dragStart = ref<{
   clientX: number
   clientY: number
@@ -60,67 +60,42 @@ const dragStart = ref<{
   viewBox: CourseUniverseViewBox
 } | null>(null)
 let resizeObserver: ResizeObserver | null = null
+const localLayoutMinZoom = 0.66
 
 const query = computed(() => props.searchQuery.trim().toLowerCase())
 const selectedCode = computed(() => props.nodes.find(node => node.selected)?.code || '')
-const relationshipCourseCodes = computed(() => buildCourseUniverseRelationshipCourseCodeSet({
-  components: props.components,
-  lines: props.lines,
-}))
-const candidateComponentIds = computed(() => {
+const prefixOptions = computed(() => buildCourseUniversePrefixOptions(props.nodes)
+  .sort((a, b) => b.count - a.count || a.prefix.localeCompare(b.prefix)))
+const visibleComponentIds = computed(() => {
   return buildCourseUniverseVisibleComponentSet({
     components: props.components,
     lines: props.lines,
-    selectedPrefix: props.selectedPrefix,
+    selectedPrefix: selectedPrefix.value,
     selectedCourseCode: selectedCode.value,
     searchQuery: props.searchQuery,
     courseNodes: props.nodes,
   })
 })
-const visibleComponentIds = computed(() => buildCourseUniverseRelationalComponentSet({
-  components: props.components,
-  lines: props.lines,
-  candidateComponentIds: candidateComponentIds.value,
-  relationshipCourseCodes: relationshipCourseCodes.value,
-  alwaysIncludeCourseCodes: selectedCode.value ? new Set([selectedCode.value]) : undefined,
-}))
 const supplementalComponentIds = computed(() => {
   return buildCourseUniverseSupplementalComponentSet({
     components: props.components,
     lines: props.lines,
-    selectedPrefix: props.selectedPrefix,
+    selectedPrefix: selectedPrefix.value,
     selectedCourseCode: selectedCode.value,
     searchQuery: props.searchQuery,
     courseNodes: props.nodes,
   })
 })
-const visibleInputComponents = computed(() => (
-  props.components.filter(component => visibleComponentIds.value.has(component.id))
-))
-const visibleInputLines = computed(() => (
-  props.lines.filter(line => (
-    visibleComponentIds.value.has(line.start_id)
-    && visibleComponentIds.value.has(line.end_id)
-  ))
-))
 const layoutComponents = computed(() => layoutCourseUniverseGraphComponents({
-  components: visibleInputComponents.value,
-  lines: visibleInputLines.value,
+  components: props.components,
+  lines: props.lines,
   visibleComponentIds: visibleComponentIds.value,
+  layout: 'classic',
 }))
 const layoutComponentById = computed(() => new Map(layoutComponents.value.map(component => [component.id, component])))
-const layoutLines = computed(() => visibleInputLines.value.map((line) => {
-  const start = layoutComponentById.value.get(line.start_id)
-  const end = layoutComponentById.value.get(line.end_id)
-  if (!start || !end) return line
-  return {
-    ...line,
-    x_coordinate: Math.round((start.x_coordinate + end.x_coordinate) / 2),
-  }
-}))
 const graph = computed(() => buildCourseUniverseGraph({
   components: layoutComponents.value,
-  lines: layoutLines.value,
+  lines: props.lines,
 }))
 const renderComponentById = computed(() => new Map(graph.value.components.map(component => [component.id, component])))
 
@@ -251,11 +226,26 @@ function fitFullGraph() {
 }
 
 function fitLocalGraph() {
-  viewport.value = fitCourseUniverseViewport({
-    nodes: visibleViewportNodes.value,
+  const nodesForViewport = visibleNodes.value
+  const padding = 150
+  const nextViewport = fitCourseUniverseViewport({
+    nodes: nodesForViewport,
     canvasSize: canvasSize.value,
-    padding: 100,
+    padding,
   })
+  const zoom = Math.max(nextViewport.zoom, localLayoutMinZoom)
+  const bounds = getCourseUniverseBounds(nodesForViewport, padding)
+  const clampedBox = getCourseUniverseViewBox({ ...nextViewport, zoom }, canvasSize.value)
+  viewport.value = {
+    ...nextViewport,
+    centerX: bounds.width > clampedBox.width
+      ? bounds.minX + clampedBox.width / 2
+      : nextViewport.centerX,
+    centerY: bounds.height > clampedBox.height
+      ? bounds.minY + clampedBox.height / 2
+      : nextViewport.centerY,
+    zoom,
+  }
 }
 
 function focusSelection() {
@@ -265,19 +255,9 @@ function focusSelection() {
   })
 }
 
-function focusLargeSubject() {
-  const subjectNode = visibleNodes.value.find(node => (
-    getCourseUniverseNodePrefix(node.code) === props.selectedPrefix
-  ))
-  if (!subjectNode) {
-    resetReadableView()
-    return
-  }
-  viewport.value = {
-    centerX: subjectNode.x + COURSE_UNIVERSE_COURSE_WIDTH / 2,
-    centerY: subjectNode.y + COURSE_UNIVERSE_COURSE_HEIGHT / 2,
-    zoom: 0.88,
-  }
+function selectPrefix(prefix: string) {
+  if (selectedCode.value) emit('select', '')
+  selectedPrefix.value = prefix
 }
 
 function returnToPrefixGraph() {
@@ -442,7 +422,13 @@ function getNodeDetailPath(node: CourseUniverseNode) {
   })
 }
 
-watch([() => props.selectedPrefix, selectedCode, visibleNodes, canvasSize], async () => {
+watch(prefixOptions, options => {
+  if (!options.some(option => option.prefix === selectedPrefix.value)) {
+    selectedPrefix.value = options[0]?.prefix || ''
+  }
+}, { immediate: true })
+
+watch([selectedPrefix, selectedCode, visibleNodes, canvasSize], async () => {
   if (!visibleNodes.value.length) return
   await nextTick()
   if (selectedCode.value) {
@@ -456,11 +442,7 @@ watch([() => props.selectedPrefix, selectedCode, visibleNodes, canvasSize], asyn
     })
     return
   }
-  if (props.selectedPrefix || selectedCode.value) {
-    if (visibleNodes.value.length > 28) {
-      focusLargeSubject()
-      return
-    }
+  if (selectedPrefix.value || selectedCode.value) {
     fitLocalGraph()
     return
   }
@@ -488,7 +470,21 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="cu-canvas" :aria-label="t('courseUniverse.title')">
-    <div v-if="selectedCode" class="cu-canvas__context">
+    <div v-if="prefixOptions.length" class="cu-prefix-bar">
+      <button
+        v-for="option in prefixOptions"
+        :key="option.prefix"
+        type="button"
+        :class="['cu-prefix-bar__chip', { active: selectedPrefix === option.prefix }]"
+        :aria-pressed="selectedPrefix === option.prefix"
+        @click="selectPrefix(option.prefix)"
+      >
+        {{ option.prefix }}
+        <span>{{ option.count }}</span>
+      </button>
+    </div>
+
+    <div class="cu-canvas__context">
       <button
         v-if="selectedCode"
         type="button"
@@ -499,8 +495,8 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <div v-if="visibleNodes.length === 0" class="cu-canvas__empty">
-      {{ t('courseUniverse.explorer.noGraph') }}
+    <div v-if="nodes.length === 0" class="cu-canvas__empty">
+      {{ t('courseUniverse.empty') }}
     </div>
 
     <div v-else class="cu-canvas__stage">
@@ -514,7 +510,7 @@ onBeforeUnmount(() => {
         <button type="button" class="cu-canvas__control" :title="t('courseUniverse.actions.fitGraph')" :aria-label="t('courseUniverse.actions.fitGraph')" @click="fitFullGraph">
           ⤢
         </button>
-        <button v-if="selectedCode" type="button" class="cu-canvas__control" :title="t('courseUniverse.actions.focusSelection')" :aria-label="t('courseUniverse.actions.focusSelection')" @click="focusSelection">
+        <button type="button" class="cu-canvas__control" :title="t('courseUniverse.actions.focusSelection')" :aria-label="t('courseUniverse.actions.focusSelection')" @click="focusSelection">
           ◎
         </button>
       </div>
@@ -524,6 +520,7 @@ onBeforeUnmount(() => {
         :class="['cu-canvas__svg', { 'is-dragging': isDragging }]"
         :viewBox="viewBox"
         role="img"
+        :aria-label="t('courseUniverse.title')"
         @wheel="handleWheel"
         @pointerdown="handlePointerDown"
         @pointermove="handlePointerMove"
@@ -668,10 +665,54 @@ onBeforeUnmount(() => {
 .cu-canvas {
   background: var(--surface-secondary);
   border: 1px solid var(--border-secondary);
-  border-radius: 12px;
-  min-height: clamp(430px, calc(100vh - 360px), 620px);
+  border-radius: 16px;
+  min-height: clamp(450px, calc(100vh - 300px), 680px);
   overflow: hidden;
   position: relative;
+}
+
+.cu-prefix-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 14px 0;
+  position: relative;
+  z-index: 4;
+}
+
+.cu-prefix-bar__chip {
+  align-items: center;
+  appearance: none;
+  background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 11px;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+}
+
+.cu-prefix-bar__chip span {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.cu-prefix-bar__chip:hover,
+.cu-prefix-bar__chip.active {
+  background: var(--btn-primary-bg);
+  border-color: var(--interactive-primary);
+  color: var(--text-inverse);
+  transform: translateY(-1px);
+}
+
+.cu-prefix-bar__chip:hover span,
+.cu-prefix-bar__chip.active span {
+  color: var(--text-inverse);
 }
 
 .cu-canvas__context {
@@ -695,8 +736,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 800;
-  min-height: 44px;
-  padding: 5px 12px;
+  padding: 5px 10px;
   transition: background 0.18s, border-color 0.18s, transform 0.18s;
 }
 
@@ -711,13 +751,11 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
   display: flex;
   justify-content: center;
-  min-height: 430px;
-  padding: 24px;
-  text-align: center;
+  min-height: 450px;
 }
 
 .cu-canvas__stage {
-  height: clamp(430px, calc(100vh - 360px), 620px);
+  height: clamp(410px, calc(100vh - 350px), 640px);
   position: relative;
 }
 
@@ -746,11 +784,11 @@ onBeforeUnmount(() => {
   display: inline-flex;
   font-size: 1rem;
   font-weight: 800;
-  height: 44px;
+  height: 34px;
   justify-content: center;
   line-height: 1;
   transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
-  width: 44px;
+  width: 34px;
 }
 
 .cu-canvas__control:hover {
@@ -924,13 +962,13 @@ onBeforeUnmount(() => {
 }
 
 .cu-node__detail-link:hover .cu-node__detail-bg,
-.cu-node__detail-link:focus-visible .cu-node__detail-bg {
+.cu-node__detail-link:focus .cu-node__detail-bg {
   fill: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
   stroke: var(--interactive-primary);
 }
 
 .cu-node__detail-link:hover .cu-node__detail-text,
-.cu-node__detail-link:focus-visible .cu-node__detail-text {
+.cu-node__detail-link:focus .cu-node__detail-text {
   fill: var(--interactive-active);
 }
 
@@ -1005,7 +1043,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-node__cart-action:hover .cu-node__cart-bg,
-.cu-node__cart-action:focus-visible .cu-node__cart-bg {
+.cu-node__cart-action:focus .cu-node__cart-bg {
   fill: color-mix(in srgb, var(--interactive-primary) 10%, var(--surface-primary));
   stroke: var(--interactive-primary);
 }
@@ -1019,8 +1057,8 @@ onBeforeUnmount(() => {
 .cu-node__cart-action.is-added .cu-node__cart-check,
 .cu-node__cart-action:hover .cu-node__cart-icon,
 .cu-node__cart-action:hover .cu-node__cart-check,
-.cu-node__cart-action:focus-visible .cu-node__cart-icon,
-.cu-node__cart-action:focus-visible .cu-node__cart-check {
+.cu-node__cart-action:focus .cu-node__cart-icon,
+.cu-node__cart-action:focus .cu-node__cart-check {
   stroke: var(--interactive-primary);
 }
 
@@ -1030,7 +1068,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-node__cart-action:hover .cu-node__cart-wheel,
-.cu-node__cart-action:focus-visible .cu-node__cart-wheel {
+.cu-node__cart-action:focus .cu-node__cart-wheel {
   fill: var(--interactive-primary);
 }
 
@@ -1044,7 +1082,7 @@ onBeforeUnmount(() => {
 }
 
 .cu-node.is-selected .cu-node__card,
-.cu-node:focus-visible .cu-node__card {
+.cu-node:focus .cu-node__card {
   stroke: var(--interactive-primary);
   filter: drop-shadow(0 4px 9px color-mix(in srgb, var(--interactive-primary) 20%, transparent));
 }
@@ -1076,12 +1114,15 @@ onBeforeUnmount(() => {
 .cu-node.is-tone-7 { --cu-node-accent: color-mix(in srgb, var(--semantic-info) 70%, var(--semantic-success)); }
 
 @media (max-width: 768px) {
-  .cu-canvas,
+  .cu-canvas {
+    min-height: 430px;
+  }
+
   .cu-canvas__empty,
   .cu-canvas__stage,
   .cu-canvas__svg {
-    min-height: 400px;
-    height: 400px;
+    min-height: 430px;
+    height: 430px;
   }
 
   .cu-canvas__controls {
@@ -1089,16 +1130,20 @@ onBeforeUnmount(() => {
     right: auto;
     top: 8px;
   }
+
+  .cu-prefix-bar__chip,
+  .cu-canvas__back {
+    min-height: 44px;
+  }
+
+  .cu-canvas__control {
+    height: 44px;
+    width: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cu-canvas__back,
-  .cu-canvas__control,
-  .cu-line,
-  .cu-node,
-  .cu-node__card,
-  .cu-node__detail-bg,
-  .cu-node__cart-bg {
+  .cu-canvas * {
     transition: none;
   }
 }
