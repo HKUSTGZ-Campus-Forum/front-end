@@ -37,6 +37,7 @@ export interface CourseUniverseMapCourse {
 }
 
 export interface CourseUniverseGraphMetadata {
+  catalog?: 'official' | 'all'
   source: string
   source_version?: string | null
   effective_from_semester_id?: string | null

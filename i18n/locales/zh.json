@@ -1768,7 +1768,8 @@
     },
     "errors": {
       "load": "课程图谱加载失败，请稍后重试。",
-      "courseDetail": "课程详情加载失败。"
+      "courseDetail": "课程详情加载失败。",
+      "catalogUnavailable": "官方课程关系暂不可用，请稍后重试。"
     },
     "legendLabel": "课程关系图例",
     "catalogSource": "学校本科课程目录 · 学期 {term} · 同步于 {date}"
