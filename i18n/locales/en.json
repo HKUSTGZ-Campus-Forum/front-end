@@ -1568,14 +1568,14 @@
     }
   },
   "courseUniverse": {
-    "title": "Course Map",
-    "hubTitle": "Course Map",
+    "title": "Course Graph",
+    "hubTitle": "Course Graph",
     "hubSubtitle": "Start here to read course relationships, reviews, schedules, and degree progress.",
     "subtitle": "Find your next course through relationships, reviews, schedules, and degree progress.",
     "searchPlaceholder": "Search course code, title, or requirement...",
     "selectedSemester": "Current semester",
     "targetMajor": "Target major",
-    "loading": "Loading Course Map...",
+    "loading": "Loading Course Graph...",
     "empty": "No course map data yet.",
     "selectCourse": "Select a course to inspect it",
     "source": {
@@ -1703,7 +1703,7 @@
       }
     },
     "modes": {
-      "universe": "Course Map",
+      "universe": "Graph",
       "explore": "Explore",
       "planner": "Planner",
       "academicMap": "Degree Progress"

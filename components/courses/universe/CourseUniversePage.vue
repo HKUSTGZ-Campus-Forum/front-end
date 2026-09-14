@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import CourseUniverseExplorer from './CourseUniverseExplorer.vue'
+import CourseUniverseCanvas from './CourseUniverseCanvas.vue'
+import CourseUniverseLegend from './CourseUniverseLegend.vue'
 import CourseToolsHeader from '~/components/courses/CourseToolsHeader.vue'
-import type { CourseOverviewPayload } from '~/types/course-overview'
 import type { CartCourse, SemesterInfo } from '~/utils/scheduler'
 import {
   compactCourseCode,
@@ -14,8 +14,6 @@ import {
   type CourseUniverseMapComponent,
   type CourseUniverseMapCourse,
   type CourseUniverseMapLine,
-  type CourseUniverseGraphMetadata,
-  type CourseUniverseGraphResponse,
   type CourseUniverseModeKey,
 } from '~/utils/courseUniverse'
 
@@ -24,11 +22,10 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
-const router = useRouter()
 const { t, locale } = useI18n()
 const { isLoggedIn } = useAuth()
 const { fetchPublic } = useApi()
-const { getMapComponents, getMapLines, getMapCourses, getRelationshipGraph, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
+const { getMapComponents, getMapLines, getMapCourses, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
 const { fetchSummary } = useAcademicMap()
 
 const components = ref<CourseUniverseMapComponent[]>([])
@@ -43,18 +40,8 @@ const errorMessage = ref('')
 const cartMessage = ref('')
 const cartNoticeTone = ref<'info' | 'success' | 'error'>('info')
 const cartUpdatingCodes = ref(new Set<string>())
-const graphMetadata = ref<CourseUniverseGraphMetadata | null>(null)
-const selectedCourseOverview = ref<CourseOverviewPayload | null>(null)
-const overviewLoading = ref(false)
-const overviewError = ref('')
-let overviewRequestId = 0
 
 const mode = computed(() => props.mode || 'universe')
-const graphSourceKind = computed<'official' | 'mixed' | 'fallback'>(() => {
-  if (!graphMetadata.value) return 'official'
-  if ((graphMetadata.value.fallback_relationship_count || 0) > 0) return 'mixed'
-  return graphMetadata.value.is_fallback ? 'fallback' : 'official'
-})
 const activeSchedulerSemester = computed(() => getCourseUniverseActiveSchedulerSemester(semesters.value))
 const activeSchedulerSemesterLabel = computed(() => {
   const semester = semesters.value.find(item => item.id === activeSchedulerSemester.value)
@@ -89,33 +76,17 @@ async function loadUniverse() {
   try {
     loading.value = true
     errorMessage.value = ''
-    const [relationshipGraph, semesterData, catalogCourses] = await Promise.all([
-      getRelationshipGraph().catch(async () => {
-        const [fallbackComponents, fallbackLines, fallbackCourses] = await Promise.all([
-          getMapComponents(),
-          getMapLines(),
-          getMapCourses(),
-        ])
-        return {
-          components: fallbackComponents,
-          lines: fallbackLines,
-          courses: fallbackCourses,
-          metadata: {
-            source: 'legacy_scheduler_map',
-            is_fallback: true,
-            course_count: fallbackCourses.length,
-            relationship_count: fallbackLines.length,
-          },
-        } as CourseUniverseGraphResponse
-      }),
+    const [mapComponents, mapLines, mapCourses, semesterData, catalogCourses] = await Promise.all([
+      getMapComponents(),
+      getMapLines(),
+      getMapCourses(),
       getSemesters(),
       getCatalogCourses().catch(() => []),
     ])
 
-    components.value = relationshipGraph.components
-    lines.value = relationshipGraph.lines
-    courses.value = mergeCourseUniverseCatalogCourses(relationshipGraph.courses, catalogCourses)
-    graphMetadata.value = relationshipGraph.metadata
+    components.value = mapComponents
+    lines.value = mapLines
+    courses.value = mergeCourseUniverseCatalogCourses(mapCourses, catalogCourses)
     semesters.value = semesterData
     const focusedCourse = typeof route.query.focus === 'string' ? compactCourseCode(route.query.focus) : ''
     if (focusedCourse) selectedCourseCode.value = focusedCourse
@@ -132,32 +103,6 @@ async function loadUniverse() {
   } finally {
     loading.value = false
   }
-}
-
-async function loadCourseOverview(code: string) {
-  const requestId = ++overviewRequestId
-  overviewLoading.value = true
-  overviewError.value = ''
-  selectedCourseOverview.value = null
-  try {
-    const response = await fetchPublic(`/api/courses/by-code/${encodeURIComponent(code)}/overview`)
-    if (!response.ok) throw new Error('overview_request_failed')
-    const payload = await response.json() as CourseOverviewPayload
-    if (requestId === overviewRequestId) selectedCourseOverview.value = payload
-  } catch {
-    if (requestId === overviewRequestId) overviewError.value = t('courseUniverse.errors.courseDetail')
-  } finally {
-    if (requestId === overviewRequestId) overviewLoading.value = false
-  }
-}
-
-function selectCourse(code: string) {
-  const normalizedCode = compactCourseCode(code)
-  selectedCourseCode.value = normalizedCode || null
-  const query = { ...route.query }
-  if (normalizedCode) query.focus = normalizedCode
-  else delete query.focus
-  router.replace({ query })
 }
 
 async function refreshPlannerCart() {
@@ -224,22 +169,6 @@ async function togglePlannerCourse(code: string) {
 watch(activeSchedulerSemester, () => {
   refreshPlannerCart()
 })
-watch(() => route.query.focus, (focus) => {
-  const normalizedCode = typeof focus === 'string' ? compactCourseCode(focus) : ''
-  if ((selectedCourseCode.value || '') !== normalizedCode) {
-    selectedCourseCode.value = normalizedCode || null
-  }
-})
-watch(selectedCourseCode, (code) => {
-  if (!code) {
-    overviewRequestId += 1
-    selectedCourseOverview.value = null
-    overviewError.value = ''
-    overviewLoading.value = false
-    return
-  }
-  loadCourseOverview(code)
-})
 onMounted(loadUniverse)
 </script>
 
@@ -247,46 +176,32 @@ onMounted(loadUniverse)
   <div class="cu-page">
     <CourseToolsHeader
       :mode="mode"
+      :mode-order="['universe', 'explore', 'planner', 'academicMap']"
     />
 
-    <div v-if="loading" class="cu-page__state cu-page__state--loading" aria-busy="true">
-      <span class="cu-page__skeleton cu-page__skeleton--title" />
-      <span class="cu-page__skeleton cu-page__skeleton--controls" />
-      <span class="cu-page__skeleton cu-page__skeleton--body" />
-      <span class="sr-only">{{ t('courseUniverse.loading') }}</span>
+    <div v-if="loading" class="cu-page__state">
+      {{ t('courseUniverse.loading') }}
     </div>
     <div v-else-if="errorMessage" class="cu-page__state cu-page__state--error">
-      <p>{{ errorMessage }}</p>
-      <button type="button" @click="loadUniverse">
-        {{ t('courseUniverse.actions.retry') }}
-      </button>
+      <p role="alert">{{ errorMessage }}</p>
+      <button type="button" @click="loadUniverse">{{ t('common.retry') }}</button>
     </div>
 
     <template v-else>
-      <p v-if="graphMetadata" :class="['cu-page__source', `is-${graphSourceKind}`]">
-        <span v-if="graphSourceKind === 'mixed'">
-          {{ t('courseUniverse.source.mixed', { count: graphMetadata.fallback_relationship_count || 0 }) }}
-        </span>
-        <span v-else>{{ graphSourceKind === 'fallback' ? t('courseUniverse.source.fallback') : t('courseUniverse.source.official') }}</span>
-        <span aria-hidden="true">·</span>
-        <span>{{ t('courseUniverse.source.summary', { courses: graphMetadata.course_count, relationships: graphMetadata.relationship_count }) }}</span>
-      </p>
       <p v-if="cartMessage" :class="['cu-page__notice', `is-${cartNoticeTone}`]">
         {{ cartMessage }}
       </p>
-      <CourseUniverseExplorer
-        :components="components"
-        :nodes="nodes"
-        :lines="lines"
-        :overview="selectedCourseOverview"
-        :overview-loading="overviewLoading"
-        :overview-error="overviewError"
-        :active-semester-label="activeSchedulerSemesterLabel"
-        :planner-updating-codes="cartUpdatingCodes"
-        @select="selectCourse"
-        @retry-overview="selectedCourseCode && loadCourseOverview(selectedCourseCode)"
-        @toggle-planner="togglePlannerCourse"
-      />
+      <div class="cu-page__graph">
+        <CourseUniverseLegend class="cu-page__legend" />
+        <CourseUniverseCanvas
+          :components="components"
+          :nodes="nodes"
+          :lines="lines"
+          search-query=""
+          @select="selectedCourseCode = $event"
+          @toggle-planner="togglePlannerCourse"
+        />
+      </div>
     </template>
   </div>
 </template>
@@ -294,8 +209,8 @@ onMounted(loadUniverse)
 <style scoped lang="scss">
 .cu-page {
   margin: 0 auto;
-  max-width: 1440px;
-  padding: 24px 20px 28px;
+  max-width: 1600px;
+  padding: 18px 20px 28px;
 }
 
 .cu-page__state {
@@ -307,7 +222,6 @@ onMounted(loadUniverse)
   display: flex;
   justify-content: center;
   min-height: 260px;
-  padding: 24px;
 }
 
 .cu-page__state--error {
@@ -316,50 +230,21 @@ onMounted(loadUniverse)
   gap: 12px;
 }
 
-.cu-page__state--error p {
-  margin: 0;
-}
-
 .cu-page__state--error button {
-  appearance: none;
   background: var(--btn-primary-bg);
   border: 1px solid var(--interactive-primary);
   border-radius: 10px;
   color: var(--text-inverse);
   cursor: pointer;
   font: inherit;
-  font-size: 0.875rem;
-  font-weight: 750;
   min-height: 44px;
   padding: 0 16px;
 }
 
-.cu-page__state--loading {
-  align-items: stretch;
+.cu-page__graph {
   display: grid;
-  gap: 14px;
-  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1fr);
-}
-
-.cu-page__skeleton {
-  animation: cu-page-pulse 1.4s ease-in-out infinite;
-  background: var(--surface-secondary);
-  border-radius: 10px;
-  display: block;
-}
-
-.cu-page__skeleton--title,
-.cu-page__skeleton--controls {
-  height: 70px;
-}
-
-.cu-page__skeleton--body {
-  grid-column: 1 / -1;
-  height: 360px;
-}
-
-@keyframes cu-page-pulse {
-  50% { opacity: 0.55; }
+  gap: 10px;
+  min-width: 0;
 }
 
 .cu-page__notice {
@@ -374,22 +259,6 @@ onMounted(loadUniverse)
   padding: 7px 12px;
 }
 
-.cu-page__source {
-  align-items: center;
-  color: var(--text-tertiary);
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 0.78rem;
-  font-weight: 650;
-  gap: 6px;
-  margin: 0 0 10px;
-}
-
-.cu-page__source.is-fallback,
-.cu-page__source.is-mixed {
-  color: var(--semantic-warning);
-}
-
 .cu-page__notice.is-success {
   background: color-mix(in srgb, var(--semantic-success) 10%, var(--surface-primary));
   border-color: color-mix(in srgb, var(--semantic-success) 34%, var(--border-primary));
@@ -402,25 +271,13 @@ onMounted(loadUniverse)
   color: var(--semantic-error);
 }
 
+.cu-page__legend {
+  min-width: 0;
+}
+
 @media (max-width: 980px) {
   .cu-page {
     padding: 16px 14px 36px;
-  }
-}
-
-@media (max-width: 640px) {
-  .cu-page__state--loading {
-    grid-template-columns: 1fr;
-  }
-
-  .cu-page__skeleton--body {
-    grid-column: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cu-page__skeleton {
-    animation: none;
   }
 }
 </style>

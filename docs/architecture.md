@@ -19,7 +19,7 @@ Browser-dependent code belongs behind client lifecycle or `.client.vue` boundari
 | Surface | Current architecture |
 |---|---|
 | Course discovery/reviews | Canonical course overview with semester offerings; reviews aggregate by course while retaining each review's offering context |
-| Course graph | Pure graph adapter in `utils/courseUniverse.ts`, interactive Vue/SVG components, shared backend catalog-rule source |
+| Course graph | Classic `CourseUniversePage` / `CourseUniverseCanvas` with the scheduler map endpoints and seed-coordinate layout in `utils/courseUniverse.ts`; course-overview catalog rules remain separate. See [academic features](features/academic.md). |
 | Planner | Guest-local or authenticated cart, pure constraint solver/ranked optimizer, saved plan snapshots and one-time calendar export |
 | Academic map | Backend-evaluated curriculum/record state with typed frontend import and progress views |
 | Forum/files | Authenticated mutation and verified OSS uploads; same-origin avatars and browser document viewers |

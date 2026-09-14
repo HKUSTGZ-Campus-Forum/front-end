@@ -4,7 +4,9 @@
 
 Current course routes are under [pages/courses](../../pages/courses). [useCourseOverview](../../composables/useCourseOverview.ts) and [course overview DTOs](../../types/course-overview.ts) distinguish canonical course identity, catalog rules and semester offerings. Course-level reviews aggregate historical reviews; each review still belongs to a specific offering. Old semester review URLs are compatibility entry points.
 
-[Course universe components](../../components/courses/universe) use the pure [courseUniverse adapter](../../utils/courseUniverse.ts). Preserve logic nodes, relationship geometry, selection/hover visibility and source/provenance display. Read the backend relationship endpoint before changing graph semantics; map seed data is a fallback, not the catalog authority.
+[CourseUniversePage](../../components/courses/universe/CourseUniversePage.vue) at `/courses/graph` restores the classic graph: subject chips ordered by course count, relationship legend, full SVG canvas, zoom/fit/focus controls and selectable course cards. It reads `/api/scheduler/map/components`, `/lines` and `/courses` through [useScheduler](../../composables/useScheduler.ts), supplementing titles from the course catalog. This deliberately displays the legacy map dataset, not the official catalog relationship endpoint; it does not change backend catalog data or course-overview requirements.
+
+[CourseUniverseCanvas](../../components/courses/universe/CourseUniverseCanvas.vue) uses the `classic` layout option in the pure [courseUniverse adapter](../../utils/courseUniverse.ts) to preserve the seed coordinate space, relationship elbows, logic nodes and the lower rows of isolated courses. Other callers keep the compact layout. Course selection, detail links, planner-cart actions, bilingual labels and both themes remain supported. The later `CourseUniverseExplorer`, `CoursePathWorkspace` and `CourseSubjectMap` components are retained but are not mounted by this route.
 
 ## Planner and cart
 
