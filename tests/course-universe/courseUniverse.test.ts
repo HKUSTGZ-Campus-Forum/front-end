@@ -1033,3 +1033,15 @@ describe('course universe helpers', () => {
     })
   })
 })
+
+describe('official conditional references', () => {
+  it('keeps a restricted-course reference separate from an unconditional prerequisite arrow', () => {
+    const graph = buildCourseUniverseGraph({
+      components,
+      lines: [{ id: 1, start_id: 'AIAA2205', end_id: 'DSAA3010', category: 1, line_type: null, x_coordinate: 200, reference_only: true, requirement_text: 'AIAA 2205 for FTEC Major Only' }],
+    })
+    expect(graph.lines[0].referenceOnly).toBe(true)
+    expect(graph.lines[0].requirementText).toContain('FTEC Major Only')
+    expect(graph.lines[0].arrowPaths).toEqual([])
+  })
+})

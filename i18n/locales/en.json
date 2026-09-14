@@ -1718,10 +1718,11 @@
       "notTaken": "Not taken",
       "interested": "Want to take",
       "prerequisite": "Prerequisite",
-      "corequisite": "Must take in same term",
+      "corequisite": "Co-requisite (before or together)",
       "exclusion": "Exclusion",
       "hollowLogic": "Choose one",
-      "solidLogic": "Need all"
+      "solidLogic": "Need all",
+      "reference": "Conditional reference (see course details)"
     },
     "statusShort": {
       "completed": "Done",
@@ -1768,7 +1769,9 @@
     "errors": {
       "load": "Course Graph failed to load. Please try again later.",
       "courseDetail": "Failed to load course detail."
-    }
+    },
+    "legendLabel": "Course relationship legend",
+    "catalogSource": "Official undergraduate catalog · Term {term} · Synced {date}"
   },
   "courses": {
     "title": "Course reviews",
@@ -1835,7 +1838,8 @@
       "source": {
         "official": "Official course catalog",
         "fallback": "Legacy catalog fallback",
-        "version": "Catalog version {version}"
+        "version": "Catalog version {version}",
+        "updated": "Synced {date}"
       },
       "academicStatusTitle": "My academic status",
       "academicStatus": {
@@ -1864,7 +1868,8 @@
       },
       "mapTitle": "See relationships in the graph",
       "mapCopy": "Open Course Graph to inspect prerequisite, corequisite, and exclusion relationships around this course.",
-      "openInMap": "View in graph"
+      "openInMap": "View in graph",
+      "downstreamHint": "These courses reference this course in their prerequisites; additional courses or major restrictions may apply."
     },
     "offeringMissing": "This offering does not exist for the selected course.",
     "allOfferings": "All terms",

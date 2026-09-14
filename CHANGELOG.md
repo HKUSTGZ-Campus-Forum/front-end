@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- 课程图谱保留经典界面，改用与课程页一致的最新官方规则；补全省略课程编号对应的关系，并正确显示条件引用、共修含义、同步日期与后修说明。此次为只读代码修复，无数据库迁移。
+
 - 课程图谱：恢复截图对应的学科标签、关系图例与完整 SVG 画布，使用原排课图谱接口和节点布局；保留课程详情、选课操作及中英文/深浅主题，并补齐手机触控与加载失败重试。仅前端恢复，不修改课程数据库。
 
 - MakerSpace: provide bilingual per-grant integration guides with full endpoints, scoped examples, pagination/error recovery and safe copy-for-AI/manual-copy controls.

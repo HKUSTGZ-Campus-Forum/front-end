@@ -32,6 +32,7 @@ const props = defineProps<{
   nodes: CourseUniverseNode[]
   lines: CourseUniverseMapLine[]
   searchQuery: string
+  catalogGraph?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -90,12 +91,18 @@ const layoutComponents = computed(() => layoutCourseUniverseGraphComponents({
   components: props.components,
   lines: props.lines,
   visibleComponentIds: visibleComponentIds.value,
-  layout: 'classic',
+  layout: props.catalogGraph ? 'compact' : 'classic',
 }))
 const layoutComponentById = computed(() => new Map(layoutComponents.value.map(component => [component.id, component])))
 const graph = computed(() => buildCourseUniverseGraph({
   components: layoutComponents.value,
-  lines: props.lines,
+  lines: props.catalogGraph ? props.lines.map(line => {
+    const start = layoutComponentById.value.get(line.start_id)
+    const end = layoutComponentById.value.get(line.end_id)
+    if (!start || !end) return line
+    const startX = start.x_coordinate + (start.category === 0 ? COURSE_UNIVERSE_COURSE_WIDTH : 0)
+    return { ...line, x_coordinate: (startX + end.x_coordinate) / 2 }
+  }) : props.lines,
 }))
 const renderComponentById = computed(() => new Map(graph.value.components.map(component => [component.id, component])))
 
@@ -537,12 +544,13 @@ onBeforeUnmount(() => {
               `is-${line.tone}`,
               {
                 'is-dashed': line.dashed,
+                'is-reference': line.referenceOnly,
                 'is-supplemental': isSupplementalLine(line),
                 'is-highlighted': highlightedLineIds.has(line.id),
                 'is-dimmed': isRenderLineDimmed(line.id),
               },
             ]"
-          />
+          ><title v-if="line.requirementText">{{ line.requirementText }}</title></path>
         </g>
 
         <g class="cu-line-arrows">
@@ -834,6 +842,11 @@ onBeforeUnmount(() => {
 
 .cu-line.is-dashed {
   stroke-dasharray: 6 5;
+}
+
+.cu-line.is-reference {
+  stroke-dasharray: 2 6;
+  stroke: var(--text-tertiary);
 }
 
 .cu-line.is-highlighted {

@@ -8,13 +8,13 @@ import {
   compactCourseCode,
   getCourseUniverseActiveSchedulerSemester,
   getCourseUniverseSchedulerSemesterLabel,
-  mergeCourseUniverseCatalogCourses,
   normalizeCourseUniverseNodes,
   type CourseUniverseAcademicRecord,
   type CourseUniverseMapComponent,
   type CourseUniverseMapCourse,
   type CourseUniverseMapLine,
   type CourseUniverseModeKey,
+  type CourseUniverseGraphMetadata,
 } from '~/utils/courseUniverse'
 
 const props = defineProps<{
@@ -24,8 +24,7 @@ const props = defineProps<{
 const route = useRoute()
 const { t, locale } = useI18n()
 const { isLoggedIn } = useAuth()
-const { fetchPublic } = useApi()
-const { getMapComponents, getMapLines, getMapCourses, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
+const { getRelationshipGraph, getSemesters, getCart, addToCart, removeFromCart } = useScheduler()
 const { fetchSummary } = useAcademicMap()
 
 const components = ref<CourseUniverseMapComponent[]>([])
@@ -37,6 +36,7 @@ const academicRecords = ref<CourseUniverseAcademicRecord[]>([])
 const selectedCourseCode = ref<string | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
+const graphMetadata = ref<CourseUniverseGraphMetadata | null>(null)
 const cartMessage = ref('')
 const cartNoticeTone = ref<'info' | 'success' | 'error'>('info')
 const cartUpdatingCodes = ref(new Set<string>())
@@ -57,36 +57,19 @@ const nodes = computed(() => normalizeCourseUniverseNodes({
   selectedCourseCode: selectedCourseCode.value,
 }))
 
-async function getCatalogCourses(): Promise<CourseUniverseMapCourse[]> {
-  const response = await fetchPublic('/api/courses?stage=all')
-  if (!response.ok) return []
-  const data = await response.json()
-  if (!Array.isArray(data)) return []
-
-  return data.map(course => ({
-    course_code: course.course_code || course.code,
-    course_title_abbr: course.course_title_abbr,
-    course_title: course.course_title,
-    name: course.name,
-    title: course.title,
-  }))
-}
-
 async function loadUniverse() {
   try {
     loading.value = true
     errorMessage.value = ''
-    const [mapComponents, mapLines, mapCourses, semesterData, catalogCourses] = await Promise.all([
-      getMapComponents(),
-      getMapLines(),
-      getMapCourses(),
+    const [graph, semesterData] = await Promise.all([
+      getRelationshipGraph('official'),
       getSemesters(),
-      getCatalogCourses().catch(() => []),
     ])
 
-    components.value = mapComponents
-    lines.value = mapLines
-    courses.value = mergeCourseUniverseCatalogCourses(mapCourses, catalogCourses)
+    components.value = graph.components
+    lines.value = graph.lines
+    courses.value = graph.courses
+    graphMetadata.value = graph.metadata
     semesters.value = semesterData
     const focusedCourse = typeof route.query.focus === 'string' ? compactCourseCode(route.query.focus) : ''
     if (focusedCourse) selectedCourseCode.value = focusedCourse
@@ -193,7 +176,11 @@ onMounted(loadUniverse)
       </p>
       <div class="cu-page__graph">
         <CourseUniverseLegend class="cu-page__legend" />
+        <p v-if="graphMetadata" class="cu-page__source">
+          {{ t('courseUniverse.catalogSource', { term: graphMetadata.effective_from_semester_id || '—', date: graphMetadata.imported_at?.slice(0, 10) || '—' }) }}
+        </p>
         <CourseUniverseCanvas
+          catalog-graph
           :components="components"
           :nodes="nodes"
           :lines="lines"
@@ -211,6 +198,12 @@ onMounted(loadUniverse)
   margin: 0 auto;
   max-width: 1600px;
   padding: 18px 20px 28px;
+}
+
+.cu-page__source {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin: 0;
 }
 
 .cu-page__state {
