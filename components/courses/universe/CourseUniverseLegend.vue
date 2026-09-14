@@ -7,11 +7,12 @@ const items = [
   { key: 'corequisite', className: 'is-corequisite', type: 'line' },
   { key: 'hollowLogic', className: 'is-hollow-logic', type: 'logic' },
   { key: 'solidLogic', className: 'is-solid-logic', type: 'logic' },
+  { key: 'reference', className: 'is-reference', type: 'line' },
 ]
 </script>
 
 <template>
-  <div class="cu-legend" aria-label="Course graph legend">
+  <div class="cu-legend" :aria-label="t('courseUniverse.legendLabel')">
     <span v-for="item in items" :key="item.key" class="cu-legend__item">
       <i :class="['cu-legend__mark', `cu-legend__mark--${item.type}`, item.className]" aria-hidden="true"></i>
       {{ t(`courseUniverse.legend.${item.key}`) }}
@@ -63,4 +64,5 @@ const items = [
 .is-exclusion { border-top-color: var(--semantic-error); }
 .is-hollow-logic { background: var(--surface-primary); }
 .is-solid-logic { background: var(--text-primary); }
+.is-reference { border-top-style: dotted; border-top-color: var(--text-tertiary); }
 </style>

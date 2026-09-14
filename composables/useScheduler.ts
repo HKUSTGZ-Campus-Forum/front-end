@@ -259,8 +259,8 @@ export function useScheduler() {
     return resp.json()
   }
 
-  async function getRelationshipGraph(): Promise<CourseUniverseGraphResponse> {
-    const resp = await fetchPublic('/api/courses/relationships/graph')
+  async function getRelationshipGraph(catalog?: 'official'): Promise<CourseUniverseGraphResponse> {
+    const resp = await fetchPublic(`/api/courses/relationships/graph${catalog ? '?catalog=official' : ''}`)
     if (!resp.ok) throw new Error('Relationship graph failed')
     return resp.json()
   }

@@ -17,6 +17,8 @@ export interface CourseUniverseMapComponent {
 }
 
 export interface CourseUniverseMapLine {
+  reference_only?: boolean
+  requirement_text?: string | null
   id: number
   start_id: string
   end_id: string
@@ -130,6 +132,8 @@ export interface CourseUniverseRenderComponent {
 }
 
 export interface CourseUniverseRenderLine {
+  referenceOnly: boolean
+  requirementText: string | null
   id: number
   startId: string
   endId: string
@@ -405,8 +409,10 @@ export function buildCourseUniverseGraph(input: {
       endId: line.end_id,
       category: line.category,
       lineType: line.line_type,
+      referenceOnly: Boolean(line.reference_only),
+      requirementText: line.requirement_text || null,
       path: `M ${startPoint.x},${startPoint.y} H ${elbowX} V ${endPoint.y} H ${endPoint.x}`,
-      arrowPaths: buildCourseUniverseLineArrows({
+      arrowPaths: line.reference_only ? [] : buildCourseUniverseLineArrows({
         category: line.category,
         lineType: line.line_type,
         startX: startPoint.x,
