@@ -92,13 +92,6 @@ const hasStrongStatus = computed(() => (
         </NuxtLink>
       </section>
 
-      <section class="cu-detail__card">
-        <p class="cu-detail__eyebrow">{{ t('courseUniverse.detail.reviewSignal') }}</p>
-        <p>{{ t('courses.reviewsCopy', { offering: selectedSemester || '-' }) }}</p>
-        <NuxtLink :to="getLocalePath('/courses/explore')" class="cu-detail__link">
-          {{ t('courseUniverse.actions.openReviews') }}
-        </NuxtLink>
-      </section>
     </template>
   </aside>
 </template>

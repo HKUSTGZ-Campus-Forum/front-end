@@ -10,6 +10,9 @@
 
 ## [Unreleased]
 
+- Replaced the homepage post feed with bilingual administrator-published announcements and four labelled historical notices; removed homepage gugu and the main sidebar community entry while retaining forum data.
+- Removed Course Explore and review entry points, redirecting old URLs to the graph or course overview without deleting review data.
+
 - 课程图谱在官方目录尚不可用或后端尚不支持官方范围时显示明确提示与重试入口，避免空白画布或误展示历史关系。
 
 - 课程图谱保留经典界面，改用与课程页一致的最新官方规则；补全省略课程编号对应的关系，并正确显示条件引用、共修含义、同步日期与后修说明。此次为只读代码修复，无数据库迁移。

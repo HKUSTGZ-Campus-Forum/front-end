@@ -62,7 +62,7 @@ const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Rec
 const cameFromUniverse = computed(() => route.query.from === 'universe')
 const backTo = computed(() => cameFromUniverse.value
   ? getLocalePath({ path: '/courses/graph', query: { focus: course.value?.code || courseCode.value } })
-  : getLocalePath({ path: '/courses/explore', query: listBackQuery.value }))
+  : getLocalePath('/courses'))
 const backLabel = computed(() => cameFromUniverse.value
   ? t('courses.overviewPage.backToUniverse')
   : t('courses.backToCourses'))

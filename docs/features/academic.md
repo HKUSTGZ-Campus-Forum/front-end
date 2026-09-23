@@ -2,7 +2,7 @@
 
 ## Course discovery, overview and graph
 
-Current course routes are under [pages/courses](../../pages/courses). [useCourseOverview](../../composables/useCourseOverview.ts) and [course overview DTOs](../../types/course-overview.ts) distinguish canonical course identity, catalog rules and semester offerings. Course-level reviews aggregate historical reviews; each review still belongs to a specific offering. Old semester review URLs are compatibility entry points.
+Current course routes are under [pages/courses](../../pages/courses). [useCourseOverview](../../composables/useCourseOverview.ts) and [course overview DTOs](../../types/course-overview.ts) distinguish canonical course identity, catalog rules and semester offerings. The course toolbar now exposes planner, graph and academic progress; Explore and course review UI are retired. Old Explore URLs redirect to the graph and old review URLs redirect to the course overview. Historical review data remains stored.
 
 [CourseUniversePage](../../components/courses/universe/CourseUniversePage.vue) at `/courses/graph` keeps the classic subject chips, legend, SVG canvas, zoom/fit/focus controls and course cards. It now reads `/api/courses/relationships/graph?catalog=official` through [useScheduler](../../composables/useScheduler.ts), sharing current official rules with course details. Unavailable official catalogs and failed requests show retry; the route never silently substitutes historical scheduler edges. The source term and import date are visible.
 
