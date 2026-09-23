@@ -1311,7 +1311,7 @@
   },
   "homePage": {
     "pageTitle": "首页 - UniKorn 科广汇",
-    "metaDescription": "查看热门帖子、校园快捷入口和最新咕咕消息。",
+    "metaDescription": "查看校园快捷入口与平台公告。",
     "relatedLinks": {
       "title": "相关链接",
       "sisNew": "SIS（新）",
@@ -1826,7 +1826,7 @@
       "teacherTbd": "教师待定",
       "openOffering": "查看学期详情",
       "offeringContextTitle": "学期主页",
-      "offeringContextCopy": "本页集中展示该学期的评价、讨论和排课信息；课程级信息和想修状态在课程总览中维护。",
+      "offeringContextCopy": "本页展示该学期的课程简介与讨论；课程级信息和想修状态在课程总览中维护。",
       "rulesEyebrow": "课程规则",
       "rulesTitle": "先修、共修与互斥",
       "noRules": "暂无先修、共修或互斥信息。",
@@ -3486,5 +3486,40 @@
         "hint": "在主页展示最近 10 篇帖子。关闭后，帖子仍可在论坛中正常访问。"
       }
     }
+  },
+  "announcements": {
+    "title": "公告",
+    "description": "查看 UniKorn 平台发布的消息与历史公告。",
+    "viewAll": "查看全部",
+    "archive": "历史公告",
+    "official": "平台公告",
+    "readMore": "查看详情",
+    "empty": "目前还没有公告。",
+    "adminNav": "公告管理",
+    "manage": "管理公告",
+    "archiveOnly": "最新公告暂时无法加载，当前显示历史公告。",
+    "archiveNote": "这是一则从历史帖子整理的公告，内容保留原发布时间的状态。",
+    "backToList": "返回公告",
+    "loadError": "公告暂时无法加载。",
+    "notFound": "未找到这则公告。",
+    "adminTitle": "公告管理",
+    "adminDescription": "只有管理员可以发布、编辑和撤下平台公告。",
+    "viewPublic": "查看公告页",
+    "new": "发布新公告",
+    "edit": "编辑",
+    "titleLabel": "公告标题",
+    "contentLabel": "公告内容",
+    "markdownHint": "支持 Markdown 格式。",
+    "required": "请填写标题和内容。",
+    "publish": "发布公告",
+    "published": "公告已发布。",
+    "updated": "公告已更新。",
+    "deleted": "公告已撤下。",
+    "saveError": "保存失败，请稍后重试。",
+    "deleteError": "撤下失败，请稍后重试。",
+    "publishedList": "已发布的公告",
+    "noPublished": "尚未发布新的平台公告。",
+    "delete": "撤下",
+    "confirmDelete": "确认撤下"
   }
 }

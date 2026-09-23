@@ -1,6 +1,6 @@
 import type { AcademicCourseStatus } from '~/types/academic-map'
 
-export type CourseUniverseModeKey = 'universe' | 'explore' | 'planner' | 'academicMap'
+export type CourseUniverseModeKey = 'universe' | 'planner' | 'academicMap'
 
 export interface CourseUniverseMode {
   key: CourseUniverseModeKey
@@ -162,7 +162,6 @@ export const COURSE_UNIVERSE_FOCUS_ZOOM = 1.45
 
 export const COURSE_UNIVERSE_MODES: CourseUniverseMode[] = [
   { key: 'planner', labelKey: 'courseUniverse.modes.planner', path: '/courses/planner' },
-  { key: 'explore', labelKey: 'courseUniverse.modes.explore', path: '/courses/explore' },
   { key: 'universe', labelKey: 'courseUniverse.modes.universe', path: '/courses/graph' },
   { key: 'academicMap', labelKey: 'courseUniverse.modes.academicMap', path: '/courses/academic-map' },
 ]

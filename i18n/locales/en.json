@@ -1311,7 +1311,7 @@
   },
   "homePage": {
     "pageTitle": "Home - UniKorn",
-    "metaDescription": "Browse trending posts, campus shortcuts, and the latest gugu messages.",
+    "metaDescription": "Find campus shortcuts and platform announcements.",
     "relatedLinks": {
       "title": "Related links",
       "sisNew": "SIS（新）",
@@ -1826,7 +1826,7 @@
       "teacherTbd": "Instructor TBD",
       "openOffering": "View term details",
       "offeringContextTitle": "Term page",
-      "offeringContextCopy": "This page keeps reviews, discussion, and scheduling context for this term. Course-level details and want-to-take status live on the course overview.",
+      "offeringContextCopy": "Find this offering’s course information and discussion here. Manage course-level details and interest status in the course overview.",
       "rulesEyebrow": "Course rules",
       "rulesTitle": "Prerequisites, corequisites, and exclusions",
       "noRules": "No prerequisite, corequisite, or exclusion information yet.",
@@ -3486,5 +3486,40 @@
         "hint": "Show your 10 latest posts on your profile. Hiding this section does not remove posts from the forum."
       }
     }
+  },
+  "announcements": {
+    "title": "Announcements",
+    "description": "Read platform updates and past announcements from UniKorn.",
+    "viewAll": "View all",
+    "archive": "Past announcement",
+    "official": "Platform announcement",
+    "readMore": "Read more",
+    "empty": "There are no announcements yet.",
+    "adminNav": "Announcements",
+    "manage": "Manage announcements",
+    "archiveOnly": "Recent announcements are temporarily unavailable. Past announcements are shown.",
+    "archiveNote": "This announcement was curated from an older post. Its content reflects the date when it was originally published.",
+    "backToList": "Back to announcements",
+    "loadError": "The announcement is temporarily unavailable.",
+    "notFound": "This announcement was not found.",
+    "adminTitle": "Manage announcements",
+    "adminDescription": "Only administrators can publish, edit, and remove platform announcements.",
+    "viewPublic": "View public page",
+    "new": "New announcement",
+    "edit": "Edit",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "markdownHint": "Markdown formatting is supported.",
+    "required": "Enter a title and content.",
+    "publish": "Publish announcement",
+    "published": "Announcement published.",
+    "updated": "Announcement updated.",
+    "deleted": "Announcement removed.",
+    "saveError": "Could not save the announcement. Try again.",
+    "deleteError": "Could not remove the announcement. Try again.",
+    "publishedList": "Published announcements",
+    "noPublished": "No new platform announcements have been published.",
+    "delete": "Remove",
+    "confirmDelete": "Confirm removal"
   }
 }
