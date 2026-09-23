@@ -6,6 +6,8 @@
 
 [useFeedbackAdmin](../../composables/useFeedbackAdmin.ts) represents feedback/merge review, commenting controls and moderation. Do not conflate author approval with admin publication. [useIdentity](../../composables/useIdentity.ts) represents badge requests and review rather than school SSO identity. [Carousel administration](../../composables/useHomeCarouselAdmin.ts) handles localized slides, ordering and archive/restore; public display is [CarouselBanner](../../components/home/CarouselBanner.vue).
 
+[Announcement administration](../../pages/admin/announcements.vue) publishes and manages posts tagged `platform-announcement`. The administrator-only page uses existing post endpoints; backend authorization is checked on create, edit and delete. The four historical announcement snapshots are read-only and are not managed through this page.
+
 [Contest pages](../../pages/contest) expose participant and manager workflows. Manager/organizer rules and track/submission validation live on the backend; a generic admin role should not be assumed equivalent. [Recruitment admin](../../pages/recruitment/admin.vue) uses its own verified-email allowlist rather than the generic admin permission model.
 
 Verification combines [carousel tests](../../tests/home-carousel.test.ts), [recruitment admin tests](../../tests/recruitment/admin-dashboard.test.ts), relevant navigation tests and backend permission/state tests. The frontend does not have dedicated end-to-end coverage for every admin/contest screen. For changed actions verify allowed and denied users, confirmation/error states and the actual backend result; never claim UI hiding proves authorization.

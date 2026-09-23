@@ -1,23 +1,10 @@
 <script setup lang="ts">
-definePageMeta({ layout: "keguang" });
-
-const route = useRoute();
-const { getLocalePath } = useAppLocale();
-const courseIdentifier = String(route.params.id || "");
-const offering = String(route.params.semesterTag || "");
-
-await navigateTo(getLocalePath({
-  path: `/courses/${courseIdentifier}/reviews`,
-  query: {
-    ...route.query,
-    ...(offering ? { offering } : {}),
-  },
-}), {
+const route = useRoute()
+const { getLocalePath } = useAppLocale()
+await navigateTo(getLocalePath(`/courses/${String(route.params.id || '')}`), {
   replace: true,
-  redirectCode: 301,
-});
+  redirectCode: 302,
+})
 </script>
 
-<template>
-  <div></div>
-</template>
+<template><div /></template>

@@ -68,7 +68,7 @@ const courseId = computed(() => resolvedCourseId.value || courseIdentifier.value
 const overviewCourseCode = computed(() => compactCourseCode(courseDetail.value.code || courseIdentifier.value));
 const semesterTag = computed(() => String(route.params.semesterTag || ""));
 const listBackQuery = computed(() => buildCourseListBackQuery(route.query as Record<string, unknown>));
-const listBackTo = computed(() => getLocalePath({ path: "/courses/explore", query: listBackQuery.value }));
+const listBackTo = computed(() => getLocalePath('/courses'));
 const courseOverviewTo = computed(() => getLocalePath({
   path: `/courses/${overviewCourseCode.value}`,
   query: listBackQuery.value,
@@ -76,13 +76,6 @@ const courseOverviewTo = computed(() => getLocalePath({
 const selectedOffering = computed(() => (
   offerings.value.find((offering) => offering.offering_tag === semesterTag.value) || null
 ));
-const reviewPageTo = computed(() => getLocalePath({
-  path: `/courses/${overviewCourseCode.value}/reviews`,
-  query: {
-    ...listBackQuery.value,
-    offering: semesterTag.value,
-  },
-}));
 const discussionCreateTo = computed(() => getLocalePath({
   path: "/forum/postMessage",
   query: {
@@ -238,17 +231,6 @@ useHead({
             <NuxtLink :to="courseOverviewTo" class="kg-btn-primary kg-btn-primary--block">
               {{ t("courseUniverse.actions.openOverview") }}
             </NuxtLink>
-          </div>
-
-          <div class="kg-card kg-pane kg-pane--review">
-            <div class="kg-pane-head">
-              <div>
-                <p class="kg-pane-eyebrow">{{ t("courses.reviewsEyebrow") }}</p>
-                <h2 class="kg-pane-title">{{ t("courses.reviewsTitle") }}</h2>
-              </div>
-            </div>
-            <p class="kg-pane-copy">{{ t("courses.reviewsCopy", { offering: selectedOffering?.display_name || semesterTag }) }}</p>
-            <NuxtLink :to="reviewPageTo" class="kg-btn-primary kg-btn-primary--block">{{ t("courses.reviewsEntry") }}</NuxtLink>
           </div>
 
           <div class="kg-card kg-pane kg-pane--discussion">

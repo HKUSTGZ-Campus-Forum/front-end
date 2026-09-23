@@ -342,7 +342,6 @@ describe('course universe helpers', () => {
   it('keeps all course tool entry pages on the shared mode navigation', () => {
     const expectedPages = [
       ['../../components/courses/universe/CourseUniversePage.vue', 'mode="mode"'],
-      ['../../pages/courses/explore.vue', 'mode="explore"'],
       ['../../pages/courses/planner/index.vue', 'mode="planner"'],
       ['../../pages/courses/academic-map.vue', 'mode="academicMap"'],
     ] as const
@@ -384,7 +383,6 @@ describe('course universe helpers', () => {
   it('exports the expected course modes', () => {
     expect(COURSE_UNIVERSE_MODES.map(mode => mode.key)).toEqual([
       'planner',
-      'explore',
       'universe',
       'academicMap',
     ])
@@ -392,7 +390,6 @@ describe('course universe helpers', () => {
 
   it('builds localized mode paths without hardcoding locale prefixes', () => {
     expect(buildCourseUniverseModePath('universe')).toBe('/courses/graph')
-    expect(buildCourseUniverseModePath('explore')).toBe('/courses/explore')
     expect(buildCourseUniverseModePath('planner')).toBe('/courses/planner')
     expect(buildCourseUniverseModePath('academicMap')).toBe('/courses/academic-map')
   })
