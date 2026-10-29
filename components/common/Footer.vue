@@ -26,13 +26,7 @@
             <h4 class="section-title">{{ t('footer.navigation') }}</h4>
             <div class="link-row">
               <NuxtLink :to="getLocalePath('/')">{{ t('nav.home') }}</NuxtLink>
-              <NuxtLink :to="getLocalePath('/forum')">{{ t('nav.community') }}</NuxtLink>
-              <NuxtLink :to="{ path: getLocalePath('/forum'), query: { section: 'feedback' } }">
-                {{ t('nav.feedback') }}
-              </NuxtLink>
-              <NuxtLink :to="{ path: getLocalePath('/forum'), query: { section: 'activity' } }">
-                {{ t('nav.activity') }}
-              </NuxtLink>
+              <NuxtLink :to="getLocalePath('/announcements')">{{ t('announcements.title') }}</NuxtLink>
               <NuxtLink :to="getLocalePath('/courses')">{{ t('nav.courses') }}</NuxtLink>
             </div>
           </div>
@@ -40,7 +34,6 @@
             <h4 class="section-title">{{ t('footer.help') }}</h4>
             <div class="link-row">
               <NuxtLink :to="getLocalePath('/help/guide')">{{ t('footer.guide') }}</NuxtLink>
-              <NuxtLink :to="getLocalePath('/help/rules')">{{ t('footer.rules') }}</NuxtLink>
               <NuxtLink :to="getLocalePath('/help/privacy')">{{ t('footer.privacy') }}</NuxtLink>
             </div>
           </div>
