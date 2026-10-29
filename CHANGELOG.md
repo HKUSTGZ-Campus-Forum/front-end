@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+- Retired direct public community URLs (including localized post, gugu, feedback and activity links) with server and client redirects; replaced footer community navigation with announcements and removed community rules.
+
 - Replaced the homepage post feed with bilingual administrator-published announcements and four labelled historical notices; removed homepage gugu and the main sidebar community entry while retaining forum data.
 - Removed Course Explore and review entry points, redirecting old URLs to the graph or course overview without deleting review data.
 
